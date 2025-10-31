@@ -1,0 +1,62 @@
+<?php
+// Suppress error display, log errors instead
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+session_start();
+
+// Ensure no output before headers
+if (ob_get_level()) {
+    ob_clean();
+}
+
+header('Content-Type: application/json');
+
+// Include database connection
+if (file_exists(__DIR__ . '/config/db_connection.php')) {
+    require_once __DIR__ . '/config/db_connection.php';
+} elseif (file_exists(__DIR__ . '/db_connection.php')) {
+    require_once __DIR__ . '/db_connection.php';
+} else {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Database connection file not found']);
+    exit();
+}
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
+    exit();
+}
+
+$restaurant_id = $_SESSION['restaurant_id'];
+
+try {
+    $conn = getConnection();
+    
+    $stmt = $conn->prepare("SELECT id, restaurant_id, member_name, email, phone, role, is_active, created_at FROM staff WHERE restaurant_id = ? ORDER BY role, member_name ASC");
+    $stmt->execute([$restaurant_id]);
+    $staff = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    echo json_encode(['success' => true, 'data' => $staff]);
+} catch (PDOException $e) {
+    error_log("PDO Error in get_staff.php: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Database error occurred. Please try again later.'
+    ]);
+    exit();
+} catch (Exception $e) {
+    error_log("Error in get_staff.php: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Database error: ' . $e->getMessage()
+    ]);
+    exit();
+}
+?>
+

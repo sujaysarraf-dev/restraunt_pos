@@ -1,0 +1,4625 @@
+const sidebar = document.querySelector(".sidebar");
+const sidebarToggler = document.querySelector(".sidebar-toggler");
+const menuToggler = document.querySelector(".menu-toggler");
+
+// Ensure these heights match the CSS sidebar height values
+let collapsedSidebarHeight = "56px"; // Height in mobile view (collapsed)
+let fullSidebarHeight = "calc(100vh - 32px)"; // Height in larger screen
+
+// Global subscription status
+let subscriptionStatus = null;
+let subscriptionData = null;
+
+// Toggle sidebar's collapsed state (only if elements exist)
+if (sidebarToggler && sidebar) {
+  sidebarToggler.addEventListener("click", () => {
+    sidebar.classList.toggle("collapsed");
+    updateToggleButton();
+  });
+}
+
+// Update toggle button visibility
+function updateToggleButton() {
+  if (!sidebar) return;
+  
+  const primaryNav = document.querySelector('.primary-nav');
+  const existingToggle = document.querySelector('.toggle-menu-item');
+  
+  if (sidebar.classList.contains('collapsed')) {
+    // Remove existing toggle if any
+    if (existingToggle) {
+      existingToggle.remove();
+    }
+    
+    // Add toggle as first menu item
+    if (primaryNav) {
+      const toggleItem = document.createElement('div');
+      toggleItem.className = 'toggle-menu-item';
+      toggleItem.innerHTML = '>';
+      toggleItem.addEventListener('click', () => {
+        sidebar.classList.remove('collapsed');
+        updateToggleButton();
+      });
+      
+      primaryNav.insertBefore(toggleItem, primaryNav.firstChild);
+    }
+  } else {
+    // Remove toggle menu item when expanded
+    if (existingToggle) {
+      existingToggle.remove();
+    }
+  }
+}
+
+// Update sidebar height and menu toggle text
+const toggleMenu = (isMenuActive) => {
+  if (!sidebar) return;
+  
+  // Check if we're on mobile
+  if (window.innerWidth < 1024) {
+    // On mobile, use a fixed large height for the menu to show all items
+    sidebar.style.height = isMenuActive ? 'calc(100vh - 26px)' : collapsedSidebarHeight;
+  } else {
+    // On desktop, use scrollHeight
+    sidebar.style.height = isMenuActive ? `${sidebar.scrollHeight}px` : collapsedSidebarHeight;
+  }
+  
+  if (menuToggler) {
+    const span = menuToggler.querySelector("span");
+    if (span) {
+      span.innerText = isMenuActive ? "close" : "menu";
+    }
+  }
+}
+
+// Toggle menu-active class and adjust height
+if (menuToggler && sidebar) {
+  menuToggler.addEventListener("click", () => {
+    toggleMenu(sidebar.classList.toggle("menu-active"));
+  });
+}
+
+// Submenu toggle functionality
+document.addEventListener("DOMContentLoaded", () => {
+  const submenuToggles = document.querySelectorAll(".submenu-toggle");
+  
+  submenuToggles.forEach(toggle => {
+    toggle.addEventListener("click", (e) => {
+      e.preventDefault();
+      const navItem = toggle.closest(".nav-item.has-submenu");
+      navItem.classList.toggle("active");
+    });
+  });
+  
+  // Add auto-close for submenu links without data-page
+  const submenuLinks = document.querySelectorAll(".submenu-link");
+  submenuLinks.forEach(link => {
+    link.addEventListener("click", (e) => {
+      // Auto-close sidebar on mobile after selecting an option
+      if (sidebar && window.innerWidth < 1024 && sidebar.classList.contains("menu-active")) {
+        sidebar.classList.remove("menu-active");
+        // Reset height to collapsed state
+        sidebar.style.height = collapsedSidebarHeight;
+        if (menuToggler) {
+          const span = menuToggler.querySelector("span");
+          if (span) span.innerText = "menu";
+        }
+      }
+    });
+  });
+
+  // Page navigation functionality
+  const navLinks = document.querySelectorAll(".nav-link[data-page]");
+  const pages = document.querySelectorAll(".page");
+
+  navLinks.forEach(link => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const targetPage = link.getAttribute("data-page");
+      showPage(targetPage);
+      
+      // Close any open submenus
+      document.querySelectorAll(".nav-item.has-submenu.active").forEach(item => {
+        item.classList.remove("active");
+      });
+      
+      // Auto-close sidebar on mobile after selecting an option
+      if (sidebar && window.innerWidth < 1024 && sidebar.classList.contains("menu-active")) {
+        sidebar.classList.remove("menu-active");
+        // Reset height to collapsed state
+        sidebar.style.height = collapsedSidebarHeight;
+        if (menuToggler) {
+          const span = menuToggler.querySelector("span");
+          if (span) span.innerText = "menu";
+        }
+      }
+    });
+  });
+
+  function showPage(pageId) {
+    // Check subscription status before allowing access (except dashboard and settings)
+    if (pageId !== "dashboardPage" && pageId !== "settingsPage") {
+      if (subscriptionStatus === 'disabled' || subscriptionStatus === 'expired') {
+        // Show renewal modal
+        const renewalModal = document.getElementById('renewalModal');
+        if (renewalModal) {
+          renewalModal.style.display = 'flex';
+        }
+        // Keep dashboard active
+        const dashboardPage = document.getElementById('dashboardPage');
+        if (dashboardPage) {
+          dashboardPage.classList.add('active');
+        }
+        return; // Block access to other pages
+      }
+    }
+    
+    // Hide all pages
+    pages.forEach(page => {
+      page.classList.remove("active");
+    });
+    
+    // Show target page
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) {
+      targetPage.classList.add("active");
+      
+      // Load dashboard stats if it's the dashboard page
+      if (pageId === "dashboardPage") {
+        console.log('Switching to dashboard, loading stats...');
+        setTimeout(() => loadDashboardStats(), 100);
+      }
+      
+      // Load menus if it's the menu page
+      if (pageId === "menuPage") {
+        loadMenus();
+      }
+      
+      // Load menu items if it's the menu items page
+      if (pageId === "menuItemsPage") {
+        loadMenuItems();
+        loadMenusForFilter();
+      }
+      
+      // Load areas if it's the area page
+      if (pageId === "areaPage") {
+        loadAreas();
+      }
+      
+      // Load tables if it's the tables page
+      if (pageId === "tablesPage") {
+        loadTables();
+      }
+      
+      // Load QR codes if it's the QR codes page
+      if (pageId === "qrCodesPage") {
+        loadQRCodes();
+      }
+      
+      // Load reservations if it's the reservations page
+      if (pageId === "reservationsPage") {
+        loadReservations();
+      }
+      
+      // Load customers if it's the customers page
+      if (pageId === "customersPage") {
+        loadCustomers();
+      }
+      
+      // Load staff if it's the staff page
+      if (pageId === "staffPage") {
+        loadStaff();
+      }
+      
+      // Load POS if it's the POS page
+      if (pageId === "posPage") {
+        loadPOSMenuItems();
+        loadTablesForPOS();
+        loadMenusForPOSFilters();
+        loadCategoriesForPOSFilters();
+      }
+      
+      // Load KOT if it's the KOT page
+      if (pageId === "kotPage") {
+        loadKOTOrders();
+        loadTablesForKOT();
+        // Start auto-refresh when KOT page is active (5 seconds)
+        if (window.kotAutoRefresh) {
+          clearInterval(window.kotAutoRefresh);
+        }
+        window.kotAutoRefresh = setInterval(() => {
+          if (document.getElementById('kotPage')?.classList.contains('active')) {
+            loadKOTOrders();
+          }
+        }, 5000);
+        
+        // Pause auto-refresh when page is hidden, resume when visible
+        if (!window.kotVisibilityHandler) {
+          window.kotVisibilityHandler = function() {
+            if (document.hidden) {
+              if (window.kotAutoRefresh) {
+                clearInterval(window.kotAutoRefresh);
+                window.kotAutoRefresh = null;
+              }
+            } else if (document.getElementById('kotPage')?.classList.contains('active')) {
+              if (!window.kotAutoRefresh) {
+                window.kotAutoRefresh = setInterval(() => {
+                  if (document.getElementById('kotPage')?.classList.contains('active')) {
+                    loadKOTOrders();
+                  }
+                }, 5000);
+              }
+            }
+          };
+          document.addEventListener('visibilitychange', window.kotVisibilityHandler);
+        }
+      } else {
+        // Stop auto-refresh when leaving KOT page
+        if (window.kotAutoRefresh) {
+          clearInterval(window.kotAutoRefresh);
+          window.kotAutoRefresh = null;
+        }
+      }
+      
+      // Load Orders if it's the Orders page
+      if (pageId === "ordersPage") {
+        loadOrders();
+        loadTablesForOrders();
+      }
+      
+      // Load waiter requests if it's the waiter requests page
+      if (pageId === "waiterRequestsPage") {
+        loadWaiterRequests();
+      }
+      
+      // Load profile data if it's the profile page
+      if (pageId === "profilePage") {
+        loadProfileData();
+      }
+      
+      // Load payments if it's the payments page
+      if (pageId === "paymentsPage") {
+        loadPayments();
+      }
+      
+      // Load settings data if it's the settings page
+      if (pageId === "settingsPage") {
+        loadSettingsData();
+      }
+    }
+  }
+
+  // Modal functionality
+  const menuModal = document.getElementById("menuModal");
+  const deleteModal = document.getElementById("deleteModal");
+  const addMenuBtn = document.getElementById("addMenuBtn");
+  const menuForm = document.getElementById("menuForm");
+  const modalTitle = document.getElementById("modalTitle");
+  const menuIdInput = document.getElementById("menuId");
+  const menuNameInput = document.getElementById("menuName");
+  const saveBtn = document.getElementById("saveBtn");
+  
+  let currentMenuId = null;
+  let currentMenuName = null;
+
+  // Open modal for adding new menu
+  addMenuBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    openMenuModal();
+  });
+
+  // Open modal for editing existing menu
+  window.editMenu = function(menuId, menuName) {
+    currentMenuId = menuId;
+    currentMenuName = menuName;
+    openMenuModal(true);
+  };
+
+  function openMenuModal(isEdit = false) {
+    if (isEdit) {
+      modalTitle.textContent = "Edit Menu";
+      menuIdInput.value = currentMenuId;
+      menuNameInput.value = currentMenuName;
+      saveBtn.textContent = "Update Menu";
+    } else {
+      modalTitle.textContent = "Add New Menu";
+      menuIdInput.value = "";
+      menuNameInput.value = "";
+      saveBtn.textContent = "Save Menu";
+    }
+    
+    menuModal.style.display = "block";
+    document.body.style.overflow = "hidden";
+    
+    // Clear any existing messages
+    const existingMessage = document.querySelector(".message");
+    if (existingMessage) {
+      existingMessage.remove();
+    }
+    
+    // Focus the input field after a short delay to ensure modal is fully rendered
+    setTimeout(() => {
+      menuNameInput.focus();
+      menuNameInput.select(); // Select all text for easy editing
+      
+      // Ensure the input is editable
+      menuNameInput.readOnly = false;
+      menuNameInput.disabled = false;
+      
+      // Force focus and selection
+      menuNameInput.focus();
+      if (isEdit && menuNameInput.value) {
+        menuNameInput.setSelectionRange(0, menuNameInput.value.length);
+      }
+    }, 150);
+  }
+
+  // Close modal functions
+  function closeMenuModal() {
+    menuModal.style.display = "none";
+    document.body.style.overflow = "auto";
+    menuForm.reset();
+    currentMenuId = null;
+    currentMenuName = null;
+    
+    // Clear any existing messages
+    const existingMessage = document.querySelector(".message");
+    if (existingMessage) {
+      existingMessage.remove();
+    }
+  }
+
+  function closeDeleteModal() {
+    deleteModal.style.display = "none";
+    document.body.style.overflow = "auto";
+    currentMenuId = null;
+    currentMenuName = null;
+  }
+
+  // Close modal event listeners
+  document.querySelectorAll(".close").forEach(closeBtn => {
+    closeBtn.addEventListener("click", (e) => {
+      if (e.target.closest("#menuModal")) {
+        closeMenuModal();
+      } else if (e.target.closest("#menuItemModal")) {
+        closeMenuItemModal();
+      } else if (e.target.closest("#deleteModal")) {
+        closeDeleteModal();
+      } else if (e.target.closest("#areaModal")) {
+        closeAreaModal();
+      } else if (e.target.closest("#tableModal")) {
+        closeTableModal();
+      } else if (e.target.closest("#reservationModal")) {
+        closeReservationModal();
+      } else if (e.target.closest("#customerModal")) {
+        closeCustomerModal();
+      }
+    });
+  });
+
+  document.getElementById("cancelBtn").addEventListener("click", closeMenuModal);
+  document.getElementById("menuItemCancelBtn").addEventListener("click", closeMenuItemModal);
+  document.getElementById("deleteCancelBtn").addEventListener("click", closeDeleteModal);
+
+  // Close modal when clicking outside
+  window.addEventListener("click", (e) => {
+    if (e.target === menuModal) {
+      closeMenuModal();
+    } else if (e.target === menuItemModal) {
+      closeMenuItemModal();
+    } else if (e.target === deleteModal) {
+      closeDeleteModal();
+    } else if (e.target === areaModal) {
+      closeAreaModal();
+    } else if (e.target === tableModal) {
+      closeTableModal();
+    } else if (e.target === reservationModal) {
+      closeReservationModal();
+    } else if (e.target === customerModal) {
+      closeCustomerModal();
+    }
+  });
+
+  // Handle menu form submission (add/edit)
+  menuForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const menuName = menuNameInput.value.trim();
+    const menuId = menuIdInput.value;
+    const isEdit = menuId !== "";
+    
+    if (!menuName) {
+      showMessage("Please enter a menu name.", "error");
+      return;
+    }
+
+    // Disable save button and show loading
+    saveBtn.disabled = true;
+    saveBtn.textContent = isEdit ? "Updating..." : "Saving...";
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('action', isEdit ? 'update' : 'add');
+      formData.append('menuName', menuName);
+      if (isEdit) {
+        formData.append('menuId', menuId);
+      }
+
+      const response = await fetch("menu_operations.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showMessage(result.message, "success");
+        setTimeout(() => {
+          closeMenuModal();
+          loadMenus(); // Refresh the menu list
+        }, 1500);
+      } else {
+        showMessage(result.message || "Error processing request. Please try again.", "error");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showMessage("Network error. Please check your connection and try again.", "error");
+    } finally {
+      // Re-enable save button
+      saveBtn.disabled = false;
+      saveBtn.textContent = isEdit ? "Update Menu" : "Save Menu";
+    }
+  });
+
+  // Function to show messages
+  function showMessage(message, type) {
+    // Remove existing message
+    const existingMessage = document.querySelector(".message");
+    if (existingMessage) {
+      existingMessage.remove();
+    }
+
+    // Create new message
+    const messageDiv = document.createElement("div");
+    messageDiv.className = `message ${type}`;
+    messageDiv.textContent = message;
+
+    // Insert message after form group
+    const formGroup = document.querySelector(".form-group");
+    if (formGroup) {
+      formGroup.insertAdjacentElement("afterend", messageDiv);
+    }
+
+    // Auto remove success messages after 3 seconds
+    if (type === "success") {
+      setTimeout(() => {
+        messageDiv.remove();
+      }, 3000);
+    }
+  }
+
+  // Function to show messages in menu item modal
+  function showMenuItemMessage(message, type) {
+    // Remove existing message
+    const existingMessage = document.querySelector("#menuItemModal .message");
+    if (existingMessage) {
+      existingMessage.remove();
+    }
+
+    // Create new message
+    const messageDiv = document.createElement("div");
+    messageDiv.className = `message ${type}`;
+    messageDiv.textContent = message;
+
+    // Insert message after first form group in menu item modal
+    const formGroup = document.querySelector("#menuItemModal .form-group");
+    if (formGroup) {
+      formGroup.insertAdjacentElement("afterend", messageDiv);
+    }
+
+    // Auto remove success messages after 3 seconds
+    if (type === "success") {
+      setTimeout(() => {
+        messageDiv.remove();
+      }, 3000);
+    }
+  }
+
+  // Load Dashboard Stats
+  async function loadDashboardStats() {
+    console.log('Loading dashboard stats...');
+    try {
+      const response = await fetch('get_dashboard_stats.php');
+      const data = await response.json();
+      
+      console.log('Dashboard API response:', data);
+      
+      if (data.success) {
+        console.log('Stats data received:', data.stats);
+        // Update main stats
+        document.getElementById('todayRevenue').textContent = '₹' + data.stats.todayRevenue.toLocaleString('en-IN', {maximumFractionDigits: 2});
+        document.getElementById('todayOrders').textContent = data.stats.todayOrders;
+        document.getElementById('activeKOT').textContent = data.stats.activeKOT;
+        document.getElementById('totalCustomers').textContent = data.stats.totalCustomers;
+        document.getElementById('tableInfo').textContent = data.stats.availableTables + '/' + data.stats.totalTables;
+        document.getElementById('totalItems').textContent = data.stats.totalItems;
+        document.getElementById('pendingOrders').textContent = data.stats.pendingOrders;
+        
+        // Display recent orders
+        const recentOrdersDiv = document.getElementById('recentOrders');
+        if (data.recentOrders.length === 0) {
+          recentOrdersDiv.innerHTML = `
+            <div style="text-align: center; padding: 3rem; color: #999;">
+              <span class="material-symbols-rounded" style="font-size: 4rem; display: block; margin-bottom: 1rem; opacity: 0.3;">receipt_long</span>
+              <p>No orders today</p>
+            </div>
+          `;
+        } else {
+          recentOrdersDiv.innerHTML = '<ul class="order-item-list">' + 
+            data.recentOrders.map(order => `
+              <li style="border-left: 4px solid #667eea;">
+                <div>
+                  <div style="font-weight: 700; color: #151A2D; margin-bottom: 0.25rem;">${order.order_number}</div>
+                  <div style="font-size: 0.85rem; color: #666;">${order.table_number ? 'Table ' + order.table_number : 'Walk-in'}</div>
+                  <div style="margin-top: 0.5rem;">
+                    <span style="background: #f8f9fa; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; color: #667eea;">${order.order_status}</span>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="color: #48bb78; font-weight: 800; font-size: 1.3rem;">₹${parseFloat(order.total).toFixed(2)}</div>
+                  <div style="font-size: 0.8rem; color: #999;">${new Date(order.created_at).toLocaleTimeString()}</div>
+                </div>
+              </li>
+            `).join('') + '</ul>';
+        }
+        
+        // Display popular items
+        const popularItemsDiv = document.getElementById('popularItems');
+        if (data.popularItems.length === 0) {
+          popularItemsDiv.innerHTML = `
+            <div style="text-align: center; padding: 3rem; color: #999;">
+              <span class="material-symbols-rounded" style="font-size: 4rem; display: block; margin-bottom: 1rem; opacity: 0.3;">restaurant</span>
+              <p>No items sold today</p>
+            </div>
+          `;
+        } else {
+          popularItemsDiv.innerHTML = '<ul class="order-item-list">' + 
+            data.popularItems.map((item, index) => `
+              <li class="item-list-item" style="border-left: 4px solid ${index === 0 ? '#48bb78' : index === 1 ? '#667eea' : '#f6ad55'};">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <div style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">${index + 1}</div>
+                  <span style="font-weight: 600;">${item.item_name}</span>
+                </div>
+                <span style="font-weight: 800; color: #48bb78; font-size: 1.1rem;">${item.total_qty} sold</span>
+              </li>
+            `).join('') + '</ul>';
+        }
+        
+        // Update time
+        const timeElement = document.getElementById('dashboardTime');
+        if (timeElement) {
+          const now = new Date();
+          timeElement.textContent = `Last updated: ${now.toLocaleTimeString()}`;
+        }
+        
+        console.log('Dashboard stats loaded successfully');
+      } else {
+        console.error('Dashboard API returned error:', data.message);
+      }
+    } catch (error) {
+      console.error('Error loading dashboard stats:', error);
+      // Show error on dashboard
+      document.getElementById('todayRevenue').textContent = 'Error';
+      document.getElementById('todayOrders').textContent = 'Error';
+      document.getElementById('recentOrders').innerHTML = '<p style="color: red;">Error loading data. Check console.</p>';
+    }
+  }
+  
+  // Expose for inline scripts (dashboard.php) that call this on window load
+  window.loadDashboardStats = loadDashboardStats;
+
+  // Auto-load dashboard on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      const dashboardPage = document.getElementById('dashboardPage');
+      if (dashboardPage && dashboardPage.classList.contains('active')) {
+        console.log('Dashboard page is active on load, loading stats...');
+        setTimeout(() => loadDashboardStats(), 500);
+      }
+    });
+  } else {
+    // Already loaded
+    const dashboardPage = document.getElementById('dashboardPage');
+    if (dashboardPage && dashboardPage.classList.contains('active')) {
+      console.log('Dashboard page is active, loading stats...');
+      setTimeout(() => loadDashboardStats(), 500);
+    }
+  }
+
+  // Menu management functions
+  async function loadMenus() {
+    const menuList = document.getElementById("menuList");
+    menuList.innerHTML = '<div class="loading">Loading menus...</div>';
+
+    try {
+      const response = await fetch("get_menus.php");
+      const result = await response.json();
+
+      if (result.success) {
+        displayMenus(result.data);
+      } else {
+        menuList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error loading menus</h3><p>Please try again later.</p></div>';
+      }
+    } catch (error) {
+      console.error("Error loading menus:", error);
+      menuList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Network Error</h3><p>Please check your connection and try again.</p></div>';
+    }
+  }
+
+  function displayMenus(menus) {
+    const menuList = document.getElementById("menuList");
+    
+    if (menus.length === 0) {
+      menuList.innerHTML = `
+        <div class="empty-state">
+          <span class="material-symbols-rounded">menu</span>
+          <h3>No menus found</h3>
+          <p>Create your first menu to get started.</p>
+        </div>
+      `;
+      return;
+    }
+
+    menuList.innerHTML = menus.map(menu => `
+      <div class="menu-card" data-menu-id="${menu.id}">
+        <h3>${escapeHtml(menu.menu_name)}</h3>
+        <div class="menu-date">Created: ${formatDate(menu.created_at)}</div>
+        <div class="menu-actions-card">
+          <button class="btn-edit" onclick="editMenu(${menu.id}, '${escapeHtml(menu.menu_name)}')">
+            <span class="material-symbols-rounded">edit</span>
+            Edit
+          </button>
+          <button class="btn-delete" onclick="deleteMenu(${menu.id}, '${escapeHtml(menu.menu_name)}')">
+            <span class="material-symbols-rounded">delete</span>
+            Delete
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Delete menu function
+  window.deleteMenu = function(menuId, menuName) {
+    currentMenuId = menuId;
+    currentMenuName = menuName;
+    
+    document.getElementById("deleteMessage").textContent = 
+      `Are you sure you want to delete "${menuName}"? This action cannot be undone.`;
+    
+    deleteModal.style.display = "block";
+    document.body.style.overflow = "hidden";
+  };
+
+  // Handle delete confirmation
+  document.getElementById("deleteConfirmBtn").addEventListener("click", async () => {
+    if (!currentMenuId) return;
+    
+    const deleteBtn = document.getElementById("deleteConfirmBtn");
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = "Deleting...";
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('action', 'delete');
+      formData.append('menuId', currentMenuId);
+
+      const response = await fetch("menu_operations.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showNotification("Menu deleted successfully!", "success");
+        closeDeleteModal();
+        loadMenus();
+      } else {
+        showNotification(result.message || "Error deleting menu.", "error");
+      }
+    } catch (error) {
+      console.error("Error deleting menu:", error);
+      showNotification("Network error. Please try again.", "error");
+    } finally {
+      deleteBtn.disabled = false;
+      deleteBtn.textContent = "Delete";
+    }
+  });
+
+  // Utility functions
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  }
+
+  function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      animation: slideInRight 0.3s ease-out;
+      ${type === 'success' ? 'background: #28a745;' : 'background: #dc3545;'}
+    `;
+
+    document.body.appendChild(notification);
+
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+      notification.style.animation = 'slideOutRight 0.3s ease-in';
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 300);
+    }, 3000);
+  }
+  
+  // Make showNotification globally available
+  window.showNotification = showNotification;
+
+  // Menu Items functionality
+  const menuItemModal = document.getElementById("menuItemModal");
+  const menuItemForm = document.getElementById("menuItemForm");
+  const addMenuItemBtn = document.getElementById("addMenuItemBtn");
+  const menuItemModalTitle = document.getElementById("menuItemModalTitle");
+  const menuItemIdInput = document.getElementById("menuItemId");
+  const menuItemSaveBtn = document.getElementById("menuItemSaveBtn");
+  const menuItemCancelBtn = document.getElementById("menuItemCancelBtn");
+  
+  let currentMenuItemId = null;
+  let currentMenuItemData = null;
+
+  // Open modal for adding new menu item
+  addMenuItemBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    openMenuItemModal();
+  });
+
+  // Open modal for editing existing menu item
+  window.editMenuItem = function(menuItemId, menuItemData) {
+    currentMenuItemId = menuItemId;
+    currentMenuItemData = menuItemData;
+    openMenuItemModal(true);
+  };
+
+  function openMenuItemModal(isEdit = false) {
+    console.log("Opening menu item modal, isEdit:", isEdit);
+    
+    menuItemModal.style.display = "block";
+    document.body.style.overflow = "hidden";
+    
+    // Load menus for dropdown first
+    loadMenusForDropdown().then(() => {
+      if (isEdit) {
+        menuItemModalTitle.textContent = "Edit Menu Item";
+        populateMenuItemForm(currentMenuItemData);
+        menuItemSaveBtn.textContent = "Update Menu Item";
+      } else {
+        menuItemModalTitle.textContent = "Add New Menu Item";
+        menuItemForm.reset();
+        menuItemIdInput.value = "";
+        menuItemSaveBtn.textContent = "Save Menu Item";
+        
+        // Reset item type buttons
+        document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+        const vegBtn = document.querySelector('.type-btn[data-type="Veg"]');
+        if (vegBtn) {
+          vegBtn.classList.add('active');
+        }
+        document.getElementById('itemType').value = 'Veg';
+        
+        // Reset checkbox
+        const hasVariationsCheckbox = document.getElementById("hasVariations");
+        if (hasVariationsCheckbox) {
+          hasVariationsCheckbox.checked = false;
+        }
+        
+        // Hide image preview
+        const imagePreview = document.getElementById('imagePreview');
+        if (imagePreview) {
+          imagePreview.style.display = 'none';
+        }
+        
+        // Reset file input
+        const fileInput = document.getElementById('itemImage');
+        if (fileInput) {
+          fileInput.value = '';
+        }
+        
+        // Reset base64 data
+        const base64Input = document.getElementById('itemImageBase64');
+        if (base64Input) {
+          base64Input.value = '';
+        }
+        
+        // Reset file name display
+        const fileNameSpan = document.querySelector('.file-name');
+        if (fileNameSpan) {
+          fileNameSpan.textContent = 'No file chosen';
+        }
+      }
+      
+      // Clear any existing messages
+      const existingMessage = document.querySelector("#menuItemModal .message");
+      if (existingMessage) {
+        existingMessage.remove();
+      }
+      
+      // Focus the first input field
+      setTimeout(() => {
+        const firstInput = document.getElementById("itemNameEn");
+        if (firstInput) {
+          firstInput.focus();
+        }
+      }, 150);
+    });
+  }
+
+  function populateMenuItemForm(data) {
+    console.log("Populating form with data:", data);
+    
+    menuItemIdInput.value = data.id;
+    document.getElementById("itemNameEn").value = data.item_name_en || '';
+    
+    // Set menu selection with debugging
+    const menuSelect = document.getElementById("chooseMenu");
+    console.log("Setting menu_id:", data.menu_id, "Available options:", menuSelect.options.length);
+    menuSelect.value = data.menu_id || '';
+    console.log("Menu select value after setting:", menuSelect.value);
+    
+    document.getElementById("itemDescriptionEn").value = data.item_description_en || '';
+    document.getElementById("itemCategory").value = data.item_category || '';
+    document.getElementById("preparationTime").value = data.preparation_time || 0;
+    document.getElementById("isAvailable").value = data.is_available ? '1' : '0';
+    document.getElementById("basePrice").value = data.base_price || '0.00';
+    
+    // Fix checkbox handling
+    const hasVariationsCheckbox = document.getElementById("hasVariations");
+    if (hasVariationsCheckbox) {
+      hasVariationsCheckbox.checked = data.has_variations == 1 || data.has_variations === true;
+    }
+    
+    // Set item type
+    document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+    const typeBtn = document.querySelector(`.type-btn[data-type="${data.item_type}"]`);
+    if (typeBtn) {
+      typeBtn.classList.add('active');
+      document.getElementById('itemType').value = data.item_type;
+    }
+    
+    // Show existing image if available
+    if (data.item_image) {
+      const imagePreview = document.getElementById('imagePreview');
+      const previewImg = document.getElementById('previewImg');
+      if (imagePreview && previewImg) {
+        previewImg.src = `image.php?path=${encodeURIComponent(data.item_image)}`;
+        imagePreview.style.display = 'block';
+      }
+    }
+  }
+
+  // Close menu item modal
+  function closeMenuItemModal() {
+    menuItemModal.style.display = "none";
+    document.body.style.overflow = "auto";
+    menuItemForm.reset();
+    currentMenuItemId = null;
+    currentMenuItemData = null;
+    
+    // Clear any existing messages
+    const existingMessage = document.querySelector(".message");
+    if (existingMessage) {
+      existingMessage.remove();
+    }
+  }
+
+
+  // Item type button functionality
+  document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById('itemType').value = this.dataset.type;
+    });
+  });
+
+  // File upload preview with base64 conversion
+  document.getElementById('itemImage').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const fileNameSpan = document.querySelector('.file-name');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    if (file) {
+      fileNameSpan.textContent = file.name;
+      
+      // Show preview and convert to base64
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        previewImg.src = e.target.result;
+        imagePreview.style.display = 'block';
+        
+        // Store base64 data for form submission
+        document.getElementById('itemImageBase64').value = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      fileNameSpan.textContent = 'No file chosen';
+      imagePreview.style.display = 'none';
+      document.getElementById('itemImageBase64').value = '';
+    }
+  });
+
+  // Handle menu item form submission
+  menuItemForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(menuItemForm);
+    const isEdit = menuItemIdInput.value !== "";
+    
+    formData.append('action', isEdit ? 'update' : 'add');
+    
+    // Disable save button and show loading
+    menuItemSaveBtn.disabled = true;
+    menuItemSaveBtn.textContent = isEdit ? "Updating..." : "Saving...";
+
+    try {
+      const response = await fetch("menu_items_operations_base64.php", {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showMenuItemMessage(result.message, "success");
+        setTimeout(() => {
+          closeMenuItemModal();
+          loadMenuItems(); // Refresh the menu items list
+        }, 1500);
+      } else {
+        showMenuItemMessage(result.message || "Error processing request. Please try again.", "error");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showMenuItemMessage("Network error. Please check your connection and try again.", "error");
+    } finally {
+      // Re-enable save button
+      menuItemSaveBtn.disabled = false;
+      menuItemSaveBtn.textContent = isEdit ? "Update Menu Item" : "Save Menu Item";
+    }
+  });
+
+  // Load menus for dropdown
+  async function loadMenusForDropdown() {
+    try {
+      const response = await fetch("get_menus.php");
+      const result = await response.json();
+      
+      if (result.success) {
+        const menuSelect = document.getElementById("chooseMenu");
+        if (!menuSelect) {
+          console.error("Menu select element not found");
+          return;
+        }
+        
+        menuSelect.innerHTML = '<option value="">--</option>';
+        
+        result.data.forEach(menu => {
+          const option = document.createElement('option');
+          option.value = menu.id;
+          option.textContent = menu.menu_name;
+          menuSelect.appendChild(option);
+        });
+        
+        console.log("Menus loaded for dropdown:", result.data.length);
+      } else {
+        console.error("Failed to load menus:", result.message);
+      }
+    } catch (error) {
+      console.error("Error loading menus:", error);
+    }
+  }
+
+  // Load menus for filter dropdown
+  async function loadMenusForFilter() {
+    try {
+      const response = await fetch("get_menus.php");
+      const result = await response.json();
+      
+      if (result.success) {
+        const menuFilter = document.getElementById("menuFilter");
+        menuFilter.innerHTML = '<option value="">All Menus</option>';
+        
+        result.data.forEach(menu => {
+          const option = document.createElement('option');
+          option.value = menu.id;
+          option.textContent = menu.menu_name;
+          menuFilter.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error("Error loading menus for filter:", error);
+    }
+  }
+
+  // Load menu items
+  async function loadMenuItems() {
+    const menuItemsList = document.getElementById("menuItemsList");
+    menuItemsList.innerHTML = '<div class="loading">Loading menu items...</div>';
+
+    try {
+      const menuFilter = document.getElementById("menuFilter").value;
+      const categoryFilter = document.getElementById("categoryFilter").value;
+      const typeFilter = document.getElementById("typeFilter").value;
+      
+      const params = new URLSearchParams();
+      if (menuFilter && menuFilter !== '') params.append('menu', menuFilter);
+      if (categoryFilter && categoryFilter !== '') params.append('category', categoryFilter);
+      if (typeFilter && typeFilter !== '') params.append('type', typeFilter);
+      
+      const response = await fetch(`get_menu_items.php?${params}`);
+      const result = await response.json();
+
+      if (result.success) {
+        displayMenuItems(result.data);
+        updateCategoryFilter(result.categories);
+      } else {
+        menuItemsList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error loading menu items</h3><p>Please try again later.</p></div>';
+      }
+    } catch (error) {
+      console.error("Error loading menu items:", error);
+      menuItemsList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Network Error</h3><p>Please check your connection and try again.</p></div>';
+    }
+  }
+
+  function displayMenuItems(menuItems) {
+    const menuItemsList = document.getElementById("menuItemsList");
+    
+    if (menuItems.length === 0) {
+      menuItemsList.innerHTML = `
+        <div class="empty-state">
+          <span class="material-symbols-rounded">restaurant_menu</span>
+          <h3>No menu items found</h3>
+          <p>Create your first menu item to get started.</p>
+        </div>
+      `;
+      return;
+    }
+
+    menuItemsList.innerHTML = menuItems.map(item => `
+      <div class="menu-item-card" data-item-id="${item.id}">
+        <div class="item-image">
+          ${item.item_image ? `<img src="image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="no-image" style="display:none;"><span class="material-symbols-rounded">image</span></div>` : '<div class="no-image"><span class="material-symbols-rounded">image</span></div>'}
+        </div>
+        <div class="item-details">
+          <h3>${escapeHtml(item.item_name_en)}</h3>
+          <p class="item-description">${escapeHtml(item.item_description_en || 'No description')}</p>
+          <div class="item-meta">
+            <span class="item-category">${escapeHtml(item.item_category || 'Uncategorized')}</span>
+            <span class="item-type ${item.item_type.toLowerCase().replace(' ', '-')}">${item.item_type}</span>
+            <span class="item-price">₹${parseFloat(item.base_price).toFixed(2)}</span>
+          </div>
+          <div class="item-info">
+            <span class="menu-name">${escapeHtml(item.menu_name)}</span>
+            <span class="prep-time">${item.preparation_time} min</span>
+            <span class="availability ${item.is_available ? 'available' : 'unavailable'}">${item.is_available ? 'Available' : 'Unavailable'}</span>
+          </div>
+        </div>
+        <div class="item-actions">
+          <button class="btn-edit" onclick="editMenuItem(${item.id}, ${JSON.stringify(item).replace(/"/g, '&quot;')})">
+            <span class="material-symbols-rounded">edit</span>
+            Edit
+          </button>
+          <button class="btn-delete" onclick="deleteMenuItem(${item.id}, '${escapeHtml(item.item_name_en)}')">
+            <span class="material-symbols-rounded">delete</span>
+            Delete
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function updateCategoryFilter(categories) {
+    const categoryFilter = document.getElementById("categoryFilter");
+    categoryFilter.innerHTML = '<option value="">All Categories</option>';
+    
+    categories.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category;
+      categoryFilter.appendChild(option);
+    });
+  }
+
+  // Delete menu item function
+  window.deleteMenuItem = function(menuItemId, menuItemName) {
+    currentMenuItemId = menuItemId;
+    currentMenuItemData = { item_name_en: menuItemName };
+    
+    document.getElementById("deleteMessage").textContent = 
+      `Are you sure you want to delete "${menuItemName}"? This action cannot be undone.`;
+    
+    deleteModal.style.display = "block";
+    document.body.style.overflow = "hidden";
+  };
+
+  // Handle delete confirmation for menu items
+  document.getElementById("deleteConfirmBtn").addEventListener("click", async () => {
+    if (!currentMenuItemId) return;
+    
+    const deleteBtn = document.getElementById("deleteConfirmBtn");
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = "Deleting...";
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('action', 'delete');
+      formData.append('menuItemId', currentMenuItemId);
+
+      const response = await fetch("menu_items_operations_base64.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showNotification("Menu item deleted successfully!", "success");
+        closeDeleteModal();
+        loadMenuItems();
+      } else {
+        showNotification(result.message || "Error deleting menu item.", "error");
+      }
+    } catch (error) {
+      console.error("Error deleting menu item:", error);
+      showNotification("Network error. Please try again.", "error");
+    } finally {
+      deleteBtn.disabled = false;
+      deleteBtn.textContent = "Delete";
+    }
+  });
+
+  // Filter functionality
+  const menuFilterEl = document.getElementById("menuFilter");
+  const categoryFilterEl = document.getElementById("categoryFilter");
+  const typeFilterEl = document.getElementById("typeFilter");
+  
+  if (menuFilterEl) menuFilterEl.addEventListener("change", loadMenuItems);
+  if (categoryFilterEl) categoryFilterEl.addEventListener("change", loadMenuItems);
+  if (typeFilterEl) typeFilterEl.addEventListener("change", loadMenuItems);
+  
+  // Area functionality
+  const areaModal = document.getElementById("areaModal");
+  const areaForm = document.getElementById("areaForm");
+  const addAreaBtn = document.getElementById("addAreaBtn");
+  const areaModalTitle = document.getElementById("areaModalTitle");
+  const areaIdInput = document.getElementById("areaId");
+  const areaNameInput = document.getElementById("areaName");
+  const areaSaveBtn = document.getElementById("areaSaveBtn");
+  const areaCancelBtn = document.getElementById("areaCancelBtn");
+  
+  let currentAreaId = null;
+  let currentAreaName = null;
+  
+  // Open area modal
+  if (addAreaBtn) {
+    addAreaBtn.addEventListener("click", () => {
+      currentAreaId = null;
+      currentAreaName = null;
+      openAreaModal(false);
+    });
+  }
+  
+  function openAreaModal(isEdit = false) {
+    if (isEdit) {
+      areaModalTitle.textContent = "Edit Area";
+      areaIdInput.value = currentAreaId;
+      areaNameInput.value = currentAreaName;
+      areaSaveBtn.textContent = "Update Area";
+    } else {
+      areaModalTitle.textContent = "Add New Area";
+      areaIdInput.value = "";
+      areaNameInput.value = "";
+      areaSaveBtn.textContent = "Save Area";
+    }
+    
+    areaModal.style.display = "block";
+    document.body.style.overflow = "hidden";
+    
+    setTimeout(() => {
+      areaNameInput.focus();
+      areaNameInput.select();
+    }, 150);
+  }
+  
+  function closeAreaModal() {
+    areaModal.style.display = "none";
+    document.body.style.overflow = "auto";
+    areaForm.reset();
+    currentAreaId = null;
+    currentAreaName = null;
+  }
+  
+  if (areaCancelBtn) {
+    areaCancelBtn.addEventListener("click", closeAreaModal);
+  }
+  
+  // Close area modal when clicking outside
+  window.addEventListener("click", (e) => {
+    if (e.target === areaModal) {
+      closeAreaModal();
+    }
+  });
+  
+  // Handle area form submission
+  if (areaForm) {
+    areaForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const areaName = areaNameInput.value.trim();
+      const areaId = areaIdInput.value;
+      const isEdit = areaId !== "";
+      
+      if (!areaName) {
+        showMessage("Please enter an area name.", "error");
+        return;
+      }
+
+      // Disable save button and show loading
+      areaSaveBtn.disabled = true;
+      areaSaveBtn.textContent = isEdit ? "Updating..." : "Saving...";
+
+      try {
+        const formData = new URLSearchParams();
+        formData.append('action', isEdit ? 'update' : 'add');
+        formData.append('areaName', areaName);
+        if (isEdit) {
+          formData.append('areaId', areaId);
+        }
+
+        const response = await fetch("area_operations.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showMessage(result.message, "success");
+          setTimeout(() => {
+            closeAreaModal();
+            loadAreas(); // Refresh the area list
+          }, 1500);
+        } else {
+          showMessage(result.message || "Error processing request. Please try again.", "error");
+        }
+        
+      } catch (error) {
+        console.error("Error:", error);
+        showMessage("Network error. Please check your connection and try again.", "error");
+      } finally {
+        // Re-enable save button
+        areaSaveBtn.disabled = false;
+        areaSaveBtn.textContent = isEdit ? "Update Area" : "Save Area";
+      }
+    });
+  }
+  
+  // Load areas
+  async function loadAreas() {
+    const areaList = document.getElementById("areaList");
+    areaList.innerHTML = '<div class="loading">Loading areas...</div>';
+
+    try {
+      const response = await fetch("get_areas.php");
+      const result = await response.json();
+
+      if (result.success) {
+        displayAreas(result.data);
+      } else {
+        areaList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error loading areas</h3><p>Please try again later.</p></div>';
+      }
+    } catch (error) {
+      console.error("Error loading areas:", error);
+      areaList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Network Error</h3><p>Please check your connection and try again.</p></div>';
+    }
+  }
+  
+  function displayAreas(areas) {
+    const areaList = document.getElementById("areaList");
+    
+    if (areas.length === 0) {
+      areaList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">inbox</span><h3>No areas found</h3><p>Create your first area to get started.</p></div>';
+      return;
+    }
+
+    areaList.innerHTML = areas.map(area => `
+      <div class="menu-card" data-area-id="${area.id}">
+        <div class="menu-card-header">
+          <h3>${escapeHtml(area.area_name)}</h3>
+          <div class="menu-card-actions">
+            <button class="btn-edit" onclick="editArea(${area.id}, '${escapeHtml(area.area_name)}')">
+              <span class="material-symbols-rounded">edit</span>
+            </button>
+            <button class="btn-delete" onclick="deleteArea(${area.id}, '${escapeHtml(area.area_name)}')">
+              <span class="material-symbols-rounded">delete</span>
+            </button>
+          </div>
+        </div>
+        <div class="menu-card-footer">
+          <span class="menu-date">Tables: ${area.no_of_tables} | Created: ${formatDate(area.created_at)}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  // Make functions globally accessible
+  window.editArea = function(areaId, areaName) {
+    currentAreaId = areaId;
+    currentAreaName = areaName;
+    openAreaModal(true);
+  };
+  
+  window.deleteArea = function(areaId, areaName) {
+    if (confirm(`Are you sure you want to delete "${areaName}"? This action cannot be undone.`)) {
+      // Call delete API
+      const formData = new URLSearchParams();
+      formData.append('action', 'delete');
+      formData.append('areaId', areaId);
+      
+      fetch("area_operations.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          showMessage(result.message, "success");
+          loadAreas();
+        } else {
+          showMessage(result.message || "Error deleting area.", "error");
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        showMessage("Network error. Please check your connection and try again.", "error");
+      });
+    }
+  };
+  
+  // Table functionality
+  const tableModal = document.getElementById("tableModal");
+  const tableForm = document.getElementById("tableForm");
+  const addTableBtn = document.getElementById("addTableBtn");
+  const tableModalTitle = document.getElementById("tableModalTitle");
+  const tableIdInput = document.getElementById("tableId");
+  const tableNumberInput = document.getElementById("tableNumber");
+  const capacityInput = document.getElementById("capacity");
+  const chooseAreaSelect = document.getElementById("chooseArea");
+  const tableSaveBtn = document.getElementById("tableSaveBtn");
+  const tableCancelBtn = document.getElementById("tableCancelBtn");
+  
+  let currentTableId = null;
+  let currentTableNumber = null;
+  let currentCapacity = null;
+  let currentTableAreaId = null;
+  
+  // Open table modal
+  if (addTableBtn) {
+    addTableBtn.addEventListener("click", () => {
+      currentTableId = null;
+      currentTableNumber = null;
+      currentCapacity = null;
+      currentTableAreaId = null;
+      openTableModal(false);
+    });
+  }
+  
+  function openTableModal(isEdit = false) {
+    // Load areas for dropdown first
+    loadAreasForDropdown().then(() => {
+      if (isEdit) {
+        tableModalTitle.textContent = "Edit Table";
+        tableIdInput.value = currentTableId;
+        tableNumberInput.value = currentTableNumber;
+        capacityInput.value = currentCapacity;
+        chooseAreaSelect.value = currentTableAreaId;
+        tableSaveBtn.textContent = "Update Table";
+      } else {
+        tableModalTitle.textContent = "Add New Table";
+        tableIdInput.value = "";
+        tableNumberInput.value = "";
+        capacityInput.value = 4;
+        chooseAreaSelect.value = "";
+        tableSaveBtn.textContent = "Save Table";
+      }
+      
+      tableModal.style.display = "block";
+      document.body.style.overflow = "hidden";
+      
+      setTimeout(() => {
+        tableNumberInput.focus();
+        tableNumberInput.select();
+      }, 150);
+    });
+  }
+  
+  function closeTableModal() {
+    tableModal.style.display = "none";
+    document.body.style.overflow = "auto";
+    tableForm.reset();
+    currentTableId = null;
+    currentTableNumber = null;
+    currentCapacity = null;
+    currentTableAreaId = null;
+  }
+  
+  if (tableCancelBtn) {
+    tableCancelBtn.addEventListener("click", closeTableModal);
+  }
+  
+  // Close table modal when clicking outside
+  window.addEventListener("click", (e) => {
+    if (e.target === tableModal) {
+      closeTableModal();
+    }
+  });
+  
+  // Load areas for dropdown
+  async function loadAreasForDropdown() {
+    try {
+      const response = await fetch("get_areas.php");
+      const result = await response.json();
+      
+      if (result.success) {
+        chooseAreaSelect.innerHTML = '<option value="">--</option>';
+        
+        result.data.forEach(area => {
+          const option = document.createElement('option');
+          option.value = area.id;
+          option.textContent = area.area_name;
+          chooseAreaSelect.appendChild(option);
+        });
+        
+        console.log("Areas loaded for dropdown:", result.data.length);
+      } else {
+        console.error("Failed to load areas:", result.message);
+      }
+    } catch (error) {
+      console.error("Error loading areas for dropdown:", error);
+    }
+  }
+  
+  // Handle table form submission
+  if (tableForm) {
+    tableForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const tableNumber = tableNumberInput.value.trim();
+      const capacity = parseInt(capacityInput.value) || 4;
+      const areaId = chooseAreaSelect.value;
+      const tableId = tableIdInput.value;
+      const isEdit = tableId !== "";
+      
+      if (!tableNumber) {
+        showMessage("Please enter a table number.", "error");
+        return;
+      }
+      
+      if (parseInt(areaId) <= 0) {
+        showMessage("Please select an area.", "error");
+        return;
+      }
+
+      // Disable save button and show loading
+      tableSaveBtn.disabled = true;
+      tableSaveBtn.textContent = isEdit ? "Updating..." : "Saving...";
+
+      try {
+        const formData = new URLSearchParams();
+        formData.append('action', isEdit ? 'update' : 'add');
+        formData.append('tableNumber', tableNumber);
+        formData.append('capacity', capacity);
+        formData.append('chooseArea', areaId);
+        if (isEdit) {
+          formData.append('tableId', tableId);
+        }
+
+        const response = await fetch("table_operations.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showMessage(result.message, "success");
+          setTimeout(() => {
+            closeTableModal();
+            loadTables(); // Refresh the table list
+          }, 1500);
+        } else {
+          showMessage(result.message || "Error processing request. Please try again.", "error");
+        }
+        
+      } catch (error) {
+        console.error("Error:", error);
+        showMessage("Network error. Please check your connection and try again.", "error");
+      } finally {
+        // Re-enable save button
+        tableSaveBtn.disabled = false;
+        tableSaveBtn.textContent = isEdit ? "Update Table" : "Save Table";
+      }
+    });
+  }
+  
+  // Load tables
+  async function loadTables() {
+    const tableList = document.getElementById("tableList");
+    tableList.innerHTML = '<div class="loading">Loading tables...</div>';
+
+    try {
+      const response = await fetch("get_tables.php");
+      const result = await response.json();
+
+      if (result.success) {
+        displayTables(result.data);
+      } else {
+        tableList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error loading tables</h3><p>Please try again later.</p></div>';
+      }
+    } catch (error) {
+      console.error("Error loading tables:", error);
+      tableList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Network Error</h3><p>Please check your connection and try again.</p></div>';
+    }
+  }
+  
+  // Load QR Codes
+  async function loadQRCodes() {
+    const qrGrid = document.getElementById("qrCodesGrid");
+    qrGrid.innerHTML = '<div class="loading">Generating QR codes...</div>';
+
+    try {
+      const response = await fetch("get_tables.php");
+      const result = await response.json();
+
+      if (result.success) {
+        const tables = result.data || result.tables || [];
+        displayQRCodes(tables);
+      } else {
+        qrGrid.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error loading tables</h3><p>Please try again later.</p></div>';
+      }
+    } catch (error) {
+      console.error("Error loading QR codes:", error);
+      qrGrid.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>Failed to load tables.</p></div>';
+    }
+  }
+  
+  // Display QR Codes
+  function displayQRCodes(tables) {
+    const qrGrid = document.getElementById("qrCodesGrid");
+    
+    if (tables.length === 0) {
+      qrGrid.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">qr_code_2</span><h3>No Tables Found</h3><p>Add tables to generate QR codes.</p></div>';
+      return;
+    }
+    
+    const baseUrl = window.location.origin + '/menu/website/index.php';
+    
+    qrGrid.innerHTML = tables.map(table => {
+      const tableUrl = `${baseUrl}?table=${encodeURIComponent(table.table_number)}`;
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(tableUrl)}`;
+      
+      return `
+        <div class="qr-code-card">
+          <div class="qr-code-image">
+            <img src="${qrCodeUrl}" alt="QR Code for ${escapeHtml(table.table_number)}">
+          </div>
+          <div class="qr-code-info">
+            <div class="qr-code-table-name">${escapeHtml(table.table_number)}</div>
+            <div class="qr-code-area">${escapeHtml(table.area_name)}</div>
+            <div class="qr-code-actions">
+              <button class="qr-download-btn" onclick="downloadQRCode('${qrCodeUrl}', '${escapeHtml(table.table_number)}')">
+                <span class="material-symbols-rounded">download</span>
+                Download
+              </button>
+              <button class="qr-print-btn" onclick="printQRCode('${qrCodeUrl}', '${escapeHtml(table.table_number)}')">
+                <span class="material-symbols-rounded">print</span>
+                Print
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  // Download QR Code
+  window.downloadQRCode = function(qrUrl, tableName) {
+    const a = document.createElement('a');
+    a.href = qrUrl;
+    a.download = `QR-${tableName}.png`;
+    a.click();
+  }
+  
+  // Print QR Code
+  window.printQRCode = function(qrUrl, tableName) {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Code - ${tableName}</title>
+          <meta charset="UTF-8">
+          <style>
+            @page {
+              margin: 0;
+              size: A4 landscape;
+            }
+            
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            
+            html, body {
+              width: 100%;
+              height: 100%;
+              overflow: hidden;
+            }
+            
+            body { 
+              font-family: 'Arial', sans-serif;
+              background: white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 2rem;
+            }
+            
+            .print-container {
+              width: 100%;
+              max-width: 800px;
+              text-align: center;
+            }
+            
+            .qr-title {
+              font-size: 2.5rem;
+              font-weight: 700;
+              color: #151A2D;
+              margin-bottom: 0.5rem;
+            }
+            
+            .qr-image {
+              width: 250px;
+              height: 250px;
+              border: 4px solid #151A2D;
+              padding: 15px;
+              background: white;
+              margin: 1rem auto;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            
+            .qr-image img {
+              width: 100%;
+              height: 100%;
+              object-fit: contain;
+            }
+            
+            .qr-instructions {
+              margin-top: 1rem;
+              font-size: 1.2rem;
+              color: #333;
+              font-weight: 600;
+            }
+            
+            .qr-logo {
+              font-size: 3rem;
+              margin-bottom: 0.5rem;
+            }
+            
+            .qr-subtitle {
+              font-size: 0.95rem;
+              color: #666;
+              margin-top: 0.5rem;
+            }
+            
+            @media print {
+              @page {
+                size: A4 landscape;
+                margin: 15mm;
+              }
+              
+              html, body {
+                height: 100%;
+                overflow: visible;
+              }
+              
+              .print-container {
+                height: auto;
+                page-break-inside: avoid;
+              }
+              
+              body {
+                padding: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-container">
+            <div class="qr-logo">🍽️</div>
+            <h1 class="qr-title">Table ${tableName}</h1>
+            <div class="qr-image">
+              <img src="${qrUrl}" alt="QR Code for Table ${tableName}">
+            </div>
+            <div class="qr-instructions">
+              <p><strong>Scan to view our menu</strong></p>
+              <p class="qr-subtitle">Use your phone camera to scan this code</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+  }
+  
+  // Generate all QR codes
+  window.generateAllQRCodes = function() {
+    showMessage('QR codes are displayed below. Click Download or Print on each card.', 'success');
+  }
+  
+  function displayTables(tables) {
+    const tableList = document.getElementById("tableList");
+    
+    if (tables.length === 0) {
+      tableList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">inbox</span><h3>No tables found</h3><p>Create your first table to get started.</p></div>';
+      return;
+    }
+
+    tableList.innerHTML = tables.map(table => `
+      <div class="menu-card" data-table-id="${table.id}">
+        <div class="menu-card-header">
+          <h3>${escapeHtml(table.table_number)}</h3>
+          <div class="menu-card-actions">
+            <button class="btn-edit" onclick="editTable(${table.id}, '${escapeHtml(table.table_number)}', ${table.capacity}, ${table.area_id})">
+              <span class="material-symbols-rounded">edit</span>
+            </button>
+            <button class="btn-delete" onclick="deleteTable(${table.id}, '${escapeHtml(table.table_number)}')">
+              <span class="material-symbols-rounded">delete</span>
+            </button>
+          </div>
+        </div>
+        <div class="menu-card-footer">
+          <span class="menu-date">Capacity: ${table.capacity} | Area: ${escapeHtml(table.area_name)} | Created: ${formatDate(table.created_at)}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  // Make functions globally accessible
+  window.editTable = function(tableId, tableNumber, capacity, areaId) {
+    currentTableId = tableId;
+    currentTableNumber = tableNumber;
+    currentCapacity = capacity;
+    currentTableAreaId = areaId;
+    loadAreasForDropdown().then(() => {
+      openTableModal(true);
+    });
+  };
+  
+  window.deleteTable = function(tableId, tableNumber) {
+    if (confirm(`Are you sure you want to delete table "${tableNumber}"? This action cannot be undone.`)) {
+      // Call delete API
+      const formData = new URLSearchParams();
+      formData.append('action', 'delete');
+      formData.append('tableId', tableId);
+      
+      fetch("table_operations.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          showMessage(result.message, "success");
+          loadTables();
+        } else {
+          showMessage(result.message || "Error deleting table.", "error");
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        showMessage("Network error. Please check your connection and try again.", "error");
+      });
+    }
+  };
+  
+  // Reservation functionality
+  const reservationModal = document.getElementById("reservationModal");
+  const reservationForm = document.getElementById("reservationForm");
+  const addReservationBtn = document.getElementById("addReservationBtn");
+  const reservationModalTitle = document.getElementById("reservationModalTitle");
+  const reservationIdInput = document.getElementById("reservationId");
+  const reservationDateInput = document.getElementById("reservationDate");
+  const noOfGuestsInput = document.getElementById("noOfGuests");
+  const mealTypeSelect = document.getElementById("mealType");
+  const timeSlotsDiv = document.getElementById("timeSlots");
+  const specialRequestInput = document.getElementById("specialRequest");
+  const customerNameInput = document.getElementById("customerName");
+  const phoneInput = document.getElementById("phone");
+  const emailInput = document.getElementById("email");
+  const selectTableSelect = document.getElementById("selectTable");
+  const reservationSaveBtn = document.getElementById("reservationSaveBtn");
+  const reservationCancelBtn = document.getElementById("reservationCancelBtn");
+  
+  let currentReservationId = null;
+  let selectedTimeSlot = null;
+  
+  // Set default date to today
+  if (reservationDateInput) {
+    const today = new Date().toISOString().split('T')[0];
+    reservationDateInput.value = today;
+  }
+  
+  // Open reservation modal
+  if (addReservationBtn) {
+    addReservationBtn.addEventListener("click", () => {
+      currentReservationId = null;
+      selectedTimeSlot = null;
+      openReservationModal(false);
+    });
+  }
+  
+  function openReservationModal(isEdit = false) {
+    if (isEdit) {
+      reservationModalTitle.textContent = "Edit Reservation";
+      reservationSaveBtn.textContent = "Update Reservation";
+    } else {
+      reservationModalTitle.textContent = "New Reservation";
+      reservationForm.reset();
+      reservationIdInput.value = "";
+      const today = new Date().toISOString().split('T')[0];
+      reservationDateInput.value = today;
+      noOfGuestsInput.value = 1;
+      mealTypeSelect.value = "Lunch";
+      selectedTimeSlot = null;
+      reservationSaveBtn.textContent = "Reserve Now";
+    }
+    
+    loadTablesForDropdown();
+    generateTimeSlots();
+    
+    reservationModal.style.display = "block";
+    document.body.style.overflow = "hidden";
+    
+    setTimeout(() => {
+      customerNameInput.focus();
+    }, 150);
+  }
+  
+  function closeReservationModal() {
+    reservationModal.style.display = "none";
+    document.body.style.overflow = "auto";
+    reservationForm.reset();
+    currentReservationId = null;
+    selectedTimeSlot = null;
+  }
+  
+  if (reservationCancelBtn) {
+    reservationCancelBtn.addEventListener("click", closeReservationModal);
+  }
+  
+  // Generate time slots
+  function generateTimeSlots() {
+    const slots = ['12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM'];
+    
+    timeSlotsDiv.innerHTML = slots.map(slot => `
+      <button type="button" class="time-slot-btn" data-slot="${slot}">${slot}</button>
+    `).join('');
+    
+    // Add click handlers
+    document.querySelectorAll('.time-slot-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.time-slot-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        selectedTimeSlot = this.dataset.slot;
+      });
+    });
+    
+    // Set previously selected slot if editing
+    if (selectedTimeSlot) {
+      const btn = document.querySelector(`.time-slot-btn[data-slot="${selectedTimeSlot}"]`);
+      if (btn) {
+        btn.classList.add('active');
+      }
+    }
+  }
+  
+  // Load tables for dropdown
+  async function loadTablesForDropdown() {
+    try {
+      const response = await fetch("get_tables.php");
+      const result = await response.json();
+      
+      if (result.success) {
+        selectTableSelect.innerHTML = '<option value="">-- Select Table --</option>';
+        
+        result.data.forEach(table => {
+          const option = document.createElement('option');
+          option.value = table.id;
+          option.textContent = `${table.table_number} - ${table.area_name} (${table.capacity} seats)`;
+          selectTableSelect.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error("Error loading tables for dropdown:", error);
+    }
+  }
+  
+  // Handle reservation form submission
+  if (reservationForm) {
+    reservationForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const reservationDate = reservationDateInput.value;
+      const timeSlot = selectedTimeSlot;
+      const noOfGuests = parseInt(noOfGuestsInput.value) || 1;
+      const mealType = mealTypeSelect.value;
+      const customerName = customerNameInput.value.trim();
+      const phone = phoneInput.value.trim();
+      const email = emailInput.value.trim();
+      const specialRequest = specialRequestInput.value.trim();
+      const tableId = parseInt(selectTableSelect.value) || null;
+      const reservationId = reservationIdInput.value;
+      const isEdit = reservationId !== "";
+      
+      if (!customerName) {
+        showMessage("Please enter customer name.", "error");
+        return;
+      }
+      
+      if (!phone) {
+        showMessage("Please enter phone number.", "error");
+        return;
+      }
+      
+      if (!selectedTimeSlot) {
+        showMessage("Please select a time slot.", "error");
+        return;
+      }
+
+      // Disable save button and show loading
+      reservationSaveBtn.disabled = true;
+      reservationSaveBtn.textContent = isEdit ? "Updating..." : "Reserving...";
+
+      try {
+        const formData = new URLSearchParams();
+        formData.append('action', isEdit ? 'update' : 'add');
+        formData.append('reservationDate', reservationDate);
+        formData.append('timeSlot', timeSlot);
+        formData.append('noOfGuests', noOfGuests);
+        formData.append('mealType', mealType);
+        formData.append('customerName', customerName);
+        formData.append('phone', phone);
+        formData.append('email', email);
+        formData.append('specialRequest', specialRequest);
+        if (tableId) {
+          formData.append('selectTable', tableId);
+        }
+        if (isEdit) {
+          formData.append('reservationId', reservationId);
+        }
+
+        const response = await fetch("reservation_operations.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showMessage(result.message, "success");
+          setTimeout(() => {
+            closeReservationModal();
+            loadReservations(); // Refresh the reservation list
+          }, 1500);
+        } else {
+          showMessage(result.message || "Error processing request. Please try again.", "error");
+        }
+        
+      } catch (error) {
+        console.error("Error:", error);
+        showMessage("Network error. Please check your connection and try again.", "error");
+      } finally {
+        // Re-enable save button
+        reservationSaveBtn.disabled = false;
+        reservationSaveBtn.textContent = isEdit ? "Update Reservation" : "Reserve Now";
+      }
+    });
+  }
+  
+  // Load reservations
+  async function loadReservations() {
+    const reservationList = document.getElementById("reservationList");
+    reservationList.innerHTML = '<div class="loading">Loading reservations...</div>';
+
+    try {
+      const response = await fetch("get_reservations.php");
+      const result = await response.json();
+      
+      console.log("Reservations API response:", result);
+
+      if (result.success) {
+        displayReservations(result.data);
+      } else {
+        reservationList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error loading reservations</h3><p>Please try again later.</p></div>';
+      }
+    } catch (error) {
+      console.error("Error loading reservations:", error);
+      reservationList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Network Error</h3><p>Please check your connection and try again.</p></div>';
+    }
+  }
+  
+  function displayReservations(reservations) {
+    const reservationList = document.getElementById("reservationList");
+    
+    if (reservations.length === 0) {
+      reservationList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">inbox</span><h3>No reservations found</h3><p>Create your first reservation to get started.</p></div>';
+      return;
+    }
+
+    reservationList.innerHTML = reservations.map(reservation => {
+      // Format date
+      const date = new Date(reservation.reservation_date);
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const formattedDate = `${dayNames[date.getDay()]}, ${date.getDate()} ${monthNames[date.getMonth()]}, ${reservation.time_slot}`;
+      
+      // Status colors
+      const statusColors = {
+        'Pending': '#ffc107',
+        'Confirmed': '#28a745',
+        'Checked In': '#007bff',
+        'Completed': '#6c757d',
+        'Cancelled': '#dc3545',
+        'No Show': '#ff6b6b'
+      };
+      
+      return `
+        <div class="reservation-card" data-reservation-id="${reservation.id}">
+          <div class="reservation-card-header">
+            <div>
+              <button class="btn-assign-table" onclick="assignTable(${reservation.id})">
+                <span class="material-symbols-rounded">table_chart</span>
+                Assign Table
+              </button>
+              ${reservation.table_number ? `
+                <div class="assigned-table-info" style="margin-top: 10px; padding: 8px 12px; background: #e7f5ff; border-radius: 8px; color: #0066cc; font-size: 0.9rem; font-weight: 500;">
+                  <span class="material-symbols-rounded" style="font-size: 1rem;">table_restaurant</span>
+                  Table ${reservation.table_number} - ${reservation.area_name}
+                </div>
+              ` : ''}
+              <div class="reservation-status" style="background-color: ${statusColors[reservation.status] || '#6c757d'}; margin-top: 10px;">
+                ${reservation.status.toUpperCase()}
+              </div>
+            </div>
+            <div class="reservation-header-right">
+              <div class="reservation-guests">
+                <span class="material-symbols-rounded">people</span>
+                ${reservation.no_of_guests} Guests
+              </div>
+            </div>
+          </div>
+          <div class="reservation-datetime">
+            <span class="material-symbols-rounded">schedule</span>
+            ${formattedDate}
+          </div>
+          <div class="reservation-info-box">
+            <div class="reservation-guest-info">
+              <div class="guest-name">
+                <span class="material-symbols-rounded">person</span>
+                ${escapeHtml(reservation.customer_name)}
+              </div>
+              <div class="guest-phone">
+                <span class="material-symbols-rounded">phone</span>
+                ${escapeHtml(reservation.phone)}
+              </div>
+              <div class="guest-email">
+                <span class="material-symbols-rounded">email</span>
+                ${escapeHtml(reservation.email || 'N/A')}
+              </div>
+            </div>
+          </div>
+          ${reservation.special_request ? `
+            <div class="reservation-notes">
+              <span class="material-symbols-rounded">note</span>
+              ${escapeHtml(reservation.special_request)}
+            </div>
+          ` : ''}
+          <div class="reservation-status-select">
+            <select class="status-select" onchange="updateReservationStatus(${reservation.id}, this.value)">
+              <option value="Pending" ${reservation.status === 'Pending' ? 'selected' : ''}>Pending</option>
+              <option value="Confirmed" ${reservation.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+              <option value="Checked In" ${reservation.status === 'Checked In' ? 'selected' : ''}>Checked In</option>
+              <option value="No Show" ${reservation.status === 'No Show' ? 'selected' : ''}>No Show</option>
+              <option value="Completed" ${reservation.status === 'Completed' ? 'selected' : ''}>Completed</option>
+              <option value="Cancelled" ${reservation.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  // Make functions globally accessible
+  window.editReservation = function(reservationId, customerName, reservationDate, timeSlot, noOfGuests, mealType, phone, email, specialRequest, tableId) {
+    currentReservationId = reservationId;
+    selectedTimeSlot = timeSlot;
+    
+    // Set form values
+    reservationIdInput.value = reservationId;
+    reservationDateInput.value = reservationDate;
+    noOfGuestsInput.value = noOfGuests;
+    mealTypeSelect.value = mealType;
+    customerNameInput.value = customerName;
+    phoneInput.value = phone;
+    emailInput.value = email;
+    specialRequestInput.value = specialRequest;
+    
+    // Open modal
+    loadTablesForDropdown().then(() => {
+      if (tableId && tableId !== 'null') {
+        selectTableSelect.value = tableId;
+      }
+      openReservationModal(true);
+    });
+  };
+  
+  window.deleteReservation = function(reservationId, customerName) {
+    if (confirm(`Are you sure you want to delete reservation for "${customerName}"? This action cannot be undone.`)) {
+      // Call delete API
+      const formData = new URLSearchParams();
+      formData.append('action', 'delete');
+      formData.append('reservationId', reservationId);
+      
+      fetch("reservation_operations.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          showMessage(result.message, "success");
+          loadReservations();
+        } else {
+          showMessage(result.message || "Error deleting reservation.", "error");
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        showMessage("Network error. Please check your connection and try again.", "error");
+      });
+    }
+  };
+  
+  // Update reservation status
+  window.updateReservationStatus = function(reservationId, newStatus) {
+    const formData = new URLSearchParams();
+    formData.append('action', 'update');
+    formData.append('reservationId', reservationId);
+    formData.append('status', newStatus);
+    
+    // Get current reservation data
+    fetch("get_reservations.php")
+      .then(response => response.json())
+      .then(result => {
+        if (result.success && result.data) {
+          const reservation = result.data.find(r => r.id == reservationId);
+          if (reservation) {
+            formData.append('reservationDate', reservation.reservation_date);
+            formData.append('timeSlot', reservation.time_slot);
+            formData.append('noOfGuests', reservation.no_of_guests);
+            formData.append('mealType', reservation.meal_type);
+            formData.append('customerName', reservation.customer_name);
+            formData.append('phone', reservation.phone);
+            formData.append('email', reservation.email || '');
+            formData.append('specialRequest', reservation.special_request || '');
+            if (reservation.table_id) {
+              formData.append('selectTable', reservation.table_id);
+            }
+            
+            fetch("reservation_operations.php", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+              if (result.success) {
+                showMessage("Status updated successfully", "success");
+                loadReservations();
+              } else {
+                showMessage(result.message || "Error updating status.", "error");
+              }
+            })
+            .catch(error => {
+              console.error("Error:", error);
+              showMessage("Network error. Please check your connection and try again.", "error");
+            });
+          }
+        }
+      });
+  };
+  
+  // Assign table to reservation
+  window.assignTable = function(reservationId) {
+    // Load tables for dropdown
+    fetch("get_tables.php")
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          const tableOptions = result.data.map(table => 
+            `${table.table_number} - ${table.area_name} (${table.capacity} seats)`
+          ).join('\n');
+          
+          const tableName = prompt("Assign Table:\n\n" + tableOptions + "\n\nEnter table number:");
+          if (tableName) {
+            const table = result.data.find(t => t.table_number === tableName);
+            if (table) {
+              updateReservationTable(reservationId, table.id);
+            } else {
+              showMessage("Table not found", "error");
+            }
+          }
+        }
+      });
+  };
+  
+  function updateReservationTable(reservationId, tableId) {
+    // Get current reservation data
+    fetch("get_reservations.php")
+      .then(response => response.json())
+      .then(result => {
+        if (result.success && result.data) {
+          const reservation = result.data.find(r => r.id == reservationId);
+          if (reservation) {
+            const formData = new URLSearchParams();
+            formData.append('action', 'update');
+            formData.append('reservationId', reservationId);
+            formData.append('selectTable', tableId);
+            formData.append('reservationDate', reservation.reservation_date);
+            formData.append('timeSlot', reservation.time_slot);
+            formData.append('noOfGuests', reservation.no_of_guests);
+            formData.append('mealType', reservation.meal_type);
+            formData.append('customerName', reservation.customer_name);
+            formData.append('phone', reservation.phone);
+            formData.append('email', reservation.email || '');
+            formData.append('specialRequest', reservation.special_request || '');
+            formData.append('status', reservation.status);
+            
+            fetch("reservation_operations.php", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+              if (result.success) {
+                showMessage("Table assigned successfully", "success");
+                loadReservations();
+              } else {
+                showMessage(result.message || "Error assigning table.", "error");
+              }
+            })
+            .catch(error => {
+              console.error("Error:", error);
+              showMessage("Network error. Please check your connection and try again.", "error");
+            });
+          }
+        }
+      });
+  }
+
+  // ========== CUSTOMER MANAGEMENT ==========
+  
+  // Customer modal elements
+  const customerModal = document.getElementById("customerModal");
+  const customerModalTitle = document.getElementById("customerModalTitle");
+  const customerForm = document.getElementById("customerForm");
+  const customerIdInput = document.getElementById("customerId");
+  const customerNameInputField = document.getElementById("customerNameInput");
+  const customerPhoneInputField = document.getElementById("customerPhoneInput");
+  const customerEmailInputField = document.getElementById("customerEmailInput");
+  const addCustomerBtn = document.getElementById("addCustomerBtn");
+  const customerCancelBtn = document.getElementById("customerCancelBtn");
+  const customerSaveBtn = document.getElementById("customerSaveBtn");
+  
+  let currentCustomerId = null;
+  
+  // Add customer button event listener
+  if (addCustomerBtn) {
+    addCustomerBtn.addEventListener("click", () => openCustomerModal(false));
+  }
+  
+  // Customer modal close
+  function closeCustomerModal() {
+    customerModal.style.display = "none";
+    document.body.style.overflow = "auto";
+  }
+  
+  if (customerCancelBtn) {
+    customerCancelBtn.addEventListener("click", closeCustomerModal);
+  }
+  
+  // Open customer modal
+  function openCustomerModal(isEdit = false) {
+    if (isEdit) {
+      customerModalTitle.textContent = "Edit Customer";
+      customerSaveBtn.textContent = "Update Customer";
+    } else {
+      customerModalTitle.textContent = "Add New Customer";
+      customerForm.reset();
+      customerIdInput.value = "";
+      currentCustomerId = null;
+      customerSaveBtn.textContent = "Save Customer";
+    }
+    
+    customerModal.style.display = "block";
+    document.body.style.overflow = "hidden";
+    
+    setTimeout(() => {
+      customerNameInputField.focus();
+    }, 150);
+  }
+  
+  // Edit customer
+  window.editCustomer = function(customerId, customerName, phone, email) {
+    currentCustomerId = customerId;
+    customerIdInput.value = customerId;
+    customerNameInputField.value = customerName;
+    customerPhoneInputField.value = phone;
+    customerEmailInputField.value = email || '';
+    openCustomerModal(true);
+  };
+  
+  // Delete customer
+  window.deleteCustomer = function(customerId, customerName) {
+    if (confirm(`Are you sure you want to delete customer "${customerName}"? This action cannot be undone.`)) {
+      const formData = new URLSearchParams();
+      formData.append('action', 'delete');
+      formData.append('customerId', customerId);
+      
+      fetch("customer_operations.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          showMessage(result.message, "success");
+          loadCustomers();
+        } else {
+          showMessage(result.message || "Error deleting customer.", "error");
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        showMessage("Network error. Please check your connection and try again.", "error");
+      });
+    }
+  };
+  
+  // Customer form submission
+  if (customerForm) {
+    customerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const formData = new URLSearchParams();
+      formData.append('action', currentCustomerId ? 'update' : 'add');
+      formData.append('customerId', customerIdInput.value);
+      formData.append('customerName', customerNameInputField.value.trim());
+      formData.append('phone', customerPhoneInputField.value.trim());
+      formData.append('email', customerEmailInputField.value.trim());
+      
+      try {
+        const response = await fetch("customer_operations.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showMessage(result.message, "success");
+          closeCustomerModal();
+          loadCustomers();
+        } else {
+          showMessage(result.message || "Error saving customer.", "error");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        showMessage("Network error. Please check your connection and try again.", "error");
+      }
+    });
+  }
+  
+  // Load customers
+  async function loadCustomers() {
+    const customerList = document.getElementById("customerList");
+    
+    try {
+      const response = await fetch("get_customers.php");
+      const result = await response.json();
+      
+      if (result.success) {
+        displayCustomers(result.data);
+      } else {
+        customerList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>' + result.message + '</p></div>';
+      }
+    } catch (error) {
+      console.error("Error loading customers:", error);
+      customerList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Network Error</h3><p>Please check your connection and try again.</p></div>';
+    }
+  }
+  
+  // Display customers
+  function displayCustomers(customers) {
+    const customerList = document.getElementById("customerList");
+    
+    // Store for export
+    window.currentCustomersData = customers;
+    
+    if (customers.length === 0) {
+      customerList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">people</span><h3>No customers found</h3><p>Add your first customer to get started.</p></div>';
+      return;
+    }
+    
+    const initials = (name) => name.split(' ').map(w => w.charAt(0).toUpperCase()).join('').substring(0, 2);
+    
+    customerList.innerHTML = customers.map(customer => {
+      const totalSpent = customer.total_spent ? `₹${parseFloat(customer.total_spent).toFixed(2)}` : '₹0.00';
+      
+      return `
+        <tr data-customer-id="${customer.id}">
+          <td class="avatar-cell">
+            <div class="avatar-small">${initials(customer.customer_name)}</div>
+          </td>
+          <td>${escapeHtml(customer.customer_name)}</td>
+          <td>${customer.phone}</td>
+          <td>${escapeHtml(customer.email || '-')}</td>
+          <td>${customer.total_visits}</td>
+          <td>${totalSpent}</td>
+          <td class="action-cell">
+            <button class="btn-action-small edit-btn" onclick="editCustomer(${customer.id}, '${escapeHtml(customer.customer_name)}', '${customer.phone}', '${escapeHtml(customer.email || '')}')">
+              <span class="material-symbols-rounded">edit</span>
+              <span>Update</span>
+            </button>
+            <button class="btn-action-small delete-btn" onclick="deleteCustomer(${customer.id}, '${escapeHtml(customer.customer_name)}')">
+              <span class="material-symbols-rounded">delete</span>
+              <span>Delete</span>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+  
+  // ========== WAITER REQUESTS MANAGEMENT ==========
+  
+  // Load waiter requests
+  async function loadWaiterRequests() {
+    const requestsList = document.getElementById("waiterRequestsList");
+    
+    try {
+      const response = await fetch("get_waiter_requests.php");
+      const result = await response.json();
+      
+      console.log('Waiter requests response:', result);
+      
+      if (result.success) {
+        displayWaiterRequestsByArea(result.requests_by_area || {});
+      } else {
+        requestsList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>' + result.message + '</p></div>';
+      }
+    } catch (error) {
+      console.error("Error loading waiter requests:", error);
+      requestsList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Network Error</h3><p>Please check your connection and try again.</p></div>';
+    }
+  }
+  
+  // Display waiter requests grouped by area
+  function displayWaiterRequestsByArea(requestsByArea) {
+    const requestsList = document.getElementById("waiterRequestsList");
+    
+    if (Object.keys(requestsByArea).length === 0) {
+      requestsList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">notifications_off</span><h3>No waiter requests</h3><p>All requests have been attended to.</p></div>';
+      return;
+    }
+    
+    let html = '';
+    
+    for (const [areaName, requests] of Object.entries(requestsByArea)) {
+      const requestCount = requests.length;
+      
+      html += `
+        <div style="margin-bottom: 3rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="color: #151A2D; font-size: 1.5rem; font-weight: 700;">${escapeHtml(areaName)}</h2>
+            <span style="background: #f0f0f0; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; color: #666;">${requestCount} Table${requestCount !== 1 ? 's' : ''}</span>
+          </div>
+          
+          ${requestCount > 0 ? `
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+              ${requests.map(request => {
+                const timeAgo = request.minutes_ago + ' minute' + (request.minutes_ago !== 1 ? 's' : '') + ' ago';
+                return `
+                  <div style="background: white; border-radius: 15px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); display: flex; gap: 1.5rem; align-items: center;">
+                    <!-- Left Section: Table Badge and Mark Attended Button -->
+                    <div style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-start;">
+                      <div style="background: #e6f7ff; color: #1890ff; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 700; font-size: 1rem;">
+                        ${escapeHtml(request.table_number)}
+                      </div>
+                      <button class="btn" style="background: white; border: 1px solid #d9d9d9; color: #333; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;" onclick="markAttended(${request.id})">
+                        <span style="color: #52c41a; font-weight: bold;">✓</span>
+                        Mark Attended
+                      </button>
+                    </div>
+                    
+                    <!-- Right Section: Time, Waiter, and Show Order Button -->
+                    <div style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-end; flex: 1;">
+                      <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
+                        <div style="display: flex; align-items: center; gap: 0.25rem; color: #666; font-size: 0.9rem;">
+                          <span class="material-symbols-rounded" style="font-size: 1rem;">schedule</span>
+                          <span>${timeAgo}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.25rem; color: #666; font-size: 0.9rem;">
+                          <span class="material-symbols-rounded" style="font-size: 1rem;">room_service</span>
+                          <span>Waiter ${request.id % 3 + 1}</span>
+                        </div>
+                      </div>
+                      ${request.request_type === 'Order' || request.notes?.includes('Order request:') ? `
+                        <button class="btn" style="background: white; border: 1px solid #d9d9d9; color: #333; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;" onclick="showOrderItems('${escapeHtml(request.notes || '')}')">
+                          <span class="material-symbols-rounded" style="font-size: 1rem;">receipt_long</span>
+                          Show Order
+                        </button>
+                      ` : ''}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : `
+            <div style="text-align: center; padding: 3rem; color: #999;">
+              <span class="material-symbols-rounded" style="font-size: 4rem; opacity: 0.3; display: block; margin-bottom: 1rem;">notifications_off</span>
+              <p style="font-size: 1.1rem;">No waiter request found in this area.</p>
+            </div>
+          `}
+        </div>
+      `;
+    }
+    
+    requestsList.innerHTML = html;
+  }
+  
+  // Get time ago
+  function getTimeAgo(dateString) {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    if (diffWeeks < 4) return `${diffWeeks} week${diffWeeks !== 1 ? 's' : ''} ago`;
+    if (diffMonths < 12) return `${diffMonths} month${diffMonths !== 1 ? 's' : ''} ago`;
+    return `${Math.floor(diffMonths / 12)} year${Math.floor(diffMonths / 12) !== 1 ? 's' : ''} ago`;
+  }
+  
+  // Mark request as attended
+  window.markAttended = function(requestId) {
+    const formData = new URLSearchParams();
+    formData.append('action', 'mark_attended');
+    formData.append('requestId', requestId);
+    
+    fetch("waiter_request_operations.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formData
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        showMessage(result.message, "success");
+        loadWaiterRequests();
+      } else {
+        showMessage(result.message || "Error marking request.", "error");
+      }
+    })
+    .catch(error => {
+      console.error("Error:", error);
+      showMessage("Network error. Please check your connection and try again.", "error");
+    });
+  };
+  
+  // Show order items from notes
+  window.showOrderItems = function(orderNotes) {
+    // Extract order items from notes
+    let orderItems = [];
+    if (orderNotes && orderNotes.includes('Order request:')) {
+      const itemsText = orderNotes.split('Order request:')[1]?.trim();
+      if (itemsText) {
+        orderItems = itemsText.split(', ').map(item => {
+          const match = item.match(/(\d+)x\s*(.+)/);
+          return match ? { quantity: parseInt(match[1]), name: match[2] } : null;
+        }).filter(item => item !== null);
+      }
+    }
+    
+    if (orderItems.length === 0) {
+      alert('No order items found');
+      return;
+    }
+    
+    // Create modal HTML
+    const modalHTML = `
+      <div class="modal-overlay" id="orderItemsModal">
+        <div class="modal-content" style="max-width: 500px;">
+          <div class="modal-header">
+            <h2>Order Items</h2>
+            <button onclick="document.getElementById('orderItemsModal').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+          </div>
+          <div class="modal-body" style="padding: 2rem;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead style="background: #f5f5f5;">
+                <tr>
+                  <th style="padding: 0.75rem; text-align: left;">Item</th>
+                  <th style="padding: 0.75rem; text-align: center;">Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${orderItems.map(item => `
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 0.75rem;">${item.name}</td>
+                    <td style="padding: 0.75rem; text-align: center; font-weight: 600;">${item.quantity}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+  };
+  
+  // Show full order details modal (from Orders page)
+  window.showFullOrderDetails = async function(orderId) {
+    try {
+      const response = await fetch(`get_order_details_by_id.php?id=${orderId}`);
+      const data = await response.json();
+      
+      if (data.success && data.order) {
+        const order = data.order;
+        
+        // Create modal HTML
+        const modalHTML = `
+          <div class="modal-overlay" id="orderDetailsModal">
+            <div class="modal-content" style="max-width: 600px;">
+              <div class="modal-header">
+                <h2>Order Details</h2>
+                <button onclick="this.closest('.modal-overlay').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+              </div>
+              <div class="modal-body" style="padding: 2rem;">
+                <div style="margin-bottom: 1.5rem;">
+                  <p><strong>Order #:</strong> ${order.order_number}</p>
+                  <p><strong>Table:</strong> ${order.table_name || order.table_number || 'Walk-in'}</p>
+                  <p><strong>Customer:</strong> ${order.customer_name || 'N/A'}</p>
+                  <p><strong>Status:</strong> <span class="status-badge ${order.order_status.toLowerCase()}">${order.order_status}</span></p>
+                  <p><strong>Payment:</strong> <span class="status-badge ${order.payment_status.toLowerCase().replace(' ', '-')}">${order.payment_status}</span></p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                  <h3 style="margin-bottom: 1rem;">Items (${order.items.length})</h3>
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <thead style="background: #f5f5f5;">
+                      <tr>
+                        <th style="padding: 0.75rem; text-align: left;">Item</th>
+                        <th style="padding: 0.75rem;">Qty</th>
+                        <th style="padding: 0.75rem; text-align: right;">Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${order.items.map(item => `
+                        <tr style="border-bottom: 1px solid #eee;">
+                          <td style="padding: 0.75rem;">${item.item_name}</td>
+                          <td style="padding: 0.75rem; text-align: center;">${item.quantity}</td>
+                          <td style="padding: 0.75rem; text-align: right;">₹${parseFloat(item.total_price).toFixed(2)}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; padding-top: 1rem; border-top: 2px solid #ddd;">
+                  <span>Total:</span>
+                  <span>₹${parseFloat(order.total).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+      } else {
+        alert('Order not found');
+      }
+    } catch (error) {
+      console.error('Error loading order details:', error);
+      alert('Failed to load order details');
+    }
+  };
+  
+  // Show order details modal
+  window.showOrder = async function(tableId) {
+    try {
+      const response = await fetch(`get_order_details.php?table_id=${tableId}`);
+      const data = await response.json();
+      
+      if (data.success && data.order) {
+        const order = data.order;
+        
+        // Create modal HTML
+        const modalHTML = `
+          <div class="modal-overlay" id="orderDetailsModal">
+            <div class="modal-content" style="max-width: 600px;">
+              <div class="modal-header">
+                <h2>Order Details</h2>
+                <button onclick="this.closest('.modal-overlay').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+              </div>
+              <div class="modal-body" style="padding: 2rem;">
+                <div style="margin-bottom: 1.5rem;">
+                  <p><strong>Order #:</strong> ${order.order_number}</p>
+                  <p><strong>Table:</strong> ${order.table_name || 'Walk-in'}</p>
+                  <p><strong>Customer:</strong> ${order.customer_name || 'N/A'}</p>
+                  <p><strong>Status:</strong> <span class="status-badge ${order.order_status.toLowerCase()}">${order.order_status}</span></p>
+                  <p><strong>Payment:</strong> <span class="status-badge ${order.payment_status.toLowerCase().replace(' ', '-')}">${order.payment_status}</span></p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                  <h3 style="margin-bottom: 1rem;">Items (${order.items.length})</h3>
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <thead style="background: #f5f5f5;">
+                      <tr>
+                        <th style="padding: 0.75rem; text-align: left;">Item</th>
+                        <th style="padding: 0.75rem;">Qty</th>
+                        <th style="padding: 0.75rem; text-align: right;">Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${order.items.map(item => `
+                        <tr style="border-bottom: 1px solid #eee;">
+                          <td style="padding: 0.75rem;">${item.item_name}</td>
+                          <td style="padding: 0.75rem; text-align: center;">${item.quantity}</td>
+                          <td style="padding: 0.75rem; text-align: right;">₹${parseFloat(item.total_price).toFixed(2)}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; padding-top: 1rem; border-top: 2px solid #ddd;">
+                  <span>Total:</span>
+                  <span>₹${parseFloat(order.total).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+      } else {
+        showMessage('Order not found', 'error');
+      }
+    } catch (error) {
+      console.error('Error loading order details:', error);
+      showMessage('Failed to load order details', 'error');
+    }
+  };
+  
+  // Staff modal functionality
+  const staffModal = document.getElementById("staffModal");
+  const staffForm = document.getElementById("staffForm");
+  const addStaffBtn = document.getElementById("addStaffBtn");
+  const staffCancelBtn = document.getElementById("staffCancelBtn");
+  const staffSaveBtn = document.getElementById("staffSaveBtn");
+  
+  // Open staff modal
+  if (addStaffBtn) {
+    addStaffBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      // Reset form
+      staffForm.reset();
+      document.querySelector('#staffModal h2').textContent = 'Add Member';
+      document.getElementById('staffSaveBtn').textContent = 'Save';
+      document.getElementById('memberPassword').required = true;
+      // Remove staffId if exists
+      const staffIdField = document.getElementById('staffId');
+      if (staffIdField) {
+        staffIdField.value = '';
+      }
+      staffModal.style.display = "block";
+      document.body.style.overflow = "hidden";
+    });
+  }
+  
+  // Close staff modal
+  function closeStaffModal() {
+    staffModal.style.display = "none";
+    document.body.style.overflow = "auto";
+    staffForm.reset();
+    // Reset modal title and button text
+    document.querySelector('#staffModal h2').textContent = 'Add Member';
+    document.getElementById('staffSaveBtn').textContent = 'Save';
+    document.getElementById('memberPassword').required = true;
+    // Remove hidden staffId field if it exists
+    const staffIdField = document.getElementById('staffId');
+    if (staffIdField) {
+      staffIdField.value = '';
+    }
+  }
+  
+  if (staffCancelBtn) {
+    staffCancelBtn.addEventListener("click", closeStaffModal);
+  }
+  
+  // Close modal when clicking outside
+  if (staffModal) {
+    window.addEventListener("click", (e) => {
+      if (e.target === staffModal) {
+        closeStaffModal();
+      }
+    });
+  }
+  
+  // Close modal with X button
+  const staffModalClose = staffModal?.querySelector(".close");
+  if (staffModalClose) {
+    staffModalClose.addEventListener("click", closeStaffModal);
+  }
+  
+  // Staff form submission handler
+  const handleStaffSubmit = async (e) => {
+    e.preventDefault();
+    
+    const staffId = document.getElementById('staffId').value;
+    const action = staffId ? 'update' : 'add';
+    
+    const formData = new URLSearchParams();
+    formData.append('action', action);
+    if (staffId) {
+      formData.append('staffId', staffId);
+    }
+    formData.append('memberName', document.getElementById('memberName').value.trim());
+    formData.append('memberEmail', document.getElementById('memberEmail').value.trim());
+    formData.append('countryCode', document.getElementById('countryCode').value);
+    formData.append('restaurantPhone', document.getElementById('staffPhone').value.trim());
+    formData.append('memberPassword', document.getElementById('memberPassword').value);
+    formData.append('memberRole', document.getElementById('memberRole').value);
+    
+    try {
+      const response = await fetch("staff_operations.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        showMessage(result.message, "success");
+        closeStaffModal();
+        loadStaff();
+      } else {
+        showMessage(result.message || "Error saving staff member.", "error");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showMessage("Network error. Please check your connection and try again.", "error");
+    }
+  };
+  
+  // Attach submit handler
+  if (staffForm) {
+    staffForm.addEventListener("submit", handleStaffSubmit);
+  }
+  
+  // Load staff
+  async function loadStaff() {
+    const staffList = document.getElementById("staffList");
+    
+    try {
+      const response = await fetch("get_staff.php");
+      const result = await response.json();
+      
+      if (result.success) {
+        displayStaff(result.data);
+      } else {
+        staffList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>' + result.message + '</p></div>';
+      }
+    } catch (error) {
+      console.error("Error loading staff:", error);
+      staffList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Network Error</h3><p>Please check your connection and try again.</p></div>';
+    }
+  }
+  
+  // Display staff
+  function displayStaff(staff) {
+    const staffList = document.getElementById("staffList");
+    
+    // Store for export
+    window.currentStaffData = staff;
+    
+    if (staff.length === 0) {
+      staffList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">person</span><h3>No staff members found</h3><p>Add your first staff member to get started.</p></div>';
+      return;
+    }
+    
+    const initials = (name) => name.split(' ').map(w => w.charAt(0).toUpperCase()).join('').substring(0, 2);
+    
+    staffList.innerHTML = staff.map(member => {
+      return `
+        <tr data-staff-id="${member.id}">
+          <td class="avatar-cell">
+            <div class="avatar-small">${initials(member.member_name)}</div>
+          </td>
+          <td>${escapeHtml(member.member_name)}</td>
+          <td>${escapeHtml(member.email)}</td>
+          <td>${escapeHtml(member.phone)}</td>
+          <td>${escapeHtml(member.role)}</td>
+          <td class="action-cell">
+            <button class="btn-action-small edit-btn" onclick="editStaff(${member.id}, '${escapeHtml(member.member_name)}', '${escapeHtml(member.email)}', '${member.phone}', '${member.role}')">
+              <span class="material-symbols-rounded">edit</span>
+              <span>Update</span>
+            </button>
+            <button class="btn-action-small delete-btn" onclick="deleteStaff(${member.id}, '${escapeHtml(member.member_name)}')">
+              <span class="material-symbols-rounded">delete</span>
+              <span>Delete</span>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+  
+  // Edit staff
+  window.editStaff = function(staffId, memberName, email, phone, role) {
+    document.getElementById('staffId').value = staffId;
+    document.getElementById('memberName').value = memberName;
+    document.getElementById('memberEmail').value = email;
+    
+    // Parse phone number (split country code and phone)
+    const phoneParts = phone.split('-');
+    if (phoneParts.length >= 2) {
+      document.getElementById('countryCode').value = phoneParts[0];
+      document.getElementById('staffPhone').value = phoneParts.slice(1).join('-');
+    } else {
+      document.getElementById('staffPhone').value = phone;
+    }
+    
+    document.getElementById('memberRole').value = role;
+    document.getElementById('memberPassword').required = false;
+    
+    // Update modal title
+    document.querySelector('#staffModal h2').textContent = 'Edit Staff Member';
+    document.getElementById('staffSaveBtn').textContent = 'Update';
+    
+    staffModal.style.display = "block";
+    document.body.style.overflow = "hidden";
+  };
+  
+  // Delete staff
+  window.deleteStaff = function(staffId, memberName) {
+    if (confirm(`Are you sure you want to delete staff member "${memberName}"? This action cannot be undone.`)) {
+      const formData = new URLSearchParams();
+      formData.append('action', 'delete');
+      formData.append('staffId', staffId);
+      
+      fetch("staff_operations.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          showMessage(result.message, "success");
+          loadStaff();
+        } else {
+          showMessage(result.message || "Error deleting staff member.", "error");
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        showMessage("Network error. Please check your connection and try again.", "error");
+      });
+    }
+  };
+  
+  // POS functionality
+  let posCart = [];
+  
+  // Load POS menu items
+  async function loadPOSMenuItems() {
+    const posMenuItemsContainer = document.getElementById("posMenuItems");
+    
+    // Get filter values
+    const menuFilter = document.getElementById("posMenuFilter")?.value || '';
+    const categoryFilter = document.getElementById("posCategoryFilter")?.value || '';
+    const typeFilter = document.getElementById("posTypeFilter")?.value || '';
+    
+    // Build URL with filters
+    let url = "get_menu_items.php";
+    const params = new URLSearchParams();
+    if (menuFilter) params.append('menu', menuFilter);
+    if (categoryFilter) params.append('category', categoryFilter);
+    if (typeFilter) params.append('type', typeFilter);
+    if (params.toString()) url += '?' + params.toString();
+    
+    try {
+      const response = await fetch(url);
+      const result = await response.json();
+      
+      if (result.success) {
+        displayPOSMenuItems(result.data);
+      } else {
+        posMenuItemsContainer.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>' + result.message + '</p></div>';
+      }
+    } catch (error) {
+      console.error("Error loading POS menu items:", error);
+      posMenuItemsContainer.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Network Error</h3><p>Please check your connection and try again.</p></div>';
+    }
+  }
+  
+  // Display POS menu items
+  function displayPOSMenuItems(items) {
+    const posMenuItemsContainer = document.getElementById("posMenuItems");
+    
+    if (items.length === 0) {
+      posMenuItemsContainer.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">menu</span><h3>No menu items found</h3><p>Add menu items to start selling.</p></div>';
+      return;
+    }
+    
+    posMenuItemsContainer.innerHTML = items.map(item => `
+      <div class="pos-menu-item" onclick="addToPOSCart(${item.id}, '${escapeHtml(item.item_name_en)}', ${item.base_price}, '${escapeHtml(item.item_image || '')}')">
+        <div class="item-image">
+          ${item.item_image ? `<img src="image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}">` : '<span class="material-symbols-rounded">restaurant</span>'}
+        </div>
+        <div class="item-name">${escapeHtml(item.item_name_en)}</div>
+        <div class="item-category">${escapeHtml(item.item_category || '')}</div>
+        <div class="item-price">₹${parseFloat(item.base_price).toFixed(2)}</div>
+      </div>
+    `).join('');
+  }
+  
+  // Load tables for POS
+  async function loadTablesForPOS() {
+    const selectPosTable = document.getElementById("selectPosTable");
+    
+    try {
+      const response = await fetch("get_tables.php");
+      const result = await response.json();
+      
+      if (result.success) {
+        const tables = result.data || result.tables || [];
+        if (selectPosTable) {
+          selectPosTable.innerHTML = '<option value="">Takeaway</option>' + 
+            tables.map(table => 
+              `<option value="${table.id}">${escapeHtml(table.table_number)} - ${escapeHtml(table.area_name)}</option>`
+            ).join('');
+        }
+      }
+    } catch (error) {
+      console.error("Error loading tables for POS:", error);
+    }
+  }
+  
+  // Add event listeners to POS filters
+  const posMenuFilter = document.getElementById("posMenuFilter");
+  const posCategoryFilter = document.getElementById("posCategoryFilter");
+  const posTypeFilter = document.getElementById("posTypeFilter");
+  
+  if (posMenuFilter) {
+    posMenuFilter.addEventListener("change", loadPOSMenuItems);
+  }
+  if (posCategoryFilter) {
+    posCategoryFilter.addEventListener("change", loadPOSMenuItems);
+  }
+  if (posTypeFilter) {
+    posTypeFilter.addEventListener("change", loadPOSMenuItems);
+  }
+  
+  // Load menus for POS filters
+  async function loadMenusForPOSFilters() {
+    const posMenuFilter = document.getElementById("posMenuFilter");
+    
+    try {
+      const response = await fetch("get_menus.php");
+      const result = await response.json();
+      
+      if (result.success && posMenuFilter) {
+        posMenuFilter.innerHTML = '<option value="">All Menus</option>' + 
+          result.data.map(menu => 
+            `<option value="${menu.id}">${escapeHtml(menu.menu_name)}</option>`
+          ).join('');
+      }
+    } catch (error) {
+      console.error("Error loading menus for POS filters:", error);
+    }
+  }
+  
+  // Load categories for POS filters
+  async function loadCategoriesForPOSFilters() {
+    const posCategoryFilter = document.getElementById("posCategoryFilter");
+    
+    try {
+      const response = await fetch("get_menu_items.php");
+      const result = await response.json();
+      
+      if (result.success && posCategoryFilter && result.categories) {
+        posCategoryFilter.innerHTML = '<option value="">All Categories</option>' + 
+          result.categories.map(category => 
+            `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`
+          ).join('');
+      }
+    } catch (error) {
+      console.error("Error loading categories for POS filters:", error);
+    }
+  }
+  
+  // Add item to POS cart
+  window.addToPOSCart = function(itemId, itemName, price, image) {
+    const existingItem = posCart.find(item => item.id === itemId);
+    
+    if (existingItem) {
+      existingItem.quantity += 1;
+    } else {
+      posCart.push({
+        id: itemId,
+        name: itemName,
+        price: price,
+        image: image,
+        quantity: 1
+      });
+    }
+    
+    updatePOSCart();
+  };
+  
+  // Update POS cart display
+  function updatePOSCart() {
+    const cartItemsContainer = document.getElementById("posCartItems");
+    
+    if (posCart.length === 0) {
+      cartItemsContainer.innerHTML = `
+        <div class="empty-cart">
+          <span class="material-symbols-rounded">shopping_cart</span>
+          <p>Cart is empty</p>
+          <p class="empty-subtext">Add items from the menu</p>
+        </div>
+      `;
+    } else {
+      cartItemsContainer.innerHTML = posCart.map(item => `
+        <div class="cart-item">
+          <div class="cart-item-info">
+            <div class="cart-item-name">${escapeHtml(item.name)}</div>
+            <div class="cart-item-price">₹${parseFloat(item.price).toFixed(2)} each</div>
+          </div>
+          <div class="cart-item-controls">
+            <button class="cart-qty-btn" onclick="updatePOSCartQty(${item.id}, -1)">-</button>
+            <span class="cart-qty-value">${item.quantity}</span>
+            <button class="cart-qty-btn" onclick="updatePOSCartQty(${item.id}, 1)">+</button>
+          </div>
+          <div class="cart-item-total">₹${(parseFloat(item.price) * item.quantity).toFixed(2)}</div>
+        </div>
+      `).join('');
+    }
+    
+    updatePOSCartSummary();
+  }
+  
+  // Update cart quantity
+  window.updatePOSCartQty = function(itemId, change) {
+    const item = posCart.find(item => item.id === itemId);
+    
+    if (item) {
+      item.quantity += change;
+      
+      if (item.quantity <= 0) {
+        posCart = posCart.filter(cartItem => cartItem.id !== itemId);
+      }
+      
+      updatePOSCart();
+    }
+  };
+  
+  // Update cart summary
+  function updatePOSCartSummary() {
+    const subtotal = posCart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+    const cgst = subtotal * 0.025; // 2.5%
+    const sgst = subtotal * 0.025; // 2.5%
+    const tax = cgst + sgst; // GST total 5%
+    const total = subtotal + tax;
+    
+    document.getElementById("cartSubtotal").textContent = `₹${subtotal.toFixed(2)}`;
+    const cgstEl = document.getElementById("cartCGST");
+    const sgstEl = document.getElementById("cartSGST");
+    if (cgstEl) cgstEl.textContent = `₹${cgst.toFixed(2)}`;
+    if (sgstEl) sgstEl.textContent = `₹${sgst.toFixed(2)}`;
+    document.getElementById("cartTax").textContent = `₹${tax.toFixed(2)}`;
+    document.getElementById("cartTotal").textContent = `₹${total.toFixed(2)}`;
+  }
+  
+  // Clear cart
+  const clearCartBtn = document.getElementById("clearCartBtn");
+  if (clearCartBtn) {
+    clearCartBtn.addEventListener("click", () => {
+      if (posCart.length > 0 && confirm("Are you sure you want to clear the cart?")) {
+        posCart = [];
+        updatePOSCart();
+      }
+    });
+  }
+  
+  // Hold order
+  const holdOrderBtn = document.getElementById("holdOrderBtn");
+  if (holdOrderBtn) {
+    holdOrderBtn.addEventListener("click", async () => {
+      if (posCart.length === 0) {
+        showMessage("Cart is empty", "error");
+        return;
+      }
+      
+      const subtotal = posCart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+      const tax = subtotal * 0.05; // GST total (CGST+SGST)
+      const total = subtotal + tax;
+      const selectedTable = document.getElementById("selectPosTable").value;
+      
+      const formData = new URLSearchParams();
+      formData.append('action', 'hold_order');
+      formData.append('tableId', selectedTable || '');
+      formData.append('cartItems', JSON.stringify(posCart));
+      formData.append('subtotal', subtotal.toFixed(2));
+      formData.append('tax', tax.toFixed(2));
+      formData.append('total', total.toFixed(2));
+      
+      try {
+        const response = await fetch("pos_operations.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showMessage(result.message + " - Order #" + result.order_number, "success");
+          posCart = [];
+          updatePOSCart();
+          document.getElementById("selectPosTable").value = "";
+        } else {
+          showMessage(result.message || "Error holding order.", "error");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        showMessage("Network error. Please check your connection and try again.", "error");
+      }
+    });
+  }
+  
+  // Process payment
+  const processPaymentBtn = document.getElementById("processPaymentBtn");
+  if (processPaymentBtn) {
+    processPaymentBtn.addEventListener("click", async () => {
+      if (posCart.length === 0) {
+        showMessage("Cart is empty", "error");
+        return;
+      }
+      
+      const subtotal = posCart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+      const tax = subtotal * 0.05; // GST total (CGST+SGST)
+      const total = subtotal + tax;
+      const selectedTable = document.getElementById("selectPosTable").value;
+      
+      // Show payment method selection
+      const paymentMethod = prompt("Select payment method:\n1. Cash\n2. Card\n3. UPI\n4. Online\n\nEnter number:", "1");
+      
+      let paymentMethodStr = 'Cash';
+      switch(paymentMethod) {
+        case '2': paymentMethodStr = 'Card'; break;
+        case '3': paymentMethodStr = 'UPI'; break;
+        case '4': paymentMethodStr = 'Online'; break;
+        default: paymentMethodStr = 'Cash';
+      }
+      
+      const formData = new URLSearchParams();
+      formData.append('action', 'create_kot');
+      formData.append('tableId', selectedTable || '');
+      const isTakeaway = !selectedTable;
+      formData.append('orderType', isTakeaway ? 'Takeaway' : 'Dine-in');
+      formData.append('customerName', isTakeaway ? 'Takeaway' : 'Table Customer');
+      formData.append('paymentMethod', paymentMethodStr);
+      formData.append('cartItems', JSON.stringify(posCart));
+      formData.append('subtotal', subtotal.toFixed(2));
+      formData.append('tax', tax.toFixed(2));
+      formData.append('total', total.toFixed(2));
+      
+      try {
+        const response = await fetch("pos_operations.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          const msg = result.kot_number
+            ? (result.message + " - KOT #" + result.kot_number + " - Order #" + result.order_number)
+            : (result.message + " - Order #" + result.order_number);
+          showMessage(msg, "success");
+          posCart = [];
+          updatePOSCart();
+          document.getElementById("selectPosTable").value = "";
+          
+          // Reload orders if on the orders page
+          if (document.getElementById('ordersPage').classList.contains('active')) {
+            loadOrders();
+          }
+        } else {
+          showMessage(result.message || "Error creating KOT.", "error");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        showMessage("Network error. Please check your connection and try again.", "error");
+      }
+    });
+  }
+  
+  // Add CSS for notifications
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+  `;
+  document.head.appendChild(style);
+});
+
+// Session management and logout functionality
+document.addEventListener("DOMContentLoaded", () => {
+  // Load restaurant info from session
+  loadRestaurantInfo();
+});
+
+async function loadRestaurantInfo() {
+  try {
+    const response = await fetch("admin/get_session.php");
+    const result = await response.json();
+    
+    if (result.success) {
+      document.getElementById("restaurantName").textContent = result.data.restaurant_name;
+      document.getElementById("restaurantId").textContent = result.data.restaurant_id;
+      
+      // Store subscription data globally
+      subscriptionData = result.data;
+      const status = result.data.subscription_status;
+      const endDate = result.data.renewal_date || result.data.trial_end_date;
+      
+      // Determine if trial is expired
+      let finalStatus = status || 'unknown';
+      
+      // Check if status is already 'expired' or 'disabled' from database
+      if (status === 'expired' || status === 'disabled') {
+        finalStatus = status;
+      } 
+      // Check if trial has expired by date
+      else if (status === 'trial' && endDate) {
+        const end = new Date(endDate);
+        const today = new Date();
+        const days = Math.ceil((end - new Date(today.toDateString())) / (1000 * 60 * 60 * 24));
+        if (days <= 0) {
+          finalStatus = 'expired';
+        }
+      }
+      
+      // Store subscription status globally
+      subscriptionStatus = finalStatus;
+      
+      // Trial/renewal info
+      const tInfo = document.getElementById('trialInfo');
+      if (tInfo) {
+        if (endDate) {
+          const end = new Date(endDate);
+          const today = new Date();
+          const days = Math.max(0, Math.ceil((end - new Date(today.toDateString()))/ (1000*60*60*24)));
+          if (status === 'disabled') {
+            tInfo.style.display = 'block';
+            tInfo.style.color = '#92400e';
+            tInfo.textContent = 'Account disabled';
+          } else if (days > 0) {
+            tInfo.style.display = 'block';
+            tInfo.style.color = '#92400e';
+            tInfo.textContent = `Trial ends in ${days} day${days>1?'s':''} (on ${end.toLocaleDateString()})`;
+          } else {
+            tInfo.style.display = 'block';
+            tInfo.style.color = '#991b1b';
+            tInfo.textContent = `Trial expired on ${end.toLocaleDateString()}`;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error loading restaurant info:", error);
+  }
+}
+
+async function initiateRenewal() {
+  try {
+    const renewButton = document.getElementById('renewButton');
+    if (renewButton) {
+      renewButton.disabled = true;
+      renewButton.innerHTML = '<span style="font-size:1.2rem;">⏳</span> Processing...';
+    }
+    
+    const amount = 999; // ₹999 for monthly subscription
+    
+    const formData = new URLSearchParams();
+    formData.append('amount', amount);
+    formData.append('subscription_type', 'monthly');
+    
+    const response = await fetch('phonepe_payment.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString()
+    });
+    
+    const result = await response.json();
+    
+    if (result.success && result.payment_url) {
+      // Mark that we're processing payment (only for real PhonePe, not demo)
+      if (!result.demo_mode) {
+        sessionStorage.setItem('payment_processing', 'true');
+      }
+      // Redirect to payment page (PhonePe or Demo)
+      window.location.href = result.payment_url;
+    } else {
+      showNotification(result.message || 'Error initiating payment. Please try again.', 'error');
+      if (renewButton) {
+        renewButton.disabled = false;
+        renewButton.innerHTML = '<span style="font-size:1.2rem;">💳</span> Renew Now (₹999)';
+      }
+    }
+  } catch (error) {
+    console.error('Error initiating renewal:', error);
+    showNotification('Network error. Please try again.', 'error');
+    const renewButton = document.getElementById('renewButton');
+    if (renewButton) {
+      renewButton.disabled = false;
+      renewButton.innerHTML = '<span style="font-size:1.2rem;">💳</span> Renew Now (₹999)';
+    }
+  }
+}
+
+// Make function globally available
+window.initiateRenewal = initiateRenewal;
+
+async function logout() {
+  if (confirm("Are you sure you want to logout?")) {
+    try {
+      const response = await fetch("admin/auth.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: "action=logout"
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Redirect to login page
+        window.location.href = "admin/login.php";
+      } else {
+        showNotification("Error logging out. Please try again.", "error");
+      }
+    } catch (error) {
+      console.error("Error logging out:", error);
+      showNotification("Network error. Please try again.", "error");
+    }
+  }
+}
+
+  // Load KOT Orders
+  async function loadKOTOrders() {
+    try {
+      const statusFilter = document.getElementById('kotStatusFilter')?.value || '';
+      const tableFilter = document.getElementById('kotTableFilter')?.value || '';
+      
+      let url = 'get_kot.php';
+      const params = [];
+      if (statusFilter) params.push(`status=${encodeURIComponent(statusFilter)}`);
+      if (tableFilter) params.push(`table=${encodeURIComponent(tableFilter)}`);
+      if (params.length > 0) url += '?' + params.join('&');
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      const kotLastRefresh = document.getElementById('kotLastRefresh');
+      if (kotLastRefresh) {
+        kotLastRefresh.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+      }
+      
+      if (data.success) {
+        displayKOTOrders(data.kots);
+      } else {
+        document.getElementById('kotList').innerHTML = '<div class="error">Failed to load KOT orders</div>';
+      }
+    } catch (error) {
+      console.error('Error loading KOT orders:', error);
+      document.getElementById('kotList').innerHTML = '<div class="error">Error loading KOT orders</div>';
+    }
+  }
+
+// Display KOT Orders
+function displayKOTOrders(kots) {
+  const kotList = document.getElementById('kotList');
+  
+  if (!kots || kots.length === 0) {
+    kotList.innerHTML = '<div class="empty-state">No KOT orders found</div>';
+    return;
+  }
+  
+  kotList.innerHTML = kots.map(kot => {
+    const kotStatus = kot.kot_status || kot.status || 'Pending';
+    const statusClass = kotStatus.toLowerCase().replace(' ', '-');
+    
+    return `
+    <div class="kot-order-card" style="border-left: 4px solid ${kotStatus === 'Pending' ? '#f59e0b' : kotStatus === 'Preparing' ? '#3b82f6' : kotStatus === 'Ready' ? '#10b981' : '#6b7280'};">
+      <div class="kot-header">
+        <div class="kot-title">
+          <h3 style="color: #dc2626; margin: 0; font-size: 1.2rem;">KOT #${kot.kot_number || kot.id}</h3>
+          <p style="margin: 5px 0; color: #6b7280; font-size: 0.9rem;">${kot.item_count || (kot.items?.length || 0)} Item(s)</p>
+          <p style="margin: 5px 0; color: #6b7280; font-size: 0.85rem;">Table: ${kot.table_number || 'Takeaway'} | ${kot.area_name || ''}</p>
+        </div>
+        <div class="kot-order-info">
+          <span class="kot-status ${statusClass}" style="padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.875rem; background: ${kotStatus === 'Pending' ? '#fef3c7' : kotStatus === 'Preparing' ? '#dbeafe' : kotStatus === 'Ready' ? '#d1fae5' : '#f3f4f6'}; color: ${kotStatus === 'Pending' ? '#92400e' : kotStatus === 'Preparing' ? '#1e40af' : kotStatus === 'Ready' ? '#065f46' : '#6b7280'};">
+            ${kotStatus === 'Preparing' ? 'IN KITCHEN' : kotStatus === 'Pending' ? 'PENDING' : kotStatus}
+          </span>
+          <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 0.8rem; text-align: right;">${new Date(kot.created_at).toLocaleString()}</p>
+        </div>
+      </div>
+      
+      <div class="kot-items" style="margin: 16px 0;">
+        <h4 style="margin: 15px 0 10px 0; color: #1f2937; font-size: 0.9rem; text-transform: uppercase;">ITEMS</h4>
+        ${(kot.items || []).map(item => `
+          <div class="kot-item" style="display: flex; justify-content: space-between; padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 8px;">
+            <div>
+              <strong>${item.item_name || item.name}</strong>
+              <div style="color: #6b7280; font-size: 0.875rem;">Qty: ${item.quantity}</div>
+            </div>
+            ${(item.notes || item.special_instructions) ? `<div style="color: #f59e0b; font-size: 0.875rem;">Note: ${item.notes || item.special_instructions}</div>` : ''}
+          </div>
+        `).join('')}
+      </div>
+      
+      <div class="kot-actions">
+        <button class="btn btn-print" onclick="printKOT(${kot.id})">
+          <span class="material-symbols-rounded">print</span>
+          Print
+        </button>
+        ${(kot.kot_status || kot.status) === 'Pending' ? `
+          <button class="btn btn-primary" onclick="updateKOTStatus(${kot.id}, 'Preparing')">
+            <span class="material-symbols-rounded">restaurant</span>
+            Start Cooking
+          </button>
+        ` : (kot.kot_status || kot.status) === 'Preparing' ? `
+          <button class="btn btn-success" onclick="updateKOTStatus(${kot.id}, 'Ready')">
+            <span class="material-symbols-rounded">check</span>
+            Mark as Ready
+          </button>
+        ` : (kot.kot_status || kot.status) === 'Ready' ? `
+          <button class="btn btn-warning" onclick="completeKOT(${kot.id})">
+            <span class="material-symbols-rounded">done_all</span>
+            Complete Order
+          </button>
+        ` : ''}
+        ${(kot.kot_status || kot.status) !== 'Completed' ? `
+          <button class="btn btn-danger" onclick="cancelKOT(${kot.id})">
+            <span class="material-symbols-rounded">delete</span>
+            Cancel
+          </button>
+        ` : ''}
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+
+// Load Orders
+async function loadOrders() {
+  try {
+    // Get filter values
+    const statusFilter = document.getElementById('ordersStatusFilter')?.value || '';
+    const paymentFilter = document.getElementById('ordersPaymentFilter')?.value || '';
+    const typeFilter = document.getElementById('ordersTypeFilter')?.value || '';
+    
+    // Build query string
+    const params = new URLSearchParams();
+    if (statusFilter) params.append('status', statusFilter);
+    if (paymentFilter) params.append('payment_status', paymentFilter);
+    if (typeFilter) params.append('order_type', typeFilter);
+    
+    const response = await fetch(`get_orders.php?${params.toString()}`);
+    const data = await response.json();
+    
+    console.log('Orders loaded:', data.count, 'orders found');
+    
+    if (data.success) {
+      displayOrders(data.orders);
+      // Store data for export
+      window.currentOrdersData = data.orders;
+    } else {
+      document.getElementById('ordersList').innerHTML = '<div class="error">Failed to load orders</div>';
+    }
+  } catch (error) {
+    console.error('Error loading orders:', error);
+    document.getElementById('ordersList').innerHTML = '<div class="error">Error loading orders</div>';
+  }
+}
+
+// Setup order filter listeners
+document.addEventListener('DOMContentLoaded', function() {
+  const ordersStatusFilter = document.getElementById('ordersStatusFilter');
+  const ordersPaymentFilter = document.getElementById('ordersPaymentFilter');
+  const ordersTypeFilter = document.getElementById('ordersTypeFilter');
+  
+  if (ordersStatusFilter) {
+    ordersStatusFilter.addEventListener('change', () => loadOrders());
+  }
+  if (ordersPaymentFilter) {
+    ordersPaymentFilter.addEventListener('change', () => loadOrders());
+  }
+  if (ordersTypeFilter) {
+    ordersTypeFilter.addEventListener('change', () => loadOrders());
+  }
+});
+
+// HTML escape utility used across UI rendering and printing
+function escapeHtml(str) {
+  if (str === undefined || str === null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Export Orders to CSV
+function exportOrdersToCSV() {
+  if (!window.currentOrdersData || window.currentOrdersData.length === 0) {
+    alert('No orders to export.');
+    return;
+  }
+  
+  let csv = 'Order Management Report\n\n';
+  csv += 'Order Number,Table,Customer,Type,Status,Payment Status,Payment Method,Total,Date\n';
+  
+  window.currentOrdersData.forEach(order => {
+    csv += `"${order.order_number}","${order.table_number || 'Walk-in'}","${order.customer_name || 'N/A'}","${order.order_type}","${order.order_status}","${order.payment_status}","${order.payment_method}",${order.total},"${new Date(order.created_at).toLocaleDateString()}"\n`;
+  });
+  
+  downloadCSV(csv, `orders_${new Date().toISOString().split('T')[0]}.csv`);
+}
+
+// Generic CSV download function
+function downloadCSV(csv, filename) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showNotification('File downloaded successfully!', 'success');
+}
+
+// Export Customers to CSV
+function exportCustomersToCSV() {
+  const customers = window.currentCustomersData || [];
+  if (customers.length === 0) {
+    alert('No customers to export.');
+    return;
+  }
+  
+  let csv = 'Customers Report\n\n';
+  csv += 'Name,Phone,Email,Total Visits,Total Spent,Last Visit\n';
+  
+  customers.forEach(customer => {
+    csv += `"${customer.customer_name || 'N/A'}","${customer.phone || 'N/A'}","${customer.email || 'N/A'}",${customer.total_visits || 0},${customer.total_spent || 0},"${customer.last_visit_date || 'N/A'}"\n`;
+  });
+  
+  downloadCSV(csv, `customers_${new Date().toISOString().split('T')[0]}.csv`);
+}
+
+// Export Staff to CSV
+function exportStaffToCSV() {
+  const staff = window.currentStaffData || [];
+  if (staff.length === 0) {
+    alert('No staff to export.');
+    return;
+  }
+  
+  let csv = 'Staff Report\n\n';
+  csv += 'Name,Phone,Email,Role,Status\n';
+  
+  staff.forEach(member => {
+    csv += `"${member.staff_name || 'N/A'}","${member.phone || 'N/A'}","${member.email || 'N/A'}","${member.role || 'N/A'}","${member.is_active ? 'Active' : 'Inactive'}"\n`;
+  });
+  
+  downloadCSV(csv, `staff_${new Date().toISOString().split('T')[0]}.csv`);
+}
+
+// Export Payments to CSV
+function exportPaymentsToCSV() {
+  const payments = window.currentPaymentsData || [];
+  if (payments.length === 0) {
+    alert('No payments to export.');
+    return;
+  }
+  
+  let csv = 'Payments Report\n\n';
+  csv += 'ID,Amount,Payment Method,Transaction ID,Order,Status,Date\n';
+  
+  payments.forEach(payment => {
+    csv += `${payment.id},${payment.amount},"${payment.payment_method || 'N/A'}","${payment.transaction_id || 'N/A'}","${payment.order_number || 'N/A'}","${payment.payment_status}","${new Date(payment.created_at).toLocaleDateString()}"\n`;
+  });
+  
+  downloadCSV(csv, `payments_${new Date().toISOString().split('T')[0]}.csv`);
+}
+
+// Display Orders
+function displayOrders(orders) {
+  const ordersList = document.getElementById('ordersList');
+  
+  if (orders.length === 0) {
+    ordersList.innerHTML = '<div class="empty-state">No orders found</div>';
+    return;
+  }
+  
+  ordersList.innerHTML = orders.map(order => `
+    <div class="order-card">
+      <div class="order-header">
+        <h3>Order #${order.order_number}</h3>
+        <div class="order-badges">
+          <span class="status-badge ${order.order_status.toLowerCase()}">${order.order_status}</span>
+          <span class="payment-badge ${order.payment_status.toLowerCase().replace(' ', '-')}">${order.payment_status}</span>
+        </div>
+      </div>
+      <div class="order-details">
+        <p><strong>Type:</strong> ${order.order_type}</p>
+        <p><strong>Table:</strong> ${order.table_name || 'Walk-in'}</p>
+        <p><strong>Customer:</strong> ${order.customer_name || 'N/A'}</p>
+        <p><strong>Time:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+        <p><strong>Total:</strong> ₹${order.total}</p>
+      </div>
+      <div class="order-items">
+        <h4>Items:</h4>
+        ${order.items.map(item => `
+          <div class="order-item">
+            <span class="item-name">${item.item_name}</span>
+            <span class="item-qty">x${item.quantity}</span>
+            <span class="item-price">₹${item.total_price}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="order-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="btn btn-info" onclick="showFullOrderDetails(${order.id})" style="background: #667eea; color: white; border: none;">
+          <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle;">visibility</span>
+          Show Order
+        </button>
+        <button class="btn btn-primary" onclick="updateOrderStatus(${order.id}, 'Preparing')">Start Preparing</button>
+        <button class="btn btn-success" onclick="updateOrderStatus(${order.id}, 'Ready')">Mark Ready</button>
+        <button class="btn btn-warning" onclick="updateOrderStatus(${order.id}, 'Served')">Mark Served</button>
+        <button class="btn btn-danger" onclick="updateOrderStatus(${order.id}, 'Cancelled')">Cancel Order</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Load tables for KOT filter
+async function loadTablesForKOT() {
+  try {
+    const response = await fetch('get_tables.php');
+    const data = await response.json();
+    
+    if (data.success) {
+      const tableFilter = document.getElementById('kotTableFilter');
+      tableFilter.innerHTML = '<option value="">All Tables</option>' + 
+        data.tables.map(table => `<option value="${table.id}">${table.table_name}</option>`).join('');
+    }
+  } catch (error) {
+    console.error('Error loading tables for KOT:', error);
+  }
+}
+
+// Load tables for Orders filter
+async function loadTablesForOrders() {
+  try {
+    const response = await fetch('get_tables.php');
+    const data = await response.json();
+    
+    if (data.success) {
+      const tableFilter = document.getElementById('ordersTableFilter');
+      if (tableFilter) {
+        tableFilter.innerHTML = '<option value="">All Tables</option>' + 
+          data.tables.map(table => `<option value="${table.id}">${table.table_name}</option>`).join('');
+      }
+    }
+  } catch (error) {
+    console.error('Error loading tables for Orders:', error);
+  }
+}
+
+// Update KOT Status
+async function updateKOTStatus(kotId, status) {
+  try {
+    const response = await fetch('kot_operations.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `action=update_kot_status&kotId=${kotId}&status=${status}`
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showNotification('KOT status updated successfully', 'success');
+      loadKOTOrders(); // Reload KOT orders immediately
+    } else {
+      showNotification(data.message || 'Failed to update KOT status', 'error');
+    }
+  } catch (error) {
+    console.error('Error updating KOT status:', error);
+    showNotification('Error updating KOT status', 'error');
+  }
+}
+
+// Make updateKOTStatus globally available
+window.updateKOTStatus = updateKOTStatus;
+
+// Complete KOT (move to Orders)
+async function completeKOT(kotId) {
+  try {
+    const response = await fetch('kot_operations.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `action=complete_kot&kotId=${kotId}`
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showNotification(`KOT completed! Order #${data.order_number} created.`, 'success');
+      loadKOTOrders(); // Reload KOT orders immediately
+    } else {
+      showNotification(data.message || 'Failed to complete KOT', 'error');
+    }
+  } catch (error) {
+    console.error('Error completing KOT:', error);
+    showNotification('Error completing KOT', 'error');
+  }
+}
+
+// Make completeKOT globally available
+window.completeKOT = completeKOT;
+
+// Cancel KOT
+async function cancelKOT(kotId) {
+  if (confirm("Are you sure you want to cancel this KOT?")) {
+    try {
+      const response = await fetch('kot_operations.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=update_kot_status&kotId=${kotId}&status=Cancelled`
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showNotification('KOT cancelled successfully', 'success');
+        loadKOTOrders(); // Reload KOT orders immediately
+      } else {
+        showNotification(data.message || 'Failed to cancel KOT', 'error');
+      }
+    } catch (error) {
+      console.error('Error cancelling KOT:', error);
+      showNotification('Error cancelling KOT', 'error');
+    }
+  }
+}
+
+// Make cancelKOT globally available
+window.cancelKOT = cancelKOT;
+
+// Print KOT
+window.printKOT = async function(kotId) {
+  try {
+    const res = await fetch('get_kot.php');
+    const data = await res.json();
+    if (!data.success) { alert('Unable to load KOT'); return; }
+    const kot = (data.kots || []).find(k => String(k.id) === String(kotId));
+    if (!kot) { alert('KOT not found'); return; }
+
+    // Build printable HTML
+    const now = new Date(kot.created_at);
+    const dateStr = now.toLocaleString();
+    const itemsHtml = (kot.items || []).map(it => `<tr><td>${it.quantity} x ${escapeHtml(it.item_name)}</td></tr>`).join('');
+    const tableOrType = kot.table_name ? kot.table_name : kot.order_type;
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>KOT ${kot.kot_number}</title>
+      <style>
+        body{font-family: Arial, sans-serif; padding: 8px;}
+        .center{text-align:center}
+        h2{margin:6px 0}
+        .meta{font-size:12px;margin:4px 0}
+        table{width:100%; border-collapse:collapse; margin-top:8px}
+        td{padding:4px 0; font-size:14px}
+        hr{border:none;border-top:1px dashed #333;margin:8px 0}
+      </style>
+    </head><body onload="window.print(); setTimeout(()=>window.close(), 300);">
+      <div class="center">
+        <h2>KOT</h2>
+        <div class="meta">${escapeHtml(kot.kot_number)}</div>
+      </div>
+      <div class="meta">${escapeHtml(tableOrType || '')}</div>
+      <div class="meta">${dateStr}</div>
+      <hr>
+      <table>${itemsHtml}</table>
+      <hr>
+      <div class="meta">Items: ${(kot.items||[]).length}</div>
+    </body></html>`;
+
+    const w = window.open('', 'PRINT', 'height=600,width=400');
+    if (!w) { alert('Popup blocked. Allow popups to print.'); return; }
+    w.document.write(html);
+    w.document.close();
+  } catch (e) {
+    console.error('Print error', e);
+    alert('Failed to print KOT');
+  }
+};
+
+// Cancel Order
+window.cancelOrder = function(orderId) {
+  if (confirm("Are you sure you want to cancel this order?")) {
+    updateKOTStatus(orderId, 'Cancelled');
+  }
+};
+
+// Update Order Status
+async function updateOrderStatus(orderId, status) {
+  try {
+    const response = await fetch('update_order_status.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `orderId=${orderId}&status=${status}`
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      loadOrders(); // Reload orders
+    } else {
+      alert('Failed to update order status');
+    }
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    alert('Error updating order status');
+  }
+}
+
+// (Optional code): Adjust sidebar height on window resize
+window.addEventListener("resize", () => {
+  if (window.innerWidth >= 1024) {
+    sidebar.style.height = fullSidebarHeight;
+  } else {
+    sidebar.classList.remove("collapsed");
+    sidebar.style.height = "auto";
+    toggleMenu(sidebar.classList.contains("menu-active"));
+  }
+});
+
+// Customer and Staff page filters and view toggles
+document.addEventListener('DOMContentLoaded', function() {
+  // Customer search
+  const customerSearch = document.getElementById('customerSearch');
+  if (customerSearch) {
+    customerSearch.addEventListener('input', filterCustomers);
+  }
+  
+  // Customer sort
+  const customerSortBy = document.getElementById('customerSortBy');
+  if (customerSortBy) {
+    customerSortBy.addEventListener('change', filterCustomers);
+  }
+  
+  // Customer view removed - using table layout only
+  
+  // Staff search
+  const staffSearch = document.getElementById('staffSearch');
+  if (staffSearch) {
+    staffSearch.addEventListener('input', filterStaff);
+  }
+  
+  // Staff sort
+  const staffSortBy = document.getElementById('staffSortBy');
+  if (staffSortBy) {
+    staffSortBy.addEventListener('change', filterStaff);
+  }
+  
+  // Staff view removed - using table layout only
+});
+
+// Filter customers
+function filterCustomers() {
+  const searchTerm = document.getElementById('customerSearch')?.value.toLowerCase() || '';
+  const sortBy = document.getElementById('customerSortBy')?.value || 'name';
+  const cards = document.querySelectorAll('#customerList .modern-card');
+  
+  cards.forEach(card => {
+    const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
+    const phone = card.querySelector('.detail-row span:last-child')?.textContent.toLowerCase() || '';
+    
+    if (name.includes(searchTerm) || phone.includes(searchTerm)) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+  
+  // Sort cards
+  const visibleCards = Array.from(cards).filter(card => card.style.display !== 'none');
+  const container = document.getElementById('customerList');
+  
+  visibleCards.sort((a, b) => {
+    if (sortBy === 'name') {
+      const nameA = a.querySelector('h3')?.textContent || '';
+      const nameB = b.querySelector('h3')?.textContent || '';
+      return nameA.localeCompare(nameB);
+    } else if (sortBy === 'visits') {
+      const visitsA = parseInt(a.querySelector('.stat-value')?.textContent) || 0;
+      const visitsB = parseInt(b.querySelector('.stat-value')?.textContent) || 0;
+      return visitsB - visitsA;
+    }
+    return 0;
+  });
+  
+  visibleCards.forEach(card => container.appendChild(card));
+}
+
+// Filter staff
+function filterStaff() {
+  const searchTerm = document.getElementById('staffSearch')?.value.toLowerCase() || '';
+  const sortBy = document.getElementById('staffSortBy')?.value || 'name';
+  const cards = document.querySelectorAll('#staffList .modern-card');
+  
+  cards.forEach(card => {
+    const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
+    const email = card.querySelector('.detail-row span:last-child')?.textContent.toLowerCase() || '';
+    const role = card.querySelectorAll('.detail-row')[2]?.querySelector('span:last-child')?.textContent.toLowerCase() || '';
+    
+    if (name.includes(searchTerm) || email.includes(searchTerm) || role.includes(searchTerm)) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+  
+  // Sort cards
+  const visibleCards = Array.from(cards).filter(card => card.style.display !== 'none');
+  const container = document.getElementById('staffList');
+  
+  visibleCards.sort((a, b) => {
+    if (sortBy === 'name') {
+      const nameA = a.querySelector('h3')?.textContent || '';
+      const nameB = b.querySelector('h3')?.textContent || '';
+      return nameA.localeCompare(nameB);
+    } else if (sortBy === 'role') {
+      const roleA = a.querySelectorAll('.detail-row')[2]?.querySelector('span:last-child')?.textContent || '';
+      const roleB = b.querySelectorAll('.detail-row')[2]?.querySelector('span:last-child')?.textContent || '';
+      return roleA.localeCompare(roleB);
+    }
+    return 0;
+  });
+  
+  visibleCards.forEach(card => container.appendChild(card));
+}
+// Load Profile Data
+async function loadProfileData() {
+  try {
+    const response = await fetch('admin/get_session.php');
+    const result = await response.json();
+    
+    if (result.success) {
+      const user = result.data;
+      const username = user.username || 'User';
+      const initials = username.split(' ').map(w => w.charAt(0).toUpperCase()).join('').substring(0, 2);
+      
+      document.getElementById('profileInitials').textContent = initials;
+      document.getElementById('profileName').textContent = username;
+      document.getElementById('profileRole').textContent = user.role || 'Administrator';
+      document.getElementById('profileEmail').textContent = user.email || 'No email';
+      
+      document.getElementById('infoUsername').textContent = username;
+      document.getElementById('infoEmail').textContent = user.email || 'N/A';
+      document.getElementById('infoRole').textContent = user.role || 'N/A';
+      const joinDate = new Date(user.created_at || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+      document.getElementById('infoMemberSince').textContent = joinDate;
+    }
+  } catch (error) {
+    console.error('Error loading profile data:', error);
+  }
+}
+
+// Load Payments
+async function loadPayments() {
+  console.log('Loading payments...');
+  const tbody = document.getElementById('paymentsTableBody');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;"><div class="loading">Loading payments...</div></td></tr>';
+  
+  try {
+    const search = document.getElementById('paymentSearch')?.value || '';
+    const method = document.getElementById('paymentMethodFilter')?.value || '';
+    const status = document.getElementById('paymentStatusFilter')?.value || '';
+    
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (method) params.append('method', method);
+    if (status) params.append('status', status);
+    
+    const url = 'get_payments.php' + (params.toString() ? '?' + params.toString() : '');
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    // Store for export
+    window.currentPaymentsData = data.payments || [];
+    
+    console.log('Payments response:', data);
+    
+    if (data.success) {
+      if (data.payments && data.payments.length > 0) {
+        tbody.innerHTML = data.payments.map(payment => `
+          <tr>
+            <td>${payment.id}</td>
+            <td><strong style="color: #48bb78;">₹${parseFloat(payment.amount).toFixed(2)}</strong></td>
+            <td>
+              <span style="background: ${
+                payment.payment_method === 'Cash' ? '#48bb78' :
+                payment.payment_method === 'UPI' ? '#667eea' :
+                payment.payment_method === 'Card' ? '#f6ad55' : '#764ba2'
+              }; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem;">
+                ${payment.payment_method}
+              </span>
+            </td>
+            <td style="color: #666;">${payment.transaction_id || '-'}</td>
+            <td>
+              <a href="#" onclick="showPage('ordersPage'); event.preventDefault();" style="color: #667eea; text-decoration: underline;">
+                ${payment.order_number}
+              </a>
+            </td>
+            <td>
+              <span style="background: ${
+                payment.payment_status === 'Success' ? '#48bb78' :
+                payment.payment_status === 'Failed' ? '#f56565' :
+                payment.payment_status === 'Pending' ? '#f6ad55' : '#999'
+              }; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem;">
+                ${payment.payment_status}
+              </span>
+            </td>
+            <td style="color: #666;">${new Date(payment.created_at).toLocaleString('en-IN')}</td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #666;">No payments found</td></tr>';
+        window.currentPaymentsData = [];
+      }
+    } else {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: red;">Error loading payments</td></tr>';
+    }
+  } catch (error) {
+    console.error('Error loading payments:', error);
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: red;">Error loading payments</td></tr>';
+  }
+}
+
+// Add payment filters
+document.addEventListener('DOMContentLoaded', function() {
+  const paymentSearch = document.getElementById('paymentSearch');
+  const paymentMethodFilter = document.getElementById('paymentMethodFilter');
+  const paymentStatusFilter = document.getElementById('paymentStatusFilter');
+  
+  if (paymentSearch) {
+    paymentSearch.addEventListener('input', debounce(() => {
+      loadPayments();
+    }, 300));
+  }
+  
+  if (paymentMethodFilter) {
+    paymentMethodFilter.addEventListener('change', () => {
+      loadPayments();
+    });
+  }
+  
+  if (paymentStatusFilter) {
+    paymentStatusFilter.addEventListener('change', () => {
+      loadPayments();
+    });
+  }
+});
+
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+// Load Settings Data
+async function loadSettingsData() {
+  try {
+    const response = await fetch('admin/get_session.php');
+    const result = await response.json();
+    
+    if (result.success) {
+      const user = result.data;
+      document.getElementById('restaurantNameSetting').value = user.restaurant_name || '';
+      document.getElementById('restaurantIdSetting').value = user.restaurant_id || '';
+      document.getElementById('usernameSetting').value = user.username || '';
+    }
+    
+    setupSettingsForms();
+  } catch (error) {
+    console.error('Error loading settings data:', error);
+  }
+}
+
+// Setup Settings Forms
+function setupSettingsForms() {
+  const restaurantSettingsForm = document.getElementById('restaurantSettingsForm');
+  if (restaurantSettingsForm) {
+    restaurantSettingsForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      showMessage('Restaurant settings updated successfully!', 'success');
+    });
+  }
+  
+  const systemSettingsForm = document.getElementById('systemSettingsForm');
+  if (systemSettingsForm) {
+    systemSettingsForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      showMessage('System settings saved successfully!', 'success');
+    });
+  }
+  
+  const securitySettingsForm = document.getElementById('securitySettingsForm');
+  if (securitySettingsForm) {
+    securitySettingsForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      showMessage('Password changed successfully!', 'success');
+      securitySettingsForm.reset();
+    });
+  }
+  
+  const profileSettingsForm = document.getElementById('profileSettingsForm');
+  if (profileSettingsForm) {
+    profileSettingsForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      showMessage('Profile updated successfully!', 'success');
+    });
+  }
+}
+
+// Load Reports Data
+async function loadReports() {
+  try {
+    const period = document.getElementById('reportPeriod')?.value || 'today';
+    const reportType = document.getElementById('reportType')?.value || 'sales';
+    console.log('Loading reports for period:', period, 'type:', reportType);
+    
+    const response = await fetch(`get_sales_report.php?period=${period}&type=${reportType}`);
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to load reports');
+    }
+    
+    console.log('Reports data received:', data);
+    
+    // Store data for export
+    window.currentReportData = data;
+    
+    // Update summary cards
+    const totalSalesEl = document.getElementById('reportTotalSales');
+    const totalOrdersEl = document.getElementById('reportTotalOrders');
+    const totalItemsEl = document.getElementById('reportTotalItems');
+    const totalCustomersEl = document.getElementById('reportTotalCustomers');
+    
+    if (totalSalesEl) {
+      totalSalesEl.textContent = '₹' + data.summary.total_sales.toLocaleString('en-IN', {maximumFractionDigits: 2});
+    }
+    if (totalOrdersEl) {
+      totalOrdersEl.textContent = data.summary.total_orders;
+    }
+    if (totalItemsEl) {
+      totalItemsEl.textContent = data.summary.total_items;
+    }
+    if (totalCustomersEl) {
+      totalCustomersEl.textContent = data.summary.total_customers;
+    }
+    
+    // Update sales table
+    const salesTable = document.getElementById('reportSalesTable');
+    if (salesTable) {
+      if (data.sales_details && data.sales_details.length > 0) {
+        salesTable.innerHTML = data.sales_details.map(order => `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 1rem;">${new Date(order.created_at).toLocaleDateString('en-IN')}</td>
+            <td style="padding: 1rem; font-weight: 600;">${order.order_number}</td>
+            <td style="padding: 1rem;">${order.customer_name}</td>
+            <td style="padding: 1rem;">${order.item_count}</td>
+            <td style="padding: 1rem;"><span style="background: #e5f3ff; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">${order.payment_method}</span></td>
+            <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--primary-red);">₹${parseFloat(order.total).toLocaleString('en-IN', {maximumFractionDigits: 2})}</td>
+          </tr>
+        `).join('');
+      } else {
+        salesTable.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: #666;">No sales data found</td></tr>';
+      }
+    }
+    
+    // Update top items
+    const topItemsDiv = document.getElementById('reportTopItems');
+    if (topItemsDiv) {
+      if (data.top_items && data.top_items.length > 0) {
+        topItemsDiv.innerHTML = data.top_items.map((item, index) => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid #eee;">
+            <div>
+              <div style="font-weight: 600;">${index + 1}. ${item.item_name}</div>
+              <div style="font-size: 0.85rem; color: #666;">Qty: ${item.total_quantity}</div>
+            </div>
+            <div style="font-weight: 700; color: var(--primary-red);">₹${parseFloat(item.total_revenue).toLocaleString('en-IN', {maximumFractionDigits: 2})}</div>
+          </div>
+        `).join('');
+      } else {
+        topItemsDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;">No items found</div>';
+      }
+    }
+    
+    // Update payment methods
+    const paymentMethodsDiv = document.getElementById('reportPaymentMethods');
+    if (paymentMethodsDiv) {
+      if (data.payment_methods && data.payment_methods.length > 0) {
+        paymentMethodsDiv.innerHTML = data.payment_methods.map(method => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid #eee;">
+            <div>
+              <div style="font-weight: 600;">${method.payment_method}</div>
+              <div style="font-size: 0.85rem; color: #666;">${method.count} orders</div>
+            </div>
+            <div style="font-weight: 700; color: var(--primary-red);">₹${parseFloat(method.amount).toLocaleString('en-IN', {maximumFractionDigits: 2})}</div>
+          </div>
+        `).join('');
+      } else {
+        paymentMethodsDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;">No payment data found</div>';
+      }
+    }
+    
+  console.log('Reports loaded successfully');
+  
+} catch (error) {
+  console.error('Error loading reports:', error);
+  alert('Failed to load reports: ' + error.message);
+}
+}
+
+// Export Reports to CSV
+function exportReportsToCSV() {
+  if (!window.currentReportData) {
+    alert('No data to export. Please load reports first.');
+    return;
+  }
+  
+  const data = window.currentReportData;
+  let csv = '';
+  
+  // Add summary
+  csv += 'Sales Report Summary\n';
+  csv += `Total Sales,${data.summary.total_sales}\n`;
+  csv += `Total Orders,${data.summary.total_orders}\n`;
+  csv += `Items Sold,${data.summary.total_items}\n`;
+  csv += `Total Customers,${data.summary.total_customers}\n\n`;
+  
+  // Add sales details
+  csv += 'Order Details\n';
+  csv += 'Order Number,Customer,Items,Payment Method,Amount,Date\n';
+  
+  if (data.sales_details && data.sales_details.length > 0) {
+    data.sales_details.forEach(order => {
+      csv += `"${order.order_number}","${order.customer_name}",${order.item_count},"${order.payment_method}",${order.total},"${new Date(order.created_at).toLocaleDateString()}"\n`;
+    });
+  }
+  
+  // Download CSV
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `sales_report_${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  showNotification('Report exported successfully!', 'success');
+}
+
+// Setup reports page listener
+document.addEventListener('DOMContentLoaded', function() {
+  const reportsLink = document.querySelector('[data-page="reportsPage"]');
+  if (reportsLink) {
+    reportsLink.addEventListener('click', function() {
+      setTimeout(() => {
+        if (document.getElementById('reportsPage')?.classList.contains('active')) {
+          loadReports();
+        }
+      }, 100);
+    });
+  }
+});
+
+// Website theme (DB-based via API)
+async function initWebsiteThemeEditor() {
+  try {
+    const sess = await fetch('admin/get_session.php').then(r=>r.json()).catch(()=>null);
+    const rid = (sess && sess.success && sess.data?.restaurant_id) ? sess.data.restaurant_id : '';
+    const pr = document.getElementById('primaryRed');
+    const dr = document.getElementById('darkRed');
+    const py = document.getElementById('primaryYellow');
+    // Load
+    const q = rid ? `?action=get&restaurant_id=${encodeURIComponent(rid)}` : '?action=get';
+    const theme = await fetch(`website/theme_api.php${q}`).then(r=>r.json()).catch(()=>null);
+    if (theme && theme.success && theme.settings) {
+      if (pr) pr.value = theme.settings.primary_red;
+      if (dr) dr.value = theme.settings.dark_red;
+      if (py) py.value = theme.settings.primary_yellow;
+    }
+    // Save
+    const saveBtn = document.getElementById('saveWebsiteThemeBtn');
+    if (saveBtn) saveBtn.addEventListener('click', async () => {
+      const payload = { primary_red: pr.value, dark_red: dr.value, primary_yellow: py.value };
+      const sq = rid ? `?action=save&restaurant_id=${encodeURIComponent(rid)}` : '?action=save';
+      const res = await fetch(`website/theme_api.php${sq}`, { method:'POST', body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (data.success) showNotification('Theme saved', 'success'); else showNotification(data.message||'Error','error');
+    });
+  } catch (e) { console.error('Theme init error', e); }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  const themeNav = document.querySelector('[data-page="websiteThemePage"]');
+  if (themeNav) themeNav.addEventListener('click', () => setTimeout(initWebsiteThemeEditor, 120));
+});
