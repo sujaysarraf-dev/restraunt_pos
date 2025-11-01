@@ -286,6 +286,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (pageId === "settingsPage") {
         loadSettingsData();
       }
+      
+      // Initialize website theme editor if it's the website theme page
+      if (pageId === "websiteThemePage") {
+        setTimeout(() => {
+          initWebsiteThemeEditor();
+        }, 200);
+      }
     }
   }
 
@@ -4599,27 +4606,190 @@ async function initWebsiteThemeEditor() {
     const pr = document.getElementById('primaryRed');
     const dr = document.getElementById('darkRed');
     const py = document.getElementById('primaryYellow');
-    // Load
+    const bannerUpload = document.getElementById('bannerUpload');
+    const uploadBannerBtn = document.getElementById('uploadBannerBtn');
+    
+    // Function to render banners grid
+    const renderBanners = (banners) => {
+      console.log('renderBanners called with:', banners);
+      // Always get fresh reference to element
+      const bannersGrid = document.getElementById('bannersGrid');
+      if (!bannersGrid) {
+        console.warn('BannersGrid element not found, retrying...');
+        // Retry after a short delay
+        setTimeout(() => {
+          const retryGrid = document.getElementById('bannersGrid');
+          if (retryGrid) {
+            console.log('BannersGrid found on retry, rendering...');
+            renderBanners(banners); // Recursive call once element is found
+          } else {
+            console.error('BannersGrid element still not found after retry');
+          }
+        }, 300);
+        return;
+      }
+      
+      console.log('BannersGrid found, rendering banners...');
+      bannersGrid.innerHTML = '';
+      
+      if (!banners || banners.length === 0) {
+        bannersGrid.innerHTML = '<p style="color:#666;grid-column:1/-1;text-align:center;padding:20px;">No banners uploaded yet</p>';
+        console.log('No banners to render');
+        return;
+      }
+      
+      console.log('Rendering', banners.length, 'banners');
+      
+      banners.forEach((banner) => {
+        console.log('Rendering banner:', banner);
+        const imagePath = banner.banner_path;
+        console.log('Image path:', imagePath);
+        const bannerCard = document.createElement('div');
+        bannerCard.style.cssText = 'position:relative;border:2px solid #ddd;border-radius:12px;overflow:hidden;background:#f9f9f9;box-shadow:0 2px 8px rgba(0,0,0,0.1);';
+        bannerCard.innerHTML = `
+          <img src="${imagePath}" alt="Banner" onerror="console.error('Image failed to load:', '${imagePath}'); this.style.display='none'; this.nextElementSibling.style.display='flex';" onload="console.log('Image loaded successfully:', '${imagePath}');" style="width:100%;height:auto;display:block;max-height:300px;min-height:200px;object-fit:cover;background:#f0f0f0;">
+          <div style="display:none;width:100%;height:200px;align-items:center;justify-content:center;background:#f0f0f0;color:#999;flex-direction:column;">
+            <span class="material-symbols-rounded" style="font-size:48px;margin-bottom:10px;">image_not_supported</span>
+            <span>Image not found</span>
+            <small style="margin-top:5px;color:#bbb;">${imagePath}</small>
+          </div>
+          <button class="delete-banner-btn" data-id="${banner.id}" style="position:absolute;top:8px;right:8px;background:rgba(220,38,38,0.9);color:white;border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.3s;box-shadow:0 2px 6px rgba(0,0,0,0.2);z-index:10;">
+            <span class="material-symbols-rounded" style="font-size:20px;">delete</span>
+          </button>
+          <div style="padding:12px;font-size:0.9rem;color:#666;text-align:center;background:#fff;border-top:1px solid #eee;">Order: ${banner.display_order || 0}</div>
+        `;
+        bannersGrid.appendChild(bannerCard);
+      });
+      
+      // Add delete button listeners
+      document.querySelectorAll('.delete-banner-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const bannerId = e.currentTarget.getAttribute('data-id');
+          if (!confirm('Are you sure you want to delete this banner?')) return;
+          
+          try {
+            e.currentTarget.disabled = true;
+            const sq = rid ? `?action=delete_banner&banner_id=${bannerId}&restaurant_id=${encodeURIComponent(rid)}` : `?action=delete_banner&banner_id=${bannerId}`;
+            const formData = new FormData();
+            formData.append('banner_id', bannerId);
+            const res = await fetch(`website/theme_api.php${sq}`, { method:'POST', body: formData });
+            const data = await res.json();
+            
+            if (data.success) {
+              showNotification('Banner deleted successfully', 'success');
+              loadBanners();
+            } else {
+              showNotification(data.message || 'Failed to delete banner', 'error');
+            }
+          } catch (err) {
+            showNotification('Network error. Please try again.', 'error');
+          }
+        });
+      });
+    };
+    
+    // Function to load banners
+    const loadBanners = async () => {
+      try {
+        const q = rid ? `?action=get_banners&restaurant_id=${encodeURIComponent(rid)}` : '?action=get_banners';
+        console.log('Loading banners from:', `website/theme_api.php${q}`);
+        const res = await fetch(`website/theme_api.php${q}`);
+        const data = await res.json();
+        console.log('Banners API response:', data);
+        if (data.success) {
+          console.log('Banners found:', data.banners?.length || 0);
+          renderBanners(data.banners || []);
+        } else {
+          console.warn('Banners API returned success=false:', data);
+          renderBanners([]);
+        }
+      } catch (e) {
+        console.error('Error loading banners:', e);
+        renderBanners([]);
+      }
+    };
+    
+    // Ensure preview section is visible
+    const bannersPreview = document.getElementById('bannersPreview');
+    if (bannersPreview) {
+      bannersPreview.style.display = 'block';
+    }
+    
+    // Load theme settings and banners
     const q = rid ? `?action=get&restaurant_id=${encodeURIComponent(rid)}` : '?action=get';
     const theme = await fetch(`website/theme_api.php${q}`).then(r=>r.json()).catch(()=>null);
     if (theme && theme.success && theme.settings) {
       if (pr) pr.value = theme.settings.primary_red;
       if (dr) dr.value = theme.settings.dark_red;
       if (py) py.value = theme.settings.primary_yellow;
+      
+      // Always load banners from API to ensure latest data
+      // Small delay to ensure page is fully rendered
+      setTimeout(() => {
+        loadBanners();
+      }, 100);
+    } else {
+      // Even if theme fails, try to load banners
+      setTimeout(() => {
+        loadBanners();
+      }, 100);
     }
-    // Save
+    
+    // Save colors
     const saveBtn = document.getElementById('saveWebsiteThemeBtn');
     if (saveBtn) saveBtn.addEventListener('click', async () => {
       const payload = { primary_red: pr.value, dark_red: dr.value, primary_yellow: py.value };
       const sq = rid ? `?action=save&restaurant_id=${encodeURIComponent(rid)}` : '?action=save';
-      const res = await fetch(`website/theme_api.php${sq}`, { method:'POST', body: JSON.stringify(payload) });
+      const res = await fetch(`website/theme_api.php${sq}`, { method:'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
       const data = await res.json();
       if (data.success) showNotification('Theme saved', 'success'); else showNotification(data.message||'Error','error');
+    });
+    
+    // Upload banners
+    if (uploadBannerBtn) uploadBannerBtn.addEventListener('click', async () => {
+      if (!bannerUpload || !bannerUpload.files || bannerUpload.files.length === 0) {
+        showNotification('Please select at least one image file', 'error');
+        return;
+      }
+      
+      const formData = new FormData();
+      // Handle multiple files - append each file with same name, PHP will create array
+      Array.from(bannerUpload.files).forEach((file) => {
+        formData.append('banners[]', file);
+      });
+      
+      const sq = rid ? `?action=upload_banner&restaurant_id=${encodeURIComponent(rid)}` : '?action=upload_banner';
+      
+      try {
+        uploadBannerBtn.disabled = true;
+        uploadBannerBtn.innerHTML = '<span class="material-symbols-rounded">upload</span>Uploading...';
+        const res = await fetch(`website/theme_api.php${sq}`, { method:'POST', body: formData });
+        const data = await res.json();
+        
+        if (data.success) {
+          const count = data.banners ? data.banners.length : 1;
+          showNotification(`${count} banner(s) uploaded successfully`, 'success');
+          bannerUpload.value = '';
+          loadBanners();
+        } else {
+          showNotification(data.message || 'Upload failed', 'error');
+        }
+      } catch (e) {
+        showNotification('Network error. Please try again.', 'error');
+      } finally {
+        uploadBannerBtn.disabled = false;
+        uploadBannerBtn.innerHTML = '<span class="material-symbols-rounded">upload</span>Upload Banners';
+      }
     });
   } catch (e) { console.error('Theme init error', e); }
 }
 
 document.addEventListener('DOMContentLoaded', function(){
-  const themeNav = document.querySelector('[data-page="websiteThemePage"]');
-  if (themeNav) themeNav.addEventListener('click', () => setTimeout(initWebsiteThemeEditor, 120));
+  // Check if websiteThemePage is already active on load (e.g., if page is refreshed)
+  const websiteThemePage = document.getElementById('websiteThemePage');
+  if (websiteThemePage && websiteThemePage.classList.contains('active')) {
+    setTimeout(() => {
+      initWebsiteThemeEditor();
+    }, 300);
+  }
 });

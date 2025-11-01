@@ -405,7 +405,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
     <div id="websiteThemePage" class="page">
       <div class="page-header">
         <h1>Website Appearance</h1>
-        <p>Change the colors used in the customer website.</p>
+        <p>Change the colors and banner image used in the customer website.</p>
       </div>
       <div class="page-content">
         <div class="settings-grid">
@@ -433,6 +433,28 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
               <a href="website/index.php" class="btn btn-primary" target="_blank">Open Website</a>
             </div>
             <p style="margin-top:10px;color:#666;">Saved locally on this server (no link parameters required). The website reads saved colors automatically from the same origin.</p>
+          </div>
+          
+          <div class="settings-section">
+            <h2 class="settings-section-title">
+              <span class="material-symbols-rounded">image</span>
+              Banner Images (Slideshow)
+            </h2>
+            <div class="form-group">
+              <label for="bannerUpload">Upload Banner Images</label>
+              <p style="color:#666;font-size:0.9rem;margin-bottom:10px;">Upload multiple banner images to display as a slideshow on your website. Each image will display for 3 seconds. Recommended size: 1200x300px or similar. Max size: 5MB per image</p>
+              <input type="file" id="bannerUpload" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple style="margin-bottom:10px;">
+              <button type="button" class="btn btn-primary" id="uploadBannerBtn" style="margin-bottom:10px;">
+                <span class="material-symbols-rounded">upload</span>
+                Upload Banners
+              </button>
+            </div>
+            <div id="bannersPreview" style="margin-top:20px;display:block;">
+              <label style="display:block;margin-bottom:10px;font-weight:600;">Banner Previews:</label>
+              <div id="bannersGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:20px;margin-top:10px;min-height:50px;">
+                <p style="color:#666;grid-column:1/-1;text-align:center;padding:20px;">Loading banners...</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

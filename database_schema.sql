@@ -321,10 +321,22 @@ CREATE TABLE IF NOT EXISTS website_settings (
     primary_red VARCHAR(20) DEFAULT '#F70000',
     dark_red VARCHAR(20) DEFAULT '#DA020E',
     primary_yellow VARCHAR(20) DEFAULT '#FFD100',
+    banner_image VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_ws_restaurant_id (restaurant_id)
 );
+
+-- Create website_banners table for multiple banners per restaurant
+CREATE TABLE IF NOT EXISTS website_banners (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    restaurant_id VARCHAR(50) NOT NULL,
+    banner_path VARCHAR(255) NOT NULL,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_restaurant (restaurant_id),
+    INDEX idx_order (restaurant_id, display_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create subscription_payments table
 CREATE TABLE IF NOT EXISTS subscription_payments (

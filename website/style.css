@@ -107,6 +107,56 @@ body {
     justify-content: center;
 }
 
+/* Banner Section - appears below hero */
+.banner-section {
+    width: 100%;
+    display: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: var(--light-gray);
+    position: relative;
+}
+
+.banner-slideshow {
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+}
+
+.banner-slide {
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+    pointer-events: none;
+}
+
+.banner-slide.active {
+    opacity: 1;
+    position: relative;
+    pointer-events: auto;
+}
+
+.banner-slide img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    max-height: 400px;
+    min-height: 200px;
+}
+
+@media (max-width: 768px) {
+    .banner-slide img {
+        max-height: 250px;
+        min-height: 150px;
+    }
+}
+
 /* Hero Section */
 .hero {
     background: linear-gradient(135deg, var(--primary-red) 0%, var(--dark-red) 100%);

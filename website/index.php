@@ -10,8 +10,8 @@
 </head>
 <body>
     <script>
-      // Fetch theme from DB via API and apply CSS variables
-      (async function(){
+      // Fetch theme from DB via API and apply CSS variables and banner
+      document.addEventListener('DOMContentLoaded', async function(){
         try {
           const params = new URLSearchParams(location.search);
           const rid = params.get('restaurant_id');
@@ -23,9 +23,69 @@
             r.style.setProperty('--primary-red', t.primary_red || '#F70000');
             r.style.setProperty('--dark-red', t.dark_red || '#DA020E');
             r.style.setProperty('--primary-yellow', t.primary_yellow || '#FFD100');
+            
+            // Set banner slideshow if exists
+            const bannerSection = document.querySelector('.banner-section');
+            const bannerSlideshow = document.getElementById('bannerSlideshow');
+            if (bannerSection && bannerSlideshow) {
+              const banners = t.banners || [];
+              
+              if (banners.length > 0) {
+                // Clear existing slides
+                bannerSlideshow.innerHTML = '';
+                
+                // Create slides
+                banners.forEach((banner, index) => {
+                  const slide = document.createElement('div');
+                  slide.className = 'banner-slide' + (index === 0 ? ' active' : '');
+                  slide.innerHTML = `<img src="../${banner.banner_path}" alt="Banner ${index + 1}" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">`;
+                  bannerSlideshow.appendChild(slide);
+                });
+                
+                // Initialize slideshow with smooth fade transitions
+                let currentSlide = 0;
+                const slides = bannerSlideshow.querySelectorAll('.banner-slide');
+                
+                const slideInterval = setInterval(() => {
+                  if (banners.length > 1) {
+                    // Fade out current slide
+                    slides[currentSlide].classList.remove('active');
+                    currentSlide = (currentSlide + 1) % banners.length;
+                    // Fade in next slide
+                    setTimeout(() => {
+                      slides[currentSlide].classList.add('active');
+                    }, 100);
+                  }
+                }, 3000); // 3 seconds per slide
+                
+                // Store interval ID for cleanup if needed
+                bannerSlideshow.dataset.intervalId = slideInterval;
+                
+                bannerSection.style.display = 'block';
+                bannerSection.style.visibility = 'visible';
+                console.log('Banner slideshow loaded:', banners.length, 'banners');
+              } else if (t.banner_image && t.banner_image !== 'null' && t.banner_image.trim() !== '') {
+                // Fallback to single banner (backward compatibility)
+                const slide = document.createElement('div');
+                slide.className = 'banner-slide active';
+                slide.innerHTML = `<img src="../${t.banner_image}" alt="Banner" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">`;
+                bannerSlideshow.innerHTML = '';
+                bannerSlideshow.appendChild(slide);
+                bannerSection.style.display = 'block';
+                bannerSection.style.visibility = 'visible';
+                console.log('Single banner loaded (backward compatibility)');
+              } else {
+                bannerSection.style.display = 'none';
+                console.log('No banner images in database');
+              }
+            } else {
+              console.error('Banner section or slideshow element not found in DOM');
+            }
           }
-        } catch(e) { /* ignore */ }
-      })();
+        } catch(e) { 
+          console.error('Error loading theme/banner:', e);
+        }
+      });
     </script>
     <!-- Navigation Bar -->
     <nav class="navbar">
@@ -63,6 +123,11 @@
                 </button>
             </div>
         </div>
+    </section>
+
+    <!-- Banner Section -->
+    <section class="banner-section" id="banner">
+        <div id="bannerSlideshow" class="banner-slideshow"></div>
     </section>
 
     <!-- Category Filter -->
