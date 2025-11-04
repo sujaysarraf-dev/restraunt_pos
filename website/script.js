@@ -221,19 +221,37 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cartOverlay').addEventListener('click', toggleCart);
 });
 
+// Get restaurant ID from URL or use default
+function getRestaurantId() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('restaurant_id') || 'RES001';
+}
+
 // Load menus
 async function loadMenus() {
     try {
-        const response = await fetch('api.php?action=getMenus');
-        menus = await response.json();
+        const restaurantId = getRestaurantId();
+        const response = await fetch(`api.php?action=getMenus&restaurant_id=${encodeURIComponent(restaurantId)}`);
+        const data = await response.json();
+        
+        // Check for error
+        if (data.error) {
+            console.error('API Error:', data.error);
+            document.getElementById('menuGrid').innerHTML = '<div class="loading">Error loading menu. Please check restaurant ID.</div>';
+            return;
+        }
+        
+        menus = Array.isArray(data) ? data : [];
         renderMenuTabs();
         
         // Load categories
-        const catResponse = await fetch('api.php?action=getCategories');
-        const categories = await catResponse.json();
+        const catResponse = await fetch(`api.php?action=getCategories&restaurant_id=${encodeURIComponent(restaurantId)}`);
+        const catData = await catResponse.json();
+        const categories = Array.isArray(catData) ? catData : [];
         populateCategoryFilter(categories);
     } catch (error) {
         console.error('Error loading menus:', error);
+        document.getElementById('menuGrid').innerHTML = '<div class="loading">Error loading menu. Please try again.</div>';
     }
 }
 
@@ -271,17 +289,30 @@ function populateCategoryFilter(categories) {
 // Load menu items
 async function loadMenuItems(filter = {}) {
     try {
-        let url = 'api.php?action=getMenuItems';
+        const restaurantId = getRestaurantId();
+        let url = `api.php?action=getMenuItems&restaurant_id=${encodeURIComponent(restaurantId)}`;
         
         if (filter.menuId) url += `&menu_id=${filter.menuId}`;
-        if (filter.category) url += `&category=${filter.category}`;
-        if (filter.type) url += `&type=${filter.type}`;
+        if (filter.category) url += `&category=${encodeURIComponent(filter.category)}`;
+        if (filter.type) url += `&type=${encodeURIComponent(filter.type)}`;
         
         const response = await fetch(url);
-        menuItems = await response.json();
+        const data = await response.json();
+        
+        // Check for error
+        if (data.error) {
+            console.error('API Error:', data.error);
+            menuItems = [];
+            renderMenuItems();
+            return;
+        }
+        
+        menuItems = Array.isArray(data) ? data : [];
         renderMenuItems();
     } catch (error) {
         console.error('Error loading menu items:', error);
+        menuItems = [];
+        renderMenuItems();
     }
 }
 
@@ -524,11 +555,22 @@ function handleSearch(e) {
     
     searchTimeout = setTimeout(async () => {
         try {
-            const response = await fetch(`api.php?action=searchItems&q=${encodeURIComponent(searchTerm)}`);
-            menuItems = await response.json();
+            const restaurantId = getRestaurantId();
+            const response = await fetch(`api.php?action=searchItems&q=${encodeURIComponent(searchTerm)}&restaurant_id=${encodeURIComponent(restaurantId)}`);
+            const data = await response.json();
+            
+            // Check for error
+            if (data.error) {
+                console.error('Search Error:', data.error);
+                menuItems = [];
+            } else {
+                menuItems = Array.isArray(data) ? data : [];
+            }
             renderMenuItems();
         } catch (error) {
             console.error('Search error:', error);
+            menuItems = [];
+            renderMenuItems();
         }
     }, 300);
 }

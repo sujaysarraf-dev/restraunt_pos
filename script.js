@@ -289,6 +289,8 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Initialize website theme editor if it's the website theme page
       if (pageId === "websiteThemePage") {
+        // Reset initialization flag when page is shown
+        websiteThemeInitialized = false;
         setTimeout(() => {
           initWebsiteThemeEditor();
         }, 200);
@@ -4599,7 +4601,15 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Website theme (DB-based via API)
+let websiteThemeInitialized = false; // Flag to prevent duplicate initialization
+
 async function initWebsiteThemeEditor() {
+  // Prevent duplicate initialization
+  if (websiteThemeInitialized) {
+    console.log('Website theme editor already initialized, skipping...');
+    return;
+  }
+  
   try {
     const sess = await fetch('admin/get_session.php').then(r=>r.json()).catch(()=>null);
     const rid = (sess && sess.success && sess.data?.restaurant_id) ? sess.data.restaurant_id : '';
@@ -4715,13 +4725,62 @@ async function initWebsiteThemeEditor() {
       bannersPreview.style.display = 'block';
     }
     
+    // Function to update color previews
+    const updateColorPreviews = () => {
+      const primaryRedVal = pr ? pr.value : '#F70000';
+      const darkRedVal = dr ? dr.value : '#DA020E';
+      const primaryYellowVal = py ? py.value : '#FFD100';
+      
+      // Update color value displays
+      const primaryRedDisplay = document.getElementById('primaryRedDisplay');
+      const darkRedDisplay = document.getElementById('darkRedDisplay');
+      const primaryYellowDisplay = document.getElementById('primaryYellowDisplay');
+      
+      if (primaryRedDisplay) primaryRedDisplay.textContent = primaryRedVal;
+      if (darkRedDisplay) darkRedDisplay.textContent = darkRedVal;
+      if (primaryYellowDisplay) primaryYellowDisplay.textContent = primaryYellowVal;
+      
+      // Update hero section gradient
+      const heroPreview = document.getElementById('heroPreview');
+      if (heroPreview) {
+        heroPreview.style.background = `linear-gradient(135deg, ${primaryRedVal} 0%, ${darkRedVal} 100%)`;
+      }
+      
+      // Update category button
+      const categoryButtonPreview = document.getElementById('categoryButtonPreview');
+      if (categoryButtonPreview) {
+        categoryButtonPreview.style.borderColor = primaryRedVal;
+        categoryButtonPreview.style.color = primaryRedVal;
+      }
+      
+      // Update add to cart button
+      const addToCartPreview = document.getElementById('addToCartPreview');
+      if (addToCartPreview) {
+        addToCartPreview.style.background = primaryYellowVal;
+      }
+      
+      // Update checkout button
+      const checkoutPreview = document.getElementById('checkoutPreview');
+      if (checkoutPreview) {
+        checkoutPreview.style.background = primaryRedVal;
+      }
+    };
+    
+    // Add event listeners to color inputs for real-time preview
+    if (pr) pr.addEventListener('input', updateColorPreviews);
+    if (dr) dr.addEventListener('input', updateColorPreviews);
+    if (py) py.addEventListener('input', updateColorPreviews);
+    
     // Load theme settings and banners
     const q = rid ? `?action=get&restaurant_id=${encodeURIComponent(rid)}` : '?action=get';
     const theme = await fetch(`website/theme_api.php${q}`).then(r=>r.json()).catch(()=>null);
     if (theme && theme.success && theme.settings) {
-      if (pr) pr.value = theme.settings.primary_red;
-      if (dr) dr.value = theme.settings.dark_red;
-      if (py) py.value = theme.settings.primary_yellow;
+      if (pr) pr.value = theme.settings.primary_red || '#F70000';
+      if (dr) dr.value = theme.settings.dark_red || '#DA020E';
+      if (py) py.value = theme.settings.primary_yellow || '#FFD100';
+      
+      // Update previews with loaded values
+      updateColorPreviews();
       
       // Always load banners from API to ensure latest data
       // Small delay to ensure page is fully rendered
@@ -4729,6 +4788,9 @@ async function initWebsiteThemeEditor() {
         loadBanners();
       }, 100);
     } else {
+      // Update previews with default values
+      updateColorPreviews();
+      
       // Even if theme fails, try to load banners
       setTimeout(() => {
         loadBanners();
@@ -4742,11 +4804,22 @@ async function initWebsiteThemeEditor() {
       const sq = rid ? `?action=save&restaurant_id=${encodeURIComponent(rid)}` : '?action=save';
       const res = await fetch(`website/theme_api.php${sq}`, { method:'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
       const data = await res.json();
-      if (data.success) showNotification('Theme saved', 'success'); else showNotification(data.message||'Error','error');
+      if (data.success) {
+        showNotification('Theme saved', 'success');
+        // Update previews after saving
+        updateColorPreviews();
+      } else {
+        showNotification(data.message||'Error','error');
+      }
     });
     
-    // Upload banners
-    if (uploadBannerBtn) uploadBannerBtn.addEventListener('click', async () => {
+    // Upload banners - Remove old listener if exists and add new one
+    if (uploadBannerBtn) {
+      // Clone button to remove all event listeners
+      const newUploadBtn = uploadBannerBtn.cloneNode(true);
+      uploadBannerBtn.parentNode.replaceChild(newUploadBtn, uploadBannerBtn);
+      
+      newUploadBtn.addEventListener('click', async () => {
       if (!bannerUpload || !bannerUpload.files || bannerUpload.files.length === 0) {
         showNotification('Please select at least one image file', 'error');
         return;
@@ -4777,10 +4850,14 @@ async function initWebsiteThemeEditor() {
       } catch (e) {
         showNotification('Network error. Please try again.', 'error');
       } finally {
-        uploadBannerBtn.disabled = false;
-        uploadBannerBtn.innerHTML = '<span class="material-symbols-rounded">upload</span>Upload Banners';
+        newUploadBtn.disabled = false;
+        newUploadBtn.innerHTML = '<span class="material-symbols-rounded">upload</span>Upload Banners';
       }
-    });
+      });
+    }
+    
+    // Mark as initialized
+    websiteThemeInitialized = true;
   } catch (e) { console.error('Theme init error', e); }
 }
 

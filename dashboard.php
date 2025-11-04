@@ -414,19 +414,57 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
               <span class="material-symbols-rounded">palette</span>
               Colors
             </h2>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="primaryRed">Primary Red</label>
-                <input type="color" id="primaryRed" value="#F70000">
+            
+            <!-- Visual Preview -->
+            <div id="colorPreviewContainer" style="background: white; border-radius: 8px; padding: 1rem; border: 2px solid #e5e7eb; margin-bottom: 2rem;">
+              <div style="font-weight: 700; color: #111827; margin-bottom: 0.75rem;">Preview:</div>
+              <div id="heroPreview" style="background: linear-gradient(135deg, #F70000 0%, #DA020E 100%); border-radius: 8px; padding: 1.5rem; color: white; margin-bottom: 1rem;">
+                <div style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem;">Restaurant Name</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">Hero Section Background (Gradient)</div>
               </div>
-              <div class="form-group">
-                <label for="darkRed">Dark Red</label>
-                <input type="color" id="darkRed" value="#DA020E">
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <div id="categoryButtonPreview" style="border: 2px solid #F70000; color: #F70000; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.875rem;">Category Button</div>
+                <div id="addToCartPreview" style="background: #FFD100; color: #333; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.875rem;">Add to Cart</div>
+                <div id="checkoutPreview" style="background: #F70000; color: white; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.875rem;">Checkout</div>
               </div>
             </div>
-            <div class="form-group">
-              <label for="primaryYellow">Primary Yellow</label>
-              <input type="color" id="primaryYellow" value="#FFD100">
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+              <div style="background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%); border-radius: 16px; padding: 1.5rem; border: 2px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'">
+                <div style="text-align: center; margin-bottom: 1rem;">
+                  <div style="font-weight: 700; color: #111827; font-size: 1rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem; color: #dc2626;">palette</span>
+                    Main Color
+                  </div>
+                  <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 0.75rem;">Primary brand color</div>
+                </div>
+                <input type="color" id="primaryRed" value="#F70000" style="width: 100%; height: 70px; border-radius: 12px; border: 3px solid #e5e7eb; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.borderColor='#d1d5db'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
+                <div id="primaryRedDisplay" style="margin-top: 0.75rem; font-family: 'Courier New', monospace; font-size: 0.9rem; color: #374151; font-weight: 600; text-align: center; background: #f3f4f6; padding: 0.5rem; border-radius: 8px;">#F70000</div>
+              </div>
+              
+              <div style="background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%); border-radius: 16px; padding: 1.5rem; border: 2px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'">
+                <div style="text-align: center; margin-bottom: 1rem;">
+                  <div style="font-weight: 700; color: #111827; font-size: 1rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem; color: #991b1b;">gradient</span>
+                    Accent Color
+                  </div>
+                  <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 0.75rem;">Darker shade for gradients</div>
+                </div>
+                <input type="color" id="darkRed" value="#DA020E" style="width: 100%; height: 70px; border-radius: 12px; border: 3px solid #e5e7eb; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.borderColor='#d1d5db'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
+                <div id="darkRedDisplay" style="margin-top: 0.75rem; font-family: 'Courier New', monospace; font-size: 0.9rem; color: #374151; font-weight: 600; text-align: center; background: #f3f4f6; padding: 0.5rem; border-radius: 8px;">#DA020E</div>
+              </div>
+              
+              <div style="background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%); border-radius: 16px; padding: 1.5rem; border: 2px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'">
+                <div style="text-align: center; margin-bottom: 1rem;">
+                  <div style="font-weight: 700; color: #111827; font-size: 1rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <span class="material-symbols-rounded" style="font-size: 1.2rem; color: #fbbf24;">star</span>
+                    Highlight Color
+                  </div>
+                  <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 0.75rem;">Call-to-action buttons</div>
+                </div>
+                <input type="color" id="primaryYellow" value="#FFD100" style="width: 100%; height: 70px; border-radius: 12px; border: 3px solid #e5e7eb; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.borderColor='#d1d5db'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
+                <div id="primaryYellowDisplay" style="margin-top: 0.75rem; font-family: 'Courier New', monospace; font-size: 0.9rem; color: #374151; font-weight: 600; text-align: center; background: #f3f4f6; padding: 0.5rem; border-radius: 8px;">#FFD100</div>
+              </div>
             </div>
             <div class="form-actions">
               <button type="button" class="btn btn-save" id="saveWebsiteThemeBtn">Save Theme</button>
