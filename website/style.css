@@ -171,6 +171,23 @@ body {
     visibility: visible !important;
 }
 
+/* Desktop: Fixed at bottom (no bottom nav) */
+@media (min-width: 769px) {
+    .cart-summary-bar {
+        bottom: 0;
+    }
+    
+    .cart-summary-bar.show {
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    /* Add padding to body on desktop when cart is visible */
+    body.has-cart {
+        padding-bottom: 70px;
+    }
+}
+
 .cart-summary-content {
     max-width: 1200px;
     margin: 0 auto;
@@ -243,11 +260,6 @@ body {
     }
 }
 
-@media (min-width: 769px) {
-    .cart-summary-bar {
-        display: none !important;
-    }
-}
 
 /* Banner Section - appears below hero */
 .banner-section {

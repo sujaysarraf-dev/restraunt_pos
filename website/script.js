@@ -1041,15 +1041,21 @@ function toggleCart() {
     const cartSummaryBar = document.getElementById('cartSummaryBar');
     
     const isOpen = cartSidebar.classList.contains('open');
+    const isMobile = window.innerWidth <= 768;
     
     cartSidebar.classList.toggle('open');
     cartOverlay.classList.toggle('show');
     
     // Hide/show bottom nav and cart summary bar
     if (isOpen) {
-        // Cart is closing, show bottom nav and cart summary bar (only if cart has items)
+        // Cart is closing, show bottom nav only on mobile and cart summary bar (only if cart has items)
         if (bottomNav) {
-            bottomNav.style.display = 'flex';
+            if (isMobile) {
+                bottomNav.style.display = 'flex';
+            } else {
+                // On desktop, remove inline style to let CSS handle it (it should be hidden)
+                bottomNav.style.display = '';
+            }
         }
         // Only show cart summary bar if cart has 1 or more items
         const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
@@ -1581,10 +1587,16 @@ async function processOrder(total) {
                 if (cartOverlay) {
                     cartOverlay.classList.remove('show');
                 }
-                // Show bottom nav again
+                // Show bottom nav again only on mobile
                 const bottomNav = document.querySelector('.bottom-nav');
                 if (bottomNav) {
-                    bottomNav.style.display = 'flex';
+                    const isMobile = window.innerWidth <= 768;
+                    if (isMobile) {
+                        bottomNav.style.display = 'flex';
+                    } else {
+                        // On desktop, remove inline style to let CSS handle it (it should be hidden)
+                        bottomNav.style.display = '';
+                    }
                 }
             }
         } else {
