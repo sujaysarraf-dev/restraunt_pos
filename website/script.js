@@ -11,6 +11,9 @@ let currentFilter = {
 // Call Waiter Functionality
 let selectedTable = null;
 
+// Reservation capacity tracking
+let selectedTableCapacity = null;
+
 // Get table from URL parameter
 function getTableFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -34,7 +37,8 @@ document.getElementById('callWaiterBtn').addEventListener('click', () => {
 // Load table info from URL and show confirmation
 async function showConfirmForTableFromURL(tableNumber) {
     try {
-        const response = await fetch('../get_tables.php');
+        const restaurantId = getRestaurantId();
+        const response = await fetch(`../get_tables.php?restaurant_id=${restaurantId}`);
         const data = await response.json();
         
         if (data.success && data.data) {
@@ -65,7 +69,8 @@ document.getElementById('closeWaiterModal').addEventListener('click', () => {
 // Load Tables for Modal
 async function loadTables() {
     try {
-        const response = await fetch('../get_tables.php');
+        const restaurantId = getRestaurantId();
+        const response = await fetch(`../get_tables.php?restaurant_id=${restaurantId}`);
         const data = await response.json();
         
         const tableGrid = document.getElementById('tableGrid');
@@ -171,6 +176,14 @@ async function confirmCallWaiter(tableId, tableNumber, areaName) {
                 cart = [];
                 updateCartStorage();
                 updateCartUI();
+                
+                // Ensure cart summary bar is hidden
+                const cartSummaryBar = document.getElementById('cartSummaryBar');
+                if (cartSummaryBar) {
+                    cartSummaryBar.style.display = 'none';
+                    cartSummaryBar.classList.remove('show');
+                }
+                document.body.classList.remove('has-cart');
             }
         } else {
             showNotification('Failed to notify waiter. Please try again.', 'error');
@@ -203,10 +216,340 @@ function openCallWaiterModal() {
     loadTables();
 }
 
+// Reservation Functionality
+// Open Reservation Modal
+function openReservationModal() {
+    document.getElementById('reservationModal').classList.add('active');
+    // Show table selection, hide form
+    document.getElementById('reservationTableSelection').style.display = 'block';
+    document.getElementById('reservationFormSection').style.display = 'none';
+    loadReservationTables();
+    // Set minimum date to today
+    const dateInput = document.getElementById('reservationDate');
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.setAttribute('min', today);
+        if (!dateInput.value) {
+            dateInput.value = today;
+        }
+    }
+}
+
+// Load Tables for Reservation Modal
+async function loadReservationTables() {
+    try {
+        const restaurantId = getRestaurantId();
+        const response = await fetch(`../get_tables.php?restaurant_id=${restaurantId}`);
+        const data = await response.json();
+        
+        const tableGrid = document.getElementById('reservationTableGrid');
+        
+        if (!tableGrid) {
+            console.error('Reservation table grid not found');
+            return;
+        }
+        
+        if (data.success && data.data) {
+            tableGrid.innerHTML = data.data.map(table => `
+                <div class="table-option" onclick="selectReservationTable(${table.id}, '${table.table_number}', '${table.area_name || ''}', ${table.capacity || 4})">
+                    <div class="table-number">${table.table_number}</div>
+                    <div class="table-area">${table.area_name || 'Unknown Area'}</div>
+                    <div style="font-size: 0.85rem; margin-top: 0.5rem; opacity: 0.8;">Capacity: ${table.capacity || 4} seats</div>
+                </div>
+            `).join('');
+        } else {
+            tableGrid.innerHTML = '<p>No tables available</p>';
+        }
+    } catch (error) {
+        console.error('Error loading tables:', error);
+        const tableGrid = document.getElementById('reservationTableGrid');
+        if (tableGrid) {
+            tableGrid.innerHTML = '<p>Error loading tables</p>';
+        }
+    }
+}
+
+// Select Table for Reservation
+function selectReservationTable(tableId, tableNumber, areaName, capacity) {
+    // Store selected table info
+    document.getElementById('selectedTableId').value = tableId;
+    selectedTableCapacity = capacity || 4;
+    
+    // Update guests input max and show capacity info
+    const guestsInput = document.getElementById('reservationGuests');
+    if (guestsInput) {
+        guestsInput.setAttribute('max', selectedTableCapacity);
+        guestsInput.value = Math.min(parseInt(guestsInput.value) || 1, selectedTableCapacity);
+    }
+    
+    // Show capacity info
+    const capacityInfo = document.getElementById('tableCapacityInfo');
+    if (capacityInfo) {
+        capacityInfo.innerHTML = `<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">table_restaurant</span> Table ${tableNumber} - ${areaName} <strong>(Max ${selectedTableCapacity} guests)</strong>`;
+        capacityInfo.style.display = 'block';
+    }
+    
+    // Hide table selection, show form
+    document.getElementById('reservationTableSelection').style.display = 'none';
+    document.getElementById('reservationFormSection').style.display = 'block';
+    
+    // Setup availability checking when date/time changes
+    setupAvailabilityCheck();
+}
+
+// Back to Table Selection
+function backToTableSelection() {
+    document.getElementById('reservationTableSelection').style.display = 'block';
+    document.getElementById('reservationFormSection').style.display = 'none';
+    document.getElementById('selectedTableId').value = '';
+    selectedTableCapacity = null;
+    
+    // Reset capacity info
+    const capacityInfo = document.getElementById('tableCapacityInfo');
+    if (capacityInfo) {
+        capacityInfo.style.display = 'none';
+    }
+    
+    // Reset guests input
+    const guestsInput = document.getElementById('reservationGuests');
+    if (guestsInput) {
+        guestsInput.removeAttribute('max');
+        guestsInput.value = 1;
+    }
+    
+    // Hide warnings
+    const availabilityWarning = document.getElementById('availabilityWarning');
+    if (availabilityWarning) {
+        availabilityWarning.style.display = 'none';
+    }
+    
+    const capacityWarning = document.getElementById('capacityWarning');
+    if (capacityWarning) {
+        capacityWarning.style.display = 'none';
+    }
+}
+
+// Close Reservation Modal on Overlay Click
+function closeReservationModalOnOverlay(event) {
+    if (event.target.id === 'reservationModal') {
+        document.getElementById('reservationModal').classList.remove('active');
+        // Reset to table selection
+        backToTableSelection();
+    }
+}
+
+// Check reservation availability
+async function checkReservationAvailability() {
+    const tableId = document.getElementById('selectedTableId').value;
+    const date = document.getElementById('reservationDate').value;
+    const timeSlot = document.getElementById('reservationTimeSlot').value;
+    const availabilityWarning = document.getElementById('availabilityWarning');
+    
+    if (!tableId || !date || !timeSlot) {
+        if (availabilityWarning) {
+            availabilityWarning.style.display = 'none';
+        }
+        return;
+    }
+    
+    try {
+        const restaurantId = getRestaurantId();
+        const response = await fetch(`../check_reservation_availability.php?restaurant_id=${restaurantId}&table_id=${tableId}&reservation_date=${date}&time_slot=${timeSlot}`);
+        const data = await response.json();
+        
+        if (data.success && !data.available) {
+            // Table is already reserved
+            if (availabilityWarning) {
+                availabilityWarning.innerHTML = `<span style="font-weight: 600;">⚠️ Already Reserved</span> - This table is already reserved for ${date} at ${timeSlot}. Please choose a different time or table.`;
+                availabilityWarning.style.display = 'block';
+            }
+        } else {
+            // Table is available
+            if (availabilityWarning) {
+                availabilityWarning.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error checking availability:', error);
+    }
+}
+
+// Setup availability checking
+function setupAvailabilityCheck() {
+    const dateInput = document.getElementById('reservationDate');
+    const timeSlotInput = document.getElementById('reservationTimeSlot');
+    
+    if (dateInput && timeSlotInput) {
+        // Remove existing listeners to avoid duplicates
+        const newDateInput = dateInput.cloneNode(true);
+        const newTimeSlotInput = timeSlotInput.cloneNode(true);
+        dateInput.parentNode.replaceChild(newDateInput, dateInput);
+        timeSlotInput.parentNode.replaceChild(newTimeSlotInput, timeSlotInput);
+        
+        // Add new listeners
+        newDateInput.addEventListener('change', checkReservationAvailability);
+        newTimeSlotInput.addEventListener('change', checkReservationAvailability);
+    }
+}
+
+// Handle Reservation Form Submission
+function setupReservationForm() {
+    const reservationForm = document.getElementById('reservationForm');
+    if (!reservationForm) {
+        console.error('Reservation form not found');
+        return;
+    }
+    
+    reservationForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const tableId = document.getElementById('selectedTableId').value;
+        if (!tableId) {
+            showNotification('Please select a table first', 'error');
+            return;
+        }
+        
+        const date = document.getElementById('reservationDate').value;
+        const timeSlot = document.getElementById('reservationTimeSlot').value;
+        const guests = parseInt(document.getElementById('reservationGuests').value) || 0;
+        
+        // Validate capacity
+        if (selectedTableCapacity && guests > selectedTableCapacity) {
+            showNotification(`This table can only accommodate ${selectedTableCapacity} guests. Please select a different table or reduce the number of guests.`, 'error');
+            return;
+        }
+        
+        if (guests <= 0) {
+            showNotification('Please enter a valid number of guests', 'error');
+            return;
+        }
+        
+        // Check availability before submitting
+        try {
+            const restaurantId = getRestaurantId();
+            const availabilityResponse = await fetch(`../check_reservation_availability.php?restaurant_id=${restaurantId}&table_id=${tableId}&reservation_date=${date}&time_slot=${timeSlot}`);
+            const availabilityData = await availabilityResponse.json();
+            
+            if (availabilityData.success && !availabilityData.available) {
+                showNotification(`This table is already reserved for ${date} at ${timeSlot}. Please choose a different time or table.`, 'error');
+                return;
+            }
+        } catch (error) {
+            console.error('Error checking availability:', error);
+        }
+        
+        const formData = {
+            table_id: parseInt(tableId),
+            reservation_date: date,
+            time_slot: timeSlot,
+            no_of_guests: guests,
+            meal_type: document.getElementById('reservationMealType').value,
+            customer_name: document.getElementById('reservationName').value,
+            phone: document.getElementById('reservationPhone').value,
+            email: document.getElementById('reservationEmail').value,
+            special_request: document.getElementById('reservationSpecialRequest').value
+        };
+        
+        // Validation
+        if (!formData.reservation_date) {
+            showNotification('Please select a date', 'error');
+            return;
+        }
+        
+        if (!formData.time_slot) {
+            showNotification('Please select a time slot', 'error');
+            return;
+        }
+        
+        if (!formData.customer_name.trim()) {
+            showNotification('Please enter your name', 'error');
+            return;
+        }
+        
+        if (!formData.phone.trim()) {
+            showNotification('Please enter your phone number', 'error');
+            return;
+        }
+        
+        // Show loading
+        showNotification('Creating reservation...', 'info');
+        
+        try {
+            const restaurantId = getRestaurantId();
+            const response = await fetch(`../create_reservation.php?restaurant_id=${restaurantId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Close modal
+                document.getElementById('reservationModal').classList.remove('active');
+                
+                // Reset form and go back to table selection
+                document.getElementById('reservationForm').reset();
+                backToTableSelection();
+                const dateInput = document.getElementById('reservationDate');
+                if (dateInput) {
+                    const today = new Date().toISOString().split('T')[0];
+                    dateInput.value = today;
+                }
+                
+                showNotification('Reservation created successfully! We will confirm your reservation shortly.', 'success');
+            } else {
+                showNotification(data.message || 'Failed to create reservation. Please try again.', 'error');
+            }
+        } catch (error) {
+            console.error('Error creating reservation:', error);
+            showNotification('Error creating reservation. Please try again.', 'error');
+        }
+    });
+}
+
+// Setup top navigation links to be functional - MUST be defined before DOMContentLoaded
+window.setupTopNavLinks = function() {
+    // Add click handlers to top nav links
+    const navLinks = document.querySelectorAll('.nav-menu .nav-link');
+    if (navLinks.length > 0) {
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                if (href && href.startsWith('#')) {
+                    const sectionId = href.substring(1);
+                    const bottomNavItem = document.querySelector(`.bottom-nav-item[data-nav="${sectionId}"]`);
+                    if (typeof scrollToSection === 'function') {
+                        scrollToSection(sectionId, bottomNavItem);
+                    }
+                }
+            });
+        });
+    }
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadMenus();
     loadMenuItems();
+    
+    // FORCE HIDE cart summary bar on load - will be shown by updateCartUI if cart has items
+    const cartSummaryBar = document.getElementById('cartSummaryBar');
+    const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    
+    // Always hide cart bar initially - FORCE HIDE if 0 items
+    if (cartSummaryBar) {
+        cartSummaryBar.style.display = 'none';
+        cartSummaryBar.style.visibility = 'hidden';
+        cartSummaryBar.classList.remove('show');
+    }
+    
+    // Remove has-cart class if cart is empty
+    if (cart.length === 0 || totalItems === 0) {
+        document.body.classList.remove('has-cart');
+    }
+    
     updateCartUI();
     
     // Event listeners
@@ -219,7 +562,138 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Close cart on overlay click
     document.getElementById('cartOverlay').addEventListener('click', toggleCart);
+    
+    // Reservation button event listener
+    const reservationBtn = document.getElementById('reservationBtn');
+    if (reservationBtn) {
+        reservationBtn.addEventListener('click', () => {
+            openReservationModal();
+        });
+    }
+    
+    // Close Reservation Modal
+    const closeReservationModal = document.getElementById('closeReservationModal');
+    if (closeReservationModal) {
+        closeReservationModal.addEventListener('click', () => {
+            document.getElementById('reservationModal').classList.remove('active');
+            backToTableSelection();
+        });
+    }
+    
+    // Setup reservation form
+    setupReservationForm();
+    
+    // Setup capacity validation
+    setupCapacityValidation();
+    
+    // Setup top nav links
+    setupTopNavLinks();
+    
+    // Setup profile modal close button
+    const closeProfileModalBtn = document.getElementById('closeProfileModal');
+    if (closeProfileModalBtn) {
+        closeProfileModalBtn.addEventListener('click', closeProfileModal);
+    }
+    
+    // Setup profile form
+    setupProfileForm();
 });
+
+// Setup capacity validation on guests input
+function setupCapacityValidation() {
+    const guestsInput = document.getElementById('reservationGuests');
+    const capacityWarning = document.getElementById('capacityWarning');
+    
+    if (guestsInput && capacityWarning) {
+        guestsInput.addEventListener('input', function() {
+            const guests = parseInt(this.value) || 0;
+            
+            if (selectedTableCapacity && guests > selectedTableCapacity) {
+                capacityWarning.innerHTML = `<span style="font-weight: 600;">⚠️ Only ${selectedTableCapacity} seats available</span> for this table. Please reduce the number of guests.`;
+                capacityWarning.style.display = 'block';
+                this.setCustomValidity(`Maximum ${selectedTableCapacity} guests allowed for this table`);
+            } else {
+                capacityWarning.style.display = 'none';
+                this.setCustomValidity('');
+            }
+        });
+        
+        guestsInput.addEventListener('change', function() {
+            const guests = parseInt(this.value) || 0;
+            if (selectedTableCapacity && guests > selectedTableCapacity) {
+                this.value = selectedTableCapacity;
+                capacityWarning.style.display = 'none';
+            }
+        });
+    }
+}
+
+// Bottom Navigation Functions
+function scrollToSection(sectionId, element) {
+    // Update active state
+    document.querySelectorAll('.bottom-nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    if (element) {
+        element.classList.add('active');
+    }
+    
+    // Update top nav active state
+    document.querySelectorAll('.nav-menu .nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+    const topNavLink = document.querySelector(`.nav-menu .nav-link[href="#${sectionId}"]`);
+    if (topNavLink) {
+        topNavLink.classList.add('active');
+    }
+    
+    // Scroll to section
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function focusSearch(element) {
+    // Update active state
+    document.querySelectorAll('.bottom-nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    if (element) {
+        element.classList.add('active');
+    }
+    
+    // Focus search input
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.focus();
+        // Scroll to hero section if needed
+        const heroSection = document.getElementById('home');
+        if (heroSection) {
+            heroSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+}
+
+function openProfile(element, e) {
+    // Prevent event propagation
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    // Update active state
+    document.querySelectorAll('.bottom-nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    if (element) {
+        element.classList.add('active');
+    }
+    
+    // Show profile modal
+    openProfileModal();
+}
+
 
 // Get restaurant ID from URL or use default
 function getRestaurantId() {
@@ -399,15 +873,48 @@ function updateCartUI() {
     // Update cart count
     const cartCount = document.getElementById('cartCount');
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    cartCount.textContent = totalItems;
+    if (cartCount) {
+        cartCount.textContent = totalItems;
+    }
+    
+    // Update cart summary bar - ONLY show when cart has 1+ items, hide if 0 items
+    const cartSummaryBar = document.getElementById('cartSummaryBar');
+    const cartSummaryItems = document.getElementById('cartSummaryItems');
+    const cartSummaryTotal = document.getElementById('cartSummaryTotal');
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // STRICT CHECK: Only show if cart has 1 or more items
+    if (cartSummaryBar) {
+        // Check if cart has items (1 or more)
+        const hasItems = cart.length > 0 && totalItems > 0;
+        
+        if (hasItems) {
+            // Show yellow bar when cart has 1 or more items
+            if (cartSummaryItems && cartSummaryTotal) {
+                cartSummaryItems.textContent = `${totalItems} ${totalItems === 1 ? 'Item' : 'Items'}`;
+                cartSummaryTotal.textContent = `₹${total.toFixed(0)}`;
+            }
+            cartSummaryBar.style.display = 'block';
+            cartSummaryBar.style.visibility = 'visible';
+            cartSummaryBar.classList.add('show');
+            document.body.classList.add('has-cart');
+        } else {
+            // FORCE HIDE yellow bar when cart is empty (0 items)
+            cartSummaryBar.style.display = 'none';
+            cartSummaryBar.style.visibility = 'hidden';
+            cartSummaryBar.classList.remove('show');
+            document.body.classList.remove('has-cart');
+        }
+    }
     
     // Render cart items
     renderCartItems();
     
     // Update total
     const cartTotal = document.getElementById('cartTotal');
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    cartTotal.textContent = total.toFixed(2);
+    if (cartTotal) {
+        cartTotal.textContent = total.toFixed(2);
+    }
     
     // Check if table is in URL
     const tableFromURL = getTableFromURL();
@@ -416,14 +923,18 @@ function updateCartUI() {
     
     if (tableFromURL && cart.length > 0) {
         // Show Continue button instead of Checkout
-        continueSection.style.display = 'block';
-        checkoutBtn.style.display = 'none';
-        checkoutBtn.disabled = true;
+        if (continueSection) continueSection.style.display = 'block';
+        if (checkoutBtn) {
+            checkoutBtn.style.display = 'none';
+            checkoutBtn.disabled = true;
+        }
     } else {
         // Show regular checkout for website users
-        continueSection.style.display = 'none';
-        checkoutBtn.style.display = 'block';
-        checkoutBtn.disabled = cart.length === 0;
+        if (continueSection) continueSection.style.display = 'none';
+        if (checkoutBtn) {
+            checkoutBtn.style.display = 'block';
+            checkoutBtn.disabled = cart.length === 0;
+        }
     }
 }
 
@@ -526,9 +1037,45 @@ function removeFromCart(index) {
 function toggleCart() {
     const cartSidebar = document.getElementById('cartSidebar');
     const cartOverlay = document.getElementById('cartOverlay');
+    const bottomNav = document.querySelector('.bottom-nav');
+    const cartSummaryBar = document.getElementById('cartSummaryBar');
+    
+    const isOpen = cartSidebar.classList.contains('open');
     
     cartSidebar.classList.toggle('open');
     cartOverlay.classList.toggle('show');
+    
+    // Hide/show bottom nav and cart summary bar
+    if (isOpen) {
+        // Cart is closing, show bottom nav and cart summary bar (only if cart has items)
+        if (bottomNav) {
+            bottomNav.style.display = 'flex';
+        }
+        // Only show cart summary bar if cart has 1 or more items
+        const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        if (cartSummaryBar) {
+            if (cart.length > 0 && totalItems > 0) {
+                // Show cart bar when cart has 1+ items
+                cartSummaryBar.style.display = 'block';
+                cartSummaryBar.style.visibility = 'visible';
+                cartSummaryBar.classList.add('show');
+            } else {
+                // Hide cart bar when cart is empty (0 items)
+                cartSummaryBar.style.display = 'none';
+                cartSummaryBar.style.visibility = 'hidden';
+                cartSummaryBar.classList.remove('show');
+            }
+        }
+    } else {
+        // Cart is opening, hide bottom nav and cart summary bar
+        if (bottomNav) {
+            bottomNav.style.display = 'none';
+        }
+        if (cartSummaryBar) {
+            cartSummaryBar.style.display = 'none';
+            cartSummaryBar.classList.remove('show');
+        }
+    }
 }
 
 // Show cart notification
@@ -787,6 +1334,193 @@ function clearCustomerFromStorage() {
     localStorage.removeItem('customerDetails');
 }
 
+// Profile Modal Functions
+function openProfileModal() {
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.classList.add('active');
+        loadProfileData();
+        loadOrderHistory();
+    }
+}
+
+function closeProfileModal() {
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.classList.remove('active');
+        // Reset to display mode
+        cancelProfileEdit();
+    }
+}
+
+function closeProfileModalOnOverlay(event) {
+    if (event.target.id === 'profileModal') {
+        closeProfileModal();
+    }
+}
+
+// Load Profile Data from localStorage
+function loadProfileData() {
+    const savedCustomer = loadCustomerFromStorage();
+    
+    if (savedCustomer) {
+        document.getElementById('profileName').textContent = savedCustomer.name || '-';
+        document.getElementById('profilePhone').textContent = savedCustomer.phone || '-';
+        document.getElementById('profileEmail').textContent = savedCustomer.email || '-';
+        document.getElementById('profileAddress').textContent = savedCustomer.address || '-';
+        
+        // Populate edit form
+        document.getElementById('editName').value = savedCustomer.name || '';
+        document.getElementById('editPhone').value = savedCustomer.phone || '';
+        document.getElementById('editEmail').value = savedCustomer.email || '';
+        document.getElementById('editAddress').value = savedCustomer.address || '';
+    } else {
+        // No saved data
+        document.getElementById('profileName').textContent = 'Not set';
+        document.getElementById('profilePhone').textContent = 'Not set';
+        document.getElementById('profileEmail').textContent = 'Not set';
+        document.getElementById('profileAddress').textContent = 'Not set';
+        
+        // Show edit form by default if no data
+        toggleProfileEdit();
+    }
+}
+
+// Toggle Profile Edit Mode
+function toggleProfileEdit() {
+    const infoDisplay = document.getElementById('profileInfo');
+    const editForm = document.getElementById('profileEdit');
+    
+    if (infoDisplay && editForm) {
+        infoDisplay.style.display = infoDisplay.style.display === 'none' ? 'block' : 'none';
+        editForm.style.display = editForm.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// Cancel Profile Edit
+function cancelProfileEdit() {
+    const infoDisplay = document.getElementById('profileInfo');
+    const editForm = document.getElementById('profileEdit');
+    
+    if (infoDisplay && editForm) {
+        infoDisplay.style.display = 'block';
+        editForm.style.display = 'none';
+    }
+    
+    // Reload data to reset form
+    loadProfileData();
+}
+
+// Save Profile Changes
+function setupProfileForm() {
+    const profileForm = document.getElementById('profileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const profileData = {
+                name: document.getElementById('editName').value.trim(),
+                phone: document.getElementById('editPhone').value.trim(),
+                email: document.getElementById('editEmail').value.trim(),
+                address: document.getElementById('editAddress').value.trim()
+            };
+            
+            // Validate required fields
+            if (!profileData.name || !profileData.phone) {
+                showNotification('Name and phone number are required', 'error');
+                return;
+            }
+            
+            // Save to localStorage
+            saveCustomerToStorage(profileData);
+            
+            // Update display
+            loadProfileData();
+            
+            // Switch back to display mode
+            cancelProfileEdit();
+            
+            showNotification('Profile updated successfully!', 'success');
+        });
+    }
+}
+
+// Load Order History
+async function loadOrderHistory() {
+    const orderHistoryDiv = document.getElementById('orderHistory');
+    if (!orderHistoryDiv) return;
+    
+    const savedCustomer = loadCustomerFromStorage();
+    
+    if (!savedCustomer || !savedCustomer.phone) {
+        orderHistoryDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-light);">Please add your phone number to view order history</div>';
+        return;
+    }
+    
+    try {
+        const restaurantId = getRestaurantId();
+        const response = await fetch(`api.php?action=getCustomerOrders&restaurant_id=${encodeURIComponent(restaurantId)}&phone=${encodeURIComponent(savedCustomer.phone)}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            orderHistoryDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-light);">No orders found</div>';
+            return;
+        }
+        
+        const orders = Array.isArray(data) ? data : (data.orders || []);
+        
+        if (orders.length === 0) {
+            orderHistoryDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-light);">No orders yet. Start ordering to see your history here!</div>';
+            return;
+        }
+        
+        // Display orders
+        orderHistoryDiv.innerHTML = orders.map(order => {
+            const orderDate = new Date(order.created_at).toLocaleDateString('en-IN', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const statusColor = order.order_status === 'Completed' ? '#28a745' : 
+                               order.order_status === 'Pending' ? '#ffc107' : 
+                               order.order_status === 'Cancelled' ? '#dc3545' : '#6c757d';
+            
+            return `
+                <div class="order-history-item">
+                    <div class="order-history-header">
+                        <div>
+                            <strong>Order #${order.order_number || order.id}</strong>
+                            <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.25rem;">${orderDate}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 700; color: var(--primary-red); font-size: 1.1rem;">₹${parseFloat(order.total || 0).toFixed(2)}</div>
+                            <div style="font-size: 0.85rem; color: ${statusColor}; margin-top: 0.25rem; font-weight: 600;">${order.order_status || 'Pending'}</div>
+                        </div>
+                    </div>
+                    ${order.items && order.items.length > 0 ? `
+                        <div class="order-history-items" style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--light-gray);">
+                            ${order.items.slice(0, 3).map(item => `
+                                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                                    <span>${item.quantity}x ${item.item_name || item.name || 'Item'}</span>
+                                    <span>₹${parseFloat(item.total_price || (item.unit_price * item.quantity) || 0).toFixed(2)}</span>
+                                </div>
+                            `).join('')}
+                            ${order.items.length > 3 ? `<div style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.5rem;">+${order.items.length - 3} more items</div>` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error loading order history:', error);
+        orderHistoryDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-light);">Error loading order history</div>';
+    }
+}
+
 // Process Order
 async function processOrder(total) {
     const name = document.getElementById('customerName').value;
@@ -830,6 +1564,29 @@ async function processOrder(total) {
             cart = [];
             updateCartStorage();
             updateCartUI();
+            
+            // Ensure cart summary bar is hidden after checkout
+            const cartSummaryBar = document.getElementById('cartSummaryBar');
+            if (cartSummaryBar) {
+                cartSummaryBar.style.display = 'none';
+                cartSummaryBar.classList.remove('show');
+            }
+            document.body.classList.remove('has-cart');
+            
+            // Close cart sidebar if open
+            const cartSidebar = document.getElementById('cartSidebar');
+            const cartOverlay = document.getElementById('cartOverlay');
+            if (cartSidebar && cartSidebar.classList.contains('open')) {
+                cartSidebar.classList.remove('open');
+                if (cartOverlay) {
+                    cartOverlay.classList.remove('show');
+                }
+                // Show bottom nav again
+                const bottomNav = document.querySelector('.bottom-nav');
+                if (bottomNav) {
+                    bottomNav.style.display = 'flex';
+                }
+            }
         } else {
             showNotification('Failed to place order: ' + (data.message || 'Unknown error'), 'error');
         }

@@ -107,6 +107,148 @@ body {
     justify-content: center;
 }
 
+/* Bottom Navigation Bar (Mobile) */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    border-top: 2px solid var(--light-gray);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0.5rem 0;
+    z-index: 1000;
+    box-shadow: 0 -2px 10px var(--shadow);
+}
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    color: var(--text-light);
+    flex: 1;
+}
+
+.bottom-nav-item.active {
+    color: var(--primary-red);
+}
+
+.bottom-nav-item .material-symbols-rounded {
+    font-size: 1.5rem;
+}
+
+.bottom-nav-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Cart Summary Bar (Yellow Bar) */
+.cart-summary-bar {
+    position: fixed;
+    bottom: 70px;
+    left: 0;
+    right: 0;
+    background: var(--primary-yellow);
+    padding: 0.875rem 1rem;
+    z-index: 999;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    display: none !important; /* ALWAYS hidden by default */
+    visibility: hidden !important; /* Double hide */
+}
+
+.cart-summary-bar.show {
+    display: block !important;
+    visibility: visible !important;
+}
+
+.cart-summary-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cart-summary-icon {
+    font-size: 1.5rem;
+    color: var(--text-dark);
+}
+
+.cart-summary-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-dark);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.cart-summary-separator {
+    opacity: 0.5;
+}
+
+.cart-summary-btn {
+    background: var(--primary-yellow);
+    border: 2px solid var(--text-dark);
+    color: var(--text-dark);
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.cart-summary-btn:hover {
+    background: var(--text-dark);
+    color: var(--primary-yellow);
+}
+
+/* Hide bottom nav on desktop, show on mobile */
+@media (min-width: 769px) {
+    .bottom-nav {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .bottom-nav {
+        display: flex;
+    }
+    
+    /* Cart summary bar should only show when it has the 'show' class */
+    .cart-summary-bar.show {
+        display: block !important;
+    }
+    
+    /* Add padding to body to prevent content from being hidden behind bottom nav and cart bar */
+    body {
+        padding-bottom: 70px;
+    }
+    
+    /* Adjust padding when cart bar is visible */
+    body.has-cart {
+        padding-bottom: 130px;
+    }
+}
+
+@media (min-width: 769px) {
+    .cart-summary-bar {
+        display: none !important;
+    }
+}
+
 /* Banner Section - appears below hero */
 .banner-section {
     width: 100%;
@@ -676,6 +818,58 @@ body {
     font-size: 1.3rem;
 }
 
+/* Reservation Button */
+.reservation-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: #28a745;
+    color: var(--white);
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    border: none;
+}
+
+.reservation-btn:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.reservation-btn .material-symbols-rounded {
+    font-size: 1.3rem;
+}
+
+/* Mobile responsive for reservation button */
+@media (max-width: 768px) {
+    .reservation-btn,
+    .call-waiter-btn {
+        padding: 0.625rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .reservation-btn span:not(.material-symbols-rounded),
+    .call-waiter-btn span:not(.material-symbols-rounded) {
+        display: none;
+    }
+    
+    .reservation-btn .material-symbols-rounded,
+    .call-waiter-btn .material-symbols-rounded {
+        font-size: 1.5rem;
+    }
+    
+    .nav-container {
+        padding: 0.75rem 1rem;
+    }
+    
+    .nav-menu {
+        display: none;
+    }
+}
+
 /* Waiter Modal */
 .waiter-modal {
     display: none;
@@ -703,6 +897,112 @@ body {
     max-height: 80vh;
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Reservation Modal - Mobile Friendly */
+.reservation-modal-content {
+    max-width: 700px;
+}
+
+@media (max-width: 768px) {
+    .waiter-modal {
+        padding: 1rem;
+        align-items: flex-start;
+        padding-top: 2rem;
+    }
+    
+    .waiter-modal-content,
+    .reservation-modal-content {
+        max-width: 100%;
+        max-height: 90vh;
+        border-radius: 16px 16px 0 0;
+        margin-top: auto;
+    }
+    
+    .waiter-modal-header {
+        padding: 1rem 1.25rem;
+        position: sticky;
+        top: 0;
+        background: var(--white);
+        z-index: 10;
+    }
+    
+    .waiter-modal-header h2 {
+        font-size: 1.25rem;
+    }
+    
+    .waiter-modal-body {
+        padding: 1.25rem;
+    }
+    
+    .table-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 0.75rem;
+    }
+    
+    .table-option {
+        padding: 1rem;
+    }
+    
+    .table-number {
+        font-size: 1.5rem;
+    }
+    
+    /* Form inputs mobile friendly */
+    .waiter-modal-body input[type="date"],
+    .waiter-modal-body input[type="number"],
+    .waiter-modal-body input[type="text"],
+    .waiter-modal-body input[type="tel"],
+    .waiter-modal-body input[type="email"],
+    .waiter-modal-body select,
+    .waiter-modal-body textarea {
+        font-size: 16px !important; /* Prevents zoom on iOS */
+        padding: 0.875rem !important;
+    }
+    
+    /* Button mobile friendly */
+    .waiter-modal-body button[type="submit"],
+    .waiter-modal-body .btn-yes,
+    .waiter-modal-body .btn-no {
+        padding: 1rem !important;
+        font-size: 1rem !important;
+        min-height: 48px; /* Better touch target */
+    }
+    
+    /* Form groups mobile spacing */
+    .waiter-modal-body .form-group {
+        margin-bottom: 1.25rem !important;
+    }
+    
+    /* Capacity info mobile */
+    #tableCapacityInfo {
+        padding: 0.75rem !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* Warning messages mobile */
+    #availabilityWarning,
+    #capacityWarning {
+        padding: 0.75rem !important;
+        font-size: 0.85rem !important;
+        line-height: 1.4;
+    }
+    
+    /* Form button container mobile */
+    .waiter-modal-body form > div:last-child {
+        flex-direction: column;
+        gap: 0.75rem !important;
+    }
+    
+    .waiter-modal-body form > div:last-child button {
+        width: 100% !important;
+        min-width: unset !important;
+    }
+    
+    /* Label mobile */
+    .waiter-modal-body label {
+        font-size: 0.95rem !important;
+    }
 }
 
 .waiter-modal-header {
@@ -1144,5 +1444,119 @@ body {
 .btn-submit:hover {
   background: var(--dark-red);
   transform: translateY(-2px);
+}
+
+/* Profile Modal Styles */
+.profile-modal-content {
+  max-width: 700px;
+}
+
+.profile-section {
+  margin-bottom: 2rem;
+}
+
+.profile-info-display {
+  background: var(--light-gray);
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.profile-info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.profile-info-item:last-child {
+  border-bottom: none;
+}
+
+.profile-label {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.profile-value {
+  color: var(--text-light);
+  text-align: right;
+  flex: 1;
+  margin-left: 1rem;
+}
+
+.btn-edit-profile {
+  background: var(--primary-red);
+  color: var(--white);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-edit-profile:hover {
+  background: var(--dark-red);
+  transform: translateY(-2px);
+}
+
+.profile-edit-form {
+  background: var(--light-gray);
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.order-history-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.order-history-item {
+  background: var(--white);
+  border: 2px solid var(--light-gray);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s;
+}
+
+.order-history-item:hover {
+  border-color: var(--primary-red);
+  box-shadow: 0 4px 12px rgba(247, 0, 0, 0.1);
+}
+
+.order-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.order-history-items {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .profile-info-item {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .profile-value {
+    text-align: left;
+    margin-left: 0;
+  }
+  
+  .order-history-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .order-history-header > div:last-child {
+    text-align: left;
+  }
 }
 

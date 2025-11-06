@@ -81,6 +81,45 @@ try {
             echo json_encode($items);
             break;
             
+        case 'getCustomerOrders':
+            $phone = isset($_GET['phone']) ? $_GET['phone'] : '';
+            if (!$phone) {
+                echo json_encode(['error' => 'Phone number is required']);
+                break;
+            }
+            
+            // First, find customer by phone number
+            $customerStmt = $pdo->prepare("SELECT customer_name FROM customers WHERE phone = :phone AND restaurant_id = :rid LIMIT 1");
+            $customerStmt->execute([':phone' => $phone, ':rid' => $restaurantId]);
+            $customer = $customerStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$customer) {
+                // No customer found with this phone, return empty array
+                echo json_encode([]);
+                break;
+            }
+            
+            // Get orders for this customer name
+            $stmt = $pdo->prepare("SELECT o.*, 
+                                   (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) as item_count
+                                   FROM orders o 
+                                   WHERE o.customer_name = :customer_name AND o.restaurant_id = :rid 
+                                   ORDER BY o.created_at DESC LIMIT 20");
+            $stmt->execute([':customer_name' => $customer['customer_name'], ':rid' => $restaurantId]);
+            $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Get order items for each order
+            foreach ($orders as &$order) {
+                $itemsStmt = $pdo->prepare("SELECT item_name, quantity, unit_price, total_price 
+                                           FROM order_items 
+                                           WHERE order_id = :order_id");
+                $itemsStmt->execute([':order_id' => $order['id']]);
+                $order['items'] = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+            
+            echo json_encode($orders);
+            break;
+            
         default:
             echo json_encode(['error' => 'Invalid action']);
     }

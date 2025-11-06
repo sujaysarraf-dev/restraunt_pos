@@ -99,6 +99,10 @@
                 <a href="#about" class="nav-link">About</a>
             </div>
             <div style="display: flex; gap: 1rem; align-items: center;">
+                <div class="reservation-btn" id="reservationBtn">
+                    <span class="material-symbols-rounded">event</span>
+                    <span>Reservation</span>
+                </div>
                 <div class="call-waiter-btn" id="callWaiterBtn">
                     <span class="material-symbols-rounded">room_service</span>
                     <span>Call Waiter</span>
@@ -229,12 +233,216 @@
         </div>
     </div>
 
+    <!-- Reservation Modal -->
+    <div class="waiter-modal" id="reservationModal" onclick="closeReservationModalOnOverlay(event)">
+        <div class="waiter-modal-content reservation-modal-content" onclick="event.stopPropagation();">
+            <div class="waiter-modal-header">
+                <h2>Make a Reservation</h2>
+                <button class="close-modal" id="closeReservationModal">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <div class="waiter-modal-body">
+                <div id="reservationTableSelection" style="display: block;">
+                    <p style="margin-bottom: 1.5rem;">Please select your table:</p>
+                    <div class="table-grid" id="reservationTableGrid">
+                        <div class="loading">Loading tables...</div>
+                    </div>
+                </div>
+                <div id="reservationFormSection" style="display: none;">
+                    <form id="reservationForm">
+                        <input type="hidden" id="selectedTableId" name="tableId">
+                        <div id="tableCapacityInfo" style="display: none; padding: 0.75rem 1rem; background: #e7f5ff; border-radius: 8px; margin-bottom: 1.5rem; color: #0066cc; font-weight: 500; font-size: 0.95rem; text-align: center;">
+                            <!-- Table capacity info will be shown here -->
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Date:</label>
+                            <input type="date" id="reservationDate" name="reservationDate" required style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Time Slot:</label>
+                            <select id="reservationTimeSlot" name="timeSlot" required style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                                <option value="">Select Time</option>
+                                <option value="09:00">09:00 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="12:00">12:00 PM</option>
+                                <option value="13:00">01:00 PM</option>
+                                <option value="14:00">02:00 PM</option>
+                                <option value="15:00">03:00 PM</option>
+                                <option value="16:00">04:00 PM</option>
+                                <option value="17:00">05:00 PM</option>
+                                <option value="18:00">06:00 PM</option>
+                                <option value="19:00">07:00 PM</option>
+                                <option value="20:00">08:00 PM</option>
+                                <option value="21:00">09:00 PM</option>
+                                <option value="22:00">10:00 PM</option>
+                            </select>
+                            <div id="availabilityWarning" style="display: none; margin-top: 0.5rem; padding: 0.75rem; background: #f8d7da; border: 1px solid #dc3545; border-radius: 6px; color: #721c24; font-size: 0.9rem;">
+                                <!-- Availability warning will be shown here -->
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Number of Guests:</label>
+                            <input type="number" id="reservationGuests" name="noOfGuests" min="1" value="1" required style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                            <div id="capacityWarning" style="display: none; margin-top: 0.5rem; padding: 0.75rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; color: #856404; font-size: 0.9rem;">
+                                <!-- Capacity warning will be shown here -->
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Meal Type:</label>
+                            <select id="reservationMealType" name="mealType" required style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                                <option value="Breakfast">Breakfast</option>
+                                <option value="Lunch" selected>Lunch</option>
+                                <option value="Dinner">Dinner</option>
+                                <option value="Snacks">Snacks</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Your Name:</label>
+                            <input type="text" id="reservationName" name="customerName" required placeholder="Enter your name" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Phone Number:</label>
+                            <input type="tel" id="reservationPhone" name="phone" required placeholder="Enter your phone number" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Email Address:</label>
+                            <input type="email" id="reservationEmail" name="email" placeholder="Enter your email (optional)" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Special Requests:</label>
+                            <textarea id="reservationSpecialRequest" name="specialRequest" rows="3" placeholder="Any special requests or notes..." style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; resize: vertical; box-sizing: border-box;"></textarea>
+                        </div>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <button type="button" class="btn-no" onclick="backToTableSelection()" style="flex: 1; min-width: 120px; padding: 1rem; font-size: 1rem;">Back</button>
+                            <button type="submit" class="btn-yes" style="flex: 1; min-width: 120px; padding: 1rem; font-size: 1.1rem;">Confirm Reservation</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="waiter-modal" id="profileModal" onclick="closeProfileModalOnOverlay(event)">
+        <div class="waiter-modal-content profile-modal-content" onclick="event.stopPropagation();">
+            <div class="waiter-modal-header">
+                <h2>My Profile</h2>
+                <button class="close-modal" id="closeProfileModal">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <div class="waiter-modal-body">
+                <div id="profileContent">
+                    <!-- Profile Info Section -->
+                    <div class="profile-section">
+                        <h3 style="margin-bottom: 1rem; color: var(--primary-red); display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="material-symbols-rounded">person</span>
+                            Personal Information
+                        </h3>
+                        <div id="profileInfo" class="profile-info-display">
+                            <div class="profile-info-item">
+                                <span class="profile-label">Name:</span>
+                                <span class="profile-value" id="profileName">-</span>
+                            </div>
+                            <div class="profile-info-item">
+                                <span class="profile-label">Phone:</span>
+                                <span class="profile-value" id="profilePhone">-</span>
+                            </div>
+                            <div class="profile-info-item">
+                                <span class="profile-label">Email:</span>
+                                <span class="profile-value" id="profileEmail">-</span>
+                            </div>
+                            <div class="profile-info-item">
+                                <span class="profile-label">Address:</span>
+                                <span class="profile-value" id="profileAddress">-</span>
+                            </div>
+                            <button class="btn-edit-profile" onclick="toggleProfileEdit()" style="margin-top: 1rem; width: 100%;">
+                                <span class="material-symbols-rounded">edit</span>
+                                Edit Profile
+                            </button>
+                        </div>
+                        <div id="profileEdit" class="profile-edit-form" style="display: none;">
+                            <form id="profileForm">
+                                <div class="form-group" style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Full Name:</label>
+                                    <input type="text" id="editName" required placeholder="Enter your name" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Phone Number:</label>
+                                    <input type="tel" id="editPhone" required placeholder="Enter your phone number" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Email Address:</label>
+                                    <input type="email" id="editEmail" placeholder="Enter your email (optional)" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Address:</label>
+                                    <textarea id="editAddress" rows="3" placeholder="Enter your address (optional)" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; resize: vertical; box-sizing: border-box;"></textarea>
+                                </div>
+                                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                    <button type="button" class="btn-no" onclick="cancelProfileEdit()" style="flex: 1; min-width: 120px; padding: 1rem; font-size: 1rem;">Cancel</button>
+                                    <button type="submit" class="btn-yes" style="flex: 1; min-width: 120px; padding: 1rem; font-size: 1.1rem;">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Order History Section -->
+                    <div class="profile-section" style="margin-top: 2rem;">
+                        <h3 style="margin-bottom: 1rem; color: var(--primary-red); display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="material-symbols-rounded">history</span>
+                            Order History
+                        </h3>
+                        <div id="orderHistory" class="order-history-list">
+                            <div class="loading" style="text-align: center; padding: 2rem;">Loading order history...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <p>&copy; 2025 Restaurant. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- Cart Summary Bar (Yellow Bar Above Bottom Nav) -->
+    <div class="cart-summary-bar" id="cartSummaryBar" style="display: none;" onclick="toggleCart()">
+        <div class="cart-summary-content">
+            <span class="material-symbols-rounded cart-summary-icon" style="font-variation-settings: 'FILL' 0;">shopping_cart</span>
+            <div class="cart-summary-info">
+                <span id="cartSummaryItems">0 Items</span>
+                <span class="cart-summary-separator">|</span>
+                <span id="cartSummaryTotal">₹0</span>
+            </div>
+            <button class="cart-summary-btn">View Cart</button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar (Mobile) -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-item active" data-nav="home" onclick="scrollToSection('home', this)">
+            <span class="material-symbols-rounded">home</span>
+            <span class="bottom-nav-label">Home</span>
+        </div>
+        <div class="bottom-nav-item" data-nav="menu" onclick="scrollToSection('menu', this)">
+            <span class="material-symbols-rounded">restaurant_menu</span>
+            <span class="bottom-nav-label">Menu</span>
+        </div>
+        <div class="bottom-nav-item" data-nav="search" onclick="focusSearch(this)">
+            <span class="material-symbols-rounded">search</span>
+            <span class="bottom-nav-label">Search</span>
+        </div>
+        <div class="bottom-nav-item" data-nav="profile" onclick="openProfile(this, event)">
+            <span class="material-symbols-rounded">person</span>
+            <span class="bottom-nav-label">Profile</span>
+        </div>
+    </nav>
 
     <script src="script.js"></script>
 </body>
