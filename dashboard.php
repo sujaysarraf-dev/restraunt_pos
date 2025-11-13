@@ -753,152 +753,170 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
         <p>Manage your restaurant settings and preferences</p>
       </div>
       <div class="page-content">
-        <div class="settings-grid">
-          <!-- Restaurant Information -->
-          <div class="settings-section">
-            <h2 class="settings-section-title">
-              <span class="material-symbols-rounded">restaurant</span>
-              Restaurant Information
-            </h2>
-            <form id="restaurantSettingsForm">
-              <div class="form-row">
+        <div class="settings-container">
+          <!-- Restaurant Information Card -->
+          <div class="profile-card-modern">
+            <div class="profile-card-header">
+              <h3>
+                <span class="material-symbols-rounded">restaurant</span>
+                Restaurant Information
+              </h3>
+              <p class="card-description">Update your restaurant details and contact information</p>
+            </div>
+            <div class="profile-card-body">
+              <form id="restaurantSettingsForm">
                 <div class="form-group">
-                  <label for="restaurantNameSetting">Restaurant Name</label>
-                  <input type="text" id="restaurantNameSetting" placeholder="Enter restaurant name">
+                  <label for="restaurantNameSetting">
+                    <span class="material-symbols-rounded">store</span>
+                    Restaurant Name
+                  </label>
+                  <input type="text" id="restaurantNameSetting" placeholder="Enter restaurant name" required>
                 </div>
+                
                 <div class="form-group">
-                  <label for="restaurantIdSetting">Restaurant ID</label>
-                  <input type="text" id="restaurantIdSetting" placeholder="Enter restaurant ID" readonly>
+                  <label for="restaurantIdSetting">
+                    <span class="material-symbols-rounded">badge</span>
+                    Restaurant ID
+                  </label>
+                  <input type="text" id="restaurantIdSetting" placeholder="Restaurant ID" readonly style="background: #f3f4f6; cursor: not-allowed;">
                 </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="restaurantAddress">Address</label>
-                <textarea id="restaurantAddress" rows="3" placeholder="Enter restaurant address"></textarea>
-              </div>
-              
-              <div class="form-row">
+                
                 <div class="form-group">
-                  <label for="restaurantPhone">Phone Number</label>
-                  <input type="tel" id="restaurantPhone" placeholder="Enter phone number">
+                  <label for="restaurantAddress">
+                    <span class="material-symbols-rounded">location_on</span>
+                    Address
+                  </label>
+                  <textarea id="restaurantAddress" rows="3" placeholder="Enter restaurant address"></textarea>
                 </div>
-                <div class="form-group">
-                  <label for="restaurantEmail">Email</label>
-                  <input type="email" id="restaurantEmail" placeholder="Enter email">
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="restaurantPhone">
+                      <span class="material-symbols-rounded">phone</span>
+                      Phone Number
+                    </label>
+                    <input type="tel" id="restaurantPhone" placeholder="Enter phone number">
+                  </div>
+                  <div class="form-group">
+                    <label for="restaurantEmail">
+                      <span class="material-symbols-rounded">email</span>
+                      Email Address
+                    </label>
+                    <input type="email" id="restaurantEmail" placeholder="Enter email address">
+                  </div>
                 </div>
-              </div>
-              
-              <div class="form-actions">
-                <button type="button" class="btn btn-cancel">Cancel</button>
-                <button type="submit" class="btn btn-save">Save Changes</button>
-              </div>
-            </form>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-save">
+                    <span class="material-symbols-rounded">save</span>
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
           
-          <!-- System Settings -->
-          <div class="settings-section">
-            <h2 class="settings-section-title">
-              <span class="material-symbols-rounded">tune</span>
-              System Settings
-            </h2>
-            <form id="systemSettingsForm">
-              <div class="form-group">
-                <label for="currencySymbol">Currency Symbol</label>
-                <input type="text" id="currencySymbol" value="₹" maxlength="3">
-              </div>
-              
-              <div class="form-group">
-                <label for="timezone">Timezone</label>
-                <select id="timezone">
-                  <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                  <option value="UTC">UTC</option>
-                  <option value="America/New_York">America/New_York (EST)</option>
-                  <option value="Europe/London">Europe/London (GMT)</option>
-                </select>
-              </div>
-              
-              <div class="form-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="autoSync">
-                  <span class="checkmark"></span>
-                  Enable Auto Sync
-                </label>
-              </div>
-              
-              <div class="form-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="notifications">
-                  <span class="checkmark"></span>
-                  Enable Push Notifications
-                </label>
-              </div>
-              
-              <div class="form-actions">
-                <button type="button" class="btn btn-cancel">Cancel</button>
-                <button type="submit" class="btn btn-save">Save Changes</button>
-              </div>
-            </form>
+          <!-- Profile Settings Card -->
+          <div class="profile-card-modern">
+            <div class="profile-card-header">
+              <h3>
+                <span class="material-symbols-rounded">account_circle</span>
+                Profile Settings
+              </h3>
+              <p class="card-description">Manage your account username and email</p>
+            </div>
+            <div class="profile-card-body">
+              <form id="profileSettingsForm">
+                <div class="form-group">
+                  <label for="usernameSetting">
+                    <span class="material-symbols-rounded">badge</span>
+                    Username
+                  </label>
+                  <input type="text" id="usernameSetting" placeholder="Enter username" required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="profileEmailSetting">
+                    <span class="material-symbols-rounded">email</span>
+                    Email Address
+                  </label>
+                  <input type="email" id="profileEmailSetting" placeholder="Enter email address" required>
+                </div>
+                
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="emailNotifications">
+                    <span class="checkmark"></span>
+                    <span>Enable Email Notifications</span>
+                  </label>
+                </div>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-save">
+                    <span class="material-symbols-rounded">save</span>
+                    Update Profile
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
           
-          <!-- Security Settings -->
-          <div class="settings-section">
-            <h2 class="settings-section-title">
-              <span class="material-symbols-rounded">security</span>
-              Security Settings
-            </h2>
-            <form id="securitySettingsForm">
-              <div class="form-group">
-                <label for="currentPassword">Current Password</label>
-                <input type="password" id="currentPassword" placeholder="Enter current password">
-              </div>
-              
-              <div class="form-group">
-                <label for="newPassword">New Password</label>
-                <input type="password" id="newPassword" placeholder="Enter new password">
-              </div>
-              
-              <div class="form-group">
-                <label for="confirmPassword">Confirm Password</label>
-                <input type="password" id="confirmPassword" placeholder="Confirm new password">
-              </div>
-              
-              <div class="form-actions">
-                <button type="button" class="btn btn-cancel">Cancel</button>
-                <button type="submit" class="btn btn-save">Change Password</button>
-              </div>
-            </form>
-          </div>
-          
-          <!-- Profile Settings -->
-          <div class="settings-section">
-            <h2 class="settings-section-title">
-              <span class="material-symbols-rounded">account_circle</span>
-              Profile Settings
-            </h2>
-            <form id="profileSettingsForm">
-              <div class="form-group">
-                <label for="usernameSetting">Username</label>
-                <input type="text" id="usernameSetting" placeholder="Enter username">
-              </div>
-              
-              <div class="form-group">
-                <label for="displayName">Display Name</label>
-                <input type="text" id="displayName" placeholder="Enter display name">
-              </div>
-              
-              <div class="form-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="emailNotifications">
-                  <span class="checkmark"></span>
-                  Email Notifications
-                </label>
-              </div>
-              
-              <div class="form-actions">
-                <button type="button" class="btn btn-cancel">Cancel</button>
-                <button type="submit" class="btn btn-save">Update Profile</button>
-              </div>
-            </form>
+          <!-- System Settings Card -->
+          <div class="profile-card-modern">
+            <div class="profile-card-header">
+              <h3>
+                <span class="material-symbols-rounded">tune</span>
+                System Settings
+              </h3>
+              <p class="card-description">Configure system preferences and defaults</p>
+            </div>
+            <div class="profile-card-body">
+              <form id="systemSettingsForm">
+                <div class="form-group">
+                  <label for="currencySymbol">
+                    <span class="material-symbols-rounded">currency_exchange</span>
+                    Currency Symbol
+                  </label>
+                  <input type="text" id="currencySymbol" value="₹" maxlength="3" placeholder="Currency symbol">
+                </div>
+                
+                <div class="form-group">
+                  <label for="timezone">
+                    <span class="material-symbols-rounded">schedule</span>
+                    Timezone
+                  </label>
+                  <select id="timezone">
+                    <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                    <option value="UTC">UTC</option>
+                    <option value="America/New_York">America/New_York (EST)</option>
+                    <option value="Europe/London">Europe/London (GMT)</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="autoSync">
+                    <span class="checkmark"></span>
+                    <span>Enable Auto Sync</span>
+                  </label>
+                </div>
+                
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="notifications">
+                    <span class="checkmark"></span>
+                    <span>Enable Push Notifications</span>
+                  </label>
+                </div>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-save">
+                    <span class="material-symbols-rounded">save</span>
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -907,67 +925,123 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
     <!-- Profile Page -->
     <div id="profilePage" class="page">
       <div class="page-header">
-        <h1>Profile</h1>
-        <p>Manage your account information</p>
+        <h1>My Profile</h1>
+        <p>Manage your account information and preferences</p>
       </div>
       <div class="page-content">
         <div class="profile-container">
-          <div class="profile-header">
-            <div class="profile-avatar-large">
-              <span id="profileInitials">JD</span>
+          <!-- Profile Header Section -->
+          <div class="profile-header-card">
+            <div class="profile-avatar-section">
+              <div class="profile-avatar-large">
+                <span id="profileInitials">JD</span>
+              </div>
             </div>
-            <div class="profile-info">
-              <h2 id="profileName">John Doe</h2>
-              <p id="profileRole">Administrator</p>
-              <p id="profileEmail">john.doe@restaurant.com</p>
+            <div class="profile-info-section">
+              <h2 id="profileName">Loading...</h2>
+              <p id="profileRole" class="profile-role-badge">Administrator</p>
+              <div class="profile-details-list">
+                <div class="profile-detail-item">
+                  <span class="material-symbols-rounded">email</span>
+                  <span id="profileEmail">Loading...</span>
+                </div>
+                <div class="profile-detail-item">
+                  <span class="material-symbols-rounded">restaurant</span>
+                  <span>Restaurant ID: <strong id="profileRestaurantName">Loading...</strong></span>
+                </div>
+                <div class="profile-detail-item">
+                  <span class="material-symbols-rounded">calendar_today</span>
+                  <span>Member Since: <strong id="profileMemberSinceDate">Loading...</strong></span>
+                </div>
+              </div>
+            </div>
+            <div class="profile-actions-section">
+              <button class="btn btn-primary" id="editProfileBtn" onclick="toggleProfileEdit()">
+                <span class="material-symbols-rounded">edit</span>
+                Edit Profile
+              </button>
             </div>
           </div>
-          
-          <div class="profile-details">
-            <div class="profile-card">
-              <h3>Account Information</h3>
-              <div class="info-row">
-                <span class="info-label">Username:</span>
-                <span class="info-value" id="infoUsername">johndoe</span>
+
+          <!-- Profile Content Grid -->
+          <div class="profile-content-grid">
+            <!-- Edit Profile Form (Hidden by default) -->
+            <div class="profile-card-modern" id="editProfileCard" style="display: none;">
+              <div class="profile-card-header">
+                <h3>
+                  <span class="material-symbols-rounded">edit</span>
+                  Edit Profile Information
+                </h3>
               </div>
-              <div class="info-row">
-                <span class="info-label">Email:</span>
-                <span class="info-value" id="infoEmail">john.doe@restaurant.com</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Role:</span>
-                <span class="info-value" id="infoRole">Administrator</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Member Since:</span>
-                <span class="info-value" id="infoMemberSince">January 2024</span>
+              <div class="profile-card-body">
+                <form id="editProfileForm">
+                  <div class="form-group">
+                    <label for="editUsername">
+                      <span class="material-symbols-rounded">badge</span>
+                      Username
+                    </label>
+                    <input type="text" id="editUsername" placeholder="Enter username" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="editEmail">
+                      <span class="material-symbols-rounded">email</span>
+                      Email Address
+                    </label>
+                    <input type="email" id="editEmail" placeholder="Enter email address" required>
+                  </div>
+                  <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="cancelProfileEdit()">
+                      <span class="material-symbols-rounded">close</span>
+                      Cancel
+                    </button>
+                    <button type="submit" class="btn btn-save">
+                      <span class="material-symbols-rounded">save</span>
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
-            
-            <div class="profile-card">
-              <h3>Statistics</h3>
-              <div class="stat-grid">
-                <div class="stat-box">
-                  <div class="stat-icon">📊</div>
-                  <div class="stat-info">
-                    <div class="stat-label">Total Orders</div>
-                    <div class="stat-value">1,234</div>
+
+            <!-- Change Password Card -->
+            <div class="profile-card-modern">
+              <div class="profile-card-header">
+                <h3>
+                  <span class="material-symbols-rounded">lock</span>
+                  Change Password
+                </h3>
+              </div>
+              <div class="profile-card-body">
+                <form id="changePasswordForm">
+                  <div class="form-group">
+                    <label for="currentPassword">
+                      <span class="material-symbols-rounded">lock</span>
+                      Current Password
+                    </label>
+                    <input type="password" id="currentPassword" placeholder="Enter current password" required>
                   </div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-icon">✅</div>
-                  <div class="stat-info">
-                    <div class="stat-label">Completed</div>
-                    <div class="stat-value">1,189</div>
+                  <div class="form-group">
+                    <label for="newPassword">
+                      <span class="material-symbols-rounded">lock_reset</span>
+                      New Password
+                    </label>
+                    <input type="password" id="newPassword" placeholder="Enter new password (min. 6 characters)" required minlength="6">
+                    <small class="form-hint">Password must be at least 6 characters long</small>
                   </div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-icon">👥</div>
-                  <div class="stat-info">
-                    <div class="stat-label">Team Size</div>
-                    <div class="stat-value">12</div>
+                  <div class="form-group">
+                    <label for="confirmPassword">
+                      <span class="material-symbols-rounded">verified</span>
+                      Confirm New Password
+                    </label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm new password" required minlength="6">
                   </div>
-                </div>
+                  <div class="form-actions">
+                    <button type="submit" class="btn btn-save">
+                      <span class="material-symbols-rounded">lock</span>
+                      Change Password
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
@@ -1485,7 +1559,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
             <div class="form-group">
               <label for="basePrice">Price:</label>
               <div class="price-input">
-                <span class="currency-symbol">₹</span>
+                <span class="currency-symbol" id="currencySymbolDisplay">₹</span>
                 <input type="number" id="basePrice" name="basePrice" min="0" step="0.01" value="0.00" placeholder="0.00">
               </div>
             </div>
@@ -1741,11 +1815,81 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
       <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
         <button id="renewButton" onclick="initiateRenewal()" style="padding:12px 24px;background:#10b981;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;transition:opacity 0.2s;display:flex;align-items:center;gap:8px;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
           <span style="font-size:1.2rem;">💳</span>
-          Renew Now (₹999)
+          Renew Now (<span id="renewalAmount">₹999</span>)
         </button>
         <button onclick="document.getElementById('renewalModal').style.display='none';" style="padding:12px 24px;background:#6b7280;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Close</button>
       </div>
       <p style="color:#9ca3af;font-size:0.875rem;margin-top:1rem;margin-bottom:0;">1 month subscription - Auto-renewable</p>
+    </div>
+  </div>
+
+  <!-- POS Clear Cart Confirmation Modal -->
+  <div id="posClearCartModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:450px;">
+      <div class="modal-header">
+        <h2>
+          <span class="material-symbols-rounded" style="vertical-align:middle;margin-right:0.5rem;">delete_outline</span>
+          Clear Cart
+        </h2>
+        <span class="close" onclick="closePOSClearCartModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center;padding:1rem 0;">
+          <span class="material-symbols-rounded" style="font-size:4rem;color:#f59e0b;display:block;margin-bottom:1rem;">shopping_cart_off</span>
+          <p style="font-size:1.1rem;color:#1f2937;margin-bottom:0.5rem;font-weight:600;">Are you sure you want to clear the cart?</p>
+          <p style="color:#6b7280;font-size:0.9rem;">This will remove all items from your cart. This action cannot be undone.</p>
+        </div>
+        <div class="form-actions" style="justify-content:center;margin-top:1.5rem;">
+          <button type="button" class="btn btn-cancel" onclick="closePOSClearCartModal()">
+            <span class="material-symbols-rounded">close</span>
+            Cancel
+          </button>
+          <button type="button" class="btn btn-delete" id="posClearCartConfirmBtn">
+            <span class="material-symbols-rounded">delete</span>
+            Clear Cart
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POS Payment Method Selection Modal -->
+  <div id="posPaymentMethodModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-header">
+        <h2>
+          <span class="material-symbols-rounded" style="vertical-align:middle;margin-right:0.5rem;">payments</span>
+          Select Payment Method
+        </h2>
+        <span class="close" onclick="closePOSPaymentMethodModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <p style="color:#6b7280;margin-bottom:1.5rem;text-align:center;">Choose the payment method for this order:</p>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1.5rem;">
+          <button class="payment-method-btn" data-method="Cash" onclick="selectPaymentMethod('Cash')" style="padding:1.5rem;border:2px solid #e5e7eb;border-radius:12px;background:white;cursor:pointer;transition:all 0.2s;text-align:center;">
+            <span class="material-symbols-rounded" style="font-size:2.5rem;color:#10b981;display:block;margin-bottom:0.5rem;">money</span>
+            <div style="font-weight:600;color:#1f2937;">Cash</div>
+          </button>
+          <button class="payment-method-btn" data-method="Card" onclick="selectPaymentMethod('Card')" style="padding:1.5rem;border:2px solid #e5e7eb;border-radius:12px;background:white;cursor:pointer;transition:all 0.2s;text-align:center;">
+            <span class="material-symbols-rounded" style="font-size:2.5rem;color:#3b82f6;display:block;margin-bottom:0.5rem;">credit_card</span>
+            <div style="font-weight:600;color:#1f2937;">Card</div>
+          </button>
+          <button class="payment-method-btn" data-method="UPI" onclick="selectPaymentMethod('UPI')" style="padding:1.5rem;border:2px solid #e5e7eb;border-radius:12px;background:white;cursor:pointer;transition:all 0.2s;text-align:center;">
+            <span class="material-symbols-rounded" style="font-size:2.5rem;color:#8b5cf6;display:block;margin-bottom:0.5rem;">qr_code</span>
+            <div style="font-weight:600;color:#1f2937;">UPI</div>
+          </button>
+          <button class="payment-method-btn" data-method="Online" onclick="selectPaymentMethod('Online')" style="padding:1.5rem;border:2px solid #e5e7eb;border-radius:12px;background:white;cursor:pointer;transition:all 0.2s;text-align:center;">
+            <span class="material-symbols-rounded" style="font-size:2.5rem;color:#f59e0b;display:block;margin-bottom:0.5rem;">language</span>
+            <div style="font-weight:600;color:#1f2937;">Online</div>
+          </button>
+        </div>
+        <div class="form-actions" style="justify-content:center;">
+          <button type="button" class="btn btn-cancel" onclick="closePOSPaymentMethodModal()">
+            <span class="material-symbols-rounded">close</span>
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

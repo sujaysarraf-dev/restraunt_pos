@@ -209,6 +209,14 @@
             
             try {
                 const response = await fetch('db_migration.php');
+                
+                // Check if response is actually JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error('Expected JSON but got: ' + text.substring(0, 100));
+                }
+                
                 const data = await response.json();
                 
                 if (data.success) {

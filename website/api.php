@@ -3,15 +3,23 @@ session_start();
 require_once 'db_config.php';
 
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST');
+header('Access-Control-Allow-Headers: Content-Type');
 
-// Resolve restaurant id: explicit query param > session > error
+// Resolve restaurant id: explicit query param > session > default
 $restaurantId = isset($_GET['restaurant_id']) && $_GET['restaurant_id'] !== ''
     ? $_GET['restaurant_id']
-    : (isset($_SESSION['restaurant_id']) ? $_SESSION['restaurant_id'] : null);
+    : (isset($_SESSION['restaurant_id']) ? $_SESSION['restaurant_id'] : 'RES001');
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
 try {
+    // Check if database connection is available
+    if (!isset($pdo)) {
+        throw new Exception('Database connection not available');
+    }
+    
     if (!$restaurantId) {
         // No restaurant context available
         echo json_encode(['error' => 'RESTAURANT_NOT_SET']);
@@ -120,10 +128,16 @@ try {
             echo json_encode($orders);
             break;
             
-        default:
-            echo json_encode(['error' => 'Invalid action']);
+    default:
+        echo json_encode(['error' => 'Invalid action']);
     }
+} catch (PDOException $e) {
+    error_log("Database error in website/api.php: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Database error occurred. Please check your database connection.']);
 } catch (Exception $e) {
+    error_log("Error in website/api.php: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }
 ?>

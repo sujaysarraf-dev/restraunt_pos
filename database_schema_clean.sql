@@ -57,6 +57,12 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     restaurant_id VARCHAR(10) NOT NULL UNIQUE,
     restaurant_name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NULL,
+    phone VARCHAR(20) NULL,
+    address TEXT NULL,
+    currency_symbol VARCHAR(10) DEFAULT '₹',
+    timezone VARCHAR(50) DEFAULT 'Asia/Kolkata',
+    role VARCHAR(50) DEFAULT 'Administrator',
     is_active BOOLEAN DEFAULT TRUE,
     subscription_status ENUM('trial','active','expired','disabled') DEFAULT 'trial',
     trial_end_date DATE NULL,
@@ -68,7 +74,9 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_username (username),
     INDEX idx_restaurant_id (restaurant_id),
     INDEX idx_is_active (is_active),
-    INDEX idx_subscription_status (subscription_status)
+    INDEX idx_subscription_status (subscription_status),
+    INDEX idx_email (email),
+    INDEX idx_phone (phone)
 );
 
 -- Create areas table

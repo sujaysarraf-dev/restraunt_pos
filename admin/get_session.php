@@ -41,9 +41,43 @@ try {
     } else {
         $conn = getConnection();
     }
-    $stmt = $conn->prepare("SELECT subscription_status, trial_end_date, renewal_date, created_at FROM users WHERE id = :id LIMIT 1");
-    $stmt->execute([':id' => $_SESSION['user_id']]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    // Try to get all fields, handle missing columns gracefully
+    try {
+        $stmt = $conn->prepare("SELECT subscription_status, trial_end_date, renewal_date, created_at, email, role, phone, address, currency_symbol, timezone FROM users WHERE id = :id LIMIT 1");
+        $stmt->execute([':id' => $_SESSION['user_id']]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    } catch (PDOException $e) {
+        // If some columns don't exist, try without them
+        if (strpos($e->getMessage(), 'currency_symbol') !== false || strpos($e->getMessage(), 'timezone') !== false || strpos($e->getMessage(), 'phone') !== false || strpos($e->getMessage(), 'address') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
+            try {
+                $stmt = $conn->prepare("SELECT subscription_status, trial_end_date, renewal_date, created_at, email, role, phone, address FROM users WHERE id = :id LIMIT 1");
+                $stmt->execute([':id' => $_SESSION['user_id']]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            } catch (PDOException $e2) {
+                // If phone/address columns don't exist, try without them
+                if (strpos($e2->getMessage(), 'phone') !== false || strpos($e2->getMessage(), 'address') !== false || strpos($e2->getMessage(), 'Unknown column') !== false) {
+                    try {
+                        $stmt = $conn->prepare("SELECT subscription_status, trial_end_date, renewal_date, created_at, email, role FROM users WHERE id = :id LIMIT 1");
+                        $stmt->execute([':id' => $_SESSION['user_id']]);
+                        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+                    } catch (PDOException $e3) {
+                        // If email/role columns don't exist either
+                        if (strpos($e3->getMessage(), 'email') !== false || strpos($e3->getMessage(), 'role') !== false || strpos($e3->getMessage(), 'Unknown column') !== false) {
+                            $stmt = $conn->prepare("SELECT subscription_status, trial_end_date, renewal_date, created_at FROM users WHERE id = :id LIMIT 1");
+                            $stmt->execute([':id' => $_SESSION['user_id']]);
+                            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+                        } else {
+                            throw $e3;
+                        }
+                    }
+                } else {
+                    throw $e2;
+                }
+            }
+        } else {
+            throw $e;
+        }
+    }
     
     echo json_encode([
         'success' => true,
@@ -52,6 +86,12 @@ try {
             'username' => $_SESSION['username'],
             'restaurant_id' => $_SESSION['restaurant_id'],
             'restaurant_name' => $_SESSION['restaurant_name'],
+            'email' => $row['email'] ?? null,
+            'phone' => $row['phone'] ?? null,
+            'address' => $row['address'] ?? null,
+            'currency_symbol' => $row['currency_symbol'] ?? null,
+            'timezone' => $row['timezone'] ?? null,
+            'role' => $row['role'] ?? 'Administrator',
             'subscription_status' => $row['subscription_status'] ?? null,
             'trial_end_date' => $row['trial_end_date'] ?? null,
             'renewal_date' => $row['renewal_date'] ?? null,

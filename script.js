@@ -79,8 +79,57 @@ if (menuToggler && sidebar) {
   });
 }
 
+// Global currency symbol - will be loaded from database
+let globalCurrencySymbol = '₹';
+
+// Get currency symbol from database/session
+async function loadCurrencySymbol() {
+  try {
+    const response = await fetch('admin/get_session.php');
+    const result = await response.json();
+    
+    if (result.success && result.data.currency_symbol) {
+      globalCurrencySymbol = result.data.currency_symbol;
+      // Also save to localStorage as backup
+      localStorage.setItem('system_currency', globalCurrencySymbol);
+    } else {
+      // Fallback to localStorage
+      globalCurrencySymbol = localStorage.getItem('system_currency') || '₹';
+    }
+  } catch (error) {
+    console.error('Error loading currency symbol:', error);
+    // Fallback to localStorage
+    globalCurrencySymbol = localStorage.getItem('system_currency') || '₹';
+  }
+}
+
+// Format currency helper function
+function formatCurrency(amount) {
+  const symbol = globalCurrencySymbol || '₹';
+  return `${symbol}${parseFloat(amount).toFixed(2)}`;
+}
+
+// Format currency with locale formatting
+function formatCurrencyLocale(amount) {
+  const symbol = globalCurrencySymbol || '₹';
+  return symbol + parseFloat(amount).toLocaleString('en-IN', {maximumFractionDigits: 2});
+}
+
 // Submenu toggle functionality
 document.addEventListener("DOMContentLoaded", () => {
+  // Load currency symbol on page load
+  loadCurrencySymbol().then(() => {
+    // Update currency symbol display in menu item form
+    const currencyDisplay = document.getElementById('currencySymbolDisplay');
+    if (currencyDisplay) {
+      currencyDisplay.textContent = globalCurrencySymbol;
+    }
+    // Update renewal amount
+    const renewalAmount = document.getElementById('renewalAmount');
+    if (renewalAmount) {
+      renewalAmount.textContent = formatCurrency(999);
+    }
+  });
   const submenuToggles = document.querySelectorAll(".submenu-toggle");
   
   submenuToggles.forEach(toggle => {
@@ -275,6 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Load profile data if it's the profile page
       if (pageId === "profilePage") {
         loadProfileData();
+        setupPasswordFormHandler();
       }
       
       // Load payments if it's the payments page
@@ -549,7 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.success) {
         console.log('Stats data received:', data.stats);
         // Update main stats
-        document.getElementById('todayRevenue').textContent = '₹' + data.stats.todayRevenue.toLocaleString('en-IN', {maximumFractionDigits: 2});
+        document.getElementById('todayRevenue').textContent = formatCurrencyLocale(data.stats.todayRevenue);
         document.getElementById('todayOrders').textContent = data.stats.todayOrders;
         document.getElementById('activeKOT').textContent = data.stats.activeKOT;
         document.getElementById('totalCustomers').textContent = data.stats.totalCustomers;
@@ -578,7 +628,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   </div>
                 </div>
                 <div style="text-align: right;">
-                  <div style="color: #48bb78; font-weight: 800; font-size: 1.3rem;">₹${parseFloat(order.total).toFixed(2)}</div>
+                  <div style="color: #48bb78; font-weight: 800; font-size: 1.3rem;">${formatCurrency(order.total)}</div>
                   <div style="font-size: 0.8rem; color: #999;">${new Date(order.created_at).toLocaleTimeString()}</div>
                 </div>
               </li>
@@ -1137,7 +1187,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="item-meta">
             <span class="item-category">${escapeHtml(item.item_category || 'Uncategorized')}</span>
             <span class="item-type ${item.item_type.toLowerCase().replace(' ', '-')}">${item.item_type}</span>
-            <span class="item-price">₹${parseFloat(item.base_price).toFixed(2)}</span>
+            <span class="item-price">${formatCurrency(item.base_price)}</span>
           </div>
           <div class="item-info">
             <span class="menu-name">${escapeHtml(item.menu_name)}</span>
@@ -1342,7 +1392,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
       } catch (error) {
         console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        showNotification("Network error. Please check your connection and try again.", "error");
       } finally {
         // Re-enable save button
         areaSaveBtn.disabled = false;
@@ -1431,7 +1481,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch(error => {
         console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        showNotification("Network error. Please check your connection and try again.", "error");
       });
     }
   };
@@ -1596,7 +1646,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
       } catch (error) {
         console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        showNotification("Network error. Please check your connection and try again.", "error");
       } finally {
         // Re-enable save button
         tableSaveBtn.disabled = false;
@@ -1891,7 +1941,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch(error => {
         console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        showNotification("Network error. Please check your connection and try again.", "error");
       });
     }
   };
@@ -2094,7 +2144,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
       } catch (error) {
         console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        showNotification("Network error. Please check your connection and try again.", "error");
       } finally {
         // Re-enable save button
         reservationSaveBtn.disabled = false;
@@ -2265,7 +2315,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch(error => {
         console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        showNotification("Network error. Please check your connection and try again.", "error");
       });
     }
   };
@@ -2314,7 +2364,7 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .catch(error => {
               console.error("Error:", error);
-              showMessage("Network error. Please check your connection and try again.", "error");
+              showNotification("Network error. Please check your connection and try again.", "error");
             });
           }
         }
@@ -2385,7 +2435,7 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .catch(error => {
               console.error("Error:", error);
-              showMessage("Network error. Please check your connection and try again.", "error");
+              showNotification("Network error. Please check your connection and try again.", "error");
             });
           }
         }
@@ -2479,7 +2529,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch(error => {
         console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        showNotification("Network error. Please check your connection and try again.", "error");
       });
     }
   };
@@ -2516,7 +2566,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       } catch (error) {
         console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        showNotification("Network error. Please check your connection and try again.", "error");
       }
     });
   }
@@ -2555,7 +2605,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const initials = (name) => name.split(' ').map(w => w.charAt(0).toUpperCase()).join('').substring(0, 2);
     
     customerList.innerHTML = customers.map(customer => {
-      const totalSpent = customer.total_spent ? `₹${parseFloat(customer.total_spent).toFixed(2)}` : '₹0.00';
+      const totalSpent = customer.total_spent ? formatCurrency(customer.total_spent) : formatCurrency(0);
       
       return `
         <tr data-customer-id="${customer.id}">
@@ -2820,7 +2870,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <tr style="border-bottom: 1px solid #eee;">
                           <td style="padding: 0.75rem;">${item.item_name}</td>
                           <td style="padding: 0.75rem; text-align: center;">${item.quantity}</td>
-                          <td style="padding: 0.75rem; text-align: right;">₹${parseFloat(item.total_price).toFixed(2)}</td>
+                          <td style="padding: 0.75rem; text-align: right;">${formatCurrency(item.total_price)}</td>
                         </tr>
                       `).join('')}
                     </tbody>
@@ -2829,7 +2879,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; padding-top: 1rem; border-top: 2px solid #ddd;">
                   <span>Total:</span>
-                  <span>₹${parseFloat(order.total).toFixed(2)}</span>
+                  <span>${formatCurrency(order.total)}</span>
                 </div>
               </div>
             </div>
@@ -2887,7 +2937,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <tr style="border-bottom: 1px solid #eee;">
                           <td style="padding: 0.75rem;">${item.item_name}</td>
                           <td style="padding: 0.75rem; text-align: center;">${item.quantity}</td>
-                          <td style="padding: 0.75rem; text-align: right;">₹${parseFloat(item.total_price).toFixed(2)}</td>
+                          <td style="padding: 0.75rem; text-align: right;">${formatCurrency(item.total_price)}</td>
                         </tr>
                       `).join('')}
                     </tbody>
@@ -2896,7 +2946,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; padding-top: 1rem; border-top: 2px solid #ddd;">
                   <span>Total:</span>
-                  <span>₹${parseFloat(order.total).toFixed(2)}</span>
+                  <span>${formatCurrency(order.total)}</span>
                 </div>
               </div>
             </div>
@@ -3131,7 +3181,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch(error => {
         console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        showNotification("Network error. Please check your connection and try again.", "error");
       });
     }
   };
@@ -3187,7 +3237,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="item-name">${escapeHtml(item.item_name_en)}</div>
         <div class="item-category">${escapeHtml(item.item_category || '')}</div>
-        <div class="item-price">₹${parseFloat(item.base_price).toFixed(2)}</div>
+        <div class="item-price">${formatCurrency(item.base_price)}</div>
       </div>
     `).join('');
   }
@@ -3303,14 +3353,14 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="cart-item">
           <div class="cart-item-info">
             <div class="cart-item-name">${escapeHtml(item.name)}</div>
-            <div class="cart-item-price">₹${parseFloat(item.price).toFixed(2)} each</div>
+            <div class="cart-item-price">${formatCurrency(item.price)} each</div>
           </div>
           <div class="cart-item-controls">
             <button class="cart-qty-btn" onclick="updatePOSCartQty(${item.id}, -1)">-</button>
             <span class="cart-qty-value">${item.quantity}</span>
             <button class="cart-qty-btn" onclick="updatePOSCartQty(${item.id}, 1)">+</button>
           </div>
-          <div class="cart-item-total">₹${(parseFloat(item.price) * item.quantity).toFixed(2)}</div>
+          <div class="cart-item-total">${formatCurrency(parseFloat(item.price) * item.quantity)}</div>
         </div>
       `).join('');
     }
@@ -3341,22 +3391,63 @@ document.addEventListener("DOMContentLoaded", () => {
     const tax = cgst + sgst; // GST total 5%
     const total = subtotal + tax;
     
-    document.getElementById("cartSubtotal").textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById("cartSubtotal").textContent = formatCurrency(subtotal);
     const cgstEl = document.getElementById("cartCGST");
     const sgstEl = document.getElementById("cartSGST");
-    if (cgstEl) cgstEl.textContent = `₹${cgst.toFixed(2)}`;
-    if (sgstEl) sgstEl.textContent = `₹${sgst.toFixed(2)}`;
-    document.getElementById("cartTax").textContent = `₹${tax.toFixed(2)}`;
-    document.getElementById("cartTotal").textContent = `₹${total.toFixed(2)}`;
+    if (cgstEl) cgstEl.textContent = formatCurrency(cgst);
+    if (sgstEl) sgstEl.textContent = formatCurrency(sgst);
+    document.getElementById("cartTax").textContent = formatCurrency(tax);
+    document.getElementById("cartTotal").textContent = formatCurrency(total);
   }
   
   // Clear cart
   const clearCartBtn = document.getElementById("clearCartBtn");
   if (clearCartBtn) {
     clearCartBtn.addEventListener("click", () => {
-      if (posCart.length > 0 && confirm("Are you sure you want to clear the cart?")) {
-        posCart = [];
-        updatePOSCart();
+      if (posCart.length > 0) {
+        openPOSClearCartModal();
+      } else {
+        showNotification('Cart is already empty', 'error');
+      }
+    });
+  }
+  
+  // POS Clear Cart Modal Functions
+  function openPOSClearCartModal() {
+    const modal = document.getElementById('posClearCartModal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
+  
+  function closePOSClearCartModal() {
+    const modal = document.getElementById('posClearCartModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+  
+  // Make functions globally available
+  window.openPOSClearCartModal = openPOSClearCartModal;
+  window.closePOSClearCartModal = closePOSClearCartModal;
+  
+  // Handle clear cart confirmation
+  const posClearCartConfirmBtn = document.getElementById('posClearCartConfirmBtn');
+  if (posClearCartConfirmBtn) {
+    posClearCartConfirmBtn.addEventListener('click', () => {
+      posCart = [];
+      updatePOSCart();
+      closePOSClearCartModal();
+      showNotification('Cart cleared successfully', 'success');
+    });
+  }
+  
+  // Close modal when clicking outside
+  const posClearCartModal = document.getElementById('posClearCartModal');
+  if (posClearCartModal) {
+    posClearCartModal.addEventListener('click', (e) => {
+      if (e.target === posClearCartModal) {
+        closePOSClearCartModal();
       }
     });
   }
@@ -3366,7 +3457,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (holdOrderBtn) {
     holdOrderBtn.addEventListener("click", async () => {
       if (posCart.length === 0) {
-        showMessage("Cart is empty", "error");
+        showNotification("Cart is empty", "error");
         return;
       }
       
@@ -3400,11 +3491,11 @@ document.addEventListener("DOMContentLoaded", () => {
           updatePOSCart();
           document.getElementById("selectPosTable").value = "";
         } else {
-          showMessage(result.message || "Error holding order.", "error");
+          showNotification(result.message || "Error holding order.", "error");
         }
       } catch (error) {
         console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        showNotification("Network error. Please check your connection and try again.", "error");
       }
     });
   }
@@ -3414,7 +3505,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (processPaymentBtn) {
     processPaymentBtn.addEventListener("click", async () => {
       if (posCart.length === 0) {
-        showMessage("Cart is empty", "error");
+        showNotification("Cart is empty", "error");
         return;
       }
       
@@ -3423,16 +3514,72 @@ document.addEventListener("DOMContentLoaded", () => {
       const total = subtotal + tax;
       const selectedTable = document.getElementById("selectPosTable").value;
       
-      // Show payment method selection
-      const paymentMethod = prompt("Select payment method:\n1. Cash\n2. Card\n3. UPI\n4. Online\n\nEnter number:", "1");
+      // Store payment data for later use
+      window.pendingPaymentData = {
+        subtotal: subtotal,
+        tax: tax,
+        total: total,
+        selectedTable: selectedTable
+      };
       
-      let paymentMethodStr = 'Cash';
-      switch(paymentMethod) {
-        case '2': paymentMethodStr = 'Card'; break;
-        case '3': paymentMethodStr = 'UPI'; break;
-        case '4': paymentMethodStr = 'Online'; break;
-        default: paymentMethodStr = 'Cash';
+      // Show payment method selection modal
+      openPOSPaymentMethodModal();
+    });
+  }
+  
+  // POS Payment Method Modal Functions
+  let selectedPaymentMethod = null;
+  
+  function openPOSPaymentMethodModal() {
+    const modal = document.getElementById('posPaymentMethodModal');
+    if (modal) {
+      modal.style.display = 'flex';
+      selectedPaymentMethod = null;
+      // Reset button styles
+      document.querySelectorAll('.payment-method-btn').forEach(btn => {
+        btn.classList.remove('selected');
+      });
+    }
+  }
+  
+  function closePOSPaymentMethodModal() {
+    const modal = document.getElementById('posPaymentMethodModal');
+    if (modal) {
+      modal.style.display = 'none';
+      selectedPaymentMethod = null;
+    }
+  }
+  
+  function selectPaymentMethod(method) {
+    selectedPaymentMethod = method;
+    // Update button styles
+    document.querySelectorAll('.payment-method-btn').forEach(btn => {
+      btn.classList.remove('selected');
+      if (btn.dataset.method === method) {
+        btn.classList.add('selected');
       }
+    });
+    
+    // Process payment after short delay to show selection
+    setTimeout(() => {
+      processPOSPaymentWithMethod(method);
+    }, 300);
+  }
+  
+  // Make functions globally available
+  window.openPOSPaymentMethodModal = openPOSPaymentMethodModal;
+  window.closePOSPaymentMethodModal = closePOSPaymentMethodModal;
+  window.selectPaymentMethod = selectPaymentMethod;
+  
+  async function processPOSPaymentWithMethod(paymentMethodStr) {
+    if (!window.pendingPaymentData) {
+      showNotification('Payment data not found. Please try again.', 'error');
+      closePOSPaymentMethodModal();
+      return;
+    }
+    
+    const { subtotal, tax, total, selectedTable } = window.pendingPaymentData;
+    closePOSPaymentMethodModal();
       
       const formData = new URLSearchParams();
       formData.append('action', 'create_kot');
@@ -3461,7 +3608,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const msg = result.kot_number
             ? (result.message + " - KOT #" + result.kot_number + " - Order #" + result.order_number)
             : (result.message + " - Order #" + result.order_number);
-          showMessage(msg, "success");
+          showNotification(msg, "success");
           posCart = [];
           updatePOSCart();
           document.getElementById("selectPosTable").value = "";
@@ -3471,11 +3618,30 @@ document.addEventListener("DOMContentLoaded", () => {
             loadOrders();
           }
         } else {
-          showMessage(result.message || "Error creating KOT.", "error");
+          showNotification(result.message || "Error creating KOT.", "error");
         }
       } catch (error) {
         console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        showNotification("Network error. Please check your connection and try again.", "error");
+      } finally {
+        // Re-enable button
+        const processBtn = document.getElementById('processPaymentBtn');
+        if (processBtn) {
+          processBtn.disabled = false;
+          processBtn.innerHTML = '<span class="material-symbols-rounded">payment</span> Process Payment';
+        }
+        // Clear pending payment data
+        window.pendingPaymentData = null;
+      }
+    }
+  
+  // Close payment method modal when clicking outside
+  const posPaymentMethodModal = document.getElementById('posPaymentMethodModal');
+  if (posPaymentMethodModal) {
+    posPaymentMethodModal.addEventListener('click', (e) => {
+      if (e.target === posPaymentMethodModal) {
+        closePOSPaymentMethodModal();
+        window.pendingPaymentData = null;
       }
     });
   }
@@ -3571,7 +3737,7 @@ async function initiateRenewal() {
       renewButton.innerHTML = '<span style="font-size:1.2rem;">⏳</span> Processing...';
     }
     
-    const amount = 999; // ₹999 for monthly subscription
+    const amount = 999; // 999 for monthly subscription
     
     const formData = new URLSearchParams();
     formData.append('amount', amount);
@@ -3598,7 +3764,7 @@ async function initiateRenewal() {
       showNotification(result.message || 'Error initiating payment. Please try again.', 'error');
       if (renewButton) {
         renewButton.disabled = false;
-        renewButton.innerHTML = '<span style="font-size:1.2rem;">💳</span> Renew Now (₹999)';
+        renewButton.innerHTML = '<span style="font-size:1.2rem;">💳</span> Renew Now (' + formatCurrency(999) + ')';
       }
     }
   } catch (error) {
@@ -3915,7 +4081,7 @@ function displayOrders(orders) {
         <p><strong>Table:</strong> ${order.table_name || 'Walk-in'}</p>
         <p><strong>Customer:</strong> ${order.customer_name || 'N/A'}</p>
         <p><strong>Time:</strong> ${new Date(order.created_at).toLocaleString()}</p>
-        <p><strong>Total:</strong> ₹${order.total}</p>
+        <p><strong>Total:</strong> ${formatCurrency(order.total)}</p>
       </div>
       <div class="order-items">
         <h4>Items:</h4>
@@ -3923,7 +4089,7 @@ function displayOrders(orders) {
           <div class="order-item">
             <span class="item-name">${item.item_name}</span>
             <span class="item-qty">x${item.quantity}</span>
-            <span class="item-price">₹${item.total_price}</span>
+            <span class="item-price">${formatCurrency(item.total_price)}</span>
           </div>
         `).join('')}
       </div>
@@ -4259,6 +4425,7 @@ function filterStaff() {
 // Load Profile Data
 async function loadProfileData() {
   try {
+    // Load user session data
     const response = await fetch('admin/get_session.php');
     const result = await response.json();
     
@@ -4267,20 +4434,197 @@ async function loadProfileData() {
       const username = user.username || 'User';
       const initials = username.split(' ').map(w => w.charAt(0).toUpperCase()).join('').substring(0, 2);
       
+      // Update profile header
       document.getElementById('profileInitials').textContent = initials;
       document.getElementById('profileName').textContent = username;
       document.getElementById('profileRole').textContent = user.role || 'Administrator';
       document.getElementById('profileEmail').textContent = user.email || 'No email';
+      document.getElementById('profileRestaurantName').textContent = user.restaurant_id || 'N/A';
       
-      document.getElementById('infoUsername').textContent = username;
-      document.getElementById('infoEmail').textContent = user.email || 'N/A';
-      document.getElementById('infoRole').textContent = user.role || 'N/A';
       const joinDate = new Date(user.created_at || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-      document.getElementById('infoMemberSince').textContent = joinDate;
+      document.getElementById('profileMemberSinceDate').textContent = joinDate;
+      
+      // Set form values
+      document.getElementById('editUsername').value = username;
+      document.getElementById('editEmail').value = user.email || '';
     }
   } catch (error) {
     console.error('Error loading profile data:', error);
+    showNotification('Error loading profile data', 'error');
   }
+}
+
+// Toggle Profile Edit
+function toggleProfileEdit() {
+  const editCard = document.getElementById('editProfileCard');
+  const editBtn = document.getElementById('editProfileBtn');
+  
+  if (editCard.style.display === 'none') {
+    editCard.style.display = 'block';
+    editBtn.textContent = 'Cancel Edit';
+    editBtn.onclick = cancelProfileEdit;
+    editBtn.classList.remove('btn-primary');
+    editBtn.classList.add('btn-cancel');
+  } else {
+    cancelProfileEdit();
+  }
+}
+
+// Cancel Profile Edit
+function cancelProfileEdit() {
+  const editCard = document.getElementById('editProfileCard');
+  const editBtn = document.getElementById('editProfileBtn');
+  
+  editCard.style.display = 'none';
+  editBtn.innerHTML = '<span class="material-symbols-rounded">edit</span> Edit Profile';
+  editBtn.onclick = toggleProfileEdit;
+  editBtn.classList.remove('btn-cancel');
+  editBtn.classList.add('btn-primary');
+  
+  // Reset form values
+  loadProfileData();
+}
+
+// Handle Edit Profile Form Submission
+document.addEventListener('DOMContentLoaded', function() {
+  const editProfileForm = document.getElementById('editProfileForm');
+  if (editProfileForm) {
+    editProfileForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const username = document.getElementById('editUsername').value.trim();
+      const email = document.getElementById('editEmail').value.trim();
+      
+      if (!username || !email) {
+        showNotification('Please fill in all fields', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('admin/auth.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=updateProfile&username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Profile updated successfully', 'success');
+          cancelProfileEdit();
+          loadProfileData();
+        } else {
+          showNotification(result.message || 'Error updating profile', 'error');
+        }
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        showNotification('Error updating profile', 'error');
+      }
+    });
+  }
+  
+});
+
+// Setup Password Form Handler
+function setupPasswordFormHandler() {
+  const changePasswordForm = document.getElementById('changePasswordForm');
+  if (!changePasswordForm) {
+    return;
+  }
+  
+  // Check if handler already attached
+  if (changePasswordForm.dataset.handlerAttached === 'true') {
+    return;
+  }
+  
+  // Mark as attached
+  changePasswordForm.dataset.handlerAttached = 'true';
+  
+  // Add listener
+  changePasswordForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Get inputs from the form
+    const currentPasswordInput = changePasswordForm.querySelector('#currentPassword');
+    const newPasswordInput = changePasswordForm.querySelector('#newPassword');
+    const confirmPasswordInput = changePasswordForm.querySelector('#confirmPassword');
+    
+    if (!currentPasswordInput || !newPasswordInput || !confirmPasswordInput) {
+      showNotification('Form fields not found. Please refresh the page.', 'error');
+      return;
+    }
+    
+    const currentPassword = currentPasswordInput.value.trim();
+    const newPassword = newPasswordInput.value.trim();
+    const confirmPassword = confirmPasswordInput.value.trim();
+    
+    // Validate all fields are filled
+    if (currentPassword === '' || newPassword === '' || confirmPassword === '') {
+      showNotification('Please fill in all fields', 'error');
+      // Highlight empty fields
+      if (currentPassword === '') currentPasswordInput.focus();
+      else if (newPassword === '') newPasswordInput.focus();
+      else if (confirmPassword === '') confirmPasswordInput.focus();
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      showNotification('New password must be at least 6 characters', 'error');
+      newPasswordInput.focus();
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      showNotification('New passwords do not match', 'error');
+      confirmPasswordInput.focus();
+      return;
+    }
+    
+    // Disable submit button to prevent double submission
+    const submitBtn = changePasswordForm.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Changing...';
+    }
+    
+    try {
+      const response = await fetch('admin/auth.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=changePassword&currentPassword=${encodeURIComponent(currentPassword)}&newPassword=${encodeURIComponent(newPassword)}`
+      });
+      
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error('Expected JSON but got: ' + text.substring(0, 100));
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        showNotification('Password changed successfully', 'success');
+        changePasswordForm.reset();
+      } else {
+        showNotification(result.message || 'Error changing password', 'error');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      showNotification('Error changing password: ' + error.message, 'error');
+    } finally {
+      // Re-enable submit button
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+      }
+    }
+  });
 }
 
 // Load Payments
@@ -4315,7 +4659,7 @@ async function loadPayments() {
         tbody.innerHTML = data.payments.map(payment => `
           <tr>
             <td>${payment.id}</td>
-            <td><strong style="color: #48bb78;">₹${parseFloat(payment.amount).toFixed(2)}</strong></td>
+            <td><strong style="color: #48bb78;">${formatCurrency(payment.amount)}</strong></td>
             <td>
               <span style="background: ${
                 payment.payment_method === 'Cash' ? '#48bb78' :
@@ -4397,9 +4741,47 @@ async function loadSettingsData() {
     
     if (result.success) {
       const user = result.data;
-      document.getElementById('restaurantNameSetting').value = user.restaurant_name || '';
-      document.getElementById('restaurantIdSetting').value = user.restaurant_id || '';
-      document.getElementById('usernameSetting').value = user.username || '';
+      
+      // Restaurant Settings
+      const restaurantNameSetting = document.getElementById('restaurantNameSetting');
+      const restaurantIdSetting = document.getElementById('restaurantIdSetting');
+      const restaurantEmail = document.getElementById('restaurantEmail');
+      const restaurantPhone = document.getElementById('restaurantPhone');
+      const restaurantAddress = document.getElementById('restaurantAddress');
+      
+      if (restaurantNameSetting) restaurantNameSetting.value = user.restaurant_name || '';
+      if (restaurantIdSetting) restaurantIdSetting.value = user.restaurant_id || '';
+      if (restaurantEmail) restaurantEmail.value = user.email || '';
+      if (restaurantPhone) restaurantPhone.value = user.phone || '';
+      if (restaurantAddress) restaurantAddress.value = user.address || '';
+      
+      // Profile Settings
+      const usernameSetting = document.getElementById('usernameSetting');
+      const profileEmailSetting = document.getElementById('profileEmailSetting');
+      
+      if (usernameSetting) usernameSetting.value = user.username || '';
+      if (profileEmailSetting) profileEmailSetting.value = user.email || '';
+      
+      // System Settings - Load from database (with localStorage fallback)
+      const currencySymbol = document.getElementById('currencySymbol');
+      const timezone = document.getElementById('timezone');
+      const autoSync = document.getElementById('autoSync');
+      const notifications = document.getElementById('notifications');
+      
+      if (currencySymbol) {
+        // Try database first, fallback to localStorage
+        currencySymbol.value = user.currency_symbol || localStorage.getItem('system_currency') || '₹';
+      }
+      if (timezone) {
+        // Try database first, fallback to localStorage
+        timezone.value = user.timezone || localStorage.getItem('system_timezone') || 'Asia/Kolkata';
+      }
+      if (autoSync) {
+        autoSync.checked = localStorage.getItem('system_autoSync') === 'true';
+      }
+      if (notifications) {
+        notifications.checked = localStorage.getItem('system_notifications') === 'true';
+      }
     }
     
     setupSettingsForms();
@@ -4410,36 +4792,188 @@ async function loadSettingsData() {
 
 // Setup Settings Forms
 function setupSettingsForms() {
+  // Restaurant Settings Form
   const restaurantSettingsForm = document.getElementById('restaurantSettingsForm');
-  if (restaurantSettingsForm) {
-    restaurantSettingsForm.addEventListener('submit', (e) => {
+  if (restaurantSettingsForm && !restaurantSettingsForm.dataset.handlerAttached) {
+    restaurantSettingsForm.dataset.handlerAttached = 'true';
+    restaurantSettingsForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      showMessage('Restaurant settings updated successfully!', 'success');
+      
+      const restaurantName = document.getElementById('restaurantNameSetting').value.trim();
+      const restaurantEmail = document.getElementById('restaurantEmail').value.trim();
+      const restaurantPhone = document.getElementById('restaurantPhone').value.trim();
+      const restaurantAddress = document.getElementById('restaurantAddress').value.trim();
+      
+      if (!restaurantName) {
+        showNotification('Restaurant name is required', 'error');
+        return;
+      }
+      
+      // Disable submit button
+      const submitBtn = restaurantSettingsForm.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Saving...';
+      }
+      
+      try {
+        const response = await fetch('admin/auth.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=updateRestaurantSettings&restaurant_name=${encodeURIComponent(restaurantName)}&email=${encodeURIComponent(restaurantEmail)}&phone=${encodeURIComponent(restaurantPhone)}&address=${encodeURIComponent(restaurantAddress)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Restaurant settings updated successfully!', 'success');
+          // Reload restaurant info to update sidebar
+          if (typeof loadRestaurantInfo === 'function') {
+            loadRestaurantInfo();
+          }
+        } else {
+          showNotification(result.message || 'Error updating restaurant settings', 'error');
+        }
+      } catch (error) {
+        console.error('Error updating restaurant settings:', error);
+        showNotification('Error updating restaurant settings', 'error');
+      } finally {
+        // Re-enable submit button
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
+      }
     });
   }
   
+  // System Settings Form
   const systemSettingsForm = document.getElementById('systemSettingsForm');
-  if (systemSettingsForm) {
-    systemSettingsForm.addEventListener('submit', (e) => {
+  if (systemSettingsForm && !systemSettingsForm.dataset.handlerAttached) {
+    systemSettingsForm.dataset.handlerAttached = 'true';
+    systemSettingsForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      showMessage('System settings saved successfully!', 'success');
+      
+      const currencySymbol = document.getElementById('currencySymbol').value.trim();
+      const timezone = document.getElementById('timezone').value.trim();
+      const autoSync = document.getElementById('autoSync').checked;
+      const notifications = document.getElementById('notifications').checked;
+      
+      // Disable submit button
+      const submitBtn = systemSettingsForm.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Saving...';
+      }
+      
+      try {
+        // Save to database
+        const response = await fetch('admin/auth.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=updateSystemSettings&currency_symbol=${encodeURIComponent(currencySymbol)}&timezone=${encodeURIComponent(timezone)}&auto_sync=${autoSync ? 1 : 0}&notifications=${notifications ? 1 : 0}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Also save to localStorage as backup
+          localStorage.setItem('system_currency', currencySymbol);
+          localStorage.setItem('system_timezone', timezone);
+          localStorage.setItem('system_autoSync', autoSync);
+          localStorage.setItem('system_notifications', notifications);
+          
+          // Update global currency symbol
+          globalCurrencySymbol = currencySymbol;
+          
+          // Update currency display in menu item form
+          const currencyDisplay = document.getElementById('currencySymbolDisplay');
+          if (currencyDisplay) {
+            currencyDisplay.textContent = globalCurrencySymbol;
+          }
+          
+          // Reload dashboard stats to update currency display
+          if (typeof loadDashboardStats === 'function') {
+            loadDashboardStats();
+          }
+          
+          showNotification('System settings saved successfully!', 'success');
+        } else {
+          showNotification(result.message || 'Error updating system settings', 'error');
+        }
+      } catch (error) {
+        console.error('Error updating system settings:', error);
+        showNotification('Error updating system settings', 'error');
+      } finally {
+        // Re-enable submit button
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
+      }
     });
   }
   
-  const securitySettingsForm = document.getElementById('securitySettingsForm');
-  if (securitySettingsForm) {
-    securitySettingsForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      showMessage('Password changed successfully!', 'success');
-      securitySettingsForm.reset();
-    });
-  }
-  
+  // Profile Settings Form
   const profileSettingsForm = document.getElementById('profileSettingsForm');
-  if (profileSettingsForm) {
-    profileSettingsForm.addEventListener('submit', (e) => {
+  if (profileSettingsForm && !profileSettingsForm.dataset.handlerAttached) {
+    profileSettingsForm.dataset.handlerAttached = 'true';
+    profileSettingsForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      showMessage('Profile updated successfully!', 'success');
+      
+      const username = document.getElementById('usernameSetting').value.trim();
+      const email = document.getElementById('profileEmailSetting').value.trim();
+      const emailNotifications = document.getElementById('emailNotifications').checked;
+      
+      if (!username || !email) {
+        showNotification('Username and email are required', 'error');
+        return;
+      }
+      
+      // Disable submit button
+      const submitBtn = profileSettingsForm.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Updating...';
+      }
+      
+      try {
+        const response = await fetch('admin/auth.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=updateProfile&username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Profile updated successfully!', 'success');
+          // Reload restaurant info to update sidebar
+          if (typeof loadRestaurantInfo === 'function') {
+            loadRestaurantInfo();
+          }
+        } else {
+          showNotification(result.message || 'Error updating profile', 'error');
+        }
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        showNotification('Error updating profile', 'error');
+      } finally {
+        // Re-enable submit button
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
+      }
     });
   }
 }
@@ -4470,7 +5004,7 @@ async function loadReports() {
     const totalCustomersEl = document.getElementById('reportTotalCustomers');
     
     if (totalSalesEl) {
-      totalSalesEl.textContent = '₹' + data.summary.total_sales.toLocaleString('en-IN', {maximumFractionDigits: 2});
+      totalSalesEl.textContent = formatCurrencyLocale(data.summary.total_sales);
     }
     if (totalOrdersEl) {
       totalOrdersEl.textContent = data.summary.total_orders;
