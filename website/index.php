@@ -26,23 +26,59 @@ try {
         $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     }
     
-    // Get currency symbol from users table based on restaurant_id
+    // Get restaurant details from users table based on restaurant_id
+    $restaurant_name = 'Restaurant';
+    $restaurant_logo = null;
+    $restaurant_phone = '';
+    $restaurant_email = '';
+    $restaurant_address = '';
+    
     try {
-        $stmt = $conn->prepare("SELECT currency_symbol FROM users WHERE restaurant_id = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT restaurant_name, restaurant_logo, currency_symbol, phone, email, address FROM users WHERE restaurant_id = ? LIMIT 1");
         $stmt->execute([$restaurant_id]);
         $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($userRow) {
+            // Restaurant name
+            if (!empty($userRow['restaurant_name'])) {
+                $restaurant_name = htmlspecialchars($userRow['restaurant_name'], ENT_QUOTES, 'UTF-8');
+            }
+            // Restaurant logo
+            if (!empty($userRow['restaurant_logo'])) {
+                $restaurant_logo = $userRow['restaurant_logo'];
+                // Ensure proper path format
+                if (strpos($restaurant_logo, 'http') !== 0 && strpos($restaurant_logo, 'uploads/') !== 0) {
+                    $restaurant_logo = '../uploads/' . $restaurant_logo;
+                } else if (strpos($restaurant_logo, 'uploads/') === 0) {
+                    $restaurant_logo = '../' . $restaurant_logo;
+                }
+            }
             // Currency symbol - load server-side to prevent flash
-            if (array_key_exists('currency_symbol', $userRow) && $userRow['currency_symbol'] !== null && $userRow['currency_symbol'] !== '') {
-                $db_currency = trim($userRow['currency_symbol']);
-                if ($db_currency !== '') {
+            // IMPORTANT: Always use database value if it exists, even if it's just "$" or any single character
+            if (array_key_exists('currency_symbol', $userRow)) {
+                $db_currency = $userRow['currency_symbol'];
+                // Check if value exists (not null) - even empty string or "$" is valid
+                if ($db_currency !== null) {
+                    $db_currency = trim($db_currency);
+                    // Use the database value (even if it's "$", "₹", or any symbol)
                     $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
                 }
             }
+            // Phone
+            if (!empty($userRow['phone'])) {
+                $restaurant_phone = htmlspecialchars($userRow['phone'], ENT_QUOTES, 'UTF-8');
+            }
+            // Email
+            if (!empty($userRow['email'])) {
+                $restaurant_email = htmlspecialchars($userRow['email'], ENT_QUOTES, 'UTF-8');
+            }
+            // Address
+            if (!empty($userRow['address'])) {
+                $restaurant_address = htmlspecialchars($userRow['address'], ENT_QUOTES, 'UTF-8');
+            }
         }
     } catch (PDOException $e) {
-        // Use default currency if query fails
-        error_log("Error loading currency symbol: " . $e->getMessage());
+        // Use defaults if query fails
+        error_log("Error loading restaurant details: " . $e->getMessage());
     }
     
     // Load theme colors and banners from database server-side (prevent flash)
@@ -98,7 +134,7 @@ try {
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Restaurant Menu - Order Online</title>
+    <title><?php echo htmlspecialchars($restaurant_name, ENT_QUOTES, 'UTF-8'); ?> - Order Online</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
@@ -116,9 +152,10 @@ try {
       window.globalCurrencySymbol = <?php echo json_encode($currency_symbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
       localStorage.setItem('system_currency', window.globalCurrencySymbol);
     </script>
-</head>
-<body>
-    <script>
+    </head>
+    <body>
+        <div style="flex: 1; display: flex; flex-direction: column;">
+        <script>
       // Theme colors and banners are now loaded server-side (no flash)
       // Only initialize banner slideshow rotation if multiple banners exist
       document.addEventListener('DOMContentLoaded', function(){
@@ -147,8 +184,11 @@ try {
     <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="nav-container">
-            <div class="nav-logo">
-                <h1>🍔 Restaurant</h1>
+            <div class="nav-logo" style="display: flex; align-items: center; gap: 0.75rem;">
+                <?php if ($restaurant_logo): ?>
+                    <img src="<?php echo htmlspecialchars($restaurant_logo, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($restaurant_name, ENT_QUOTES, 'UTF-8'); ?>" onerror="this.style.display='none';" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-red);">
+                <?php endif; ?>
+                <h1 style="margin: 0; font-size: 1.5rem; color: var(--text-dark);"><?php echo htmlspecialchars($restaurant_name, ENT_QUOTES, 'UTF-8'); ?></h1>
             </div>
             <div class="nav-menu">
                 <a href="#home" class="nav-link active">Home</a>
@@ -483,9 +523,10 @@ try {
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 Restaurant. All rights reserved.</p>
+            <p>&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($restaurant_name, ENT_QUOTES, 'UTF-8'); ?>. All rights reserved.</p>
         </div>
     </footer>
+        </div>
 
     <!-- Cart Summary Bar (Yellow Bar Above Bottom Nav) -->
     <div class="cart-summary-bar" id="cartSummaryBar" style="display: none;" onclick="toggleCart()">

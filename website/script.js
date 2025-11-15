@@ -8,19 +8,33 @@ let currentFilter = {
     type: null
 };
 
-// Currency symbol from server-side (set in index.php head)
-// Use window.globalCurrencySymbol if available, otherwise fallback to localStorage or default
-const globalCurrencySymbol = window.globalCurrencySymbol || localStorage.getItem('system_currency') || '₹';
+// Currency symbol from server-side database (set in index.php head)
+// Always use window.globalCurrencySymbol which is loaded from database
+// This ensures currency is always from DB, not from localStorage cache
+// IMPORTANT: window.globalCurrencySymbol is set by PHP from database, so it's always the source of truth
+let globalCurrencySymbol = window.globalCurrencySymbol || '₹';
 
-// Format currency helper function - uses server-side currency symbol
+// Clear any old localStorage currency and use only database value
+if (window.globalCurrencySymbol) {
+    localStorage.setItem('system_currency', window.globalCurrencySymbol);
+    globalCurrencySymbol = window.globalCurrencySymbol; // Update local variable
+} else {
+    // If not set by PHP, clear localStorage to force reload
+    localStorage.removeItem('system_currency');
+}
+
+// Format currency helper function - uses database currency symbol
 function formatCurrency(amount) {
-    const symbol = globalCurrencySymbol || '₹';
+    // Always use the server-provided currency from database (window.globalCurrencySymbol)
+    // This is set by PHP from the database, so it's always correct
+    const symbol = window.globalCurrencySymbol || globalCurrencySymbol || '₹';
     return `${symbol}${parseFloat(amount).toFixed(2)}`;
 }
 
 // Format currency without decimals (for summary bar)
 function formatCurrencyNoDecimals(amount) {
-    const symbol = globalCurrencySymbol || '₹';
+    // Always use the server-provided currency from database (window.globalCurrencySymbol)
+    const symbol = window.globalCurrencySymbol || globalCurrencySymbol || '₹';
     return `${symbol}${parseFloat(amount).toFixed(0)}`;
 }
 
@@ -1249,7 +1263,7 @@ function showCustomerDetailsModal(total) {
                         <h3>Order Summary</h3>
                         <div class="summary-items" id="summaryItems"></div>
                         <div class="summary-total">
-                            <strong>Total: ${globalCurrencySymbol}<span id="summaryTotal">0.00</span></strong>
+                            <strong>Total: ${window.globalCurrencySymbol || globalCurrencySymbol || '₹'}<span id="summaryTotal">0.00</span></strong>
                         </div>
                     </div>
                     <div class="payment-method-section" id="paymentSection">
@@ -1320,7 +1334,7 @@ function updateOrderSummary() {
         summaryItems.innerHTML = cart.map(item => `
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                 <span>${item.name} x ${item.quantity}</span>
-                <span>₹${(item.price * item.quantity).toFixed(2)}</span>
+                <span>${formatCurrency(item.price * item.quantity)}</span>
             </div>
         `).join('');
     }
@@ -1518,7 +1532,7 @@ async function loadOrderHistory() {
                             <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.25rem;">${orderDate}</div>
                         </div>
                         <div style="text-align: right;">
-                            <div style="font-weight: 700; color: var(--primary-red); font-size: 1.1rem;">₹${parseFloat(order.total || 0).toFixed(2)}</div>
+                            <div style="font-weight: 700; color: var(--primary-red); font-size: 1.1rem;">${formatCurrency(order.total || 0)}</div>
                             <div style="font-size: 0.85rem; color: ${statusColor}; margin-top: 0.25rem; font-weight: 600;">${order.order_status || 'Pending'}</div>
                         </div>
                     </div>
@@ -1527,7 +1541,7 @@ async function loadOrderHistory() {
                             ${order.items.slice(0, 3).map(item => `
                                 <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem;">
                                     <span>${item.quantity}x ${item.item_name || item.name || 'Item'}</span>
-                                    <span>₹${parseFloat(item.total_price || (item.unit_price * item.quantity) || 0).toFixed(2)}</span>
+                                    <span>${formatCurrency(item.total_price || (item.unit_price * item.quantity) || 0)}</span>
                                 </div>
                             `).join('')}
                             ${order.items.length > 3 ? `<div style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.5rem;">+${order.items.length - 3} more items</div>` : ''}
