@@ -1,12 +1,15 @@
 <?php
 // Load currency symbol from database server-side (same as dashboard)
-// Get restaurant_id from URL or default to RES001
+// Get restaurant_id from URL, session, or default to RES001
+session_start();
 $restaurant_id = isset($_GET['restaurant_id']) && $_GET['restaurant_id'] !== '' 
     ? $_GET['restaurant_id'] 
-    : 'RES001';
+    : (isset($_SESSION['restaurant_id']) && $_SESSION['restaurant_id'] !== '' 
+        ? $_SESSION['restaurant_id'] 
+        : 'RES001');
 
-// Default currency symbol
-$currency_symbol = '₹';
+// Default currency symbol - will be loaded from database
+$currency_symbol = '₹'; // This is only a fallback if database fails
 
 try {
     // Include database connection
@@ -34,8 +37,22 @@ try {
     $restaurant_address = '';
     
     try {
-        $stmt = $conn->prepare("SELECT restaurant_name, restaurant_logo, currency_symbol, phone, email, address FROM users WHERE restaurant_id = ? LIMIT 1");
-        $stmt->execute([$restaurant_id]);
+        // First try to get user_id from restaurant_id, then get currency
+        // This matches how dashboard loads currency (by user_id)
+        $userStmt = $conn->prepare("SELECT id FROM users WHERE restaurant_id = ? LIMIT 1");
+        $userStmt->execute([$restaurant_id]);
+        $userResult = $userStmt->fetch(PDO::FETCH_ASSOC);
+        $user_id = $userResult ? $userResult['id'] : null;
+        
+        // Now get all user details including currency (same as dashboard)
+        if ($user_id) {
+            $stmt = $conn->prepare("SELECT restaurant_name, restaurant_logo, currency_symbol, phone, email, address FROM users WHERE id = ? LIMIT 1");
+            $stmt->execute([$user_id]);
+        } else {
+            // Fallback: try by restaurant_id directly
+            $stmt = $conn->prepare("SELECT restaurant_name, restaurant_logo, currency_symbol, phone, email, address FROM users WHERE restaurant_id = ? LIMIT 1");
+            $stmt->execute([$restaurant_id]);
+        }
         $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($userRow) {
             // Restaurant name
@@ -52,16 +69,22 @@ try {
                     $restaurant_logo = '../' . $restaurant_logo;
                 }
             }
-            // Currency symbol - load server-side to prevent flash
-            // IMPORTANT: Always use database value if it exists, even if it's just "$" or any single character
-            if (array_key_exists('currency_symbol', $userRow)) {
-                $db_currency = $userRow['currency_symbol'];
-                // Check if value exists (not null) - even empty string or "$" is valid
-                if ($db_currency !== null) {
-                    $db_currency = trim($db_currency);
-                    // Use the database value (even if it's "$", "₹", or any symbol)
+            // Currency symbol - load server-side to prevent flash (same as dashboard)
+            // IMPORTANT: Use array_key_exists to check if column exists, then check value
+            // This matches exactly how dashboard.php loads currency
+            if (array_key_exists('currency_symbol', $userRow) && $userRow['currency_symbol'] !== null && $userRow['currency_symbol'] !== '') {
+                $db_currency = trim($userRow['currency_symbol']);
+                if ($db_currency !== '') {
                     $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
+                    // Save to session for faster loading next time (like dashboard)
+                    $_SESSION['currency_symbol'] = $currency_symbol;
+                    error_log("DEBUG: Currency loaded from DB for restaurant_id '$restaurant_id' (user_id: " . ($user_id ?? 'N/A') . "): '$currency_symbol'");
+                } else {
+                    error_log("Currency symbol in database is empty for restaurant_id: " . $restaurant_id);
                 }
+            } else {
+                // Currency is NULL or doesn't exist - use default
+                error_log("Currency symbol is NULL or not found in database for restaurant_id: " . $restaurant_id . " (user_id: " . ($user_id ?? 'N/A') . ")");
             }
             // Phone
             if (!empty($userRow['phone'])) {
@@ -147,10 +170,29 @@ try {
       }
     </style>
     <script>
-      // Set currency symbol from server-side (like restaurant logo/name)
-      // This prevents any flash of default currency symbol
+      // Set currency symbol from server-side database ONLY
+      // This is the ONLY source of truth - loaded from database in PHP above
+      // NO localStorage fallback - currency MUST come from backend
       window.globalCurrencySymbol = <?php echo json_encode($currency_symbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-      localStorage.setItem('system_currency', window.globalCurrencySymbol);
+      // Debug: Log currency from database
+      console.log('=== CURRENCY DEBUG ===');
+      console.log('Currency loaded from database (PHP):', window.globalCurrencySymbol);
+      console.log('Currency type:', typeof window.globalCurrencySymbol);
+      console.log('Currency length:', window.globalCurrencySymbol ? window.globalCurrencySymbol.length : 'null');
+      console.log('Restaurant ID:', '<?php echo htmlspecialchars($restaurant_id, ENT_QUOTES, 'UTF-8'); ?>');
+      console.log('=====================');
+      
+      // Verify currency is set correctly
+      if (!window.globalCurrencySymbol || window.globalCurrencySymbol === '₹') {
+          console.warn('WARNING: Currency might not be loaded from database correctly!');
+          console.warn('Expected: Your database currency, Got:', window.globalCurrencySymbol);
+      }
+      // Clear any old localStorage currency to ensure database is source of truth
+      if (window.globalCurrencySymbol) {
+          localStorage.setItem('system_currency', window.globalCurrencySymbol);
+      } else {
+          localStorage.removeItem('system_currency');
+      }
     </script>
     </head>
     <body>
@@ -311,7 +353,7 @@ try {
         </div>
         <div class="cart-footer">
             <div class="cart-total">
-                <span>Total: <?php echo htmlspecialchars($currency_symbol); ?><span id="cartTotal">0.00</span></span>
+                <span>Total: <span id="cartTotal">0.00</span></span>
             </div>
             <!-- Show Call Waiter button if table is in URL and cart has items -->
             <div id="continueSection" style="display: none;">
@@ -535,7 +577,7 @@ try {
             <div class="cart-summary-info">
                 <span id="cartSummaryItems">0 Items</span>
                 <span class="cart-summary-separator">|</span>
-                <span id="cartSummaryTotal"><?php echo htmlspecialchars($currency_symbol); ?>0</span>
+                <span id="cartSummaryTotal">0</span>
             </div>
             <button class="cart-summary-btn">View Cart</button>
         </div>

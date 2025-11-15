@@ -8,33 +8,82 @@ let currentFilter = {
     type: null
 };
 
-// Currency symbol from server-side database (set in index.php head)
-// Always use window.globalCurrencySymbol which is loaded from database
-// This ensures currency is always from DB, not from localStorage cache
-// IMPORTANT: window.globalCurrencySymbol is set by PHP from database, so it's always the source of truth
-let globalCurrencySymbol = window.globalCurrencySymbol || '₹';
+// Currency symbol from server-side database ONLY (set in index.php head)
+// IMPORTANT: window.globalCurrencySymbol is ALWAYS set by PHP from database
+// NO localStorage fallback - currency MUST come from backend database
+// The currency is set in the <head> by PHP before this script loads
+// So window.globalCurrencySymbol should always be available
 
-// Clear any old localStorage currency and use only database value
-if (window.globalCurrencySymbol) {
-    localStorage.setItem('system_currency', window.globalCurrencySymbol);
-    globalCurrencySymbol = window.globalCurrencySymbol; // Update local variable
-} else {
-    // If not set by PHP, clear localStorage to force reload
-    localStorage.removeItem('system_currency');
+// Verify currency is loaded from database on page load
+// Wait for DOM to ensure window.globalCurrencySymbol is set by inline script
+function initializeCurrency() {
+    if (typeof window.globalCurrencySymbol !== 'undefined' && window.globalCurrencySymbol) {
+        console.log('Currency loaded from database:', window.globalCurrencySymbol);
+        // Clear localStorage and use only database value
+        localStorage.setItem('system_currency', window.globalCurrencySymbol);
+        // Update any initial currency displays
+        updateInitialCurrencyDisplays();
+    } else {
+        console.error('ERROR: Currency symbol not loaded from database! window.globalCurrencySymbol:', window.globalCurrencySymbol);
+    }
 }
 
-// Format currency helper function - uses database currency symbol
+// Update initial currency displays on page load
+function updateInitialCurrencyDisplays() {
+    // This function will be called after formatCurrency functions are defined
+    // It ensures all currency displays use the database currency
+    if (!window.globalCurrencySymbol) {
+        return; // Can't update without currency symbol
+    }
+    
+    // Update cart total if it exists
+    const cartTotal = document.getElementById('cartTotal');
+    if (cartTotal) {
+        // Extract numeric value from text (remove any existing currency symbols)
+        const text = cartTotal.textContent || '0.00';
+        const amount = parseFloat(text.replace(/[^\d.]/g, '')) || 0;
+        cartTotal.textContent = formatCurrency(amount);
+    }
+    
+    // Update cart summary total if it exists
+    const cartSummaryTotal = document.getElementById('cartSummaryTotal');
+    if (cartSummaryTotal) {
+        // Extract numeric value from text (remove any existing currency symbols)
+        const text = cartSummaryTotal.textContent || '0';
+        const amount = parseFloat(text.replace(/[^\d.]/g, '')) || 0;
+        cartSummaryTotal.textContent = formatCurrencyNoDecimals(amount);
+    }
+}
+
+// Initialize currency when script loads (after inline script sets window.globalCurrencySymbol)
+// We'll call this after formatCurrency functions are defined (at end of script or in DOMContentLoaded)
+
+// Format currency helper function - uses database currency symbol ONLY
 function formatCurrency(amount) {
-    // Always use the server-provided currency from database (window.globalCurrencySymbol)
-    // This is set by PHP from the database, so it's always correct
-    const symbol = window.globalCurrencySymbol || globalCurrencySymbol || '₹';
+    // ALWAYS use window.globalCurrencySymbol from database (set by PHP in head)
+    // This is the ONLY source of truth - database value from backend
+    // Get fresh value from window.globalCurrencySymbol every time (set by PHP)
+    // Force refresh from window object to ensure we always have latest value
+    const symbol = window.globalCurrencySymbol;
+    if (!symbol) {
+        console.error('Currency symbol not available from database! window.globalCurrencySymbol:', window.globalCurrencySymbol);
+        // Try to get from database again - this should never happen if PHP loaded correctly
+        return `₹${parseFloat(amount).toFixed(2)}`; // Emergency fallback only
+    }
+    // Always use the symbol from window.globalCurrencySymbol (database value)
     return `${symbol}${parseFloat(amount).toFixed(2)}`;
 }
 
 // Format currency without decimals (for summary bar)
 function formatCurrencyNoDecimals(amount) {
-    // Always use the server-provided currency from database (window.globalCurrencySymbol)
-    const symbol = window.globalCurrencySymbol || globalCurrencySymbol || '₹';
+    // ALWAYS use window.globalCurrencySymbol from database (set by PHP in head)
+    // Force refresh from window object to ensure we always have latest value
+    const symbol = window.globalCurrencySymbol;
+    if (!symbol) {
+        console.error('Currency symbol not available from database! window.globalCurrencySymbol:', window.globalCurrencySymbol);
+        return `₹${parseFloat(amount).toFixed(0)}`; // Emergency fallback only
+    }
+    // Always use the symbol from window.globalCurrencySymbol (database value)
     return `${symbol}${parseFloat(amount).toFixed(0)}`;
 }
 
@@ -561,6 +610,9 @@ window.setupTopNavLinks = function() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize currency first (ensures formatCurrency functions can use it)
+    initializeCurrency();
+    
     loadMenus();
     loadMenuItems();
     
@@ -943,7 +995,7 @@ function updateCartUI() {
     // Update total
     const cartTotal = document.getElementById('cartTotal');
     if (cartTotal) {
-        cartTotal.textContent = total.toFixed(2);
+        cartTotal.textContent = formatCurrency(total);
     }
     
     // Check if table is in URL
@@ -1263,7 +1315,7 @@ function showCustomerDetailsModal(total) {
                         <h3>Order Summary</h3>
                         <div class="summary-items" id="summaryItems"></div>
                         <div class="summary-total">
-                            <strong>Total: ${window.globalCurrencySymbol || globalCurrencySymbol || '₹'}<span id="summaryTotal">0.00</span></strong>
+                            <strong>Total: <span id="summaryTotal">${formatCurrency(0)}</span></strong>
                         </div>
                     </div>
                     <div class="payment-method-section" id="paymentSection">
@@ -1342,7 +1394,7 @@ function updateOrderSummary() {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const summaryTotal = document.getElementById('summaryTotal');
     if (summaryTotal) {
-        summaryTotal.textContent = total.toFixed(2);
+        summaryTotal.textContent = formatCurrency(total);
     }
 }
 
