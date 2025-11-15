@@ -8,6 +8,22 @@ let currentFilter = {
     type: null
 };
 
+// Currency symbol from server-side (set in index.php head)
+// Use window.globalCurrencySymbol if available, otherwise fallback to localStorage or default
+const globalCurrencySymbol = window.globalCurrencySymbol || localStorage.getItem('system_currency') || '₹';
+
+// Format currency helper function - uses server-side currency symbol
+function formatCurrency(amount) {
+    const symbol = globalCurrencySymbol || '₹';
+    return `${symbol}${parseFloat(amount).toFixed(2)}`;
+}
+
+// Format currency without decimals (for summary bar)
+function formatCurrencyNoDecimals(amount) {
+    const symbol = globalCurrencySymbol || '₹';
+    return `${symbol}${parseFloat(amount).toFixed(0)}`;
+}
+
 // Call Waiter Functionality
 let selectedTable = null;
 
@@ -830,7 +846,7 @@ function createMenuItemCard(item) {
             </div>
             <div class="menu-card-description">${item.item_description_en || 'Delicious food item'}</div>
             <div class="menu-card-footer">
-                <div class="menu-card-price">₹${parseFloat(item.base_price).toFixed(2)}</div>
+                <div class="menu-card-price">${formatCurrency(item.base_price)}</div>
                 <button class="add-to-cart-btn" onclick="addToCart(${item.id}, '${item.item_name_en}', ${item.base_price}, '${item.item_image || ''}')">
                     <span class="material-symbols-rounded">add_shopping_cart</span>
                     Add
@@ -892,7 +908,7 @@ function updateCartUI() {
             // Show yellow bar when cart has 1 or more items
             if (cartSummaryItems && cartSummaryTotal) {
                 cartSummaryItems.textContent = `${totalItems} ${totalItems === 1 ? 'Item' : 'Items'}`;
-                cartSummaryTotal.textContent = `₹${total.toFixed(0)}`;
+                cartSummaryTotal.textContent = formatCurrencyNoDecimals(total);
             }
             cartSummaryBar.style.display = 'block';
             cartSummaryBar.style.visibility = 'visible';
@@ -996,7 +1012,7 @@ function createCartItemHTML(item, index) {
         </div>
         <div class="cart-item-info">
             <div class="cart-item-name">${item.name}</div>
-            <div class="cart-item-price">₹${item.price.toFixed(2)}</div>
+            <div class="cart-item-price">${formatCurrency(item.price)}</div>
             <div class="cart-item-controls">
                 <button class="quantity-btn" onclick="updateQuantity(${index}, -1)">-</button>
                 <input type="number" class="quantity-input" value="${item.quantity}" min="1" 
@@ -1233,7 +1249,7 @@ function showCustomerDetailsModal(total) {
                         <h3>Order Summary</h3>
                         <div class="summary-items" id="summaryItems"></div>
                         <div class="summary-total">
-                            <strong>Total: ₹<span id="summaryTotal">0.00</span></strong>
+                            <strong>Total: ${globalCurrencySymbol}<span id="summaryTotal">0.00</span></strong>
                         </div>
                     </div>
                     <div class="payment-method-section" id="paymentSection">

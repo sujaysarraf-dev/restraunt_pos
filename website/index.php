@@ -1,89 +1,146 @@
+<?php
+// Load currency symbol from database server-side (same as dashboard)
+// Get restaurant_id from URL or default to RES001
+$restaurant_id = isset($_GET['restaurant_id']) && $_GET['restaurant_id'] !== '' 
+    ? $_GET['restaurant_id'] 
+    : 'RES001';
+
+// Default currency symbol
+$currency_symbol = '₹';
+
+try {
+    // Include database connection
+    require_once __DIR__ . '/db_config.php';
+    
+    // Get connection
+    if (isset($pdo) && $pdo instanceof PDO) {
+        $conn = $pdo;
+    } else {
+        // Fallback connection if needed
+        $host = 'localhost';
+        $dbname = 'restro2';
+        $username = 'root';
+        $password = '';
+        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    }
+    
+    // Get currency symbol from users table based on restaurant_id
+    try {
+        $stmt = $conn->prepare("SELECT currency_symbol FROM users WHERE restaurant_id = ? LIMIT 1");
+        $stmt->execute([$restaurant_id]);
+        $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($userRow) {
+            // Currency symbol - load server-side to prevent flash
+            if (array_key_exists('currency_symbol', $userRow) && $userRow['currency_symbol'] !== null && $userRow['currency_symbol'] !== '') {
+                $db_currency = trim($userRow['currency_symbol']);
+                if ($db_currency !== '') {
+                    $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
+                }
+            }
+        }
+    } catch (PDOException $e) {
+        // Use default currency if query fails
+        error_log("Error loading currency symbol: " . $e->getMessage());
+    }
+    
+    // Load theme colors and banners from database server-side (prevent flash)
+    $primary_red = '#F70000';
+    $dark_red = '#DA020E';
+    $primary_yellow = '#FFD100';
+    $banners = [];
+    $banner_image = null;
+    
+    try {
+        // Get theme colors from website_settings table
+        $stmt = $conn->prepare("SELECT primary_red, dark_red, primary_yellow, banner_image FROM website_settings WHERE restaurant_id = ? LIMIT 1");
+        $stmt->execute([$restaurant_id]);
+        $themeRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($themeRow) {
+            if (!empty($themeRow['primary_red'])) {
+                $primary_red = htmlspecialchars($themeRow['primary_red'], ENT_QUOTES, 'UTF-8');
+            }
+            if (!empty($themeRow['dark_red'])) {
+                $dark_red = htmlspecialchars($themeRow['dark_red'], ENT_QUOTES, 'UTF-8');
+            }
+            if (!empty($themeRow['primary_yellow'])) {
+                $primary_yellow = htmlspecialchars($themeRow['primary_yellow'], ENT_QUOTES, 'UTF-8');
+            }
+            if (!empty($themeRow['banner_image']) && trim($themeRow['banner_image']) !== '') {
+                $banner_image = htmlspecialchars($themeRow['banner_image'], ENT_QUOTES, 'UTF-8');
+            }
+        }
+        
+        // Get banners from website_banners table
+        try {
+            $bannersStmt = $conn->prepare("SELECT id, banner_path, display_order FROM website_banners WHERE restaurant_id = ? ORDER BY display_order ASC, id ASC");
+            $bannersStmt->execute([$restaurant_id]);
+            $banners = $bannersStmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            // Table might not exist, use empty array
+            error_log("Error loading banners: " . $e->getMessage());
+        }
+    } catch (PDOException $e) {
+        // Use default colors if query fails
+        error_log("Error loading theme settings: " . $e->getMessage());
+    }
+} catch (Exception $e) {
+    // Use default currency if database connection fails
+    error_log("Database connection error: " . $e->getMessage());
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Restaurant Menu - Order Online</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+      /* Theme colors loaded server-side from database - prevents flash */
+      :root {
+        --primary-red: <?php echo htmlspecialchars($primary_red, ENT_QUOTES, 'UTF-8'); ?>;
+        --dark-red: <?php echo htmlspecialchars($dark_red, ENT_QUOTES, 'UTF-8'); ?>;
+        --primary-yellow: <?php echo htmlspecialchars($primary_yellow, ENT_QUOTES, 'UTF-8'); ?>;
+      }
+    </style>
+    <script>
+      // Set currency symbol from server-side (like restaurant logo/name)
+      // This prevents any flash of default currency symbol
+      window.globalCurrencySymbol = <?php echo json_encode($currency_symbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+      localStorage.setItem('system_currency', window.globalCurrencySymbol);
+    </script>
 </head>
 <body>
     <script>
-      // Fetch theme from DB via API and apply CSS variables and banner
-      document.addEventListener('DOMContentLoaded', async function(){
-        try {
-          const params = new URLSearchParams(location.search);
-          const rid = params.get('restaurant_id');
-          const q = rid ? `?action=get&restaurant_id=${encodeURIComponent(rid)}` : '?action=get';
-          const res = await fetch('theme_api.php'+q);
-          const data = await res.json();
-          if (data.success && data.settings) {
-            const t = data.settings, r = document.documentElement;
-            r.style.setProperty('--primary-red', t.primary_red || '#F70000');
-            r.style.setProperty('--dark-red', t.dark_red || '#DA020E');
-            r.style.setProperty('--primary-yellow', t.primary_yellow || '#FFD100');
+      // Theme colors and banners are now loaded server-side (no flash)
+      // Only initialize banner slideshow rotation if multiple banners exist
+      document.addEventListener('DOMContentLoaded', function(){
+        const bannerSlideshow = document.getElementById('bannerSlideshow');
+        if (bannerSlideshow) {
+          const slides = bannerSlideshow.querySelectorAll('.banner-slide');
+          if (slides.length > 1) {
+            // Initialize slideshow rotation for multiple banners
+            let currentSlide = 0;
+            const slideInterval = setInterval(() => {
+              // Fade out current slide
+              slides[currentSlide].classList.remove('active');
+              currentSlide = (currentSlide + 1) % slides.length;
+              // Fade in next slide
+              setTimeout(() => {
+                slides[currentSlide].classList.add('active');
+              }, 100);
+            }, 3000); // 3 seconds per slide
             
-            // Set banner slideshow if exists
-            const bannerSection = document.querySelector('.banner-section');
-            const bannerSlideshow = document.getElementById('bannerSlideshow');
-            if (bannerSection && bannerSlideshow) {
-              const banners = t.banners || [];
-              
-              if (banners.length > 0) {
-                // Clear existing slides
-                bannerSlideshow.innerHTML = '';
-                
-                // Create slides
-                banners.forEach((banner, index) => {
-                  const slide = document.createElement('div');
-                  slide.className = 'banner-slide' + (index === 0 ? ' active' : '');
-                  slide.innerHTML = `<img src="../${banner.banner_path}" alt="Banner ${index + 1}" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">`;
-                  bannerSlideshow.appendChild(slide);
-                });
-                
-                // Initialize slideshow with smooth fade transitions
-                let currentSlide = 0;
-                const slides = bannerSlideshow.querySelectorAll('.banner-slide');
-                
-                const slideInterval = setInterval(() => {
-                  if (banners.length > 1) {
-                    // Fade out current slide
-                    slides[currentSlide].classList.remove('active');
-                    currentSlide = (currentSlide + 1) % banners.length;
-                    // Fade in next slide
-                    setTimeout(() => {
-                      slides[currentSlide].classList.add('active');
-                    }, 100);
-                  }
-                }, 3000); // 3 seconds per slide
-                
-                // Store interval ID for cleanup if needed
-                bannerSlideshow.dataset.intervalId = slideInterval;
-                
-                bannerSection.style.display = 'block';
-                bannerSection.style.visibility = 'visible';
-                console.log('Banner slideshow loaded:', banners.length, 'banners');
-              } else if (t.banner_image && t.banner_image !== 'null' && t.banner_image.trim() !== '') {
-                // Fallback to single banner (backward compatibility)
-                const slide = document.createElement('div');
-                slide.className = 'banner-slide active';
-                slide.innerHTML = `<img src="../${t.banner_image}" alt="Banner" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">`;
-                bannerSlideshow.innerHTML = '';
-                bannerSlideshow.appendChild(slide);
-                bannerSection.style.display = 'block';
-                bannerSection.style.visibility = 'visible';
-                console.log('Single banner loaded (backward compatibility)');
-              } else {
-                bannerSection.style.display = 'none';
-                console.log('No banner images in database');
-              }
-            } else {
-              console.error('Banner section or slideshow element not found in DOM');
-            }
+            // Store interval ID for cleanup if needed
+            bannerSlideshow.dataset.intervalId = slideInterval;
           }
-        } catch(e) { 
-          console.error('Error loading theme/banner:', e);
         }
       });
     </script>
@@ -130,8 +187,27 @@
     </section>
 
     <!-- Banner Section -->
-    <section class="banner-section" id="banner">
-        <div id="bannerSlideshow" class="banner-slideshow"></div>
+    <section class="banner-section" id="banner" style="<?php echo (empty($banners) && empty($banner_image)) ? 'display: none;' : 'display: block; visibility: visible;'; ?>">
+        <div id="bannerSlideshow" class="banner-slideshow">
+            <?php
+            // Output banners server-side to prevent flash
+            if (!empty($banners) && is_array($banners)) {
+                foreach ($banners as $index => $banner) {
+                    $bannerPath = htmlspecialchars($banner['banner_path'], ENT_QUOTES, 'UTF-8');
+                    $activeClass = $index === 0 ? ' active' : '';
+                    echo '<div class="banner-slide' . $activeClass . '">';
+                    echo '<img src="../' . $bannerPath . '" alt="Banner ' . ($index + 1) . '" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">';
+                    echo '</div>';
+                }
+            } elseif (!empty($banner_image)) {
+                // Fallback to single banner (backward compatibility)
+                $bannerPath = htmlspecialchars($banner_image, ENT_QUOTES, 'UTF-8');
+                echo '<div class="banner-slide active">';
+                echo '<img src="../' . $bannerPath . '" alt="Banner" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">';
+                echo '</div>';
+            }
+            ?>
+        </div>
     </section>
 
     <!-- Category Filter -->
@@ -195,7 +271,7 @@
         </div>
         <div class="cart-footer">
             <div class="cart-total">
-                <span>Total: ₹<span id="cartTotal">0.00</span></span>
+                <span>Total: <?php echo htmlspecialchars($currency_symbol); ?><span id="cartTotal">0.00</span></span>
             </div>
             <!-- Show Call Waiter button if table is in URL and cart has items -->
             <div id="continueSection" style="display: none;">
@@ -418,7 +494,7 @@
             <div class="cart-summary-info">
                 <span id="cartSummaryItems">0 Items</span>
                 <span class="cart-summary-separator">|</span>
-                <span id="cartSummaryTotal">₹0</span>
+                <span id="cartSummaryTotal"><?php echo htmlspecialchars($currency_symbol); ?>0</span>
             </div>
             <button class="cart-summary-btn">View Cart</button>
         </div>
