@@ -540,6 +540,9 @@ function handleUpdateSystemSettings() {
     }
     
     if ($result) {
+        // Save currency to session so it loads immediately on next page load (no flash)
+        $_SESSION['currency_symbol'] = $currencySymbol;
+        
         echo json_encode([
             'success' => true,
             'message' => 'System settings updated successfully',

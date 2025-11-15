@@ -85,12 +85,14 @@ let globalCurrencySymbol = window.globalCurrencySymbol || localStorage.getItem('
 
 // Get currency symbol from database/session
 async function loadCurrencySymbol() {
-  // If already set by inline script, use that value
+  // If already set by inline script from PHP, use that value and DO NOT update DOM
   if (window.globalCurrencySymbol) {
     globalCurrencySymbol = window.globalCurrencySymbol;
+    // DO NOT update any DOM elements - PHP already set them correctly
     return;
   }
   
+  // Only fetch if not set by PHP (shouldn't happen, but fallback)
   try {
     const response = await fetch('admin/get_session.php');
     const result = await response.json();
@@ -100,6 +102,7 @@ async function loadCurrencySymbol() {
       window.globalCurrencySymbol = globalCurrencySymbol;
       // Also save to localStorage as backup
       localStorage.setItem('system_currency', globalCurrencySymbol);
+      // DO NOT update DOM - only set the variable for formatCurrency() function
     } else {
       // Fallback to localStorage
       globalCurrencySymbol = localStorage.getItem('system_currency') || '₹';
@@ -111,6 +114,7 @@ async function loadCurrencySymbol() {
     globalCurrencySymbol = localStorage.getItem('system_currency') || '₹';
     window.globalCurrencySymbol = globalCurrencySymbol;
   }
+  // DO NOT update any DOM elements - they're already set by PHP
 }
 
 // Format currency helper function
@@ -4959,9 +4963,11 @@ function setupSettingsForms() {
           // Update global currency symbol
           globalCurrencySymbol = currencySymbol;
           
-          // Update currency display in menu item form
+          // Update currency display in menu item form (only when user changes settings, not on page load)
+          // PHP already sets this correctly, so only update if user explicitly changed it
           const currencyDisplay = document.getElementById('currencySymbolDisplay');
-          if (currencyDisplay) {
+          if (currencyDisplay && !window.currencyFromServer) {
+            // Only update if not loaded from server (shouldn't happen, but safety check)
             currencyDisplay.textContent = globalCurrencySymbol;
           }
           

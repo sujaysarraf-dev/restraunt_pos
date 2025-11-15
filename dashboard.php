@@ -11,7 +11,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
 $restaurant_name = $_SESSION['restaurant_name'] ?? 'Restaurant Name';
 $restaurant_id = $_SESSION['restaurant_id'] ?? 'RES001';
 $restaurant_logo = 'logo.png'; // Default fallback
-$currency_symbol = '₹'; // Default currency
+// Try to get currency from session first (if saved), otherwise default
+$currency_symbol = $_SESSION['currency_symbol'] ?? '₹'; // Default currency
 $timezone = 'Asia/Kolkata'; // Default timezone
 $user_email = '';
 $user_phone = '';
@@ -34,12 +35,13 @@ try {
     }
     
     // Try to get all user settings from database to prevent FOUC
+    // Load exactly like restaurant logo - server-side before HTML renders
     try {
         $stmt = $conn->prepare("SELECT restaurant_logo, currency_symbol, timezone, email, phone, address, role FROM users WHERE id = ? LIMIT 1");
         $stmt->execute([$_SESSION['user_id']]);
         $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($userRow) {
-            // Restaurant logo
+            // Restaurant logo - load exactly like this
             if (!empty($userRow['restaurant_logo'])) {
                 $restaurant_logo = $userRow['restaurant_logo'];
                 // Ensure proper path format
@@ -47,9 +49,16 @@ try {
                     $restaurant_logo = 'uploads/' . $restaurant_logo;
                 }
             }
-            // Currency symbol
-            if (!empty($userRow['currency_symbol'])) {
-                $currency_symbol = htmlspecialchars($userRow['currency_symbol']);
+            // Currency symbol - load exactly like restaurant logo (server-side, no JavaScript needed)
+            // This MUST be loaded before HTML renders to prevent any flash
+            // IMPORTANT: Use array_key_exists to check if column exists, then check value
+            if (array_key_exists('currency_symbol', $userRow) && $userRow['currency_symbol'] !== null && $userRow['currency_symbol'] !== '') {
+                $db_currency = trim($userRow['currency_symbol']);
+                if ($db_currency !== '') {
+                    $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
+                    // Save to session for faster loading next time
+                    $_SESSION['currency_symbol'] = $currency_symbol;
+                }
             }
             // Timezone
             if (!empty($userRow['timezone'])) {
@@ -64,17 +73,28 @@ try {
     } catch (PDOException $e) {
         // If columns don't exist, try without them
         try {
-            $stmt = $conn->prepare("SELECT restaurant_logo FROM users WHERE id = ? LIMIT 1");
+            $stmt = $conn->prepare("SELECT restaurant_logo, currency_symbol FROM users WHERE id = ? LIMIT 1");
             $stmt->execute([$_SESSION['user_id']]);
             $logoRow = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($logoRow && !empty($logoRow['restaurant_logo'])) {
-                $restaurant_logo = $logoRow['restaurant_logo'];
-                if (strpos($restaurant_logo, 'http') !== 0 && strpos($restaurant_logo, 'uploads/') !== 0) {
-                    $restaurant_logo = 'uploads/' . $restaurant_logo;
+            if ($logoRow) {
+                if (!empty($logoRow['restaurant_logo'])) {
+                    $restaurant_logo = $logoRow['restaurant_logo'];
+                    if (strpos($restaurant_logo, 'http') !== 0 && strpos($restaurant_logo, 'uploads/') !== 0) {
+                        $restaurant_logo = 'uploads/' . $restaurant_logo;
+                    }
+                }
+                // Also try to get currency symbol
+                if (array_key_exists('currency_symbol', $logoRow) && $logoRow['currency_symbol'] !== null && $logoRow['currency_symbol'] !== '') {
+                    $db_currency = trim($logoRow['currency_symbol']);
+                    if ($db_currency !== '') {
+                        $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
+                        // Save to session for faster loading next time
+                        $_SESSION['currency_symbol'] = $currency_symbol;
+                    }
                 }
             }
         } catch (PDOException $e2) {
-            // Use defaults
+            // Use defaults - currency_symbol already has default '₹' set above
             $restaurant_logo = 'logo.png';
         }
     }
@@ -96,20 +116,10 @@ try {
   <link rel="stylesheet" href="style.css">
   <!-- Linking Google fonts for icons -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
-  <style>
-    /* Prevent FOUC - Currency is set by PHP, so it should never flash */
-    /* This ensures currency elements are visible immediately with correct value */
-    #currencySymbolDisplay,
-    .currency-symbol,
-    #currencySymbol {
-      /* No hiding needed - PHP already sets correct value */
-    }
-  </style>
   <script>
-    // Set currency symbol from PHP (just like restaurant logo/name)
-    // This is set server-side, so no JavaScript updates needed on page load
-    window.globalCurrencySymbol = '<?php echo addslashes($currency_symbol); ?>';
-    window.currencyFromServer = true; // Flag to prevent JavaScript updates
+    // Currency symbol loaded from server-side PHP (exactly like restaurant logo/name)
+    // NO JavaScript updates needed - value is already correct in HTML from PHP
+    window.globalCurrencySymbol = <?php echo json_encode($currency_symbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     localStorage.setItem('system_currency', window.globalCurrencySymbol);
   </script>
 </head>
@@ -338,7 +348,7 @@ try {
               <span class="material-symbols-rounded">payments</span>
               <div class="stat-main-info">
                 <div class="stat-label">Today's Revenue</div>
-                <div class="stat-value-large" id="todayRevenue">₹0.00</div>
+                <div class="stat-value-large" id="todayRevenue"><?php echo htmlspecialchars($currency_symbol); ?>0.00</div>
               </div>
             </div>
             <div class="stat-footer">
