@@ -5257,23 +5257,31 @@ async function initWebsiteThemeEditor() {
       
       console.log('Rendering', banners.length, 'banners');
       
-      banners.forEach((banner) => {
+      banners.forEach((banner, index) => {
         console.log('Rendering banner:', banner);
         const imagePath = banner.banner_path;
         console.log('Image path:', imagePath);
         const bannerCard = document.createElement('div');
-        bannerCard.style.cssText = 'position:relative;border:2px solid #ddd;border-radius:12px;overflow:hidden;background:#f9f9f9;box-shadow:0 2px 8px rgba(0,0,0,0.1);';
+        bannerCard.setAttribute('draggable', 'true');
+        bannerCard.setAttribute('data-banner-id', banner.id);
+        bannerCard.setAttribute('data-banner-index', index);
+        bannerCard.className = 'banner-card-draggable';
+        bannerCard.style.cssText = 'position:relative;border:2px solid #ddd;border-radius:12px;overflow:hidden;background:#f9f9f9;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:move;transition:all 0.3s ease;';
         bannerCard.innerHTML = `
-          <img src="${imagePath}" alt="Banner" onerror="console.error('Image failed to load:', '${imagePath}'); this.style.display='none'; this.nextElementSibling.style.display='flex';" onload="console.log('Image loaded successfully:', '${imagePath}');" style="width:100%;height:auto;display:block;max-height:300px;min-height:200px;object-fit:cover;background:#f0f0f0;">
+          <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);color:white;padding:4px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;z-index:10;pointer-events:none;">
+            <span class="material-symbols-rounded" style="font-size:16px;vertical-align:middle;">drag_indicator</span>
+            Drag to reorder
+          </div>
+          <img src="${imagePath}" alt="Banner" onerror="console.error('Image failed to load:', '${imagePath}'); this.style.display='none'; this.nextElementSibling.style.display='flex';" onload="console.log('Image loaded successfully:', '${imagePath}');" style="width:100%;height:auto;display:block;max-height:300px;min-height:200px;object-fit:cover;background:#f0f0f0;pointer-events:none;">
           <div style="display:none;width:100%;height:200px;align-items:center;justify-content:center;background:#f0f0f0;color:#999;flex-direction:column;">
             <span class="material-symbols-rounded" style="font-size:48px;margin-bottom:10px;">image_not_supported</span>
             <span>Image not found</span>
             <small style="margin-top:5px;color:#bbb;">${imagePath}</small>
           </div>
-          <button class="delete-banner-btn" data-id="${banner.id}" style="position:absolute;top:8px;right:8px;background:rgba(220,38,38,0.9);color:white;border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.3s;box-shadow:0 2px 6px rgba(0,0,0,0.2);z-index:10;">
+          <button class="delete-banner-btn" data-id="${banner.id}" draggable="false" style="position:absolute;top:8px;right:8px;background:rgba(220,38,38,0.9);color:white;border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.3s;box-shadow:0 2px 6px rgba(0,0,0,0.2);z-index:10;">
             <span class="material-symbols-rounded" style="font-size:20px;">delete</span>
           </button>
-          <div style="padding:12px;font-size:0.9rem;color:#666;text-align:center;background:#fff;border-top:1px solid #eee;">Order: ${banner.display_order || 0}</div>
+          <div style="padding:12px;font-size:0.9rem;color:#666;text-align:center;background:#fff;border-top:1px solid #eee;">Order: ${banner.display_order !== null && banner.display_order !== undefined ? banner.display_order : index + 1}</div>
         `;
         bannersGrid.appendChild(bannerCard);
       });
@@ -5281,6 +5289,7 @@ async function initWebsiteThemeEditor() {
       // Add delete button listeners
       document.querySelectorAll('.delete-banner-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
+          e.stopPropagation(); // Prevent drag when clicking delete
           const bannerId = e.currentTarget.getAttribute('data-id');
           if (!confirm('Are you sure you want to delete this banner?')) return;
           
@@ -5301,6 +5310,124 @@ async function initWebsiteThemeEditor() {
           } catch (err) {
             showNotification('Network error. Please try again.', 'error');
           }
+        });
+      });
+      
+      // Add drag and drop functionality
+      let draggedElement = null;
+      let draggedIndex = null;
+      
+      document.querySelectorAll('.banner-card-draggable').forEach((card, index) => {
+        // Drag start
+        card.addEventListener('dragstart', (e) => {
+          // Don't start drag if clicking on delete button
+          if (e.target.closest('.delete-banner-btn')) {
+            e.preventDefault();
+            return;
+          }
+          draggedElement = card;
+          draggedIndex = index;
+          card.style.opacity = '0.5';
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/html', card.innerHTML);
+        });
+        
+        // Drag end
+        card.addEventListener('dragend', (e) => {
+          card.style.opacity = '1';
+          // Remove all drag-over classes
+          document.querySelectorAll('.banner-card-draggable').forEach(c => {
+            c.style.border = '2px solid #ddd';
+            c.style.transform = 'scale(1)';
+          });
+        });
+        
+        // Drag over
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          
+          if (draggedElement && card !== draggedElement) {
+            const cards = Array.from(bannersGrid.querySelectorAll('.banner-card-draggable'));
+            const draggedIndex = cards.indexOf(draggedElement);
+            const targetIndex = cards.indexOf(card);
+            
+            if (draggedIndex < targetIndex) {
+              // Dragging down
+              card.style.borderTop = '3px solid #4CAF50';
+              card.style.borderBottom = '2px solid #ddd';
+            } else {
+              // Dragging up
+              card.style.borderBottom = '3px solid #4CAF50';
+              card.style.borderTop = '2px solid #ddd';
+            }
+            card.style.transform = 'scale(1.02)';
+          }
+        });
+        
+        // Drag leave
+        card.addEventListener('dragleave', (e) => {
+          card.style.border = '2px solid #ddd';
+          card.style.transform = 'scale(1)';
+        });
+        
+        // Drop
+        card.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          if (draggedElement && card !== draggedElement) {
+            const cards = Array.from(bannersGrid.querySelectorAll('.banner-card-draggable'));
+            const draggedIndex = cards.indexOf(draggedElement);
+            const targetIndex = cards.indexOf(card);
+            
+            // Reorder in DOM
+            if (draggedIndex < targetIndex) {
+              bannersGrid.insertBefore(draggedElement, card.nextSibling);
+            } else {
+              bannersGrid.insertBefore(draggedElement, card);
+            }
+            
+            // Get new order of banner IDs
+            const newOrder = Array.from(bannersGrid.querySelectorAll('.banner-card-draggable')).map(c => 
+              parseInt(c.getAttribute('data-banner-id'))
+            );
+            
+            // Update order in database
+            try {
+              const sq = rid ? `?action=reorder_banners&restaurant_id=${encodeURIComponent(rid)}` : '?action=reorder_banners';
+              const res = await fetch(`website/theme_api.php${sq}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ banner_ids: newOrder })
+              });
+              const data = await res.json();
+              
+              if (data.success) {
+                showNotification('Banner order updated successfully', 'success');
+                // Update display order numbers
+                const updatedCards = Array.from(bannersGrid.querySelectorAll('.banner-card-draggable'));
+                updatedCards.forEach((c, idx) => {
+                  const orderDiv = c.querySelector('div[style*="Order:"]');
+                  if (orderDiv) {
+                    orderDiv.textContent = `Order: ${idx + 1}`;
+                  }
+                });
+              } else {
+                showNotification(data.message || 'Failed to update banner order', 'error');
+                // Reload to restore original order
+                loadBanners();
+              }
+            } catch (err) {
+              showNotification('Network error. Please try again.', 'error');
+              // Reload to restore original order
+              loadBanners();
+            }
+          }
+          
+          // Reset styles
+          card.style.border = '2px solid #ddd';
+          card.style.transform = 'scale(1)';
         });
       });
     };
