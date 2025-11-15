@@ -6,27 +6,122 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
     header('Location: admin/login.php');
     exit();
 }
+
+// Load restaurant info from database to prevent flash of default content
+$restaurant_name = $_SESSION['restaurant_name'] ?? 'Restaurant Name';
+$restaurant_id = $_SESSION['restaurant_id'] ?? 'RES001';
+$restaurant_logo = 'logo.png'; // Default fallback
+$currency_symbol = '₹'; // Default currency
+$timezone = 'Asia/Kolkata'; // Default timezone
+$user_email = '';
+$user_phone = '';
+$user_address = '';
+$user_role = 'Administrator';
+
+try {
+    // Include database connection
+    if (file_exists(__DIR__ . '/config/db_connection.php')) {
+        require_once __DIR__ . '/config/db_connection.php';
+    } elseif (file_exists(__DIR__ . '/db_connection.php')) {
+        require_once __DIR__ . '/db_connection.php';
+    }
+    
+    // Get connection
+    if (isset($pdo) && $pdo instanceof PDO) {
+        $conn = $pdo;
+    } else {
+        $conn = getConnection();
+    }
+    
+    // Try to get all user settings from database to prevent FOUC
+    try {
+        $stmt = $conn->prepare("SELECT restaurant_logo, currency_symbol, timezone, email, phone, address, role FROM users WHERE id = ? LIMIT 1");
+        $stmt->execute([$_SESSION['user_id']]);
+        $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($userRow) {
+            // Restaurant logo
+            if (!empty($userRow['restaurant_logo'])) {
+                $restaurant_logo = $userRow['restaurant_logo'];
+                // Ensure proper path format
+                if (strpos($restaurant_logo, 'http') !== 0 && strpos($restaurant_logo, 'uploads/') !== 0) {
+                    $restaurant_logo = 'uploads/' . $restaurant_logo;
+                }
+            }
+            // Currency symbol
+            if (!empty($userRow['currency_symbol'])) {
+                $currency_symbol = htmlspecialchars($userRow['currency_symbol']);
+            }
+            // Timezone
+            if (!empty($userRow['timezone'])) {
+                $timezone = htmlspecialchars($userRow['timezone']);
+            }
+            // User details
+            $user_email = htmlspecialchars($userRow['email'] ?? '');
+            $user_phone = htmlspecialchars($userRow['phone'] ?? '');
+            $user_address = htmlspecialchars($userRow['address'] ?? '');
+            $user_role = htmlspecialchars($userRow['role'] ?? 'Administrator');
+        }
+    } catch (PDOException $e) {
+        // If columns don't exist, try without them
+        try {
+            $stmt = $conn->prepare("SELECT restaurant_logo FROM users WHERE id = ? LIMIT 1");
+            $stmt->execute([$_SESSION['user_id']]);
+            $logoRow = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($logoRow && !empty($logoRow['restaurant_logo'])) {
+                $restaurant_logo = $logoRow['restaurant_logo'];
+                if (strpos($restaurant_logo, 'http') !== 0 && strpos($restaurant_logo, 'uploads/') !== 0) {
+                    $restaurant_logo = 'uploads/' . $restaurant_logo;
+                }
+            }
+        } catch (PDOException $e2) {
+            // Use defaults
+            $restaurant_logo = 'logo.png';
+        }
+    }
+} catch (Exception $e) {
+    // If database query fails, use defaults
+    $restaurant_logo = 'logo.png';
+}
 ?>
 <!DOCTYPE html>
 <!-- Coding By CodingNepal - youtube.com/@codingnepal -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Restaurant Management System</title>
   <link rel="stylesheet" href="style.css">
   <!-- Linking Google fonts for icons -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
+  <style>
+    /* Prevent FOUC - Currency is set by PHP, so it should never flash */
+    /* This ensures currency elements are visible immediately with correct value */
+    #currencySymbolDisplay,
+    .currency-symbol,
+    #currencySymbol {
+      /* No hiding needed - PHP already sets correct value */
+    }
+  </style>
+  <script>
+    // Set currency symbol from PHP (just like restaurant logo/name)
+    // This is set server-side, so no JavaScript updates needed on page load
+    window.globalCurrencySymbol = '<?php echo addslashes($currency_symbol); ?>';
+    window.currencyFromServer = true; // Flag to prevent JavaScript updates
+    localStorage.setItem('system_currency', window.globalCurrencySymbol);
+  </script>
 </head>
 <body>
   <aside class="sidebar">
     <!-- Sidebar header -->
     <header class="sidebar-header">
       <a href="#" class="header-logo">
-        <img src="logo.png" alt="Restaurant Management">
+        <img id="dashboardRestaurantLogo" src="<?php echo htmlspecialchars($restaurant_logo); ?>" alt="Restaurant Management" onerror="this.src='logo.png'; this.style.borderRadius='50%'; this.style.objectFit='cover';" style="border-radius: 50%; object-fit: cover; width: 46px; height: 46px;">
         <div class="restaurant-info">
-          <div class="restaurant-name" id="restaurantName">Restaurant Name</div>
-          <div class="restaurant-id" id="restaurantId">RES001</div>
+          <div class="restaurant-name" id="restaurantName"><?php echo htmlspecialchars($restaurant_name); ?></div>
+          <div class="restaurant-id" id="restaurantId"><?php echo htmlspecialchars($restaurant_id); ?></div>
         </div>
       </a>
       <button class="toggler sidebar-toggler">
@@ -877,7 +972,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
                     <span class="material-symbols-rounded">currency_exchange</span>
                     Currency Symbol
                   </label>
-                  <input type="text" id="currencySymbol" value="₹" maxlength="3" placeholder="Currency symbol">
+                  <input type="text" id="currencySymbol" value="<?php echo htmlspecialchars($currency_symbol); ?>" maxlength="3" placeholder="Currency symbol">
                 </div>
                 
                 <div class="form-group">
@@ -886,10 +981,10 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
                     Timezone
                   </label>
                   <select id="timezone">
-                    <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                    <option value="UTC">UTC</option>
-                    <option value="America/New_York">America/New_York (EST)</option>
-                    <option value="Europe/London">Europe/London (GMT)</option>
+                    <option value="Asia/Kolkata" <?php echo $timezone === 'Asia/Kolkata' ? 'selected' : ''; ?>>Asia/Kolkata (IST)</option>
+                    <option value="UTC" <?php echo $timezone === 'UTC' ? 'selected' : ''; ?>>UTC</option>
+                    <option value="America/New_York" <?php echo $timezone === 'America/New_York' ? 'selected' : ''; ?>>America/New_York (EST)</option>
+                    <option value="Europe/London" <?php echo $timezone === 'Europe/London' ? 'selected' : ''; ?>>Europe/London (GMT)</option>
                   </select>
                 </div>
                 
@@ -933,9 +1028,13 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
           <!-- Profile Header Section -->
           <div class="profile-header-card">
             <div class="profile-avatar-section">
-              <div class="profile-avatar-large">
+              <div class="profile-avatar-large" id="profileAvatarContainer">
+                <img id="profileRestaurantLogo" src="" alt="Restaurant Logo" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                 <span id="profileInitials">JD</span>
               </div>
+              <button class="btn-edit-avatar" onclick="openLogoUploadModal()" title="Change Restaurant Logo">
+                <span class="material-symbols-rounded">photo_camera</span>
+              </button>
             </div>
             <div class="profile-info-section">
               <h2 id="profileName">Loading...</h2>
@@ -1559,7 +1658,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
             <div class="form-group">
               <label for="basePrice">Price:</label>
               <div class="price-input">
-                <span class="currency-symbol" id="currencySymbolDisplay">₹</span>
+                <span class="currency-symbol" id="currencySymbolDisplay"><?php echo htmlspecialchars($currency_symbol); ?></span>
                 <input type="number" id="basePrice" name="basePrice" min="0" step="0.01" value="0.00" placeholder="0.00">
               </div>
             </div>
@@ -1815,7 +1914,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
       <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
         <button id="renewButton" onclick="initiateRenewal()" style="padding:12px 24px;background:#10b981;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;transition:opacity 0.2s;display:flex;align-items:center;gap:8px;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
           <span style="font-size:1.2rem;">💳</span>
-          Renew Now (<span id="renewalAmount">₹999</span>)
+          Renew Now (<span id="renewalAmount"><?php echo htmlspecialchars($currency_symbol); ?>999</span>)
         </button>
         <button onclick="document.getElementById('renewalModal').style.display='none';" style="padding:12px 24px;background:#6b7280;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Close</button>
       </div>
@@ -1887,6 +1986,44 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
           <button type="button" class="btn btn-cancel" onclick="closePOSPaymentMethodModal()">
             <span class="material-symbols-rounded">close</span>
             Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restaurant Logo Upload Modal -->
+  <div id="logoUploadModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-header">
+        <h2>
+          <span class="material-symbols-rounded" style="vertical-align:middle;margin-right:0.5rem;">image</span>
+          Change Restaurant Logo
+        </h2>
+        <span class="close" onclick="closeLogoUploadModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center;padding:1rem 0;">
+          <div id="logoPreviewContainer" style="margin-bottom:1.5rem;">
+            <div id="logoPreview" style="width:150px;height:150px;border-radius:50%;background:#f3f4f6;margin:0 auto;display:flex;align-items:center;justify-content:center;border:3px dashed #d1d5db;overflow:hidden;">
+              <span class="material-symbols-rounded" style="font-size:3rem;color:#9ca3af;">image</span>
+            </div>
+          </div>
+          <input type="file" id="logoFileInput" accept="image/*" style="display:none;" onchange="handleLogoFileSelect(event)">
+          <button type="button" class="btn btn-primary" onclick="document.getElementById('logoFileInput').click()" style="margin-bottom:1rem;">
+            <span class="material-symbols-rounded">upload</span>
+            Choose Image
+          </button>
+          <p style="color:#6b7280;font-size:0.875rem;margin:0.5rem 0;">Recommended: Square image, max 2MB (JPG, PNG, WebP)</p>
+        </div>
+        <div class="form-actions" style="justify-content:center;margin-top:1.5rem;">
+          <button type="button" class="btn btn-cancel" onclick="closeLogoUploadModal()">
+            <span class="material-symbols-rounded">close</span>
+            Cancel
+          </button>
+          <button type="button" class="btn btn-save" id="saveLogoBtn" onclick="uploadRestaurantLogo()" disabled>
+            <span class="material-symbols-rounded">save</span>
+            Save Logo
           </button>
         </div>
       </div>
@@ -1979,6 +2116,57 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SE
         }
       }, 300);
     });
+    
+    // Ensure mobile scrolling works on all devices
+    (function() {
+      function enableScrolling() {
+        if (window.innerWidth <= 768) {
+          // Ensure html allows body to grow
+          document.documentElement.style.overflowY = 'auto';
+          document.documentElement.style.height = 'auto';
+          document.documentElement.style.minHeight = '100%';
+          document.documentElement.style.maxHeight = 'none';
+          
+          // Ensure body can scroll and grow
+          document.body.style.overflowY = 'auto';
+          document.body.style.height = 'auto';
+          document.body.style.minHeight = '100vh';
+          document.body.style.maxHeight = 'none';
+          document.body.style.webkitOverflowScrolling = 'touch';
+          document.body.style.touchAction = 'pan-y';
+          document.body.style.position = 'relative';
+          
+          // Ensure main-content doesn't constrain body
+          const mainContent = document.querySelector('.main-content');
+          if (mainContent) {
+            mainContent.style.height = 'auto';
+            mainContent.style.minHeight = 'auto';
+            mainContent.style.maxHeight = 'none';
+            mainContent.style.overflow = 'visible';
+            mainContent.style.position = 'relative';
+          }
+          
+          // Remove height constraints from all page containers
+          const containers = document.querySelectorAll('.page, .page-content, .page-header');
+          containers.forEach(function(el) {
+            el.style.height = 'auto';
+            el.style.minHeight = 'auto';
+            el.style.maxHeight = 'none';
+            el.style.overflow = 'visible';
+          });
+        }
+      }
+      
+      // Run on load and resize
+      enableScrolling();
+      window.addEventListener('resize', enableScrolling);
+      window.addEventListener('orientationchange', function() {
+        setTimeout(enableScrolling, 100);
+      });
+      
+      // Also run after a short delay to ensure DOM is fully loaded
+      setTimeout(enableScrolling, 100);
+    })();
   </script>
 </body>
 </html>

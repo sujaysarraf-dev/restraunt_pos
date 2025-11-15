@@ -80,26 +80,36 @@ if (menuToggler && sidebar) {
 }
 
 // Global currency symbol - will be loaded from database
-let globalCurrencySymbol = '₹';
+// Check if already set by inline script in dashboard.php (prevents FOUC)
+let globalCurrencySymbol = window.globalCurrencySymbol || localStorage.getItem('system_currency') || '₹';
 
 // Get currency symbol from database/session
 async function loadCurrencySymbol() {
+  // If already set by inline script, use that value
+  if (window.globalCurrencySymbol) {
+    globalCurrencySymbol = window.globalCurrencySymbol;
+    return;
+  }
+  
   try {
     const response = await fetch('admin/get_session.php');
     const result = await response.json();
     
     if (result.success && result.data.currency_symbol) {
       globalCurrencySymbol = result.data.currency_symbol;
+      window.globalCurrencySymbol = globalCurrencySymbol;
       // Also save to localStorage as backup
       localStorage.setItem('system_currency', globalCurrencySymbol);
     } else {
       // Fallback to localStorage
       globalCurrencySymbol = localStorage.getItem('system_currency') || '₹';
+      window.globalCurrencySymbol = globalCurrencySymbol;
     }
   } catch (error) {
     console.error('Error loading currency symbol:', error);
     // Fallback to localStorage
     globalCurrencySymbol = localStorage.getItem('system_currency') || '₹';
+    window.globalCurrencySymbol = globalCurrencySymbol;
   }
 }
 
@@ -117,19 +127,17 @@ function formatCurrencyLocale(amount) {
 
 // Submenu toggle functionality
 document.addEventListener("DOMContentLoaded", () => {
-  // Load currency symbol on page load
-  loadCurrencySymbol().then(() => {
-    // Update currency symbol display in menu item form
-    const currencyDisplay = document.getElementById('currencySymbolDisplay');
-    if (currencyDisplay) {
-      currencyDisplay.textContent = globalCurrencySymbol;
-    }
-    // Update renewal amount
-    const renewalAmount = document.getElementById('renewalAmount');
-    if (renewalAmount) {
-      renewalAmount.textContent = formatCurrency(999);
-    }
-  });
+  // Currency symbol is already set by PHP server-side (like restaurant logo/name)
+  // Only load if not already set by inline script
+  if (!window.globalCurrencySymbol) {
+    loadCurrencySymbol();
+  } else {
+    // Use the server-loaded value
+    globalCurrencySymbol = window.globalCurrencySymbol;
+  }
+  
+  // DO NOT update currency displays on page load - they're already correct from PHP
+  // Only update dynamically added elements or when user changes settings
   const submenuToggles = document.querySelectorAll(".submenu-toggle");
   
   submenuToggles.forEach(toggle => {
@@ -3435,8 +3443,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const posClearCartConfirmBtn = document.getElementById('posClearCartConfirmBtn');
   if (posClearCartConfirmBtn) {
     posClearCartConfirmBtn.addEventListener('click', () => {
-      posCart = [];
-      updatePOSCart();
+        posCart = [];
+        updatePOSCart();
       closePOSClearCartModal();
       showNotification('Cart cleared successfully', 'success');
     });
@@ -3675,6 +3683,30 @@ async function loadRestaurantInfo() {
     if (result.success) {
       document.getElementById("restaurantName").textContent = result.data.restaurant_name;
       document.getElementById("restaurantId").textContent = result.data.restaurant_id;
+      
+      // Update dashboard logo
+      const dashboardLogo = document.getElementById("dashboardRestaurantLogo");
+      if (dashboardLogo && result.data.restaurant_logo) {
+        const logoPath = result.data.restaurant_logo.startsWith('http') 
+          ? result.data.restaurant_logo 
+          : (result.data.restaurant_logo.startsWith('uploads/') 
+            ? result.data.restaurant_logo 
+            : 'uploads/' + result.data.restaurant_logo);
+        dashboardLogo.src = logoPath;
+        dashboardLogo.style.borderRadius = '50%';
+        dashboardLogo.style.objectFit = 'cover';
+        dashboardLogo.onerror = function() {
+          // Fallback to default logo if restaurant logo fails to load
+          this.src = 'logo.png';
+          this.style.borderRadius = '50%';
+          this.style.objectFit = 'cover';
+        };
+      } else if (dashboardLogo) {
+        // Reset to default logo if no restaurant logo
+        dashboardLogo.src = 'logo.png';
+        dashboardLogo.style.borderRadius = '50%';
+        dashboardLogo.style.objectFit = 'cover';
+      }
       
       // Store subscription data globally
       subscriptionData = result.data;
@@ -4444,6 +4476,36 @@ async function loadProfileData() {
       const joinDate = new Date(user.created_at || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
       document.getElementById('profileMemberSinceDate').textContent = joinDate;
       
+      // Update restaurant logo if available
+      if (user.restaurant_logo) {
+        const logoImg = document.getElementById('profileRestaurantLogo');
+        const initialsSpan = document.getElementById('profileInitials');
+        const logoPath = user.restaurant_logo.startsWith('http') 
+          ? user.restaurant_logo 
+          : (user.restaurant_logo.startsWith('uploads/') 
+            ? user.restaurant_logo 
+            : 'uploads/' + user.restaurant_logo);
+        logoImg.src = logoPath;
+        logoImg.style.display = 'block';
+        initialsSpan.style.display = 'none';
+        
+        // Also update dashboard logo
+        const dashboardLogo = document.getElementById("dashboardRestaurantLogo");
+        if (dashboardLogo) {
+          dashboardLogo.src = logoPath;
+          dashboardLogo.style.borderRadius = '50%';
+          dashboardLogo.style.objectFit = 'cover';
+          dashboardLogo.onerror = function() {
+            this.src = 'logo.png';
+            this.style.borderRadius = '50%';
+            this.style.objectFit = 'cover';
+          };
+        }
+      } else {
+        document.getElementById('profileRestaurantLogo').style.display = 'none';
+        document.getElementById('profileInitials').style.display = 'block';
+      }
+      
       // Set form values
       document.getElementById('editUsername').value = username;
       document.getElementById('editEmail').value = user.email || '';
@@ -4763,18 +4825,23 @@ async function loadSettingsData() {
       if (profileEmailSetting) profileEmailSetting.value = user.email || '';
       
       // System Settings - Load from database (with localStorage fallback)
+      // Only update if value is different from what PHP already set
       const currencySymbol = document.getElementById('currencySymbol');
       const timezone = document.getElementById('timezone');
       const autoSync = document.getElementById('autoSync');
       const notifications = document.getElementById('notifications');
       
       if (currencySymbol) {
-        // Try database first, fallback to localStorage
-        currencySymbol.value = user.currency_symbol || localStorage.getItem('system_currency') || '₹';
+        // DO NOT update - PHP already set it correctly (like restaurant logo/name)
+        // The value is rendered server-side, so we never update it on page load
+        // Only update if explicitly changed by user in settings form
       }
       if (timezone) {
-        // Try database first, fallback to localStorage
-        timezone.value = user.timezone || localStorage.getItem('system_timezone') || 'Asia/Kolkata';
+        // Only update if not already set correctly
+        const currentValue = timezone.value;
+        if (!currentValue || currentValue === 'Asia/Kolkata') {
+          timezone.value = user.timezone || localStorage.getItem('system_timezone') || 'Asia/Kolkata';
+        }
       }
       if (autoSync) {
         autoSync.checked = localStorage.getItem('system_autoSync') === 'true';
@@ -5404,3 +5471,121 @@ document.addEventListener('DOMContentLoaded', function(){
     }, 300);
   }
 });
+
+// Restaurant Logo Upload Functions
+let selectedLogoFile = null;
+
+function openLogoUploadModal() {
+  const modal = document.getElementById('logoUploadModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    selectedLogoFile = null;
+    document.getElementById('logoFileInput').value = '';
+    document.getElementById('saveLogoBtn').disabled = true;
+    // Reset preview
+    const preview = document.getElementById('logoPreview');
+    preview.innerHTML = '<span class="material-symbols-rounded" style="font-size:3rem;color:#9ca3af;">image</span>';
+    preview.style.background = '#f3f4f6';
+    preview.style.border = '3px dashed #d1d5db';
+  }
+}
+
+function closeLogoUploadModal() {
+  const modal = document.getElementById('logoUploadModal');
+  if (modal) {
+    modal.style.display = 'none';
+    selectedLogoFile = null;
+    document.getElementById('logoFileInput').value = '';
+  }
+}
+
+function handleLogoFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    showNotification('Please select a valid image file', 'error');
+    return;
+  }
+  
+  // Validate file size (2MB max)
+  if (file.size > 2 * 1024 * 1024) {
+    showNotification('Image size must be less than 2MB', 'error');
+    return;
+  }
+  
+  selectedLogoFile = file;
+  
+  // Show preview
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const preview = document.getElementById('logoPreview');
+    preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="Logo Preview">`;
+    preview.style.background = 'transparent';
+    preview.style.border = 'none';
+    document.getElementById('saveLogoBtn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadRestaurantLogo() {
+  if (!selectedLogoFile) {
+    showNotification('Please select an image first', 'error');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('action', 'uploadRestaurantLogo');
+  formData.append('logo', selectedLogoFile);
+  
+  const saveBtn = document.getElementById('saveLogoBtn');
+  const originalText = saveBtn.innerHTML;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Uploading...';
+  
+  try {
+    const response = await fetch('admin/auth.php', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      showNotification('Restaurant logo updated successfully', 'success');
+      closeLogoUploadModal();
+      // Reload profile data to show new logo
+      await loadProfileData();
+      // Also reload restaurant info to update dashboard logo
+      if (typeof loadRestaurantInfo === 'function') {
+        await loadRestaurantInfo();
+      }
+    } else {
+      showNotification(result.message || 'Failed to upload logo', 'error');
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalText;
+    }
+  } catch (error) {
+    console.error('Error uploading logo:', error);
+    showNotification('Network error. Please try again.', 'error');
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalText;
+  }
+}
+
+// Close logo modal when clicking outside
+const logoUploadModal = document.getElementById('logoUploadModal');
+if (logoUploadModal) {
+  logoUploadModal.addEventListener('click', (e) => {
+    if (e.target === logoUploadModal) {
+      closeLogoUploadModal();
+    }
+  });
+}
+
+// Make functions globally available
+window.openLogoUploadModal = openLogoUploadModal;
+window.closeLogoUploadModal = closeLogoUploadModal;
+window.handleLogoFileSelect = handleLogoFileSelect;
+window.uploadRestaurantLogo = uploadRestaurantLogo;

@@ -68,6 +68,10 @@ try {
             handleUpdateSystemSettings();
             break;
             
+        case 'uploadRestaurantLogo':
+            handleUploadRestaurantLogo();
+            break;
+            
         default:
             throw new Exception('Invalid action');
     }
@@ -546,6 +550,123 @@ function handleUpdateSystemSettings() {
         ]);
     } else {
         throw new Exception('Failed to update system settings');
+    }
+}
+
+function handleUploadRestaurantLogo() {
+    global $pdo;
+    
+    // Check if user is logged in
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
+        throw new Exception('You must be logged in to upload restaurant logo');
+    }
+    
+    // Check if file was uploaded
+    if (!isset($_FILES['logo']) || $_FILES['logo']['error'] !== UPLOAD_ERR_OK) {
+        throw new Exception('No file uploaded or upload error occurred');
+    }
+    
+    $file = $_FILES['logo'];
+    
+    // Validate file type
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    
+    if (!in_array($mimeType, $allowedTypes)) {
+        throw new Exception('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.');
+    }
+    
+    // Validate file size (2MB max)
+    $maxSize = 2 * 1024 * 1024; // 2MB
+    if ($file['size'] > $maxSize) {
+        throw new Exception('File size too large. Maximum size is 2MB.');
+    }
+    
+    // Create uploads directory if it doesn't exist
+    $uploadDir = __DIR__ . '/../uploads/';
+    if (!file_exists($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    // Generate unique filename
+    $extension = '';
+    switch ($mimeType) {
+        case 'image/jpeg':
+            $extension = '.jpg';
+            break;
+        case 'image/png':
+            $extension = '.png';
+            break;
+        case 'image/gif':
+            $extension = '.gif';
+            break;
+        case 'image/webp':
+            $extension = '.webp';
+            break;
+    }
+    
+    $filename = 'logo_' . $_SESSION['restaurant_id'] . '_' . uniqid() . '_' . time() . $extension;
+    $filepath = $uploadDir . $filename;
+    
+    // Move uploaded file
+    if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+        throw new Exception('Failed to save uploaded file');
+    }
+    
+    $logoPath = 'uploads/' . $filename;
+    
+    $userId = $_SESSION['user_id'];
+    
+    // Delete old logo if exists
+    try {
+        $oldLogoStmt = $pdo->prepare("SELECT restaurant_logo FROM users WHERE id = ?");
+        $oldLogoStmt->execute([$userId]);
+        $oldLogo = $oldLogoStmt->fetchColumn();
+        
+        if ($oldLogo && file_exists(__DIR__ . '/../' . $oldLogo)) {
+            @unlink(__DIR__ . '/../' . $oldLogo);
+        }
+    } catch (PDOException $e) {
+        // Ignore if column doesn't exist yet
+    }
+    
+    // Update restaurant logo - handle column existence gracefully
+    try {
+        $updateStmt = $pdo->prepare("UPDATE users SET restaurant_logo = ?, updated_at = NOW() WHERE id = ?");
+        $result = $updateStmt->execute([$logoPath, $userId]);
+    } catch (PDOException $e) {
+        // If column doesn't exist, we need to add it first
+        if (strpos($e->getMessage(), 'restaurant_logo') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
+            // Add column if it doesn't exist
+            try {
+                $alterStmt = $pdo->prepare("ALTER TABLE users ADD COLUMN restaurant_logo VARCHAR(255) NULL AFTER restaurant_name");
+                $alterStmt->execute();
+                
+                // Try update again
+                $updateStmt = $pdo->prepare("UPDATE users SET restaurant_logo = ?, updated_at = NOW() WHERE id = ?");
+                $result = $updateStmt->execute([$logoPath, $userId]);
+            } catch (PDOException $e2) {
+                // If alter fails (column might already exist), try update again
+                $updateStmt = $pdo->prepare("UPDATE users SET restaurant_logo = ?, updated_at = NOW() WHERE id = ?");
+                $result = $updateStmt->execute([$logoPath, $userId]);
+            }
+        } else {
+            throw $e;
+        }
+    }
+    
+    if ($result) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Restaurant logo uploaded successfully',
+            'data' => [
+                'restaurant_logo' => $logoPath
+            ]
+        ]);
+    } else {
+        throw new Exception('Failed to update restaurant logo');
     }
 }
 ?>

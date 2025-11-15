@@ -8,11 +8,24 @@
   font-family: "Poppins", sans-serif;
 }
 
+html {
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: auto;
+  min-height: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
-  min-height: 100vh;
   background: linear-gradient(#F1FAFF, #CBE4FF);
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  height: auto;
+  min-height: 100vh;
+  max-height: none;
 }
 
 .sidebar {
@@ -48,8 +61,9 @@ body {
   width: 46px;
   height: 46px;
   display: block;
-  object-fit: contain;
-  border-radius: 50%;
+  object-fit: cover;
+  border-radius: 50% !important;
+  overflow: hidden;
 }
 
 .restaurant-info {
@@ -556,8 +570,9 @@ body {
 .main-content {
   margin-left: 302px; /* Sidebar width + margin */
   padding: 20px;
-  min-height: 100vh;
   transition: margin-left 0.4s ease;
+  overflow-x: hidden;
+  min-height: 100vh;
 }
 
 .sidebar.collapsed + .main-content {
@@ -602,6 +617,7 @@ body {
   border-radius: 12px;
   padding: 30px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow-x: hidden;
 }
 
 /* Dashboard Styles */
@@ -1774,7 +1790,8 @@ select:focus {
   }
   
   #menuItemModal .modal-body {
-  padding: 20px;
+    padding: 20px;
+  }
 }
 
 /* Payment Method Buttons */
@@ -1799,6 +1816,7 @@ select:focus {
   .main-content {
     margin-left: 0;
     padding: 15px;
+    padding-top: 71px; /* Account for fixed sidebar header (56px + 15px padding) */
   }
   
   .menu-items-list {
@@ -1835,7 +1853,62 @@ select:focus {
 
 /* Tighter, symmetric gutters on phones to remove extra right-side gap */
 @media (max-width: 768px) {
-  .main-content { padding-left: 12px; padding-right: 12px; }
+  html {
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: auto;
+    min-height: 100%;
+    -webkit-overflow-scrolling: touch;
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  body {
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    height: auto !important;
+    min-height: 100vh;
+    max-height: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    position: relative !important;
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  .main-content {
+    padding-left: 12px; 
+    padding-right: 12px; 
+    padding-top: 71px; /* Account for fixed sidebar header (56px + 15px padding) */
+    height: auto;
+    min-height: auto;
+    max-height: none;
+    overflow: visible;
+    position: relative;
+  }
+  
+  .page {
+    height: auto;
+    min-height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+  
+  .page-content {
+    height: auto;
+    min-height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+  
+  input, textarea, select {
+    touch-action: auto;
+    font-size: 16px; /* Prevents zoom on iOS */
+    -webkit-appearance: none;
+  }
+  
+  button, a {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 /* Responsive media query code for small screens */
@@ -1875,6 +1948,9 @@ select:focus {
   .sidebar-header .header-logo img {
     width: 32px;
     height: 32px;
+    border-radius: 50% !important;
+    object-fit: cover;
+    overflow: hidden;
   }
 
   .sidebar-header .sidebar-toggler,
