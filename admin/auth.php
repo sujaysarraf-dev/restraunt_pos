@@ -115,10 +115,19 @@ function handleLogin() {
         $_SESSION['user_type'] = 'admin';
         $_SESSION['role'] = 'Admin';
         
+        // Create restaurant slug for URL
+        $restaurant_name = $user['restaurant_name'] ?? 'Restaurant';
+        $restaurant_slug = strtolower($restaurant_name);
+        $restaurant_slug = preg_replace('/[^a-z0-9]+/', '-', $restaurant_slug);
+        $restaurant_slug = trim($restaurant_slug, '-');
+        
+        // Redirect to restaurant website instead of dashboard
+        $redirect = '../website/index.php?restaurant_id=' . urlencode($user['restaurant_id']) . '&restaurant=' . urlencode($restaurant_slug);
+        
         echo json_encode([
             'success' => true,
             'message' => 'Login successful',
-            'redirect' => '../views/dashboard.php',
+            'redirect' => $redirect,
             'data' => [
                 'username' => $user['username'],
                 'restaurant_id' => $user['restaurant_id'],
