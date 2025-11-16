@@ -635,7 +635,49 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCartUI();
     
     // Event listeners
-    document.getElementById('searchInput').addEventListener('input', handleSearch);
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', handleSearch);
+        searchInput.addEventListener('focus', () => {
+            // Show suggestions if we have them
+            if (searchSuggestions.length > 0) {
+                const suggestionsDiv = document.getElementById('searchSuggestions');
+                if (suggestionsDiv) suggestionsDiv.style.display = 'block';
+            }
+        });
+        searchInput.addEventListener('blur', (e) => {
+            // Delay hiding to allow clicks on suggestions
+            setTimeout(() => {
+                const suggestionsDiv = document.getElementById('searchSuggestions');
+                if (suggestionsDiv && !suggestionsDiv.matches(':hover')) {
+                    suggestionsDiv.style.display = 'none';
+                }
+            }, 200);
+        });
+        searchInput.addEventListener('keydown', (e) => {
+            const suggestionsDiv = document.getElementById('searchSuggestions');
+            if (!suggestionsDiv || suggestionsDiv.style.display === 'none') return;
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, searchSuggestions.length - 1);
+                renderSearchSuggestions();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+                renderSearchSuggestions();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < searchSuggestions.length) {
+                    selectSuggestion(selectedSuggestionIndex);
+                }
+            } else if (e.key === 'Escape') {
+                suggestionsDiv.style.display = 'none';
+                selectedSuggestionIndex = -1;
+            }
+        });
+    }
+    
     document.getElementById('typeFilter').addEventListener('change', handleFilter);
     document.getElementById('categoryFilter').addEventListener('change', handleFilter);
     document.getElementById('cartIcon').addEventListener('click', toggleCart);
@@ -1178,12 +1220,25 @@ function showCartNotification() {
 
 // Handle search
 let searchTimeout;
+let searchSuggestions = [];
+let selectedSuggestionIndex = -1;
+
 function handleSearch(e) {
     const searchTerm = e.target.value.trim();
+    const suggestionsDiv = document.getElementById('searchSuggestions');
     
     clearTimeout(searchTimeout);
     
+    // Hide suggestions if search is empty
+    if (searchTerm.length === 0) {
+        if (suggestionsDiv) suggestionsDiv.style.display = 'none';
+        loadMenuItems(currentFilter);
+        selectedSuggestionIndex = -1;
+        return;
+    }
+    
     if (searchTerm.length < 2) {
+        if (suggestionsDiv) suggestionsDiv.style.display = 'none';
         loadMenuItems(currentFilter);
         return;
     }
@@ -1198,16 +1253,123 @@ function handleSearch(e) {
             if (data.error) {
                 console.error('Search Error:', data.error);
                 menuItems = [];
+                searchSuggestions = [];
             } else {
                 menuItems = Array.isArray(data) ? data : [];
+                // Show top 5 results in suggestions
+                searchSuggestions = menuItems.slice(0, 5);
             }
+            
+            // Show suggestions dropdown
+            renderSearchSuggestions();
             renderMenuItems();
         } catch (error) {
             console.error('Search error:', error);
             menuItems = [];
+            searchSuggestions = [];
+            if (suggestionsDiv) suggestionsDiv.style.display = 'none';
             renderMenuItems();
         }
     }, 300);
+}
+
+// Render search suggestions dropdown
+function renderSearchSuggestions() {
+    const suggestionsDiv = document.getElementById('searchSuggestions');
+    if (!suggestionsDiv) return;
+    
+    if (searchSuggestions.length === 0) {
+        suggestionsDiv.innerHTML = `
+            <div class="search-suggestions-empty">
+                <span class="material-symbols-rounded">search_off</span>
+                <div>No results found</div>
+            </div>
+        `;
+        suggestionsDiv.style.display = 'block';
+        return;
+    }
+    
+    suggestionsDiv.innerHTML = searchSuggestions.map((item, index) => {
+        const itemName = item.item_name_en || item.item_name || 'Unknown Item';
+        const category = item.item_category || '';
+        const price = item.base_price || 0;
+        const imageUrl = item.item_image ? `image.php?path=${encodeURIComponent(item.item_image)}` : '';
+        
+        // Build image HTML
+        let imageHtml = '';
+        if (imageUrl) {
+            imageHtml = `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(itemName)}" class="search-suggestions-item-image" onerror="this.onerror=null; this.style.display='none'; const fallback = this.nextElementSibling; if(fallback) fallback.style.display='flex';">`;
+            // Add fallback icon div that shows if image fails
+            imageHtml += `<div class="search-suggestions-item-image" style="display: none; align-items: center; justify-content: center; color: var(--text-light); background: var(--light-gray);">
+                <span class="material-symbols-rounded">restaurant_menu</span>
+            </div>`;
+        } else {
+            // Show icon if no image
+            imageHtml = `<div class="search-suggestions-item-image" style="display: flex; align-items: center; justify-content: center; color: var(--text-light); background: var(--light-gray);">
+                <span class="material-symbols-rounded">restaurant_menu</span>
+            </div>`;
+        }
+        
+        return `
+            <div class="search-suggestions-item ${index === selectedSuggestionIndex ? 'selected' : ''}" 
+                 data-index="${index}" 
+                 onmousedown="event.preventDefault(); selectSuggestion(${index})"
+                 onmouseenter="highlightSuggestion(${index})">
+                ${imageHtml}
+                <div class="search-suggestions-item-info">
+                    <div class="search-suggestions-item-name">${escapeHtml(itemName)}</div>
+                    ${category ? `<div class="search-suggestions-item-category">${escapeHtml(category)}</div>` : ''}
+                    <div class="search-suggestions-item-price">${formatCurrency(price)}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    suggestionsDiv.style.display = 'block';
+    
+    // Prevent blur when clicking on suggestions
+    suggestionsDiv.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+    });
+}
+
+// Select a suggestion
+function selectSuggestion(index) {
+    if (index >= 0 && index < searchSuggestions.length) {
+        const item = searchSuggestions[index];
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.value = item.item_name_en || item.item_name || '';
+        }
+        
+        // Hide suggestions
+        const suggestionsDiv = document.getElementById('searchSuggestions');
+        if (suggestionsDiv) suggestionsDiv.style.display = 'none';
+        
+        // Scroll to menu section and highlight the item
+        const menuSection = document.getElementById('menu');
+        if (menuSection) {
+            menuSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Trigger search to show full results
+        if (searchInput) {
+            searchInput.dispatchEvent(new Event('input'));
+        }
+    }
+}
+
+// Highlight suggestion on hover
+function highlightSuggestion(index) {
+    selectedSuggestionIndex = index;
+    renderSearchSuggestions();
+}
+
+// Escape HTML helper
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Handle filter

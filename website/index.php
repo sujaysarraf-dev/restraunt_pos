@@ -259,11 +259,14 @@ try {
         <div class="hero-content">
             <h1 class="hero-title">Delicious Food<br>Delivered Fresh</h1>
             <p class="hero-subtitle">Order your favorite meals online and enjoy fast delivery</p>
-            <div class="hero-search">
-                <input type="text" id="searchInput" placeholder="Search for food...">
-                <button class="search-btn">
-                    <span class="material-symbols-rounded">search</span>
-                </button>
+            <div style="position: relative; max-width: 600px; margin: 0 auto;">
+                <div class="hero-search">
+                    <input type="text" id="searchInput" placeholder="Search for food..." autocomplete="off">
+                    <button class="search-btn">
+                        <span class="material-symbols-rounded">search</span>
+                    </button>
+                </div>
+                <div class="search-suggestions" id="searchSuggestions" style="display: none;"></div>
             </div>
         </div>
     </section>
