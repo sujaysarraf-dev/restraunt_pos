@@ -73,15 +73,26 @@ try {
         $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     }
     
+    // Track if restaurant was explicitly requested (not default)
+    $restaurant_explicitly_requested = false;
+    
     // If we have a restaurant slug but no restaurant_id, find it
-    if (!empty($restaurant_slug) && (!$restaurant_id || $restaurant_id === 'RES001')) {
+    if (!empty($restaurant_slug)) {
+        $restaurant_explicitly_requested = true;
         $restaurant_info = findRestaurantBySlug($conn, $restaurant_slug);
         if ($restaurant_info) {
             $restaurant_id = $restaurant_info['restaurant_id'];
         } else {
-            // Restaurant not found by slug, use default
-            $restaurant_id = 'RES001';
+            // Restaurant not found by slug - show 404
+            http_response_code(404);
+            include __DIR__ . '/404.php';
+            exit();
         }
+    }
+    
+    // If restaurant_id was explicitly provided in URL, mark as requested
+    if (isset($_GET['restaurant_id']) && $_GET['restaurant_id'] !== '' && $_GET['restaurant_id'] !== 'RES001') {
+        $restaurant_explicitly_requested = true;
     }
     
     // Get restaurant details from users table based on restaurant_id
@@ -90,6 +101,7 @@ try {
     $restaurant_phone = '';
     $restaurant_email = '';
     $restaurant_address = '';
+    $restaurant_found = false;
     
     try {
         // First try to get user_id from restaurant_id, then get currency
@@ -109,7 +121,16 @@ try {
             $stmt->execute([$restaurant_id]);
         }
         $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // If restaurant was explicitly requested but not found, show 404
+        if ($restaurant_explicitly_requested && !$userRow) {
+            http_response_code(404);
+            include __DIR__ . '/404.php';
+            exit();
+        }
+        
         if ($userRow) {
+            $restaurant_found = true;
             // Restaurant name
             if (!empty($userRow['restaurant_name'])) {
                 $restaurant_name = htmlspecialchars($userRow['restaurant_name'], ENT_QUOTES, 'UTF-8');
