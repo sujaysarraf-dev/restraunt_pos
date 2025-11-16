@@ -612,6 +612,36 @@ try {
               ?>" class="btn btn-primary" target="_blank">Open Website</a>
             </div>
             <p style="margin-top:10px;color:#666;">Saved locally on this server (no link parameters required). The website reads saved colors automatically from the same origin.</p>
+            
+            <!-- Restaurant Website Link -->
+            <div style="margin-top: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 12px; border: 2px solid #e5e7eb;">
+              <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: #111827; display: flex; align-items: center; gap: 0.5rem;">
+                <span class="material-symbols-rounded" style="font-size: 1.3rem; color: var(--primary-red);">link</span>
+                Your Restaurant Website Link
+              </h3>
+              <p style="margin: 0 0 1rem 0; color: #6b7280; font-size: 0.9rem;">Share this unique link with your customers. Each restaurant has its own unique URL.</p>
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="restaurantWebsiteLink" readonly value="<?php 
+                  $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+                  $restaurant_slug = strtolower($restaurant_name);
+                  $restaurant_slug = preg_replace('/[^a-z0-9]+/', '-', $restaurant_slug);
+                  $restaurant_slug = trim($restaurant_slug, '-');
+                  $script_path = dirname($_SERVER['PHP_SELF']);
+                  echo htmlspecialchars($base_url . $script_path . '/../website/index.php?restaurant_id=' . urlencode($restaurant_id) . '&restaurant=' . urlencode($restaurant_slug));
+                ?>" style="flex: 1; min-width: 300px; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; background: white; color: #111827;">
+                <button type="button" class="btn btn-primary" onclick="copyRestaurantLink()" style="white-space: nowrap;">
+                  <span class="material-symbols-rounded">content_copy</span>
+                  Copy Link
+                </button>
+              </div>
+              <p style="margin: 0.75rem 0 0 0; color: #6b7280; font-size: 0.85rem;">
+                <strong>Short URL format:</strong> <code style="background: #e5e7eb; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.85rem;"><?php 
+                  $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+                  $script_path = dirname($_SERVER['PHP_SELF']);
+                  echo htmlspecialchars($base_url . $script_path . '/../website/' . urlencode($restaurant_slug));
+                ?></code>
+              </p>
+            </div>
           </div>
           
           <div class="settings-section">
