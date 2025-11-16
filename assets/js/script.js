@@ -3361,13 +3361,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const tax = cgst + sgst; // GST total 5%
     const total = subtotal + tax;
     
-    document.getElementById("cartSubtotal").textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById("cartSubtotal").textContent = formatCurrency(subtotal);
     const cgstEl = document.getElementById("cartCGST");
     const sgstEl = document.getElementById("cartSGST");
-    if (cgstEl) cgstEl.textContent = `₹${cgst.toFixed(2)}`;
-    if (sgstEl) sgstEl.textContent = `₹${sgst.toFixed(2)}`;
-    document.getElementById("cartTax").textContent = `₹${tax.toFixed(2)}`;
-    document.getElementById("cartTotal").textContent = `₹${total.toFixed(2)}`;
+    if (cgstEl) cgstEl.textContent = formatCurrency(cgst);
+    if (sgstEl) sgstEl.textContent = formatCurrency(sgst);
+    document.getElementById("cartTax").textContent = formatCurrency(tax);
+    document.getElementById("cartTotal").textContent = formatCurrency(total);
   }
   
   // Clear cart
