@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
     exit();
 }
 
-require_once '../config/db_connection.php';
+require_once '../db_connection.php';
 
 try {
     $conn = getConnection();

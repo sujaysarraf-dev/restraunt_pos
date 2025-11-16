@@ -15,8 +15,8 @@ $restaurant_id = $_SESSION['restaurant_id'];
     <title>Waiter Dashboard - <?php echo htmlspecialchars($_SESSION['restaurant_name'] ?? 'Restaurant'); ?></title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <script src="../assets/js/script.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #f3f4f6; }
@@ -716,7 +716,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
                 return `
                     <div class="pos-menu-item" onclick="addToWaiterPOSCart(${item.id}, '${itemName}', ${item.base_price || item.price}, '${item.item_image || ''}')" style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s; text-align: center;">
                         <div class="item-image" style="width: 100%; height: 120px; background: #f9fafb; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; overflow: hidden;">
-                            ${item.item_image ? `<img src="image.php?path=${encodeURIComponent(item.item_image)}" alt="${itemName}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">` : '<span class="material-symbols-rounded" style="font-size: 3rem; color: #9ca3af;">restaurant</span>'}
+                            ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${itemName}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">` : '<span class="material-symbols-rounded" style="font-size: 3rem; color: #9ca3af;">restaurant</span>'}
                         </div>
                         <div class="item-name" style="font-weight: 600; margin-bottom: 4px; color: #111827;">${item.item_name_en || item.item_name}</div>
                         <div class="item-category" style="font-size: 0.875rem; color: #6b7280; margin-bottom: 8px;">${item.item_category || ''}</div>

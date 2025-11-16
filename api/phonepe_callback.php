@@ -1,8 +1,6 @@
 <?php
 session_start();
-if (file_exists(__DIR__ . '/../config/db_connection.php')) {
-    require_once __DIR__ . '/../config/db_connection.php';
-} elseif (file_exists(__DIR__ . '/../db_connection.php')) {
+if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
 }
 

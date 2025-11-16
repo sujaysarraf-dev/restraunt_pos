@@ -21,17 +21,30 @@ $user_role = 'Administrator';
 
 try {
     // Include database connection
-    if (file_exists(__DIR__ . '/config/db_connection.php')) {
-        require_once __DIR__ . '/config/db_connection.php';
-    } elseif (file_exists(__DIR__ . '/db_connection.php')) {
-        require_once __DIR__ . '/db_connection.php';
+    if (file_exists(__DIR__ . '/../db_connection.php')) {
+        require_once __DIR__ . '/../db_connection.php';
+    } else {
+        // Fallback: try root directory
+        $rootDir = dirname(__DIR__);
+        if (file_exists($rootDir . '/db_connection.php')) {
+            require_once $rootDir . '/db_connection.php';
+        }
     }
     
     // Get connection
     if (isset($pdo) && $pdo instanceof PDO) {
         $conn = $pdo;
-    } else {
+    } elseif (function_exists('getConnection')) {
         $conn = getConnection();
+    } else {
+        // If getConnection doesn't exist, create connection directly
+        $host = 'localhost';
+        $dbname = 'restro2';
+        $username = 'root';
+        $password = '';
+        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     }
     
     // Try to get all user settings from database to prevent FOUC
@@ -44,9 +57,15 @@ try {
             // Restaurant logo - load exactly like this
             if (!empty($userRow['restaurant_logo'])) {
                 $restaurant_logo = $userRow['restaurant_logo'];
-                // Ensure proper path format
-                if (strpos($restaurant_logo, 'http') !== 0 && strpos($restaurant_logo, 'uploads/') !== 0) {
-                    $restaurant_logo = 'uploads/' . $restaurant_logo;
+                // Ensure proper path format - from views/ folder, need ../uploads/
+                if (strpos($restaurant_logo, 'http') !== 0) {
+                    // If it already starts with uploads/, add ../ prefix
+                    if (strpos($restaurant_logo, 'uploads/') === 0) {
+                        $restaurant_logo = '../' . $restaurant_logo;
+                    } elseif (strpos($restaurant_logo, '../') !== 0) {
+                        // If it doesn't have ../ prefix, add it
+                        $restaurant_logo = '../uploads/' . $restaurant_logo;
+                    }
                 }
             }
             // Currency symbol - load exactly like restaurant logo (server-side, no JavaScript needed)
@@ -79,8 +98,15 @@ try {
             if ($logoRow) {
                 if (!empty($logoRow['restaurant_logo'])) {
                     $restaurant_logo = $logoRow['restaurant_logo'];
-                    if (strpos($restaurant_logo, 'http') !== 0 && strpos($restaurant_logo, 'uploads/') !== 0 && strpos($restaurant_logo, '../') !== 0) {
-                        $restaurant_logo = '../uploads/' . $restaurant_logo;
+                    // Ensure proper path format - from views/ folder, need ../uploads/
+                    if (strpos($restaurant_logo, 'http') !== 0) {
+                        // If it already starts with uploads/, add ../ prefix
+                        if (strpos($restaurant_logo, 'uploads/') === 0) {
+                            $restaurant_logo = '../' . $restaurant_logo;
+                        } elseif (strpos($restaurant_logo, '../') !== 0) {
+                            // If it doesn't have ../ prefix, add it
+                            $restaurant_logo = '../uploads/' . $restaurant_logo;
+                        }
                     }
                 }
                 // Also try to get currency symbol
@@ -100,7 +126,7 @@ try {
     }
 } catch (Exception $e) {
     // If database query fails, use defaults
-    $restaurant_logo = 'logo.png';
+    $restaurant_logo = '../assets/images/logo.png';
 }
 ?>
 <!DOCTYPE html>

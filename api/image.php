@@ -3,27 +3,34 @@
 $imagePath = $_GET['path'] ?? '';
 
 // Security check - only allow images from uploads directory
-if (strpos($imagePath, 'uploads/') !== 0) {
+if (strpos($imagePath, 'uploads/') !== 0 && strpos($imagePath, '../uploads/') !== 0) {
     http_response_code(403);
     exit('Access denied');
 }
 
+// Normalize path - remove ../uploads/ prefix if present, keep uploads/
+$normalizedPath = str_replace('../uploads/', 'uploads/', $imagePath);
+
+// Build full path from root
+$rootDir = dirname(__DIR__);
+$fullPath = $rootDir . '/' . $normalizedPath;
+
 // Check if file exists
-if (!file_exists($imagePath)) {
+if (!file_exists($fullPath)) {
     http_response_code(404);
     exit('Image not found');
 }
 
 // Get file info
 $finfo = finfo_open(FILEINFO_MIME_TYPE);
-$mimeType = finfo_file($finfo, $imagePath);
+$mimeType = finfo_file($finfo, $fullPath);
 finfo_close($finfo);
 
 // Set appropriate headers
 header('Content-Type: ' . $mimeType);
-header('Content-Length: ' . filesize($imagePath));
+header('Content-Length: ' . filesize($fullPath));
 header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
 
 // Output the image
-readfile($imagePath);
+readfile($fullPath);
 ?>

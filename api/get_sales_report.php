@@ -15,10 +15,8 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
 // Include database connection
-if (file_exists(__DIR__ . '/config/db_connection.php')) {
-    require_once __DIR__ . '/config/db_connection.php';
-} elseif (file_exists(__DIR__ . '/db_connection.php')) {
-    require_once __DIR__ . '/db_connection.php';
+if (file_exists(__DIR__ . '/../db_connection.php')) {
+    require_once __DIR__ . '/../db_connection.php';
 } else {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Database connection file not found']);
@@ -33,7 +31,20 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
 }
 
 try {
-    $conn = getConnection();
+    if (isset($pdo) && $pdo instanceof PDO) {
+        $conn = $pdo;
+    } elseif (function_exists('getConnection')) {
+        $conn = getConnection();
+    } else {
+        // Fallback connection
+        $host = 'localhost';
+        $dbname = 'restro2';
+        $username = 'root';
+        $password = '';
+        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    }
     $restaurant_id = $_SESSION['restaurant_id'];
     
     $period = $_GET['period'] ?? 'today';

@@ -185,7 +185,7 @@
                 </div>
                 <div id="migrationList"></div>
                 <div id="errorList"></div>
-                <a href="dashboard.php" style="display: block; margin-top: 2rem; text-align: center; color: #667eea; text-decoration: none; font-weight: 600;">← Back to Dashboard</a>
+                <a href="../views/dashboard.php" style="display: block; margin-top: 2rem; text-align: center; color: #667eea; text-decoration: none; font-weight: 600;">← Back to Dashboard</a>
             </div>
             
             <button class="btn" id="runMigrationsBtn" onclick="runMigrations()">
@@ -208,7 +208,7 @@
             statusDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Running database migrations...</p></div>';
             
             try {
-                const response = await fetch('db_migration.php');
+                const response = await fetch('db_migration.php'); // Same folder, no path change needed
                 
                 // Check if response is actually JSON
                 const contentType = response.headers.get('content-type');

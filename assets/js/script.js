@@ -3140,7 +3140,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const typeFilter = document.getElementById("posTypeFilter")?.value || '';
     
     // Build URL with filters
-    let url = "get_menu_items.php";
+    let url = "../api/get_menu_items.php";
     const params = new URLSearchParams();
     if (menuFilter) params.append('menu', menuFilter);
     if (categoryFilter) params.append('category', categoryFilter);
@@ -3494,7 +3494,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function loadRestaurantInfo() {
   try {
-    const response = await fetch("admin/get_session.php");
+    const response = await fetch("../admin/get_session.php");
     const result = await response.json();
     
     if (result.success) {
@@ -3609,7 +3609,7 @@ window.initiateRenewal = initiateRenewal;
 async function logout() {
   if (confirm("Are you sure you want to logout?")) {
     try {
-      const response = await fetch("admin/auth.php", {
+      const response = await fetch("../admin/auth.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -3638,7 +3638,7 @@ async function logout() {
       const statusFilter = document.getElementById('kotStatusFilter')?.value || '';
       const tableFilter = document.getElementById('kotTableFilter')?.value || '';
       
-      let url = 'get_kot.php';
+      let url = '../api/get_kot.php';
       const params = [];
       if (statusFilter) params.push(`status=${encodeURIComponent(statusFilter)}`);
       if (tableFilter) params.push(`table=${encodeURIComponent(tableFilter)}`);
@@ -3752,7 +3752,7 @@ async function loadOrders() {
     if (paymentFilter) params.append('payment_status', paymentFilter);
     if (typeFilter) params.append('order_type', typeFilter);
     
-    const response = await fetch(`get_orders.php?${params.toString()}`);
+    const response = await fetch(`../api/get_orders.php?${params.toString()}`);
     const data = await response.json();
     
     console.log('Orders loaded:', data.count, 'orders found');
@@ -4250,7 +4250,7 @@ function filterStaff() {
 // Load Profile Data
 async function loadProfileData() {
   try {
-    const response = await fetch('admin/get_session.php');
+    const response = await fetch('../admin/get_session.php');
     const result = await response.json();
     
     if (result.success) {
@@ -4258,16 +4258,60 @@ async function loadProfileData() {
       const username = user.username || 'User';
       const initials = username.split(' ').map(w => w.charAt(0).toUpperCase()).join('').substring(0, 2);
       
-      document.getElementById('profileInitials').textContent = initials;
-      document.getElementById('profileName').textContent = username;
-      document.getElementById('profileRole').textContent = user.role || 'Administrator';
-      document.getElementById('profileEmail').textContent = user.email || 'No email';
+      // Basic profile elements
+      const profileInitialsEl = document.getElementById('profileInitials');
+      const profileNameEl = document.getElementById('profileName');
+      const profileRoleEl = document.getElementById('profileRole');
+      const profileEmailEl = document.getElementById('profileEmail');
       
-      document.getElementById('infoUsername').textContent = username;
-      document.getElementById('infoEmail').textContent = user.email || 'N/A';
-      document.getElementById('infoRole').textContent = user.role || 'N/A';
-      const joinDate = new Date(user.created_at || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-      document.getElementById('infoMemberSince').textContent = joinDate;
+      if (profileInitialsEl) profileInitialsEl.textContent = initials;
+      if (profileNameEl) profileNameEl.textContent = username;
+      if (profileRoleEl) profileRoleEl.textContent = user.role || 'Administrator';
+      if (profileEmailEl) profileEmailEl.textContent = user.email || 'No email';
+      
+      // Restaurant logo in profile
+      const profileRestaurantLogoEl = document.getElementById('profileRestaurantLogo');
+      if (profileRestaurantLogoEl && user.restaurant_logo) {
+        let logoPath = user.restaurant_logo;
+        // Ensure proper path format - from views/ folder, need ../uploads/
+        if (logoPath && !logoPath.startsWith('http') && !logoPath.startsWith('../')) {
+          if (logoPath.startsWith('uploads/')) {
+            logoPath = '../' + logoPath;
+          } else {
+            logoPath = '../uploads/' + logoPath;
+          }
+        }
+        profileRestaurantLogoEl.src = logoPath;
+        profileRestaurantLogoEl.style.display = 'block';
+        if (profileInitialsEl) profileInitialsEl.style.display = 'none';
+      }
+      
+      // Restaurant name and member since date
+      const profileRestaurantNameEl = document.getElementById('profileRestaurantName');
+      const profileMemberSinceDateEl = document.getElementById('profileMemberSinceDate');
+      
+      if (profileRestaurantNameEl) {
+        profileRestaurantNameEl.textContent = user.restaurant_id || 'N/A';
+      }
+      
+      if (profileMemberSinceDateEl && user.created_at) {
+        const joinDate = new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        profileMemberSinceDateEl.textContent = joinDate;
+      }
+      
+      // Optional info elements (may not exist in all dashboard versions)
+      const infoUsernameEl = document.getElementById('infoUsername');
+      const infoEmailEl = document.getElementById('infoEmail');
+      const infoRoleEl = document.getElementById('infoRole');
+      const infoMemberSinceEl = document.getElementById('infoMemberSince');
+      
+      if (infoUsernameEl) infoUsernameEl.textContent = username;
+      if (infoEmailEl) infoEmailEl.textContent = user.email || 'N/A';
+      if (infoRoleEl) infoRoleEl.textContent = user.role || 'N/A';
+      if (infoMemberSinceEl && user.created_at) {
+        const joinDate = new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        infoMemberSinceEl.textContent = joinDate;
+      }
     }
   } catch (error) {
     console.error('Error loading profile data:', error);
@@ -4292,7 +4336,7 @@ async function loadPayments() {
     if (method) params.append('method', method);
     if (status) params.append('status', status);
     
-    const url = 'get_payments.php' + (params.toString() ? '?' + params.toString() : '');
+    const url = '../api/get_payments.php' + (params.toString() ? '?' + params.toString() : '');
     const response = await fetch(url);
     const data = await response.json();
     
@@ -4383,14 +4427,58 @@ function debounce(func, wait) {
 // Load Settings Data
 async function loadSettingsData() {
   try {
-    const response = await fetch('admin/get_session.php');
+    const response = await fetch('../admin/get_session.php');
     const result = await response.json();
     
     if (result.success) {
       const user = result.data;
-      document.getElementById('restaurantNameSetting').value = user.restaurant_name || '';
-      document.getElementById('restaurantIdSetting').value = user.restaurant_id || '';
-      document.getElementById('usernameSetting').value = user.username || '';
+      
+      // Restaurant Settings
+      const restaurantNameSetting = document.getElementById('restaurantNameSetting');
+      const restaurantIdSetting = document.getElementById('restaurantIdSetting');
+      const restaurantEmail = document.getElementById('restaurantEmail');
+      const restaurantPhone = document.getElementById('restaurantPhone');
+      const restaurantAddress = document.getElementById('restaurantAddress');
+      
+      if (restaurantNameSetting) restaurantNameSetting.value = user.restaurant_name || '';
+      if (restaurantIdSetting) restaurantIdSetting.value = user.restaurant_id || '';
+      if (restaurantEmail) restaurantEmail.value = user.email || '';
+      if (restaurantPhone) restaurantPhone.value = user.phone || '';
+      if (restaurantAddress) restaurantAddress.value = user.address || '';
+      
+      // Profile Settings
+      const usernameSetting = document.getElementById('usernameSetting');
+      const profileEmailSetting = document.getElementById('profileEmailSetting');
+      const emailNotifications = document.getElementById('emailNotifications');
+      
+      if (usernameSetting) usernameSetting.value = user.username || '';
+      if (profileEmailSetting) profileEmailSetting.value = user.email || '';
+      if (emailNotifications) {
+        emailNotifications.checked = localStorage.getItem('emailNotifications') === 'true';
+      }
+      
+      // System Settings - Currency and timezone are already set by PHP, but update if needed
+      const currencySymbol = document.getElementById('currencySymbol');
+      const timezone = document.getElementById('timezone');
+      const autoSync = document.getElementById('autoSync');
+      const notifications = document.getElementById('notifications');
+      
+      // Currency symbol is already set by PHP, don't override unless empty
+      if (currencySymbol && !currencySymbol.value && user.currency_symbol) {
+        currencySymbol.value = user.currency_symbol;
+      }
+      
+      // Timezone is already set by PHP, but update if not set
+      if (timezone && (!timezone.value || timezone.value === 'Asia/Kolkata')) {
+        timezone.value = user.timezone || localStorage.getItem('system_timezone') || 'Asia/Kolkata';
+      }
+      
+      if (autoSync) {
+        autoSync.checked = localStorage.getItem('system_autoSync') === 'true';
+      }
+      if (notifications) {
+        notifications.checked = localStorage.getItem('system_notifications') === 'true';
+      }
     }
     
     setupSettingsForms();
@@ -4401,36 +4489,247 @@ async function loadSettingsData() {
 
 // Setup Settings Forms
 function setupSettingsForms() {
+  // Restaurant Settings Form
   const restaurantSettingsForm = document.getElementById('restaurantSettingsForm');
-  if (restaurantSettingsForm) {
-    restaurantSettingsForm.addEventListener('submit', (e) => {
+  if (restaurantSettingsForm && !restaurantSettingsForm.dataset.handlerAttached) {
+    restaurantSettingsForm.dataset.handlerAttached = 'true';
+    restaurantSettingsForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      showMessage('Restaurant settings updated successfully!', 'success');
+      
+      const restaurantName = document.getElementById('restaurantNameSetting')?.value.trim();
+      const restaurantEmail = document.getElementById('restaurantEmail')?.value.trim();
+      const restaurantPhone = document.getElementById('restaurantPhone')?.value.trim();
+      const restaurantAddress = document.getElementById('restaurantAddress')?.value.trim();
+      
+      if (!restaurantName) {
+        showNotification('Restaurant name is required', 'error');
+        return;
+      }
+      
+      // Disable submit button
+      const submitBtn = restaurantSettingsForm.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Saving...';
+      }
+      
+      try {
+        const response = await fetch('../admin/auth.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=updateRestaurantSettings&restaurant_name=${encodeURIComponent(restaurantName)}&email=${encodeURIComponent(restaurantEmail || '')}&phone=${encodeURIComponent(restaurantPhone || '')}&address=${encodeURIComponent(restaurantAddress || '')}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Restaurant settings updated successfully', 'success');
+          // Update session data
+          if (typeof loadRestaurantInfo === 'function') {
+            await loadRestaurantInfo();
+          }
+        } else {
+          showNotification(result.message || 'Error updating restaurant settings', 'error');
+        }
+      } catch (error) {
+        console.error('Error updating restaurant settings:', error);
+        showNotification('Error updating restaurant settings', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
+      }
     });
   }
   
-  const systemSettingsForm = document.getElementById('systemSettingsForm');
-  if (systemSettingsForm) {
-    systemSettingsForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      showMessage('System settings saved successfully!', 'success');
-    });
-  }
-  
-  const securitySettingsForm = document.getElementById('securitySettingsForm');
-  if (securitySettingsForm) {
-    securitySettingsForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      showMessage('Password changed successfully!', 'success');
-      securitySettingsForm.reset();
-    });
-  }
-  
+  // Profile Settings Form
   const profileSettingsForm = document.getElementById('profileSettingsForm');
-  if (profileSettingsForm) {
-    profileSettingsForm.addEventListener('submit', (e) => {
+  if (profileSettingsForm && !profileSettingsForm.dataset.handlerAttached) {
+    profileSettingsForm.dataset.handlerAttached = 'true';
+    profileSettingsForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      showMessage('Profile updated successfully!', 'success');
+      
+      const username = document.getElementById('usernameSetting')?.value.trim();
+      const email = document.getElementById('profileEmailSetting')?.value.trim();
+      const emailNotifications = document.getElementById('emailNotifications')?.checked;
+      
+      if (!username || !email) {
+        showNotification('Username and email are required', 'error');
+        return;
+      }
+      
+      // Save email notifications preference
+      if (emailNotifications !== undefined) {
+        localStorage.setItem('emailNotifications', emailNotifications ? 'true' : 'false');
+      }
+      
+      // Disable submit button
+      const submitBtn = profileSettingsForm.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Saving...';
+      }
+      
+      try {
+        const response = await fetch('../admin/auth.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=updateProfile&username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Profile settings updated successfully', 'success');
+          // Reload profile data
+          if (typeof loadProfileData === 'function') {
+            await loadProfileData();
+          }
+        } else {
+          showNotification(result.message || 'Error updating profile settings', 'error');
+        }
+      } catch (error) {
+        console.error('Error updating profile settings:', error);
+        showNotification('Error updating profile settings', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
+      }
+    });
+  }
+  
+  // System Settings Form
+  const systemSettingsForm = document.getElementById('systemSettingsForm');
+  if (systemSettingsForm && !systemSettingsForm.dataset.handlerAttached) {
+    systemSettingsForm.dataset.handlerAttached = 'true';
+    systemSettingsForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const currencySymbol = document.getElementById('currencySymbol')?.value.trim();
+      const timezone = document.getElementById('timezone')?.value.trim();
+      const autoSync = document.getElementById('autoSync')?.checked;
+      const notifications = document.getElementById('notifications')?.checked;
+      
+      // Save to localStorage
+      if (timezone) localStorage.setItem('system_timezone', timezone);
+      if (autoSync !== undefined) localStorage.setItem('system_autoSync', autoSync ? 'true' : 'false');
+      if (notifications !== undefined) localStorage.setItem('system_notifications', notifications ? 'true' : 'false');
+      
+      // Disable submit button
+      const submitBtn = systemSettingsForm.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Saving...';
+      }
+      
+      try {
+        // Save to database
+        const response = await fetch('../admin/auth.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=updateSystemSettings&currency_symbol=${encodeURIComponent(currencySymbol || '₹')}&timezone=${encodeURIComponent(timezone || 'Asia/Kolkata')}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('System settings saved successfully', 'success');
+          // Update currency symbol display if it exists
+          const currencyDisplay = document.getElementById('currencySymbolDisplay');
+          if (currencyDisplay && currencySymbol) {
+            currencyDisplay.textContent = currencySymbol;
+          }
+          // Reload page to apply timezone changes
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else {
+          showNotification(result.message || 'Error saving system settings', 'error');
+        }
+      } catch (error) {
+        console.error('Error saving system settings:', error);
+        showNotification('Error saving system settings', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
+      }
+    });
+  }
+  
+  // Security Settings Form (if exists)
+  const securitySettingsForm = document.getElementById('securitySettingsForm');
+  if (securitySettingsForm && !securitySettingsForm.dataset.handlerAttached) {
+    securitySettingsForm.dataset.handlerAttached = 'true';
+    securitySettingsForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const currentPassword = document.getElementById('currentPassword')?.value.trim();
+      const newPassword = document.getElementById('newPassword')?.value.trim();
+      const confirmPassword = document.getElementById('confirmPassword')?.value.trim();
+      
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        showNotification('Please fill in all fields', 'error');
+        return;
+      }
+      
+      if (newPassword.length < 6) {
+        showNotification('New password must be at least 6 characters', 'error');
+        return;
+      }
+      
+      if (newPassword !== confirmPassword) {
+        showNotification('New passwords do not match', 'error');
+        return;
+      }
+      
+      // Disable submit button
+      const submitBtn = securitySettingsForm.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Changing...';
+      }
+      
+      try {
+        const response = await fetch('../admin/auth.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=changePassword&currentPassword=${encodeURIComponent(currentPassword)}&newPassword=${encodeURIComponent(newPassword)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Password changed successfully', 'success');
+          securitySettingsForm.reset();
+        } else {
+          showNotification(result.message || 'Error changing password', 'error');
+        }
+      } catch (error) {
+        console.error('Error changing password:', error);
+        showNotification('Error changing password', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
+      }
     });
   }
 }
@@ -4442,7 +4741,7 @@ async function loadReports() {
     const reportType = document.getElementById('reportType')?.value || 'sales';
     console.log('Loading reports for period:', period, 'type:', reportType);
     
-    const response = await fetch(`get_sales_report.php?period=${period}&type=${reportType}`);
+    const response = await fetch(`../api/get_sales_report.php?period=${period}&type=${reportType}`);
     const data = await response.json();
     
     if (!data.success) {
@@ -4594,14 +4893,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // Website theme (DB-based via API)
 async function initWebsiteThemeEditor() {
   try {
-    const sess = await fetch('admin/get_session.php').then(r=>r.json()).catch(()=>null);
+    const sess = await fetch('../admin/get_session.php').then(r=>r.json()).catch(()=>null);
     const rid = (sess && sess.success && sess.data?.restaurant_id) ? sess.data.restaurant_id : '';
     const pr = document.getElementById('primaryRed');
     const dr = document.getElementById('darkRed');
     const py = document.getElementById('primaryYellow');
     // Load
     const q = rid ? `?action=get&restaurant_id=${encodeURIComponent(rid)}` : '?action=get';
-    const theme = await fetch(`website/theme_api.php${q}`).then(r=>r.json()).catch(()=>null);
+    const theme = await fetch(`../website/theme_api.php${q}`).then(r=>r.json()).catch(()=>null);
     if (theme && theme.success && theme.settings) {
       if (pr) pr.value = theme.settings.primary_red;
       if (dr) dr.value = theme.settings.dark_red;
@@ -4612,7 +4911,7 @@ async function initWebsiteThemeEditor() {
     if (saveBtn) saveBtn.addEventListener('click', async () => {
       const payload = { primary_red: pr.value, dark_red: dr.value, primary_yellow: py.value };
       const sq = rid ? `?action=save&restaurant_id=${encodeURIComponent(rid)}` : '?action=save';
-      const res = await fetch(`website/theme_api.php${sq}`, { method:'POST', body: JSON.stringify(payload) });
+      const res = await fetch(`../website/theme_api.php${sq}`, { method:'POST', body: JSON.stringify(payload) });
       const data = await res.json();
       if (data.success) showNotification('Theme saved', 'success'); else showNotification(data.message||'Error','error');
     });
@@ -4623,3 +4922,232 @@ document.addEventListener('DOMContentLoaded', function(){
   const themeNav = document.querySelector('[data-page="websiteThemePage"]');
   if (themeNav) themeNav.addEventListener('click', () => setTimeout(initWebsiteThemeEditor, 120));
 });
+// Toggle Profile Edit
+function toggleProfileEdit() {
+  const editCard = document.getElementById('editProfileCard');
+  const editBtn = document.getElementById('editProfileBtn');
+  
+  if (!editCard || !editBtn) return;
+  
+  if (editCard.style.display === 'none' || !editCard.style.display) {
+    editCard.style.display = 'block';
+    editBtn.innerHTML = '<span class="material-symbols-rounded">close</span> Cancel Edit';
+    editBtn.onclick = cancelProfileEdit;
+    editBtn.classList.remove('btn-primary');
+    editBtn.classList.add('btn-cancel');
+  } else {
+    cancelProfileEdit();
+  }
+}
+
+// Cancel Profile Edit
+function cancelProfileEdit() {
+  const editCard = document.getElementById('editProfileCard');
+  const editBtn = document.getElementById('editProfileBtn');
+  
+  if (!editCard || !editBtn) return;
+  
+  editCard.style.display = 'none';
+  editBtn.innerHTML = '<span class="material-symbols-rounded">edit</span> Edit Profile';
+  editBtn.onclick = toggleProfileEdit;
+  editBtn.classList.remove('btn-cancel');
+  editBtn.classList.add('btn-primary');
+  
+  // Reset form values
+  loadProfileData();
+}
+
+// Open Logo Upload Modal
+function openLogoUploadModal() {
+  const modal = document.getElementById('logoUploadModal');
+  if (modal) {
+    modal.style.display = 'block';
+    // Load current logo if available
+    const currentLogo = document.getElementById('profileRestaurantLogo');
+    if (currentLogo && currentLogo.src) {
+      const preview = document.getElementById('logoPreview');
+      if (preview) {
+        preview.innerHTML = `<img src="${currentLogo.src}" alt="Current Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      }
+    }
+  }
+}
+
+// Close Logo Upload Modal
+function closeLogoUploadModal() {
+  const modal = document.getElementById('logoUploadModal');
+  if (modal) {
+    modal.style.display = 'none';
+    // Reset file input
+    const fileInput = document.getElementById('logoFileInput');
+    if (fileInput) fileInput.value = '';
+    // Reset preview
+    const preview = document.getElementById('logoPreview');
+    if (preview) {
+      preview.innerHTML = '<span class="material-symbols-rounded" style="font-size:3rem;color:#9ca3af;">image</span>';
+    }
+    // Reset save button
+    const saveBtn = document.getElementById('saveLogoBtn');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="material-symbols-rounded">save</span> Save Logo';
+    }
+    selectedLogoFile = null;
+  }
+}
+
+// Global variable to store selected logo file
+let selectedLogoFile = null;
+
+// Handle Logo File Select
+function handleLogoFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    showNotification('Please select an image file', 'error');
+    return;
+  }
+  
+  // Validate file size (2MB max)
+  if (file.size > 2 * 1024 * 1024) {
+    showNotification('Image size must be less than 2MB', 'error');
+    return;
+  }
+  
+  selectedLogoFile = file;
+  
+  // Show preview
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const preview = document.getElementById('logoPreview');
+    if (preview) {
+      preview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    }
+    // Enable save button
+    const saveBtn = document.getElementById('saveLogoBtn');
+    if (saveBtn) {
+      saveBtn.disabled = false;
+    }
+  };
+  
+  reader.readAsDataURL(file);
+}
+
+// Upload Restaurant Logo
+async function uploadRestaurantLogo() {
+  if (!selectedLogoFile) {
+    showNotification('Please select an image first', 'error');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('action', 'uploadRestaurantLogo');
+  formData.append('logo', selectedLogoFile);
+  
+  const saveBtn = document.getElementById('saveLogoBtn');
+  const originalText = saveBtn ? saveBtn.innerHTML : '';
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Uploading...';
+  }
+  
+  try {
+    const response = await fetch('../admin/auth.php', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      showNotification('Restaurant logo updated successfully', 'success');
+      closeLogoUploadModal();
+      // Reload profile data to show new logo
+      await loadProfileData();
+      // Also reload restaurant info to update dashboard logo
+      if (typeof loadRestaurantInfo === 'function') {
+        await loadRestaurantInfo();
+      }
+      // Reload dashboard logo
+      const dashboardLogo = document.getElementById('dashboardRestaurantLogo');
+      if (dashboardLogo && result.logo_path) {
+        let logoPath = result.logo_path;
+        if (logoPath && !logoPath.startsWith('http') && !logoPath.startsWith('../')) {
+          if (logoPath.startsWith('uploads/')) {
+            logoPath = '../' + logoPath;
+          } else {
+            logoPath = '../uploads/' + logoPath;
+          }
+        }
+        dashboardLogo.src = logoPath;
+      }
+    } else {
+      showNotification(result.message || 'Failed to upload logo', 'error');
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
+      }
+    }
+  } catch (error) {
+    console.error('Error uploading logo:', error);
+    showNotification('Network error. Please try again.', 'error');
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalText;
+    }
+  }
+}
+
+// Setup Edit Profile Form Handler
+document.addEventListener('DOMContentLoaded', function() {
+  const editProfileForm = document.getElementById('editProfileForm');
+  if (editProfileForm) {
+    editProfileForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const username = document.getElementById('editUsername')?.value.trim();
+      const email = document.getElementById('editEmail')?.value.trim();
+      
+      if (!username || !email) {
+        showNotification('Please fill in all fields', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('../admin/auth.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=updateProfile&username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification('Profile updated successfully', 'success');
+          cancelProfileEdit();
+          loadProfileData();
+        } else {
+          showNotification(result.message || 'Error updating profile', 'error');
+        }
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        showNotification('Error updating profile', 'error');
+      }
+    });
+  }
+  
+  // Close logo modal when clicking outside
+  const logoUploadModal = document.getElementById('logoUploadModal');
+  if (logoUploadModal) {
+    logoUploadModal.addEventListener('click', function(e) {
+      if (e.target === logoUploadModal) {
+        closeLogoUploadModal();
+      }
+    });
+  }
+});
+

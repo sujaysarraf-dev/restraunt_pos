@@ -9,9 +9,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
     exit();
 }
 
-if (file_exists(__DIR__ . '/../config/db_connection.php')) {
-    require_once __DIR__ . '/../config/db_connection.php';
-} elseif (file_exists(__DIR__ . '/../db_connection.php')) {
+if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
 }
 
