@@ -281,7 +281,7 @@ function handleBase64Image($base64String) {
     }
     
     // Create uploads directory if it doesn't exist
-    $uploadDir = __DIR__ . '/uploads/';
+    $uploadDir = __DIR__ . '/../uploads/';
     if (!file_exists($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
@@ -311,7 +311,7 @@ function handleBase64Image($base64String) {
         throw new Exception('Failed to save image file');
     }
     
-    return 'uploads/' . $filename;
+    return '../uploads/' . $filename;
 }
 ?>
 

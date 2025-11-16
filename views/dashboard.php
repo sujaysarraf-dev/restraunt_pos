@@ -3,14 +3,14 @@ session_start();
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SESSION['restaurant_id'])) {
-    header('Location: admin/login.php');
+    header('Location: ../admin/login.php');
     exit();
 }
 
 // Load restaurant info from database to prevent flash of default content
 $restaurant_name = $_SESSION['restaurant_name'] ?? 'Restaurant Name';
 $restaurant_id = $_SESSION['restaurant_id'] ?? 'RES001';
-$restaurant_logo = 'logo.png'; // Default fallback
+$restaurant_logo = '../assets/images/logo.png'; // Default fallback
 // Try to get currency from session first (if saved), otherwise default
 $currency_symbol = $_SESSION['currency_symbol'] ?? '₹'; // Default currency
 $timezone = 'Asia/Kolkata'; // Default timezone
@@ -79,8 +79,8 @@ try {
             if ($logoRow) {
                 if (!empty($logoRow['restaurant_logo'])) {
                     $restaurant_logo = $logoRow['restaurant_logo'];
-                    if (strpos($restaurant_logo, 'http') !== 0 && strpos($restaurant_logo, 'uploads/') !== 0) {
-                        $restaurant_logo = 'uploads/' . $restaurant_logo;
+                    if (strpos($restaurant_logo, 'http') !== 0 && strpos($restaurant_logo, 'uploads/') !== 0 && strpos($restaurant_logo, '../') !== 0) {
+                        $restaurant_logo = '../uploads/' . $restaurant_logo;
                     }
                 }
                 // Also try to get currency symbol
@@ -95,7 +95,7 @@ try {
             }
         } catch (PDOException $e2) {
             // Use defaults - currency_symbol already has default '₹' set above
-            $restaurant_logo = 'logo.png';
+            $restaurant_logo = '../assets/images/logo.png';
         }
     }
 } catch (Exception $e) {
@@ -113,7 +113,7 @@ try {
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Restaurant Management System</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
   <!-- Linking Google fonts for icons -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
   <script>
@@ -128,7 +128,7 @@ try {
     <!-- Sidebar header -->
     <header class="sidebar-header">
       <a href="#" class="header-logo">
-        <img id="dashboardRestaurantLogo" src="<?php echo htmlspecialchars($restaurant_logo); ?>" alt="Restaurant Management" onerror="this.src='logo.png'; this.style.borderRadius='50%'; this.style.objectFit='cover';" style="border-radius: 50%; object-fit: cover; width: 46px; height: 46px;">
+        <img id="dashboardRestaurantLogo" src="<?php echo htmlspecialchars($restaurant_logo); ?>" alt="Restaurant Management" onerror="this.src='../assets/images/logo.png'; this.style.borderRadius='50%'; this.style.objectFit='cover';" style="border-radius: 50%; object-fit: cover; width: 46px; height: 46px;">
         <div class="restaurant-info">
           <div class="restaurant-name" id="restaurantName"><?php echo htmlspecialchars($restaurant_name); ?></div>
           <div class="restaurant-id" id="restaurantId"><?php echo htmlspecialchars($restaurant_id); ?></div>
@@ -289,7 +289,7 @@ try {
           <span class="nav-tooltip">Settings</span>
         </li>
         <li class="nav-item">
-          <a href="website/index.php" class="nav-link" target="_blank">
+          <a href="../website/index.php" class="nav-link" target="_blank">
             <span class="nav-icon material-symbols-rounded">language</span>
             <span class="nav-label">Customer Website</span>
           </a>
@@ -573,7 +573,7 @@ try {
             </div>
             <div class="form-actions">
               <button type="button" class="btn btn-save" id="saveWebsiteThemeBtn">Save Theme</button>
-              <a href="website/index.php" class="btn btn-primary" target="_blank">Open Website</a>
+              <a href="../website/index.php" class="btn btn-primary" target="_blank">Open Website</a>
             </div>
             <p style="margin-top:10px;color:#666;">Saved locally on this server (no link parameters required). The website reads saved colors automatically from the same origin.</p>
           </div>
@@ -2041,7 +2041,7 @@ try {
   </div>
 
   <!-- Script -->
-  <script src="script.js?v=<?php echo time(); ?>"></script>
+  <script src="../assets/js/script.js?v=<?php echo time(); ?>"></script>
   <script>
     // Check payment status on page load (for redirect from PhonePe or Demo)
     window.addEventListener('load', function() {
@@ -2076,7 +2076,7 @@ try {
         sessionStorage.removeItem('payment_processing');
         
         // Check payment status from server
-        fetch('check_payment_status.php')
+        fetch('../api/check_payment_status.php')
           .then(response => response.json())
           .then(result => {
             if (result.success) {
@@ -2091,7 +2091,7 @@ try {
               } else {
                 // Payment still pending, check again after 2 seconds
                 setTimeout(() => {
-                  fetch('check_payment_status.php')
+                  fetch('../api/check_payment_status.php')
                     .then(r => r.json())
                     .then(r => {
                       if (r.success && r.payment.payment_status === 'success') {

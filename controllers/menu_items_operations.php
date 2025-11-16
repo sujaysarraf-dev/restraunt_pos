@@ -35,7 +35,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
 }
 
 // Create uploads directory if it doesn't exist
-$uploadDir = __DIR__ . '/uploads/';
+$uploadDir = __DIR__ . '/../uploads/';
 if (!file_exists($uploadDir)) {
     mkdir($uploadDir, 0777, true);
 }

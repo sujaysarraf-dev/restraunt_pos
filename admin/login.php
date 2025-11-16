@@ -265,7 +265,7 @@
                 if (result.success) {
                     showMessage('Login successful! Redirecting...', 'success');
                     setTimeout(() => {
-                        window.location.href = result.redirect || '../dashboard.php';
+                        window.location.href = result.redirect || '../views/dashboard.php';
                     }, 1000);
                 } else {
                     showMessage(result.message || 'Login failed. Please try again.', 'error');

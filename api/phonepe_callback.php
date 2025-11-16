@@ -1,6 +1,10 @@
 <?php
 session_start();
-require_once 'db_connection.php';
+if (file_exists(__DIR__ . '/../config/db_connection.php')) {
+    require_once __DIR__ . '/../config/db_connection.php';
+} elseif (file_exists(__DIR__ . '/../db_connection.php')) {
+    require_once __DIR__ . '/../db_connection.php';
+}
 
 // PhonePe Test API Configuration
 define('PHONEPE_SALT_KEY', '099eb0cd-02cf-4e2a-8aca-3e6c6aff8719'); // Test Salt Key

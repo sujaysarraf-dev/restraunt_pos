@@ -445,7 +445,7 @@ document.addEventListener("DOMContentLoaded", () => {
         formData.append('menuId', menuId);
       }
 
-      const response = await fetch("../operations/menu_operations.php", {
+      const response = await fetch("../controllers/menu_operations.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -716,7 +716,7 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append('action', 'delete');
       formData.append('menuId', currentMenuId);
 
-      const response = await fetch("../operations/menu_operations.php", {
+      const response = await fetch("../controllers/menu_operations.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -921,7 +921,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const imagePreview = document.getElementById('imagePreview');
       const previewImg = document.getElementById('previewImg');
       if (imagePreview && previewImg) {
-        previewImg.src = `image.php?path=${encodeURIComponent(data.item_image)}`;
+        previewImg.src = `../api/image.php?path=${encodeURIComponent(data.item_image)}`;
         imagePreview.style.display = 'block';
       }
     }
@@ -993,7 +993,7 @@ document.addEventListener("DOMContentLoaded", () => {
     menuItemSaveBtn.textContent = isEdit ? "Updating..." : "Saving...";
 
     try {
-      const response = await fetch("menu_items_operations_base64.php", {
+      const response = await fetch("../controllers/menu_items_operations_base64.php", {
         method: "POST",
         body: formData
       });
@@ -1087,7 +1087,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (categoryFilter && categoryFilter !== '') params.append('category', categoryFilter);
       if (typeFilter && typeFilter !== '') params.append('type', typeFilter);
       
-      const response = await fetch(`get_menu_items.php?${params}`);
+      const response = await fetch(`../api/get_menu_items.php?${params}`);
       const result = await response.json();
 
       if (result.success) {
@@ -1119,7 +1119,7 @@ document.addEventListener("DOMContentLoaded", () => {
     menuItemsList.innerHTML = menuItems.map(item => `
       <div class="menu-item-card" data-item-id="${item.id}">
         <div class="item-image">
-          ${item.item_image ? `<img src="image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
             <div class="no-image" style="display:none;"><span class="material-symbols-rounded">image</span></div>` : '<div class="no-image"><span class="material-symbols-rounded">image</span></div>'}
         </div>
         <div class="item-details">
@@ -1187,7 +1187,7 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append('action', 'delete');
       formData.append('menuItemId', currentMenuItemId);
 
-      const response = await fetch("menu_items_operations_base64.php", {
+      const response = await fetch("../controllers/menu_items_operations_base64.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -1311,7 +1311,7 @@ document.addEventListener("DOMContentLoaded", () => {
           formData.append('areaId', areaId);
         }
 
-        const response = await fetch("../operations/area_operations.php", {
+        const response = await fetch("../controllers/area_operations.php", {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -1404,7 +1404,7 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append('action', 'delete');
       formData.append('areaId', areaId);
       
-      fetch("../operations/area_operations.php", {
+      fetch("../controllers/area_operations.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -1565,7 +1565,7 @@ document.addEventListener("DOMContentLoaded", () => {
           formData.append('tableId', tableId);
         }
 
-        const response = await fetch("../operations/table_operations.php", {
+        const response = await fetch("../controllers/table_operations.php", {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -1864,7 +1864,7 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append('action', 'delete');
       formData.append('tableId', tableId);
       
-      fetch("../operations/table_operations.php", {
+      fetch("../controllers/table_operations.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -2063,7 +2063,7 @@ document.addEventListener("DOMContentLoaded", () => {
           formData.append('reservationId', reservationId);
         }
 
-        const response = await fetch("../operations/reservation_operations.php", {
+        const response = await fetch("../controllers/reservation_operations.php", {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -2238,7 +2238,7 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append('action', 'delete');
       formData.append('reservationId', reservationId);
       
-      fetch("../operations/reservation_operations.php", {
+      fetch("../controllers/reservation_operations.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -2287,7 +2287,7 @@ document.addEventListener("DOMContentLoaded", () => {
               formData.append('selectTable', reservation.table_id);
             }
             
-            fetch("../operations/reservation_operations.php", {
+            fetch("../controllers/reservation_operations.php", {
               method: "POST",
               headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -2358,7 +2358,7 @@ document.addEventListener("DOMContentLoaded", () => {
             formData.append('specialRequest', reservation.special_request || '');
             formData.append('status', reservation.status);
             
-            fetch("../operations/reservation_operations.php", {
+            fetch("../controllers/reservation_operations.php", {
               method: "POST",
               headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -2452,7 +2452,7 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append('action', 'delete');
       formData.append('customerId', customerId);
       
-      fetch("../operations/customer_operations.php", {
+      fetch("../controllers/customer_operations.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -2488,7 +2488,7 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append('email', customerEmailInputField.value.trim());
       
       try {
-        const response = await fetch("../operations/customer_operations.php", {
+        const response = await fetch("../controllers/customer_operations.php", {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -2696,7 +2696,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append('action', 'mark_attended');
     formData.append('requestId', requestId);
     
-    fetch("../operations/waiter_request_operations.php", {
+    fetch("../controllers/waiter_request_operations.php", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -2985,7 +2985,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append('memberRole', document.getElementById('memberRole').value);
     
     try {
-      const response = await fetch("../operations/staff_operations.php", {
+      const response = await fetch("../controllers/staff_operations.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -3104,7 +3104,7 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append('action', 'delete');
       formData.append('staffId', staffId);
       
-      fetch("../operations/staff_operations.php", {
+      fetch("../controllers/staff_operations.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -3174,7 +3174,7 @@ document.addEventListener("DOMContentLoaded", () => {
     posMenuItemsContainer.innerHTML = items.map(item => `
       <div class="pos-menu-item" onclick="addToPOSCart(${item.id}, '${escapeHtml(item.item_name_en)}', ${item.base_price}, '${escapeHtml(item.item_image || '')}')">
         <div class="item-image">
-          ${item.item_image ? `<img src="image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}">` : '<span class="material-symbols-rounded">restaurant</span>'}
+          ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}">` : '<span class="material-symbols-rounded">restaurant</span>'}
         </div>
         <div class="item-name">${escapeHtml(item.item_name_en)}</div>
         <div class="item-category">${escapeHtml(item.item_category || '')}</div>
@@ -3375,7 +3375,7 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append('total', total.toFixed(2));
       
       try {
-        const response = await fetch("../operations/pos_operations.php", {
+        const response = await fetch("../controllers/pos_operations.php", {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -3438,7 +3438,7 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append('total', total.toFixed(2));
       
       try {
-        const response = await fetch("../operations/pos_operations.php", {
+        const response = await fetch("../controllers/pos_operations.php", {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -3969,7 +3969,7 @@ async function loadTablesForOrders() {
 // Update KOT Status
 async function updateKOTStatus(kotId, status) {
   try {
-    const response = await fetch('../operations/kot_operations.php', {
+    const response = await fetch('../controllers/kot_operations.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -3997,7 +3997,7 @@ window.updateKOTStatus = updateKOTStatus;
 // Complete KOT (move to Orders)
 async function completeKOT(kotId) {
   try {
-    const response = await fetch('../operations/kot_operations.php', {
+    const response = await fetch('../controllers/kot_operations.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -4026,7 +4026,7 @@ window.completeKOT = completeKOT;
 async function cancelKOT(kotId) {
   if (confirm("Are you sure you want to cancel this KOT?")) {
     try {
-      const response = await fetch('../operations/kot_operations.php', {
+      const response = await fetch('../controllers/kot_operations.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',

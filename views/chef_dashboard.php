@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['staff_id']) || !isset($_SESSION['restaurant_id']) || $_SESSION['role'] !== 'Chef') {
-    header('Location: admin/login.php');
+    header('Location: ../admin/login.php');
     exit();
 }
 

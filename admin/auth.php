@@ -120,7 +120,7 @@ function handleLogin() {
         echo json_encode([
             'success' => true,
             'message' => 'Login successful',
-            'redirect' => '../dashboard.php',
+            'redirect' => '../views/dashboard.php',
             'data' => [
                 'username' => $user['username'],
                 'restaurant_id' => $user['restaurant_id'],
@@ -149,13 +149,13 @@ function handleLogin() {
         $_SESSION['role'] = $staff['role'];
         
         // Determine redirect based on role
-        $redirect = '../dashboard.php'; // Default
+        $redirect = '../views/dashboard.php'; // Default
         if ($staff['role'] === 'Chef') {
-            $redirect = '../chef_dashboard.php';
+            $redirect = '../views/chef_dashboard.php';
         } elseif ($staff['role'] === 'Waiter') {
-            $redirect = '../waiter_dashboard.php';
+            $redirect = '../views/waiter_dashboard.php';
         } elseif ($staff['role'] === 'Manager') {
-            $redirect = '../manager_dashboard.php';
+            $redirect = '../views/manager_dashboard.php';
         }
         
         echo json_encode([
