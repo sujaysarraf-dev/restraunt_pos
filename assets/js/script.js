@@ -3627,7 +3627,7 @@ async function initiateRenewal() {
     const renewButton = document.getElementById('renewButton');
     if (renewButton) {
       renewButton.disabled = false;
-      renewButton.innerHTML = '<span style="font-size:1.2rem;">💳</span> Renew Now (₹999)';
+      renewButton.innerHTML = `<span style="font-size:1.2rem;">💳</span> Renew Now (${formatCurrency(999)})`;
     }
   }
 }
