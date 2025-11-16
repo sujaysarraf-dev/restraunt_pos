@@ -117,7 +117,7 @@ document.getElementById('callWaiterBtn').addEventListener('click', () => {
 async function showConfirmForTableFromURL(tableNumber) {
     try {
         const restaurantId = getRestaurantId();
-        const response = await fetch(`../get_tables.php?restaurant_id=${restaurantId}`);
+        const response = await fetch(`../api/get_tables.php?restaurant_id=${restaurantId}`);
         const data = await response.json();
         
         if (data.success && data.data) {
@@ -149,7 +149,7 @@ document.getElementById('closeWaiterModal').addEventListener('click', () => {
 async function loadTables() {
     try {
         const restaurantId = getRestaurantId();
-        const response = await fetch(`../get_tables.php?restaurant_id=${restaurantId}`);
+        const response = await fetch(`../api/get_tables.php?restaurant_id=${restaurantId}`);
         const data = await response.json();
         
         const tableGrid = document.getElementById('tableGrid');
@@ -231,7 +231,7 @@ async function confirmCallWaiter(tableId, tableNumber, areaName) {
     }
     
     try {
-        const response = await fetch('../create_waiter_request.php', {
+        const response = await fetch('../api/create_waiter_request.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -318,7 +318,7 @@ function openReservationModal() {
 async function loadReservationTables() {
     try {
         const restaurantId = getRestaurantId();
-        const response = await fetch(`../get_tables.php?restaurant_id=${restaurantId}`);
+        const response = await fetch(`../api/get_tables.php?restaurant_id=${restaurantId}`);
         const data = await response.json();
         
         const tableGrid = document.getElementById('reservationTableGrid');
@@ -433,7 +433,7 @@ async function checkReservationAvailability() {
     
     try {
         const restaurantId = getRestaurantId();
-        const response = await fetch(`../check_reservation_availability.php?restaurant_id=${restaurantId}&table_id=${tableId}&reservation_date=${date}&time_slot=${timeSlot}`);
+        const response = await fetch(`../api/check_reservation_availability.php?restaurant_id=${restaurantId}&table_id=${tableId}&reservation_date=${date}&time_slot=${timeSlot}`);
         const data = await response.json();
         
         if (data.success && !data.available) {
@@ -555,7 +555,7 @@ function setupReservationForm() {
         
         try {
             const restaurantId = getRestaurantId();
-            const response = await fetch(`../create_reservation.php?restaurant_id=${restaurantId}`, {
+            const response = await fetch(`../api/create_reservation.php?restaurant_id=${restaurantId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -1790,7 +1790,7 @@ async function processOrder(total) {
     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
     
     try {
-        const response = await fetch('../process_website_order.php', {
+        const response = await fetch('../api/process_website_order.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

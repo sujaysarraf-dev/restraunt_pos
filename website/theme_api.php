@@ -7,6 +7,24 @@ $action = $_GET['action'] ?? 'get';
 session_start();
 $restaurant_id = $_GET['restaurant_id'] ?? ($_SESSION['restaurant_id'] ?? 'RES001');
 
+// Ensure $pdo is available
+if (!isset($pdo) && function_exists('getConnection')) {
+    try {
+        $pdo = getConnection();
+    } catch (Exception $e) {
+        error_log("Error getting connection in theme_api.php: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database connection failed']);
+        exit;
+    }
+}
+
+if (!isset($pdo)) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Database connection not available']);
+    exit;
+}
+
 try {
   if ($action === 'get') {
     $stmt = $pdo->prepare('SELECT primary_red, dark_red, primary_yellow, banner_image FROM website_settings WHERE restaurant_id = :rid');

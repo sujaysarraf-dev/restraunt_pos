@@ -8,14 +8,17 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
 // Try to use the main db_connection.php first
-if (file_exists(__DIR__ . '/../config/db_connection.php')) {
-    require_once __DIR__ . '/../config/db_connection.php';
-    // If config/db_connection.php exists, it should set up $pdo
-    // If not, we'll create it below
-} elseif (file_exists(__DIR__ . '/../db_connection.php')) {
+if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
     // The main db_connection.php may set up $pdo or getConnection()
     // We need to ensure $pdo is available
+    if (!isset($pdo) && function_exists('getConnection')) {
+        try {
+            $pdo = getConnection();
+        } catch (Exception $e) {
+            error_log("Error getting connection: " . $e->getMessage());
+        }
+    }
 }
 
 // If $pdo is not set, create it directly
