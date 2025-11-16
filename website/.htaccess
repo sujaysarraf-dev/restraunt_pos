@@ -1,0 +1,19 @@
+# Restaurant URL Routing
+# Allows URLs like: website/restaurant-name instead of website/index.php?restaurant=restaurant-name
+
+RewriteEngine On
+RewriteBase /test/restraunt_pos/website/
+
+# If the request is for a file that exists, don't rewrite
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# If the request is not for index.php, router.php, or other PHP files, treat it as restaurant slug
+RewriteCond %{REQUEST_URI} !^.*\.(php|css|js|jpg|jpeg|png|gif|webp|ico|svg)$ [NC]
+
+# Rewrite restaurant-name to index.php?restaurant=restaurant-name
+RewriteRule ^([a-z0-9-]+)/?$ index.php?restaurant=$1 [L,QSA]
+
+# If accessing website/ directly, show index.php
+RewriteRule ^$ index.php [L]
+

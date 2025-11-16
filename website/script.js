@@ -822,7 +822,17 @@ function openProfile(element, e) {
 // Get restaurant ID from URL or use default
 function getRestaurantId() {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('restaurant_id') || 'RES001';
+    // Try restaurant_id first
+    let restaurantId = urlParams.get('restaurant_id');
+    
+    // If not found, check if restaurant slug is in URL
+    if (!restaurantId) {
+        const restaurantSlug = urlParams.get('restaurant');
+        // The PHP should have already converted slug to restaurant_id, but if not, use default
+        restaurantId = 'RES001';
+    }
+    
+    return restaurantId || 'RES001';
 }
 
 // Load menus

@@ -5300,6 +5300,31 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 });
+
+// Copy Restaurant Website Link
+function copyRestaurantLink() {
+  const linkInput = document.getElementById('restaurantWebsiteLink');
+  if (linkInput) {
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999); // For mobile devices
+    try {
+      document.execCommand('copy');
+      showNotification('Restaurant link copied to clipboard!', 'success');
+    } catch (err) {
+      // Fallback for modern browsers
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(linkInput.value).then(() => {
+          showNotification('Restaurant link copied to clipboard!', 'success');
+        }).catch(() => {
+          showNotification('Failed to copy link. Please copy manually.', 'error');
+        });
+      } else {
+        showNotification('Failed to copy link. Please copy manually.', 'error');
+      }
+    }
+  }
+}
+
 // Toggle Profile Edit
 function toggleProfileEdit() {
   const editCard = document.getElementById('editProfileCard');

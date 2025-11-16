@@ -315,7 +315,12 @@ try {
           <span class="nav-tooltip">Settings</span>
         </li>
         <li class="nav-item">
-          <a href="../website/index.php" class="nav-link" target="_blank">
+          <a href="../website/index.php?restaurant_id=<?php echo urlencode($restaurant_id); ?>&restaurant=<?php 
+            $restaurant_slug = strtolower($restaurant_name);
+            $restaurant_slug = preg_replace('/[^a-z0-9]+/', '-', $restaurant_slug);
+            $restaurant_slug = trim($restaurant_slug, '-');
+            echo urlencode($restaurant_slug);
+          ?>" class="nav-link" target="_blank">
             <span class="nav-icon material-symbols-rounded">language</span>
             <span class="nav-label">Customer Website</span>
           </a>
@@ -599,7 +604,12 @@ try {
             </div>
             <div class="form-actions">
               <button type="button" class="btn btn-save" id="saveWebsiteThemeBtn">Save Theme</button>
-              <a href="../website/index.php" class="btn btn-primary" target="_blank">Open Website</a>
+              <a href="../website/index.php?restaurant_id=<?php echo urlencode($restaurant_id); ?>&restaurant=<?php 
+                $restaurant_slug = strtolower($restaurant_name);
+                $restaurant_slug = preg_replace('/[^a-z0-9]+/', '-', $restaurant_slug);
+                $restaurant_slug = trim($restaurant_slug, '-');
+                echo urlencode($restaurant_slug);
+              ?>" class="btn btn-primary" target="_blank">Open Website</a>
             </div>
             <p style="margin-top:10px;color:#666;">Saved locally on this server (no link parameters required). The website reads saved colors automatically from the same origin.</p>
           </div>

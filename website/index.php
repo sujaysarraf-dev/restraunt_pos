@@ -1,12 +1,56 @@
 <?php
 // Load currency symbol from database server-side (same as dashboard)
-// Get restaurant_id from URL, session, or default to RES001
+// Get restaurant_id from URL, restaurant name slug, session, or default to RES001
 session_start();
-$restaurant_id = isset($_GET['restaurant_id']) && $_GET['restaurant_id'] !== '' 
-    ? $_GET['restaurant_id'] 
-    : (isset($_SESSION['restaurant_id']) && $_SESSION['restaurant_id'] !== '' 
-        ? $_SESSION['restaurant_id'] 
-        : 'RES001');
+
+// Function to create URL-friendly slug from restaurant name
+function createRestaurantSlug($name) {
+    $slug = strtolower($name);
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+    $slug = trim($slug, '-');
+    return $slug;
+}
+
+// Function to find restaurant by slug
+function findRestaurantBySlug($conn, $slug) {
+    $stmt = $conn->prepare("SELECT restaurant_id, restaurant_name FROM users WHERE restaurant_name IS NOT NULL AND restaurant_name != ''");
+    $stmt->execute();
+    $restaurants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    foreach ($restaurants as $restaurant) {
+        $restaurant_slug = createRestaurantSlug($restaurant['restaurant_name']);
+        if ($restaurant_slug === $slug) {
+            return [
+                'restaurant_id' => $restaurant['restaurant_id'],
+                'restaurant_name' => $restaurant['restaurant_name']
+            ];
+        }
+    }
+    
+    return null;
+}
+
+// Get restaurant identifier - priority: restaurant_id > restaurant slug > session > default
+$restaurant_id = null;
+$restaurant_slug = isset($_GET['restaurant']) ? trim($_GET['restaurant']) : '';
+
+// First, try to get restaurant_id from URL
+if (isset($_GET['restaurant_id']) && $_GET['restaurant_id'] !== '') {
+    $restaurant_id = $_GET['restaurant_id'];
+} 
+// If restaurant slug provided, find restaurant_id
+elseif (!empty($restaurant_slug)) {
+    // We'll need database connection to find restaurant by slug
+    // This will be done after db connection is established
+}
+// Try session
+elseif (isset($_SESSION['restaurant_id']) && $_SESSION['restaurant_id'] !== '') {
+    $restaurant_id = $_SESSION['restaurant_id'];
+}
+// Default
+else {
+    $restaurant_id = 'RES001';
+}
 
 // Default currency symbol - will be loaded from database
 $currency_symbol = '₹'; // This is only a fallback if database fails
@@ -27,6 +71,17 @@ try {
         $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    }
+    
+    // If we have a restaurant slug but no restaurant_id, find it
+    if (!empty($restaurant_slug) && (!$restaurant_id || $restaurant_id === 'RES001')) {
+        $restaurant_info = findRestaurantBySlug($conn, $restaurant_slug);
+        if ($restaurant_info) {
+            $restaurant_id = $restaurant_info['restaurant_id'];
+        } else {
+            // Restaurant not found by slug, use default
+            $restaurant_id = 'RES001';
+        }
     }
     
     // Get restaurant details from users table based on restaurant_id
