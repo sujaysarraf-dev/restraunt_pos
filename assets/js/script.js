@@ -317,6 +317,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   }
+  
+  // Make showPage globally accessible for onclick handlers
+  window.showPage = showPage;
 
   // Modal functionality
   const menuModal = document.getElementById("menuModal");
