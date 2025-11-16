@@ -47,7 +47,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
                 </div>
                 <div style="text-align: right;">
                     <div style="font-size: 0.9rem; opacity: 0.9;">Welcome, <?php echo htmlspecialchars($_SESSION['username'] ?? 'Manager'); ?></div>
-                    <a href="admin/auth.php?action=logout" style="color: white; text-decoration: none; font-weight: 600; margin-top: 8px; display: inline-block;">Logout</a>
+                    <a href="../admin/auth.php?action=logout" style="color: white; text-decoration: none; font-weight: 600; margin-top: 8px; display: inline-block;">Logout</a>
                 </div>
             </div>
         </header>
