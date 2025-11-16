@@ -10,6 +10,29 @@ let fullSidebarHeight = "calc(100vh - 32px)"; // Height in larger screen
 let subscriptionStatus = null;
 let subscriptionData = null;
 
+// Currency symbol from database (set by PHP in dashboard.php)
+// This is loaded server-side to prevent flash of default currency
+let globalCurrencySymbol = window.globalCurrencySymbol || '₹';
+
+// Format currency helper function - uses database currency symbol
+function formatCurrency(amount) {
+  const symbol = globalCurrencySymbol || window.globalCurrencySymbol || '₹';
+  return `${symbol}${parseFloat(amount).toFixed(2)}`;
+}
+
+// Format currency without decimals
+function formatCurrencyNoDecimals(amount) {
+  const symbol = globalCurrencySymbol || window.globalCurrencySymbol || '₹';
+  return `${symbol}${parseFloat(amount).toLocaleString('en-IN', {maximumFractionDigits: 0})}`;
+}
+
+// Update global currency symbol when it changes
+function updateCurrencySymbol(newSymbol) {
+  globalCurrencySymbol = newSymbol;
+  window.globalCurrencySymbol = newSymbol;
+  localStorage.setItem('system_currency', newSymbol);
+}
+
 // Toggle sidebar's collapsed state (only if elements exist)
 if (sidebarToggler && sidebar) {
   sidebarToggler.addEventListener("click", () => {
@@ -137,6 +160,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function showPage(pageId) {
+    // Initialize website theme editor when navigating to that page
+    if (pageId === 'websiteThemePage') {
+      setTimeout(() => {
+        initWebsiteThemeEditor();
+      }, 100);
+    }
     // Check subscription status before allowing access (except dashboard and settings)
     if (pageId !== "dashboardPage" && pageId !== "settingsPage") {
       if (subscriptionStatus === 'disabled' || subscriptionStatus === 'expired') {
@@ -540,7 +569,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.success) {
         console.log('Stats data received:', data.stats);
         // Update main stats
-        document.getElementById('todayRevenue').textContent = '₹' + data.stats.todayRevenue.toLocaleString('en-IN', {maximumFractionDigits: 2});
+        document.getElementById('todayRevenue').textContent = formatCurrencyNoDecimals(data.stats.todayRevenue);
         document.getElementById('todayOrders').textContent = data.stats.todayOrders;
         document.getElementById('activeKOT').textContent = data.stats.activeKOT;
         document.getElementById('totalCustomers').textContent = data.stats.totalCustomers;
@@ -569,7 +598,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   </div>
                 </div>
                 <div style="text-align: right;">
-                  <div style="color: #48bb78; font-weight: 800; font-size: 1.3rem;">₹${parseFloat(order.total).toFixed(2)}</div>
+                  <div style="color: #48bb78; font-weight: 800; font-size: 1.3rem;">${formatCurrency(order.total)}</div>
                   <div style="font-size: 0.8rem; color: #999;">${new Date(order.created_at).toLocaleTimeString()}</div>
                 </div>
               </li>
@@ -1128,7 +1157,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="item-meta">
             <span class="item-category">${escapeHtml(item.item_category || 'Uncategorized')}</span>
             <span class="item-type ${item.item_type.toLowerCase().replace(' ', '-')}">${item.item_type}</span>
-            <span class="item-price">₹${parseFloat(item.base_price).toFixed(2)}</span>
+            <span class="item-price">${formatCurrency(item.base_price)}</span>
           </div>
           <div class="item-info">
             <span class="menu-name">${escapeHtml(item.menu_name)}</span>
@@ -2546,7 +2575,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const initials = (name) => name.split(' ').map(w => w.charAt(0).toUpperCase()).join('').substring(0, 2);
     
     customerList.innerHTML = customers.map(customer => {
-      const totalSpent = customer.total_spent ? `₹${parseFloat(customer.total_spent).toFixed(2)}` : '₹0.00';
+      const totalSpent = customer.total_spent ? formatCurrency(customer.total_spent) : formatCurrency(0);
       
       return `
         <tr data-customer-id="${customer.id}">
@@ -2811,7 +2840,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <tr style="border-bottom: 1px solid #eee;">
                           <td style="padding: 0.75rem;">${item.item_name}</td>
                           <td style="padding: 0.75rem; text-align: center;">${item.quantity}</td>
-                          <td style="padding: 0.75rem; text-align: right;">₹${parseFloat(item.total_price).toFixed(2)}</td>
+                          <td style="padding: 0.75rem; text-align: right;">${formatCurrency(item.total_price)}</td>
                         </tr>
                       `).join('')}
                     </tbody>
@@ -2820,7 +2849,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; padding-top: 1rem; border-top: 2px solid #ddd;">
                   <span>Total:</span>
-                  <span>₹${parseFloat(order.total).toFixed(2)}</span>
+                  <span>${formatCurrency(order.total)}</span>
                 </div>
               </div>
             </div>
@@ -2878,7 +2907,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <tr style="border-bottom: 1px solid #eee;">
                           <td style="padding: 0.75rem;">${item.item_name}</td>
                           <td style="padding: 0.75rem; text-align: center;">${item.quantity}</td>
-                          <td style="padding: 0.75rem; text-align: right;">₹${parseFloat(item.total_price).toFixed(2)}</td>
+                          <td style="padding: 0.75rem; text-align: right;">${formatCurrency(item.total_price)}</td>
                         </tr>
                       `).join('')}
                     </tbody>
@@ -2887,7 +2916,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; padding-top: 1rem; border-top: 2px solid #ddd;">
                   <span>Total:</span>
-                  <span>₹${parseFloat(order.total).toFixed(2)}</span>
+                  <span>${formatCurrency(order.total)}</span>
                 </div>
               </div>
             </div>
@@ -3178,7 +3207,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="item-name">${escapeHtml(item.item_name_en)}</div>
         <div class="item-category">${escapeHtml(item.item_category || '')}</div>
-        <div class="item-price">₹${parseFloat(item.base_price).toFixed(2)}</div>
+        <div class="item-price">${formatCurrency(item.base_price)}</div>
       </div>
     `).join('');
   }
@@ -3294,14 +3323,14 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="cart-item">
           <div class="cart-item-info">
             <div class="cart-item-name">${escapeHtml(item.name)}</div>
-            <div class="cart-item-price">₹${parseFloat(item.price).toFixed(2)} each</div>
+            <div class="cart-item-price">${formatCurrency(item.price)} each</div>
           </div>
           <div class="cart-item-controls">
             <button class="cart-qty-btn" onclick="updatePOSCartQty(${item.id}, -1)">-</button>
             <span class="cart-qty-value">${item.quantity}</span>
             <button class="cart-qty-btn" onclick="updatePOSCartQty(${item.id}, 1)">+</button>
           </div>
-          <div class="cart-item-total">₹${(parseFloat(item.price) * item.quantity).toFixed(2)}</div>
+          <div class="cart-item-total">${formatCurrency(parseFloat(item.price) * item.quantity)}</div>
         </div>
       `).join('');
     }
@@ -3562,7 +3591,7 @@ async function initiateRenewal() {
       renewButton.innerHTML = '<span style="font-size:1.2rem;">⏳</span> Processing...';
     }
     
-    const amount = 999; // ₹999 for monthly subscription
+    const amount = 999; // Monthly subscription amount
     
     const formData = new URLSearchParams();
     formData.append('amount', amount);
@@ -3589,7 +3618,7 @@ async function initiateRenewal() {
       showNotification(result.message || 'Error initiating payment. Please try again.', 'error');
       if (renewButton) {
         renewButton.disabled = false;
-        renewButton.innerHTML = '<span style="font-size:1.2rem;">💳</span> Renew Now (₹999)';
+        renewButton.innerHTML = `<span style="font-size:1.2rem;">💳</span> Renew Now (${formatCurrency(999)})`;
       }
     }
   } catch (error) {
@@ -3906,7 +3935,7 @@ function displayOrders(orders) {
         <p><strong>Table:</strong> ${order.table_name || 'Walk-in'}</p>
         <p><strong>Customer:</strong> ${order.customer_name || 'N/A'}</p>
         <p><strong>Time:</strong> ${new Date(order.created_at).toLocaleString()}</p>
-        <p><strong>Total:</strong> ₹${order.total}</p>
+        <p><strong>Total:</strong> ${formatCurrency(order.total)}</p>
       </div>
       <div class="order-items">
         <h4>Items:</h4>
@@ -3914,7 +3943,7 @@ function displayOrders(orders) {
           <div class="order-item">
             <span class="item-name">${item.item_name}</span>
             <span class="item-qty">x${item.quantity}</span>
-            <span class="item-price">₹${item.total_price}</span>
+            <span class="item-price">${formatCurrency(item.total_price)}</span>
           </div>
         `).join('')}
       </div>
@@ -4350,7 +4379,7 @@ async function loadPayments() {
         tbody.innerHTML = data.payments.map(payment => `
           <tr>
             <td>${payment.id}</td>
-            <td><strong style="color: #48bb78;">₹${parseFloat(payment.amount).toFixed(2)}</strong></td>
+            <td><strong style="color: #48bb78;">${formatCurrency(payment.amount)}</strong></td>
             <td>
               <span style="background: ${
                 payment.payment_method === 'Cash' ? '#48bb78' :
@@ -4650,6 +4679,8 @@ function setupSettingsForms() {
           const currencyDisplay = document.getElementById('currencySymbolDisplay');
           if (currencyDisplay && currencySymbol) {
             currencyDisplay.textContent = currencySymbol;
+            // Update global currency symbol
+            updateCurrencySymbol(currencySymbol);
           }
           // Reload page to apply timezone changes
           setTimeout(() => {
@@ -4760,7 +4791,7 @@ async function loadReports() {
     const totalCustomersEl = document.getElementById('reportTotalCustomers');
     
     if (totalSalesEl) {
-      totalSalesEl.textContent = '₹' + data.summary.total_sales.toLocaleString('en-IN', {maximumFractionDigits: 2});
+      totalSalesEl.textContent = formatCurrencyNoDecimals(data.summary.total_sales);
     }
     if (totalOrdersEl) {
       totalOrdersEl.textContent = data.summary.total_orders;
@@ -4783,7 +4814,7 @@ async function loadReports() {
             <td style="padding: 1rem;">${order.customer_name}</td>
             <td style="padding: 1rem;">${order.item_count}</td>
             <td style="padding: 1rem;"><span style="background: #e5f3ff; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">${order.payment_method}</span></td>
-            <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--primary-red);">₹${parseFloat(order.total).toLocaleString('en-IN', {maximumFractionDigits: 2})}</td>
+            <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--primary-red);">${formatCurrencyNoDecimals(order.total)}</td>
           </tr>
         `).join('');
       } else {
@@ -4801,7 +4832,7 @@ async function loadReports() {
               <div style="font-weight: 600;">${index + 1}. ${item.item_name}</div>
               <div style="font-size: 0.85rem; color: #666;">Qty: ${item.total_quantity}</div>
             </div>
-            <div style="font-weight: 700; color: var(--primary-red);">₹${parseFloat(item.total_revenue).toLocaleString('en-IN', {maximumFractionDigits: 2})}</div>
+            <div style="font-weight: 700; color: var(--primary-red);">${formatCurrencyNoDecimals(item.total_revenue)}</div>
           </div>
         `).join('');
       } else {
@@ -4819,7 +4850,7 @@ async function loadReports() {
               <div style="font-weight: 600;">${method.payment_method}</div>
               <div style="font-size: 0.85rem; color: #666;">${method.count} orders</div>
             </div>
-            <div style="font-weight: 700; color: var(--primary-red);">₹${parseFloat(method.amount).toLocaleString('en-IN', {maximumFractionDigits: 2})}</div>
+            <div style="font-weight: 700; color: var(--primary-red);">${formatCurrencyNoDecimals(method.amount)}</div>
           </div>
         `).join('');
       } else {
@@ -4891,36 +4922,383 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Website theme (DB-based via API)
+let websiteThemeInitialized = false;
+
 async function initWebsiteThemeEditor() {
+  // Prevent duplicate initialization
+  if (websiteThemeInitialized) {
+    console.log('Website theme editor already initialized, skipping...');
+    return;
+  }
+  
   try {
     const sess = await fetch('../admin/get_session.php').then(r=>r.json()).catch(()=>null);
     const rid = (sess && sess.success && sess.data?.restaurant_id) ? sess.data.restaurant_id : '';
     const pr = document.getElementById('primaryRed');
     const dr = document.getElementById('darkRed');
     const py = document.getElementById('primaryYellow');
-    // Load
+    const bannerUpload = document.getElementById('bannerUpload');
+    const uploadBannerBtn = document.getElementById('uploadBannerBtn');
+    
+    // Function to render banners grid
+    const renderBanners = (banners) => {
+      const bannersGrid = document.getElementById('bannersGrid');
+      if (!bannersGrid) {
+        setTimeout(() => {
+          const retryGrid = document.getElementById('bannersGrid');
+          if (retryGrid) {
+            renderBanners(banners);
+          }
+        }, 300);
+        return;
+      }
+      
+      bannersGrid.innerHTML = '';
+      
+      if (!banners || banners.length === 0) {
+        bannersGrid.innerHTML = '<p style="color:#666;grid-column:1/-1;text-align:center;padding:20px;">No banners uploaded yet</p>';
+        return;
+      }
+      
+      banners.forEach((banner, index) => {
+        const imagePath = banner.banner_path.startsWith('http') ? banner.banner_path : '../' + banner.banner_path;
+        const bannerCard = document.createElement('div');
+        bannerCard.setAttribute('draggable', 'true');
+        bannerCard.setAttribute('data-banner-id', banner.id);
+        bannerCard.setAttribute('data-banner-index', index);
+        bannerCard.className = 'banner-card-draggable';
+        bannerCard.style.cssText = 'position:relative;border:2px solid #ddd;border-radius:12px;overflow:hidden;background:#f9f9f9;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:move;transition:all 0.3s ease;';
+        bannerCard.innerHTML = `
+          <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);color:white;padding:4px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;z-index:10;pointer-events:none;">
+            <span class="material-symbols-rounded" style="font-size:16px;vertical-align:middle;">drag_indicator</span>
+            Drag to reorder
+          </div>
+          <img src="${imagePath}" alt="Banner" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width:100%;height:auto;display:block;max-height:300px;min-height:200px;object-fit:cover;background:#f0f0f0;pointer-events:none;">
+          <div style="display:none;width:100%;height:200px;align-items:center;justify-content:center;background:#f0f0f0;color:#999;flex-direction:column;">
+            <span class="material-symbols-rounded" style="font-size:48px;margin-bottom:10px;">image_not_supported</span>
+            <span>Image not found</span>
+            <small style="margin-top:5px;color:#bbb;">${imagePath}</small>
+          </div>
+          <button class="delete-banner-btn" data-id="${banner.id}" draggable="false" style="position:absolute;top:8px;right:8px;background:rgba(220,38,38,0.9);color:white;border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.3s;box-shadow:0 2px 6px rgba(0,0,0,0.2);z-index:10;">
+            <span class="material-symbols-rounded" style="font-size:20px;">delete</span>
+          </button>
+          <div style="padding:12px;font-size:0.9rem;color:#666;text-align:center;background:#fff;border-top:1px solid #eee;">Order: ${banner.display_order !== null && banner.display_order !== undefined ? banner.display_order : index + 1}</div>
+        `;
+        bannersGrid.appendChild(bannerCard);
+      });
+      
+      // Add delete button listeners
+      document.querySelectorAll('.delete-banner-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const bannerId = e.currentTarget.getAttribute('data-id');
+          if (!confirm('Are you sure you want to delete this banner?')) return;
+          
+          try {
+            e.currentTarget.disabled = true;
+            const sq = rid ? `?action=delete_banner&banner_id=${bannerId}&restaurant_id=${encodeURIComponent(rid)}` : `?action=delete_banner&banner_id=${bannerId}`;
+            const formData = new FormData();
+            formData.append('banner_id', bannerId);
+            const res = await fetch(`../website/theme_api.php${sq}`, { method:'POST', body: formData });
+            const data = await res.json();
+            
+            if (data.success) {
+              showNotification('Banner deleted successfully', 'success');
+              loadBanners();
+            } else {
+              showNotification(data.message || 'Failed to delete banner', 'error');
+            }
+          } catch (err) {
+            showNotification('Network error. Please try again.', 'error');
+          }
+        });
+      });
+      
+      // Add drag and drop functionality
+      let draggedElement = null;
+      
+      document.querySelectorAll('.banner-card-draggable').forEach((card, index) => {
+        card.addEventListener('dragstart', (e) => {
+          if (e.target.closest('.delete-banner-btn')) {
+            e.preventDefault();
+            return;
+          }
+          draggedElement = card;
+          card.style.opacity = '0.5';
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        
+        card.addEventListener('dragend', (e) => {
+          card.style.opacity = '1';
+          document.querySelectorAll('.banner-card-draggable').forEach(c => {
+            c.style.border = '2px solid #ddd';
+            c.style.transform = 'scale(1)';
+          });
+        });
+        
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          
+          if (draggedElement && card !== draggedElement) {
+            const cards = Array.from(bannersGrid.querySelectorAll('.banner-card-draggable'));
+            const draggedIndex = cards.indexOf(draggedElement);
+            const targetIndex = cards.indexOf(card);
+            
+            if (draggedIndex < targetIndex) {
+              card.style.borderTop = '3px solid #4CAF50';
+              card.style.borderBottom = '2px solid #ddd';
+            } else {
+              card.style.borderBottom = '3px solid #4CAF50';
+              card.style.borderTop = '2px solid #ddd';
+            }
+            card.style.transform = 'scale(1.02)';
+          }
+        });
+        
+        card.addEventListener('dragleave', (e) => {
+          card.style.border = '2px solid #ddd';
+          card.style.transform = 'scale(1)';
+        });
+        
+        card.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          if (draggedElement && card !== draggedElement) {
+            const cards = Array.from(bannersGrid.querySelectorAll('.banner-card-draggable'));
+            const draggedIndex = cards.indexOf(draggedElement);
+            const targetIndex = cards.indexOf(card);
+            
+            if (draggedIndex < targetIndex) {
+              bannersGrid.insertBefore(draggedElement, card.nextSibling);
+            } else {
+              bannersGrid.insertBefore(draggedElement, card);
+            }
+            
+            const newOrder = Array.from(bannersGrid.querySelectorAll('.banner-card-draggable')).map(c => 
+              parseInt(c.getAttribute('data-banner-id'))
+            );
+            
+            try {
+              const sq = rid ? `?action=reorder_banners&restaurant_id=${encodeURIComponent(rid)}` : '?action=reorder_banners';
+              const res = await fetch(`../website/theme_api.php${sq}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ banner_ids: newOrder })
+              });
+              const data = await res.json();
+              
+              if (data.success) {
+                showNotification('Banner order updated successfully', 'success');
+                const updatedCards = Array.from(bannersGrid.querySelectorAll('.banner-card-draggable'));
+                updatedCards.forEach((c, idx) => {
+                  const orderDiv = c.querySelector('div[style*="Order:"]');
+                  if (orderDiv) {
+                    orderDiv.textContent = `Order: ${idx + 1}`;
+                  }
+                });
+              } else {
+                showNotification(data.message || 'Failed to update banner order', 'error');
+                loadBanners();
+              }
+            } catch (err) {
+              showNotification('Network error. Please try again.', 'error');
+              loadBanners();
+            }
+          }
+          
+          card.style.border = '2px solid #ddd';
+          card.style.transform = 'scale(1)';
+        });
+      });
+    };
+    
+    // Function to load banners
+    const loadBanners = async () => {
+      try {
+        const q = rid ? `?action=get_banners&restaurant_id=${encodeURIComponent(rid)}` : '?action=get_banners';
+        const res = await fetch(`../website/theme_api.php${q}`);
+        const data = await res.json();
+        if (data.success) {
+          renderBanners(data.banners || []);
+        } else {
+          renderBanners([]);
+        }
+      } catch (e) {
+        console.error('Error loading banners:', e);
+        renderBanners([]);
+      }
+    };
+    
+    // Ensure preview section is visible
+    const bannersPreview = document.getElementById('bannersPreview');
+    if (bannersPreview) {
+      bannersPreview.style.display = 'block';
+    }
+    
+    // Function to update color previews
+    const updateColorPreviews = () => {
+      const primaryRedVal = pr ? pr.value : '#F70000';
+      const darkRedVal = dr ? dr.value : '#DA020E';
+      const primaryYellowVal = py ? py.value : '#FFD100';
+      
+      // Update color value displays
+      const primaryRedDisplay = document.getElementById('primaryRedDisplay');
+      const darkRedDisplay = document.getElementById('darkRedDisplay');
+      const primaryYellowDisplay = document.getElementById('primaryYellowDisplay');
+      
+      if (primaryRedDisplay) primaryRedDisplay.textContent = primaryRedVal;
+      if (darkRedDisplay) darkRedDisplay.textContent = darkRedVal;
+      if (primaryYellowDisplay) primaryYellowDisplay.textContent = primaryYellowVal;
+      
+      // Update hero section gradient
+      const heroPreview = document.getElementById('heroPreview');
+      if (heroPreview) {
+        heroPreview.style.background = `linear-gradient(135deg, ${primaryRedVal} 0%, ${darkRedVal} 100%)`;
+      }
+      
+      // Update category button
+      const categoryButtonPreview = document.getElementById('categoryButtonPreview');
+      if (categoryButtonPreview) {
+        categoryButtonPreview.style.borderColor = primaryRedVal;
+        categoryButtonPreview.style.color = primaryRedVal;
+      }
+      
+      // Update add to cart button
+      const addToCartPreview = document.getElementById('addToCartPreview');
+      if (addToCartPreview) {
+        addToCartPreview.style.background = primaryYellowVal;
+      }
+      
+      // Update checkout button
+      const checkoutPreview = document.getElementById('checkoutPreview');
+      if (checkoutPreview) {
+        checkoutPreview.style.background = primaryRedVal;
+      }
+    };
+    
+    // Add event listeners to color inputs for real-time preview
+    if (pr) pr.addEventListener('input', updateColorPreviews);
+    if (dr) dr.addEventListener('input', updateColorPreviews);
+    if (py) py.addEventListener('input', updateColorPreviews);
+    
+    // Load theme settings and banners
     const q = rid ? `?action=get&restaurant_id=${encodeURIComponent(rid)}` : '?action=get';
     const theme = await fetch(`../website/theme_api.php${q}`).then(r=>r.json()).catch(()=>null);
     if (theme && theme.success && theme.settings) {
-      if (pr) pr.value = theme.settings.primary_red;
-      if (dr) dr.value = theme.settings.dark_red;
-      if (py) py.value = theme.settings.primary_yellow;
+      if (pr) pr.value = theme.settings.primary_red || '#F70000';
+      if (dr) dr.value = theme.settings.dark_red || '#DA020E';
+      if (py) py.value = theme.settings.primary_yellow || '#FFD100';
+      
+      // Update previews with loaded values
+      updateColorPreviews();
+      
+      // Load banners
+      setTimeout(() => {
+        loadBanners();
+      }, 100);
+    } else {
+      // Update previews with default values
+      updateColorPreviews();
+      
+      setTimeout(() => {
+        loadBanners();
+      }, 100);
     }
-    // Save
+    
+    // Save colors
     const saveBtn = document.getElementById('saveWebsiteThemeBtn');
-    if (saveBtn) saveBtn.addEventListener('click', async () => {
-      const payload = { primary_red: pr.value, dark_red: dr.value, primary_yellow: py.value };
-      const sq = rid ? `?action=save&restaurant_id=${encodeURIComponent(rid)}` : '?action=save';
-      const res = await fetch(`../website/theme_api.php${sq}`, { method:'POST', body: JSON.stringify(payload) });
-      const data = await res.json();
-      if (data.success) showNotification('Theme saved', 'success'); else showNotification(data.message||'Error','error');
-    });
-  } catch (e) { console.error('Theme init error', e); }
+    if (saveBtn) {
+      // Remove old listener if exists
+      const newSaveBtn = saveBtn.cloneNode(true);
+      saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+      
+      newSaveBtn.addEventListener('click', async () => {
+        const payload = { primary_red: pr.value, dark_red: dr.value, primary_yellow: py.value };
+        const sq = rid ? `?action=save&restaurant_id=${encodeURIComponent(rid)}` : '?action=save';
+        const res = await fetch(`../website/theme_api.php${sq}`, { 
+          method:'POST', 
+          headers: {'Content-Type': 'application/json'}, 
+          body: JSON.stringify(payload) 
+        });
+        const data = await res.json();
+        if (data.success) {
+          showNotification('Theme saved', 'success');
+          updateColorPreviews();
+        } else {
+          showNotification(data.message||'Error','error');
+        }
+      });
+    }
+    
+    // Upload banners
+    if (uploadBannerBtn && bannerUpload) {
+      // Clone button to remove old listeners
+      const newUploadBtn = uploadBannerBtn.cloneNode(true);
+      uploadBannerBtn.parentNode.replaceChild(newUploadBtn, uploadBannerBtn);
+      
+      newUploadBtn.addEventListener('click', async () => {
+        if (!bannerUpload || !bannerUpload.files || bannerUpload.files.length === 0) {
+          showNotification('Please select at least one image file', 'error');
+          return;
+        }
+        
+        const formData = new FormData();
+        Array.from(bannerUpload.files).forEach((file) => {
+          formData.append('banners[]', file);
+        });
+        
+        const sq = rid ? `?action=upload_banner&restaurant_id=${encodeURIComponent(rid)}` : '?action=upload_banner';
+        
+        try {
+          newUploadBtn.disabled = true;
+          newUploadBtn.innerHTML = '<span class="material-symbols-rounded">upload</span>Uploading...';
+          const res = await fetch(`../website/theme_api.php${sq}`, { method:'POST', body: formData });
+          const data = await res.json();
+          
+          if (data.success) {
+            const count = data.banners ? data.banners.length : 1;
+            showNotification(`${count} banner(s) uploaded successfully`, 'success');
+            bannerUpload.value = '';
+            loadBanners();
+          } else {
+            showNotification(data.message || 'Upload failed', 'error');
+          }
+        } catch (e) {
+          showNotification('Network error. Please try again.', 'error');
+        } finally {
+          newUploadBtn.disabled = false;
+          newUploadBtn.innerHTML = '<span class="material-symbols-rounded">upload</span>Upload Banners';
+        }
+      });
+    }
+    
+    // Mark as initialized
+    websiteThemeInitialized = true;
+  } catch (e) { 
+    console.error('Theme init error', e); 
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function(){
+  // Check if websiteThemePage is already active on load
+  const websiteThemePage = document.getElementById('websiteThemePage');
+  if (websiteThemePage && websiteThemePage.classList.contains('active')) {
+    setTimeout(() => {
+      initWebsiteThemeEditor();
+    }, 300);
+  }
+  
+  // Also listen for navigation clicks
   const themeNav = document.querySelector('[data-page="websiteThemePage"]');
-  if (themeNav) themeNav.addEventListener('click', () => setTimeout(initWebsiteThemeEditor, 120));
+  if (themeNav) {
+    themeNav.addEventListener('click', () => {
+      setTimeout(() => {
+        initWebsiteThemeEditor();
+      }, 120);
+    });
+  }
 });
 // Toggle Profile Edit
 function toggleProfileEdit() {
