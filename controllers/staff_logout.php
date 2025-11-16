@@ -12,8 +12,8 @@ if (isset($_COOKIE[session_name()])) {
 // Destroy the session
 session_destroy();
 
-// Redirect to login page
-header('Location: admin/login.php');
+// Redirect to login page (correct path from controllers/ folder)
+header('Location: ../admin/login.php');
 exit();
 ?>
 

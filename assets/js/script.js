@@ -3649,8 +3649,8 @@ async function logout() {
       const result = await response.json();
       
       if (result.success) {
-        // Redirect to login page
-        window.location.href = "admin/login.php";
+        // Redirect to login page (correct path from views/ folder)
+        window.location.href = "../admin/login.php";
       } else {
         showNotification("Error logging out. Please try again.", "error");
       }
