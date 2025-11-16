@@ -115,19 +115,10 @@ function handleLogin() {
         $_SESSION['user_type'] = 'admin';
         $_SESSION['role'] = 'Admin';
         
-        // Create restaurant slug for URL
-        $restaurant_name = $user['restaurant_name'] ?? 'Restaurant';
-        $restaurant_slug = strtolower($restaurant_name);
-        $restaurant_slug = preg_replace('/[^a-z0-9]+/', '-', $restaurant_slug);
-        $restaurant_slug = trim($restaurant_slug, '-');
-        
-        // Redirect to restaurant website instead of dashboard
-        $redirect = '../website/index.php?restaurant_id=' . urlencode($user['restaurant_id']) . '&restaurant=' . urlencode($restaurant_slug);
-        
         echo json_encode([
             'success' => true,
             'message' => 'Login successful',
-            'redirect' => $redirect,
+            'redirect' => '../views/dashboard.php',
             'data' => [
                 'username' => $user['username'],
                 'restaurant_id' => $user['restaurant_id'],
@@ -155,14 +146,15 @@ function handleLogin() {
         $_SESSION['user_type'] = 'staff';
         $_SESSION['role'] = $staff['role'];
         
-        // Create restaurant slug for URL
-        $restaurant_name = $staff['restaurant_name'] ?? 'Restaurant';
-        $restaurant_slug = strtolower($restaurant_name);
-        $restaurant_slug = preg_replace('/[^a-z0-9]+/', '-', $restaurant_slug);
-        $restaurant_slug = trim($restaurant_slug, '-');
-        
-        // Redirect to restaurant website instead of dashboard (for all roles)
-        $redirect = '../website/index.php?restaurant_id=' . urlencode($staff['restaurant_id']) . '&restaurant=' . urlencode($restaurant_slug);
+        // Determine redirect based on role
+        $redirect = '../views/dashboard.php'; // Default
+        if ($staff['role'] === 'Chef') {
+            $redirect = '../views/chef_dashboard.php';
+        } elseif ($staff['role'] === 'Waiter') {
+            $redirect = '../views/waiter_dashboard.php';
+        } elseif ($staff['role'] === 'Manager') {
+            $redirect = '../views/manager_dashboard.php';
+        }
         
         echo json_encode([
             'success' => true,
