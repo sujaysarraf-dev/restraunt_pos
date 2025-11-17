@@ -430,10 +430,20 @@ if (!$currency_symbol) {
                                     <strong>Subtotal:</strong> ${waiterCurrencySymbol}${parseFloat(order.subtotal || 0).toFixed(2)} | 
                                     <strong>Tax:</strong> ${waiterCurrencySymbol}${parseFloat(order.tax || 0).toFixed(2)}
                                 </div>
-                                <button class="btn btn-success" onclick="markOrderServed(${order.id})" style="padding: 12px 24px; font-size: 1rem; white-space: nowrap;">
-                                    <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1.2rem;">check_circle</span>
-                                    Mark as Served
-                                </button>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button class="btn btn-primary" onclick="markOrderPreparing(${order.id})" style="padding: 10px 18px; display: flex; align-items: center; gap: 6px;">
+                                        <span class="material-symbols-rounded" style="font-size: 1.1rem;">restaurant</span>
+                                        Start Preparing
+                                    </button>
+                                    <button class="btn btn-warning" onclick="markOrderReady(${order.id})" style="padding: 10px 18px; display: flex; align-items: center; gap: 6px; background: #f59e0b;">
+                                        <span class="material-symbols-rounded" style="font-size: 1.1rem;">task_alt</span>
+                                        Mark Ready
+                                    </button>
+                                    <button class="btn btn-success" onclick="markOrderServed(${order.id})" style="padding: 10px 18px; display: flex; align-items: center; gap: 6px;">
+                                        <span class="material-symbols-rounded" style="font-size: 1.1rem;">check_circle</span>
+                                        Mark Served
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -450,19 +460,30 @@ if (!$currency_symbol) {
             });
         }
         
-        async function markOrderServed(orderId) {
-            showConfirmModal('Are you sure you want to mark this order as served?', async () => {
+        function handleOrderStatusChange(orderId, status) {
+            const messages = {
+                'Preparing': 'Are you sure you want to start preparing this order?',
+                'Ready': 'Are you sure you want to mark this order as ready?',
+                'Served': 'Are you sure this order has been served?'
+            };
+            const successMessages = {
+                'Preparing': 'Order marked as Preparing successfully!',
+                'Ready': 'Order marked as Ready successfully!',
+                'Served': 'Order marked as Served successfully!'
+            };
+            
+            showConfirmModal(messages[status] || 'Confirm action?', async () => {
                 try {
                     const response = await fetch('../api/update_order_status.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: `orderId=${orderId}&status=Served`
+                        body: `orderId=${orderId}&status=${status}`
                     });
                     const result = await response.json();
                     
                     if (result.success) {
-                        showNotification('Order marked as served successfully!', 'success');
-                        loadActiveOrders(); // Refresh immediately after update
+                        showNotification(successMessages[status] || 'Order updated successfully!', 'success');
+                        loadActiveOrders();
                     } else {
                         showNotification(result.message || 'Failed to update order', 'error');
                     }
@@ -473,7 +494,21 @@ if (!$currency_symbol) {
             });
         }
         
-        // Make markOrderServed globally available
+        function markOrderPreparing(orderId) {
+            handleOrderStatusChange(orderId, 'Preparing');
+        }
+        
+        function markOrderReady(orderId) {
+            handleOrderStatusChange(orderId, 'Ready');
+        }
+        
+        function markOrderServed(orderId) {
+            handleOrderStatusChange(orderId, 'Served');
+        }
+        
+        // Make order status handlers globally available
+        window.markOrderPreparing = markOrderPreparing;
+        window.markOrderReady = markOrderReady;
         window.markOrderServed = markOrderServed;
 
         async function markAttended(requestId) {
