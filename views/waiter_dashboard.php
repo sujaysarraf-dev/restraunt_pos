@@ -430,20 +430,10 @@ if (!$currency_symbol) {
                                     <strong>Subtotal:</strong> ${waiterCurrencySymbol}${parseFloat(order.subtotal || 0).toFixed(2)} | 
                                     <strong>Tax:</strong> ${waiterCurrencySymbol}${parseFloat(order.tax || 0).toFixed(2)}
                                 </div>
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <button class="btn btn-primary" onclick="markOrderPreparing(${order.id})" style="padding: 10px 18px; display: flex; align-items: center; gap: 6px;">
-                                        <span class="material-symbols-rounded" style="font-size: 1.1rem;">restaurant</span>
-                                        Start Preparing
-                                    </button>
-                                    <button class="btn btn-warning" onclick="markOrderReady(${order.id})" style="padding: 10px 18px; display: flex; align-items: center; gap: 6px; background: #f59e0b;">
-                                        <span class="material-symbols-rounded" style="font-size: 1.1rem;">task_alt</span>
-                                        Mark Ready
-                                    </button>
-                                    <button class="btn btn-success" onclick="markOrderServed(${order.id})" style="padding: 10px 18px; display: flex; align-items: center; gap: 6px;">
-                                        <span class="material-symbols-rounded" style="font-size: 1.1rem;">check_circle</span>
-                                        Mark Served
-                                    </button>
-                                </div>
+                                <button class="btn btn-success" onclick="markOrderServed(${order.id})" style="padding: 12px 24px; display: flex; align-items: center; gap: 6px;">
+                                    <span class="material-symbols-rounded" style="font-size: 1.1rem;">check_circle</span>
+                                    Mark as Served
+                                </button>
                             </div>
                         </div>
                     `;
