@@ -826,7 +826,7 @@ try {
               </div>
               <div>
                 <div style="color: #666; font-size: 0.9rem; margin-bottom: 0.25rem;">Total Sales</div>
-                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-red);" id="reportTotalSales">₹0.00</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-red);" id="reportTotalSales"><?php echo htmlspecialchars($currency_symbol); ?>0.00</div>
               </div>
             </div>
           </div>
@@ -1367,23 +1367,23 @@ try {
             <div class="pos-cart-summary">
               <div class="cart-summary-row">
                 <span>Subtotal:</span>
-                <span id="cartSubtotal">₹0.00</span>
+                <span id="cartSubtotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
               </div>
               <div class="cart-summary-row">
                 <span>CGST (2.5%):</span>
-                <span id="cartCGST">₹0.00</span>
+                <span id="cartCGST"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
               </div>
               <div class="cart-summary-row">
                 <span>SGST (2.5%):</span>
-                <span id="cartSGST">₹0.00</span>
+                <span id="cartSGST"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
               </div>
               <div class="cart-summary-row">
                 <span>GST (5%):</span>
-                <span id="cartTax">₹0.00</span>
+                <span id="cartTax"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
               </div>
               <div class="cart-summary-row total">
                 <span>Total:</span>
-                <span id="cartTotal">₹0.00</span>
+                <span id="cartTotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
               </div>
             </div>
 
