@@ -2821,20 +2821,8 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
   };
   
-  // Show full order details inline (from Orders page)
+  // Show full order details in modal (from Orders page)
   window.showFullOrderDetails = async function(orderId) {
-    const container = document.getElementById(`orderDetails-${orderId}`);
-    if (!container) return;
-    
-    if (container.classList.contains('open')) {
-      container.classList.remove('open');
-      container.innerHTML = '';
-      return;
-    }
-    
-    container.classList.add('open');
-    container.innerHTML = '<div class="order-details-inline-loading">Loading order details...</div>';
-    
     try {
       const response = await fetch(`../api/get_order_details_by_id.php?id=${orderId}`);
       const data = await response.json();
@@ -2843,56 +2831,96 @@ document.addEventListener("DOMContentLoaded", () => {
         const order = data.order;
         const items = Array.isArray(order.items) ? order.items : [];
         
-        const itemsHtml = items.length
-          ? items.map(item => `
-              <div class="inline-item-row">
-                <div>
-                  <div class="inline-item-name">${item.item_name}</div>
-                  ${item.notes ? `<div class="inline-item-note">Note: ${item.notes}</div>` : ''}
-                </div>
-                <div class="inline-item-meta">
-                  <span>x${item.quantity || 1}</span>
-                  <strong>${formatCurrency(item.total_price || 0)}</strong>
-                </div>
-              </div>
-            `).join('')
-          : '<div class="inline-empty">No items found for this order.</div>';
+        // Remove existing modal if any
+        const existingModal = document.getElementById('orderDetailsModal');
+        if (existingModal) {
+          existingModal.remove();
+        }
         
-        container.innerHTML = `
-          <div class="inline-summary">
-            <div><strong>Order #:</strong> ${order.order_number}</div>
-            <div><strong>Table:</strong> ${order.table_name || order.table_number || 'Walk-in'}</div>
-            <div><strong>Customer:</strong> ${order.customer_name || 'N/A'}</div>
-            <div><strong>Status:</strong> <span class="status-badge ${order.order_status.toLowerCase()}">${order.order_status}</span></div>
-            <div><strong>Payment:</strong> <span class="status-badge ${order.payment_status.toLowerCase().replace(' ', '-')}">${order.payment_status}</span></div>
-          </div>
-          <div class="inline-items">${itemsHtml}</div>
-          <div class="inline-totals">
-            <div><span>Subtotal</span><strong>${formatCurrency(order.subtotal || 0)}</strong></div>
-            <div><span>Tax</span><strong>${formatCurrency(order.tax || 0)}</strong></div>
-            <div><span>Total</span><strong>${formatCurrency(order.total || 0)}</strong></div>
-          </div>
-          ${order.notes ? `<div class="inline-notes">Note: ${order.notes}</div>` : ''}
-          <div class="inline-actions">
-            <button class="inline-close-btn" onclick="closeInlineOrderDetails(${order.id})">
-              Close
-            </button>
+        // Create modal HTML
+        const modalHTML = `
+          <div class="modal-overlay" id="orderDetailsModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+            <div class="modal-content" style="background: white; border-radius: 12px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+              <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+                <h2 style="margin: 0; font-size: 1.5rem; color: #111827;">Order Details</h2>
+                <button onclick="this.closest('.modal-overlay').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='#f3f4f6'; this.style.color='#111827'" onmouseout="this.style.background='none'; this.style.color='#6b7280'">&times;</button>
+              </div>
+              <div class="modal-body" style="padding: 1.5rem;">
+                <div style="margin-bottom: 1.5rem;">
+                  <p style="margin: 0.5rem 0;"><strong>Order #:</strong> ${order.order_number}</p>
+                  <p style="margin: 0.5rem 0;"><strong>Table:</strong> ${order.table_name || order.table_number || 'Walk-in'}</p>
+                  <p style="margin: 0.5rem 0;"><strong>Customer:</strong> ${order.customer_name || 'N/A'}</p>
+                  <p style="margin: 0.5rem 0;"><strong>Status:</strong> <span class="status-badge ${order.order_status.toLowerCase()}">${order.order_status}</span></p>
+                  <p style="margin: 0.5rem 0;"><strong>Payment:</strong> <span class="status-badge ${order.payment_status.toLowerCase().replace(' ', '-')}">${order.payment_status}</span></p>
+                  <p style="margin: 0.5rem 0;"><strong>Time:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                  <h3 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 1.1rem;">Items (${items.length})</h3>
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <thead style="background: #f5f5f5;">
+                      <tr>
+                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151;">Item</th>
+                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; color: #374151;">Qty</th>
+                        <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: #374151;">Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${items.length ? items.map(item => `
+                        <tr style="border-bottom: 1px solid #eee;">
+                          <td style="padding: 0.75rem;">
+                            <div style="font-weight: 500; color: #111827;">${item.item_name}</div>
+                            ${item.notes ? `<div style="font-size: 0.875rem; color: #f59e0b; margin-top: 4px;">Note: ${item.notes}</div>` : ''}
+                          </td>
+                          <td style="padding: 0.75rem; text-align: center; color: #6b7280;">${item.quantity || 1}</td>
+                          <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: #111827;">${formatCurrency(item.total_price || 0)}</td>
+                        </tr>
+                      `).join('') : '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: #6b7280;">No items found</td></tr>'}
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem; padding-top: 1rem; border-top: 2px solid #e5e7eb;">
+                  <div>
+                    <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Subtotal</div>
+                    <div style="font-weight: 600; color: #111827;">${formatCurrency(order.subtotal || 0)}</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Tax</div>
+                    <div style="font-weight: 600; color: #111827;">${formatCurrency(order.tax || 0)}</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Total</div>
+                    <div style="font-weight: 700; font-size: 1.1rem; color: #111827;">${formatCurrency(order.total || 0)}</div>
+                  </div>
+                </div>
+                
+                ${order.notes ? `
+                  <div style="margin-top: 1rem; padding: 1rem; background: #fff7ed; border-radius: 8px; border: 1px solid #fdba74;">
+                    <strong style="color: #92400e;">Notes:</strong>
+                    <p style="margin: 0.5rem 0 0 0; color: #78350f;">${order.notes}</p>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
           </div>
         `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Close modal when clicking outside
+        const modal = document.getElementById('orderDetailsModal');
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) {
+            modal.remove();
+          }
+        });
       } else {
-        container.innerHTML = '<div class="inline-error">Unable to load order details.</div>';
+        alert('Order not found');
       }
     } catch (error) {
       console.error('Error loading order details:', error);
-      container.innerHTML = '<div class="inline-error">Failed to load order details.</div>';
-    }
-  };
-  
-  window.closeInlineOrderDetails = function(orderId) {
-    const container = document.getElementById(`orderDetails-${orderId}`);
-    if (container) {
-      container.classList.remove('open');
-      container.innerHTML = '';
+      alert('Failed to load order details');
     }
   };
   
@@ -3984,7 +4012,6 @@ function displayOrders(orders) {
         </button>
         <button class="btn btn-danger" onclick="updateOrderStatus(${order.id}, 'Cancelled')">Cancel Order</button>
       </div>
-      <div class="order-details-inline" id="orderDetails-${order.id}"></div>
     </div>
   `).join('');
 }
