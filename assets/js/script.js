@@ -193,6 +193,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (targetPage) {
       targetPage.classList.add("active");
       
+      try {
+        localStorage.setItem('admin_active_page', pageId);
+      } catch (err) {
+        console.warn('Unable to persist active page', err);
+      }
+      
       // Load dashboard stats if it's the dashboard page
       if (pageId === "dashboardPage") {
         console.log('Switching to dashboard, loading stats...');
@@ -320,6 +326,19 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Make showPage globally accessible for onclick handlers
   window.showPage = showPage;
+
+  // Restore previously active page (if available)
+  try {
+    const savedPageId = localStorage.getItem('admin_active_page');
+    if (savedPageId && document.getElementById(savedPageId)) {
+      showPage(savedPageId);
+    } else {
+      showPage('dashboardPage');
+    }
+  } catch (err) {
+    console.warn('Unable to restore saved page, defaulting to dashboard', err);
+    showPage('dashboardPage');
+  }
 
   // Modal functionality
   const menuModal = document.getElementById("menuModal");
