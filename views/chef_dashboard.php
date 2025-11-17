@@ -16,6 +16,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="stylesheet" href="../assets/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f3f4f6; min-height: 100vh; }
@@ -321,6 +322,17 @@ $restaurant_id = $_SESSION['restaurant_id'];
     <script>
         const chefRestaurantId = <?php echo json_encode($restaurant_id); ?>;
         const chefRestaurantIdQuery = chefRestaurantId ? encodeURIComponent(chefRestaurantId) : '';
+        const showChefAlert = (message, type = 'info') => {
+            if (window.Swal) {
+                Swal.fire({
+                    icon: type,
+                    text: message,
+                    confirmButtonColor: '#d97706'
+                });
+            } else {
+                showChefAlert(message);
+            }
+        };
         async function loadKOTOrders() {
             try {
                 const response = await fetch('../api/get_kot.php?restaurant_id=' + chefRestaurantIdQuery, { cache: 'no-store' });
@@ -383,11 +395,11 @@ $restaurant_id = $_SESSION['restaurant_id'];
                     console.log(`✅ ${statusMsg}`);
                     loadKOTOrders(); // Refresh immediately after update
                 } else {
-                    alert('Error: ' + (result.message || 'Failed to update status'));
+                    showChefAlert('Error: ' + (result.message || 'Failed to update status'));
                 }
             } catch (error) {
                 console.error('Error updating status:', error);
-                alert('Error updating status');
+                showChefAlert('Error updating status');
             }
         }
         
@@ -402,14 +414,14 @@ $restaurant_id = $_SESSION['restaurant_id'];
                 
                 if (result.success) {
                     console.log('✅ Order completed and KOT closed!');
-                    alert('Order completed! Order moved to main Orders tab.');
+                    showChefAlert('Order completed! Order moved to main Orders tab.');
                     loadKOTOrders(); // Refresh immediately after update
                 } else {
-                    alert('Error: ' + (result.message || 'Failed to complete order'));
+                    showChefAlert('Error: ' + (result.message || 'Failed to complete order'));
                 }
             } catch (error) {
                 console.error('Error completing KOT:', error);
-                alert('Error completing order');
+                showChefAlert('Error completing order');
             }
         }
         

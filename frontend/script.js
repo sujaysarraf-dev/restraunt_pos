@@ -1,3 +1,25 @@
+// Load SweetAlert2 dynamically if not already present
+(function ensureSweetAlert(){
+    if (!window.Swal) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+        script.defer = true;
+        document.head.appendChild(script);
+    }
+})();
+
+function showFrontendAlert(message, type = 'info', options = {}) {
+    if (window.Swal) {
+        return Swal.fire({
+            icon: type,
+            text: message,
+            confirmButtonColor: '#d97706',
+            ...options
+        });
+    }
+    return window.showFrontendAlert(message);
+}
+
 ﻿// Navigation Toggle
 const navToggle = document.querySelector('.nav-toggle');
 const navMenu = document.querySelector('.nav-menu');
@@ -85,7 +107,7 @@ if (contactForm) {
         
         // Here you would normally send this to your server
         // For now, we'll just show a success message
-        alert('Thank you for your interest! We will contact you soon.');
+        showFrontendAlert('Thank you for your interest! We will contact you soon.');
         contactForm.reset();
         
         // In production, you would do something like:
@@ -96,11 +118,11 @@ if (contactForm) {
         // })
         // .then(response => response.json())
         // .then(data => {
-        //     alert('Message sent successfully!');
+        //     showFrontendAlert('Message sent successfully!');
         //     contactForm.reset();
         // })
         // .catch(error => {
-        //     alert('Error sending message. Please try again.');
+        //     showFrontendAlert('Error sending message. Please try again.');
         // });
     });
 }

@@ -142,6 +142,7 @@ try {
   <link rel="stylesheet" href="../assets/css/style.css">
   <!-- Linking Google fonts for icons -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
     // Currency symbol loaded from server-side PHP (exactly like restaurant logo/name)
     // NO JavaScript updates needed - value is already correct in HTML from PHP

@@ -11,6 +11,7 @@ session_start();
   <title>Superadmin Dashboard</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     :root{ --bg:#f4f6fb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280; --primary:#151A2D; --green:#10b981; --red:#ef4444; --orange:#f59e0b; }
     *{margin:0;padding:0;box-sizing:border-box;}
@@ -360,6 +361,17 @@ session_start();
 
     // Global variables
     let saPage = 1, saLimit = 10, saQuery = '';
+    const showSuperAlert = (message, type = 'info') => {
+      if (window.Swal) {
+        Swal.fire({
+          icon: type,
+          text: message,
+          confirmButtonColor: '#111827'
+        });
+      } else {
+        showSuperAlert(message);
+      }
+    };
 
     // Dashboard Stats
     async function loadStats(){
@@ -494,7 +506,7 @@ session_start();
         password: document.getElementById('cmPass').value,
         restaurant_name: document.getElementById('cmName').value.trim(),
       };
-      if(!payload.username || !payload.password || !payload.restaurant_name){ alert('All fields are required'); return; }
+      if(!payload.username || !payload.password || !payload.restaurant_name){ showSuperAlert('All fields are required'); return; }
       const res = await fetch('api.php?action=createRestaurant', { method:'POST', body: JSON.stringify(payload), headers: {'Content-Type': 'application/json'} });
       const data = await res.json();
       if (data.success) { 
@@ -503,8 +515,8 @@ session_start();
         document.getElementById('cmPass').value = '';
         document.getElementById('cmName').value = '';
         fetchRestaurants(); 
-        alert('Created. Restaurant ID: '+data.restaurant_id); 
-      } else alert(data.message||'Error');
+        showSuperAlert('Created. Restaurant ID: '+data.restaurant_id); 
+      } else showSuperAlert(data.message||'Error');
     });
 
     // Restaurant actions
@@ -512,7 +524,7 @@ session_start();
       const res = await fetch('api.php?action=toggleRestaurant', { method:'POST', body: JSON.stringify({id, is_active: active}), headers: {'Content-Type': 'application/json'} });
       const data = await res.json();
       if (data.success) { fetchRestaurants(); if(document.getElementById('subscriptionsPage').classList.contains('active')) loadSubscriptions(); }
-      else alert(data.message||'Error');
+      else showSuperAlert(data.message||'Error');
     }
 
     window.resetPassword = async function(id){
@@ -520,7 +532,7 @@ session_start();
       if(!p) return;
       const res = await fetch('api.php?action=resetPassword', { method:'POST', body: JSON.stringify({id, password: p}), headers: {'Content-Type': 'application/json'} });
       const data = await res.json();
-      if (!data.success) alert(data.message||'Error');
+      if (!data.success) showSuperAlert(data.message||'Error');
     }
 
     // Search and pagination

@@ -10,6 +10,18 @@ let fullSidebarHeight = "calc(100vh - 32px)"; // Height in larger screen
 let subscriptionStatus = null;
 let subscriptionData = null;
 
+function showSweetAlert(message, type = 'info', options = {}) {
+  if (window.Swal) {
+    return Swal.fire({
+      icon: type,
+      text: message,
+      confirmButtonColor: '#d33',
+      ...options
+    });
+  }
+  return window.showSweetAlert(message);
+}
+
 // Toggle sidebar's collapsed state (only if elements exist)
 if (sidebarToggler && sidebar) {
   sidebarToggler.addEventListener("click", () => {
@@ -2804,7 +2816,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     if (orderItems.length === 0) {
-      alert('No order items found');
+      showSweetAlert('No order items found');
       return;
     }
     
@@ -2900,11 +2912,11 @@ document.addEventListener("DOMContentLoaded", () => {
         
         document.body.insertAdjacentHTML('beforeend', modalHTML);
       } else {
-        alert('Order not found');
+        showSweetAlert('Order not found');
       }
     } catch (error) {
       console.error('Error loading order details:', error);
-      alert('Failed to load order details');
+      showSweetAlert('Failed to load order details');
     }
   };
   
@@ -4012,7 +4024,7 @@ function escapeHtml(str) {
 // Export Orders to CSV
 function exportOrdersToCSV() {
   if (!window.currentOrdersData || window.currentOrdersData.length === 0) {
-    alert('No orders to export.');
+    showSweetAlert('No orders to export.');
     return;
   }
   
@@ -4044,7 +4056,7 @@ function downloadCSV(csv, filename) {
 function exportCustomersToCSV() {
   const customers = window.currentCustomersData || [];
   if (customers.length === 0) {
-    alert('No customers to export.');
+    showSweetAlert('No customers to export.');
     return;
   }
   
@@ -4062,7 +4074,7 @@ function exportCustomersToCSV() {
 function exportStaffToCSV() {
   const staff = window.currentStaffData || [];
   if (staff.length === 0) {
-    alert('No staff to export.');
+    showSweetAlert('No staff to export.');
     return;
   }
   
@@ -4080,7 +4092,7 @@ function exportStaffToCSV() {
 function exportPaymentsToCSV() {
   const payments = window.currentPaymentsData || [];
   if (payments.length === 0) {
-    alert('No payments to export.');
+    showSweetAlert('No payments to export.');
     return;
   }
   
@@ -4268,9 +4280,9 @@ window.printKOT = async function(kotId) {
   try {
     const res = await fetch('get_kot.php');
     const data = await res.json();
-    if (!data.success) { alert('Unable to load KOT'); return; }
+    if (!data.success) { showSweetAlert('Unable to load KOT'); return; }
     const kot = (data.kots || []).find(k => String(k.id) === String(kotId));
-    if (!kot) { alert('KOT not found'); return; }
+    if (!kot) { showSweetAlert('KOT not found'); return; }
 
     // Build printable HTML
     const now = new Date(kot.created_at);
@@ -4302,12 +4314,12 @@ window.printKOT = async function(kotId) {
     </body></html>`;
 
     const w = window.open('', 'PRINT', 'height=600,width=400');
-    if (!w) { alert('Popup blocked. Allow popups to print.'); return; }
+    if (!w) { showSweetAlert('Popup blocked. Allow popups to print.'); return; }
     w.document.write(html);
     w.document.close();
   } catch (e) {
     console.error('Print error', e);
-    alert('Failed to print KOT');
+    showSweetAlert('Failed to print KOT');
   }
 };
 
@@ -4334,11 +4346,11 @@ async function updateOrderStatus(orderId, status) {
     if (data.success) {
       loadOrders(); // Reload orders
     } else {
-      alert('Failed to update order status');
+      showSweetAlert('Failed to update order status');
     }
   } catch (error) {
     console.error('Error updating order status:', error);
-    alert('Error updating order status');
+    showSweetAlert('Error updating order status');
   }
 }
 
@@ -5148,14 +5160,14 @@ async function loadReports() {
   
 } catch (error) {
   console.error('Error loading reports:', error);
-  alert('Failed to load reports: ' + error.message);
+  showSweetAlert('Failed to load reports: ' + error.message);
 }
 }
 
 // Export Reports to CSV
 function exportReportsToCSV() {
   if (!window.currentReportData) {
-    alert('No data to export. Please load reports first.');
+    showSweetAlert('No data to export. Please load reports first.');
     return;
   }
   
