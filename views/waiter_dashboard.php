@@ -245,6 +245,8 @@ $restaurant_id = $_SESSION['restaurant_id'];
     </div>
 
     <script>
+        const waiterRestaurantId = <?php echo json_encode($restaurant_id); ?>;
+        const waiterRestaurantIdQuery = waiterRestaurantId ? encodeURIComponent(waiterRestaurantId) : '';
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -288,7 +290,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
 
         async function loadWaiterRequests() {
             try {
-                const response = await fetch('get_waiter_requests.php?restaurant_id=<?php echo $restaurant_id; ?>');
+                const response = await fetch(`../api/get_waiter_requests.php?restaurant_id=${waiterRestaurantIdQuery}`);
                 const result = await response.json();
                 
                 const list = document.getElementById('waiterRequestsList');
@@ -338,7 +340,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
             return new Promise(async (resolve, reject) => {
                 try {
                     // Fetch orders with status Ready (orders that are ready to be served)
-                    const response = await fetch('get_orders.php?restaurant_id=<?php echo $restaurant_id; ?>&status=Ready');
+                    const response = await fetch(`../api/get_orders.php?restaurant_id=${waiterRestaurantIdQuery}&status=Ready`);
                     const result = await response.json();
                 
                 const list = document.getElementById('activeOrdersList');
@@ -409,7 +411,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
         async function markOrderServed(orderId) {
             showConfirmModal('Are you sure you want to mark this order as served?', async () => {
                 try {
-                    const response = await fetch('update_order_status.php', {
+                    const response = await fetch('../api/update_order_status.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: `orderId=${orderId}&status=Served`
@@ -434,7 +436,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
 
         async function markAttended(requestId) {
             try {
-                const response = await fetch('waiter_request_operations.php', {
+                const response = await fetch('../controllers/waiter_request_operations.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: `action=mark_attended&requestId=${requestId}`
@@ -685,7 +687,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
         // POS Functions for Waiter Dashboard (if script.js functions not available)
         async function loadPOSDataForWaiter() {
             try {
-                const response = await fetch('get_menu_items.php?restaurant_id=<?php echo $restaurant_id; ?>');
+                const response = await fetch(`../api/get_menu_items.php?restaurant_id=${waiterRestaurantIdQuery}`);
                 const result = await response.json();
                 
                 if (result.success && result.data && result.data.length > 0) {
@@ -764,7 +766,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
         
         async function loadTablesForWaiterPOS() {
             try {
-                const response = await fetch('get_tables.php?restaurant_id=<?php echo $restaurant_id; ?>');
+                const response = await fetch(`../api/get_tables.php?restaurant_id=${waiterRestaurantIdQuery}`);
                 const result = await response.json();
                 
                 const select = document.getElementById('selectPosTable');
@@ -781,7 +783,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
         
         async function loadMenusForWaiterPOS() {
             try {
-                const response = await fetch('get_menus.php?restaurant_id=<?php echo $restaurant_id; ?>');
+                const response = await fetch(`../api/get_menus.php?restaurant_id=${waiterRestaurantIdQuery}`);
                 const result = await response.json();
                 
                 const select = document.getElementById('posMenuFilter');
@@ -798,7 +800,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
         
         async function loadCategoriesForWaiterPOS() {
             try {
-                const response = await fetch('get_menu_items.php?restaurant_id=<?php echo $restaurant_id; ?>');
+                const response = await fetch(`../api/get_menu_items.php?restaurant_id=${waiterRestaurantIdQuery}`);
                 const result = await response.json();
                 
                 const select = document.getElementById('posCategoryFilter');
@@ -935,7 +937,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
                 formData.append('total', total.toFixed(2));
                 
                 try {
-                    const response = await fetch('pos_operations.php', {
+                    const response = await fetch('../controllers/pos_operations.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: formData.toString()
@@ -1041,7 +1043,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
                         formData.append('notes', '');
                         
                         try {
-                            const response = await fetch('pos_operations.php', {
+                            const response = await fetch('../controllers/pos_operations.php', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                                 body: formData.toString()
