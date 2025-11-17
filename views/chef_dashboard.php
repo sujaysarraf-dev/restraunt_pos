@@ -319,9 +319,11 @@ $restaurant_id = $_SESSION['restaurant_id'];
     </div>
 
     <script>
+        const chefRestaurantId = <?php echo json_encode($restaurant_id); ?>;
+        const chefRestaurantIdQuery = chefRestaurantId ? encodeURIComponent(chefRestaurantId) : '';
         async function loadKOTOrders() {
             try {
-                const response = await fetch('get_kot.php?restaurant_id=<?php echo $restaurant_id; ?>');
+                const response = await fetch('../api/get_kot.php?restaurant_id=' + chefRestaurantIdQuery);
                 const result = await response.json();
                 
                 const kotList = document.getElementById('kotOrdersList');
@@ -368,7 +370,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
 
         async function updateKOTStatus(kotId, newStatus) {
             try {
-                const response = await fetch('kot_operations.php', {
+                const response = await fetch('../controllers/kot_operations.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: `action=update_kot_status&kotId=${kotId}&status=${newStatus}`
@@ -391,7 +393,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
         
         async function completeKOT(kotId) {
             try {
-                const response = await fetch('kot_operations.php', {
+                const response = await fetch('../controllers/kot_operations.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: `action=complete_kot&kotId=${kotId}`
