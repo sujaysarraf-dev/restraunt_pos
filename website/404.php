@@ -135,8 +135,7 @@
         </div>
         
         <div>
-            <a href="index.php" class="btn">Go to Home</a>
-            <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+            <a href="javascript:history.back()" class="btn">Go Back</a>
         </div>
     </div>
 </body>
