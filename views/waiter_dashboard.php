@@ -382,10 +382,14 @@ if (!$currency_symbol) {
             return new Promise(async (resolve, reject) => {
                 try {
                     // Fetch orders with status Ready (orders that are ready to be served)
-                    const response = await fetch(`../api/get_orders.php?restaurant_id=${waiterRestaurantIdQuery}&status=Ready`);
+                    const list = document.getElementById('activeOrdersList');
+                    if (list) {
+                        list.innerHTML = '<div class="loading">Refreshing orders...</div>';
+                    }
+                    const response = await fetch(`../api/get_orders.php?restaurant_id=${waiterRestaurantIdQuery}&status=Ready`, { cache: 'no-store' });
                     const result = await response.json();
                 
-                const list = document.getElementById('activeOrdersList');
+                
                 
                 if (result.success && result.orders && result.orders.length > 0) {
                     list.innerHTML = result.orders.map(order => {
@@ -430,8 +434,8 @@ if (!$currency_symbol) {
                                     <strong>Subtotal:</strong> ${waiterCurrencySymbol}${parseFloat(order.subtotal || 0).toFixed(2)} | 
                                     <strong>Tax:</strong> ${waiterCurrencySymbol}${parseFloat(order.tax || 0).toFixed(2)}
                                 </div>
-                                <button class="btn btn-success" onclick="markOrderServed(${order.id})" style="padding: 12px 24px; display: flex; align-items: center; gap: 6px;">
-                                    <span class="material-symbols-rounded" style="font-size: 1.1rem;">check_circle</span>
+                                <button class="btn btn-success" onclick="markOrderServed(${order.id})" style="padding: 12px 24px; font-size: 1rem; white-space: nowrap;">
+                                    <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1.2rem;">check_circle</span>
                                     Mark as Served
                                 </button>
                             </div>
@@ -450,30 +454,19 @@ if (!$currency_symbol) {
             });
         }
         
-        function handleOrderStatusChange(orderId, status) {
-            const messages = {
-                'Preparing': 'Are you sure you want to start preparing this order?',
-                'Ready': 'Are you sure you want to mark this order as ready?',
-                'Served': 'Are you sure this order has been served?'
-            };
-            const successMessages = {
-                'Preparing': 'Order marked as Preparing successfully!',
-                'Ready': 'Order marked as Ready successfully!',
-                'Served': 'Order marked as Served successfully!'
-            };
-            
-            showConfirmModal(messages[status] || 'Confirm action?', async () => {
+        async function markOrderServed(orderId) {
+            showConfirmModal('Are you sure you want to mark this order as served?', async () => {
                 try {
                     const response = await fetch('../api/update_order_status.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: `orderId=${orderId}&status=${status}`
+                        body: `orderId=${orderId}&status=Served`
                     });
                     const result = await response.json();
                     
                     if (result.success) {
-                        showNotification(successMessages[status] || 'Order updated successfully!', 'success');
-                        loadActiveOrders();
+                        showNotification('Order marked as served successfully!', 'success');
+                        loadActiveOrders(); // Refresh immediately after update
                     } else {
                         showNotification(result.message || 'Failed to update order', 'error');
                     }
@@ -484,21 +477,7 @@ if (!$currency_symbol) {
             });
         }
         
-        function markOrderPreparing(orderId) {
-            handleOrderStatusChange(orderId, 'Preparing');
-        }
-        
-        function markOrderReady(orderId) {
-            handleOrderStatusChange(orderId, 'Ready');
-        }
-        
-        function markOrderServed(orderId) {
-            handleOrderStatusChange(orderId, 'Served');
-        }
-        
-        // Make order status handlers globally available
-        window.markOrderPreparing = markOrderPreparing;
-        window.markOrderReady = markOrderReady;
+        // Make markOrderServed globally available
         window.markOrderServed = markOrderServed;
 
         async function markAttended(requestId) {

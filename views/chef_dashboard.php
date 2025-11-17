@@ -323,7 +323,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
         const chefRestaurantIdQuery = chefRestaurantId ? encodeURIComponent(chefRestaurantId) : '';
         async function loadKOTOrders() {
             try {
-                const response = await fetch('../api/get_kot.php?restaurant_id=' + chefRestaurantIdQuery);
+                const response = await fetch('../api/get_kot.php?restaurant_id=' + chefRestaurantIdQuery, { cache: 'no-store' });
                 const result = await response.json();
                 
                 const kotList = document.getElementById('kotOrdersList');

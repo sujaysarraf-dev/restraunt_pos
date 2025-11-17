@@ -329,6 +329,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Restore previously active page (if available)
   try {
+    const ordersListContainer = document.getElementById('ordersList');
+    if (ordersListContainer) {
+      ordersListContainer.innerHTML = '<div class="loading">Refreshing orders...</div>';
+    }
     const savedPageId = localStorage.getItem('admin_active_page');
     if (savedPageId && document.getElementById(savedPageId)) {
       showPage(savedPageId);
@@ -3839,7 +3843,7 @@ async function loadOrders() {
     if (paymentFilter) params.append('payment_status', paymentFilter);
     if (typeFilter) params.append('order_type', typeFilter);
     
-    const response = await fetch(`../api/get_orders.php?${params.toString()}`);
+    const response = await fetch(`../api/get_orders.php?${params.toString()}`, { cache: 'no-store' });
     const data = await response.json();
     
     console.log('Orders loaded:', data.count, 'orders found');
