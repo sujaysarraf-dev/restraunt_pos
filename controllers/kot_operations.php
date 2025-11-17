@@ -405,8 +405,8 @@ function handleCompleteKOT() {
         if ($existing_order) {
             $order_id = $existing_order['id'];
             
-            // Update order status to "Served" (this will show it in main Orders tab)
-            $update_order_sql = "UPDATE orders SET order_status = 'Served', updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+            // Keep the order in "Ready" status so waiters can see it in their Active Orders list
+            $update_order_sql = "UPDATE orders SET order_status = 'Ready', updated_at = CURRENT_TIMESTAMP WHERE id = ?";
             $update_order_stmt = $conn->prepare($update_order_sql);
             $update_order_stmt->execute([$order_id]);
             
@@ -425,13 +425,13 @@ function handleCompleteKOT() {
             return;
         }
         
-        // If order doesn't exist yet, create it with status "Served" (fallback case)
+        // If order doesn't exist yet, create it with status "Ready" (fallback case)
         // This should rarely happen as order should be created when status is set to "Ready"
         if ($kot['kot_status'] === 'Ready') {
             $order_number = generateOrderNumber();
             
-            // Create order from KOT with status "Served" since we're completing it
-            $order_sql = "INSERT INTO orders (restaurant_id, table_id, order_number, customer_name, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, 'Cash', 'Paid', 'Served', ?, ?, ?, ?)";
+            // Create order from KOT with status "Ready" so waiters can deliver it
+            $order_sql = "INSERT INTO orders (restaurant_id, table_id, order_number, customer_name, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, 'Cash', 'Paid', 'Ready', ?, ?, ?, ?)";
             $order_stmt = $conn->prepare($order_sql);
             $order_stmt->execute([$restaurant_id, $kot['table_id'], $order_number, $kot['customer_name'], $kot['order_type'], $kot['subtotal'], $kot['tax'], $kot['total'], $kot['notes']]);
             $order_id = $conn->lastInsertId();
