@@ -6,6 +6,44 @@ if (!isset($_SESSION['staff_id']) || !isset($_SESSION['restaurant_id']) || $_SES
 }
 
 $restaurant_id = $_SESSION['restaurant_id'];
+$currency_symbol = $_SESSION['currency_symbol'] ?? null;
+
+if (!$currency_symbol) {
+    try {
+        if (file_exists(__DIR__ . '/../db_connection.php')) {
+            require_once __DIR__ . '/../db_connection.php';
+            
+            if (isset($pdo) && $pdo instanceof PDO) {
+                $conn = $pdo;
+            } elseif (function_exists('getConnection')) {
+                $conn = getConnection();
+            } else {
+                $host = 'localhost';
+                $dbname = 'restro2';
+                $username = 'root';
+                $password = '';
+                $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+                $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            }
+            
+            $currencyStmt = $conn->prepare("SELECT currency_symbol FROM users WHERE restaurant_id = ? LIMIT 1");
+            $currencyStmt->execute([$restaurant_id]);
+            $currencyRow = $currencyStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($currencyRow && !empty($currencyRow['currency_symbol'])) {
+                $currency_symbol = $currencyRow['currency_symbol'];
+                $_SESSION['currency_symbol'] = $currency_symbol;
+            }
+        }
+    } catch (Exception $e) {
+        // Ignore and fallback to default below
+    }
+}
+
+if (!$currency_symbol) {
+    $currency_symbol = '₹';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -16,6 +54,10 @@ $restaurant_id = $_SESSION['restaurant_id'];
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="stylesheet" href="../assets/css/style.css">
+    <script>
+        window.globalCurrencySymbol = <?php echo json_encode($currency_symbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        const waiterCurrencySymbol = window.globalCurrencySymbol || '₹';
+    </script>
     <script src="../assets/js/script.js"></script>
     <style>
         * { box-sizing: border-box; }
@@ -211,19 +253,19 @@ $restaurant_id = $_SESSION['restaurant_id'];
                         <div class="pos-cart-summary" style="margin-bottom: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb;">
                             <div class="cart-summary-row" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span>Subtotal:</span>
-                                <span id="cartSubtotal">₹0.00</span>
+                                <span id="cartSubtotal"><?php echo htmlspecialchars($currency_symbol, ENT_QUOTES, 'UTF-8'); ?>0.00</span>
                             </div>
                             <div class="cart-summary-row" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span>CGST (2.5%):</span>
-                                <span id="cartCGST">₹0.00</span>
+                                <span id="cartCGST"><?php echo htmlspecialchars($currency_symbol, ENT_QUOTES, 'UTF-8'); ?>0.00</span>
                             </div>
                             <div class="cart-summary-row" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span>SGST (2.5%):</span>
-                                <span id="cartSGST">₹0.00</span>
+                                <span id="cartSGST"><?php echo htmlspecialchars($currency_symbol, ENT_QUOTES, 'UTF-8'); ?>0.00</span>
                             </div>
                             <div class="cart-summary-row total" style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; padding-top: 8px; border-top: 2px solid #e5e7eb;">
                                 <span>Total:</span>
-                                <span id="cartTotal">₹0.00</span>
+                                <span id="cartTotal"><?php echo htmlspecialchars($currency_symbol, ENT_QUOTES, 'UTF-8'); ?>0.00</span>
                             </div>
                         </div>
 
@@ -361,7 +403,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
                                     </div>
                                 </div>
                                 <div style="text-align: right;">
-                                    <span class="badge badge-info" style="background: #3b82f6; color: white; padding: 8px 16px; border-radius: 8px; font-weight: 600; display: inline-block; margin-bottom: 8px;">₹${parseFloat(order.total || order.total_amount || 0).toFixed(2)}</span>
+                                    <span class="badge badge-info" style="background: #3b82f6; color: white; padding: 8px 16px; border-radius: 8px; font-weight: 600; display: inline-block; margin-bottom: 8px;">${waiterCurrencySymbol}${parseFloat(order.total || order.total_amount || 0).toFixed(2)}</span>
                                 </div>
                             </div>
                             
@@ -376,7 +418,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
                                             </div>
                                             <div style="text-align: right; margin-left: 16px;">
                                                 <div style="color: #6b7280; font-size: 0.875rem;">Qty: ${item.quantity || 1}</div>
-                                                <div style="color: #111827; font-weight: 600;">₹${parseFloat(item.total_price || item.unit_price || 0).toFixed(2)}</div>
+                                                <div style="color: #111827; font-weight: 600;">${waiterCurrencySymbol}${parseFloat(item.total_price || item.unit_price || 0).toFixed(2)}</div>
                                             </div>
                                         </div>
                                     `).join('')}
@@ -385,8 +427,8 @@ $restaurant_id = $_SESSION['restaurant_id'];
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb; flex-wrap: wrap; gap: 12px;">
                                 <div style="color: #6b7280; font-size: 0.875rem; flex: 1;">
-                                    <strong>Subtotal:</strong> ₹${parseFloat(order.subtotal || 0).toFixed(2)} | 
-                                    <strong>Tax:</strong> ₹${parseFloat(order.tax || 0).toFixed(2)}
+                                    <strong>Subtotal:</strong> ${waiterCurrencySymbol}${parseFloat(order.subtotal || 0).toFixed(2)} | 
+                                    <strong>Tax:</strong> ${waiterCurrencySymbol}${parseFloat(order.tax || 0).toFixed(2)}
                                 </div>
                                 <button class="btn btn-success" onclick="markOrderServed(${order.id})" style="padding: 12px 24px; font-size: 1rem; white-space: nowrap;">
                                     <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1.2rem;">check_circle</span>
@@ -722,7 +764,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
                         </div>
                         <div class="item-name" style="font-weight: 600; margin-bottom: 4px; color: #111827;">${item.item_name_en || item.item_name}</div>
                         <div class="item-category" style="font-size: 0.875rem; color: #6b7280; margin-bottom: 8px;">${item.item_category || ''}</div>
-                        <div class="item-price" style="font-weight: 700; color: #3b82f6; font-size: 1.1rem;">₹${parseFloat(item.base_price || item.price || 0).toFixed(2)}</div>
+                        <div class="item-price" style="font-weight: 700; color: #3b82f6; font-size: 1.1rem;">${waiterCurrencySymbol}${parseFloat(item.base_price || item.price || 0).toFixed(2)}</div>
                     </div>
                 `;
             }).join('');
@@ -854,14 +896,14 @@ $restaurant_id = $_SESSION['restaurant_id'];
                     <div class="cart-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 8px; margin-bottom: 8px; border: 1px solid #e5e7eb;">
                         <div class="cart-item-info" style="flex: 1;">
                             <div class="cart-item-name" style="font-weight: 600; margin-bottom: 4px;">${item.name}</div>
-                            <div class="cart-item-price" style="font-size: 0.875rem; color: #6b7280;">₹${parseFloat(item.price).toFixed(2)} each</div>
+                            <div class="cart-item-price" style="font-size: 0.875rem; color: #6b7280;">${waiterCurrencySymbol}${parseFloat(item.price).toFixed(2)} each</div>
                         </div>
                         <div class="cart-item-controls" style="display: flex; align-items: center; gap: 12px; margin: 0 16px;">
                             <button onclick="updateWaiterPOSCartQty(${item.id}, -1)" style="padding: 6px 12px; border: 1px solid #e5e7eb; background: white; border-radius: 6px; cursor: pointer; font-weight: 600;">-</button>
                             <span style="min-width: 30px; text-align: center; font-weight: 600;">${item.quantity}</span>
                             <button onclick="updateWaiterPOSCartQty(${item.id}, 1)" style="padding: 6px 12px; border: 1px solid #e5e7eb; background: white; border-radius: 6px; cursor: pointer; font-weight: 600;">+</button>
                         </div>
-                        <div class="cart-item-total" style="font-weight: 700; color: #111827; min-width: 80px; text-align: right;">₹${(parseFloat(item.price) * item.quantity).toFixed(2)}</div>
+                        <div class="cart-item-total" style="font-weight: 700; color: #111827; min-width: 80px; text-align: right;">${waiterCurrencySymbol}${(parseFloat(item.price) * item.quantity).toFixed(2)}</div>
                     </div>
                 `).join('');
             }
@@ -890,10 +932,10 @@ $restaurant_id = $_SESSION['restaurant_id'];
             const tax = cgst + sgst; // GST total 5%
             const total = subtotal + tax;
             
-            document.getElementById('cartSubtotal').textContent = `₹${subtotal.toFixed(2)}`;
-            document.getElementById('cartCGST').textContent = `₹${cgst.toFixed(2)}`;
-            document.getElementById('cartSGST').textContent = `₹${sgst.toFixed(2)}`;
-            document.getElementById('cartTotal').textContent = `₹${total.toFixed(2)}`;
+            document.getElementById('cartSubtotal').textContent = `${waiterCurrencySymbol}${subtotal.toFixed(2)}`;
+            document.getElementById('cartCGST').textContent = `${waiterCurrencySymbol}${cgst.toFixed(2)}`;
+            document.getElementById('cartSGST').textContent = `${waiterCurrencySymbol}${sgst.toFixed(2)}`;
+            document.getElementById('cartTotal').textContent = `${waiterCurrencySymbol}${total.toFixed(2)}`;
         }
         
         // Make functions globally available

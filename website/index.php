@@ -242,6 +242,8 @@ try {
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <meta name="restaurant-id" content="<?php echo htmlspecialchars($restaurant_id, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="restaurant-slug" content="<?php echo htmlspecialchars($restaurant_slug, ENT_QUOTES, 'UTF-8'); ?>">
     <title><?php echo htmlspecialchars($restaurant_name, ENT_QUOTES, 'UTF-8'); ?> - Order Online</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
@@ -278,9 +280,13 @@ try {
       } else {
           localStorage.removeItem('system_currency');
       }
+      
+      // Expose restaurant context to frontend scripts (used for API calls)
+      window.websiteRestaurantId = <?php echo json_encode($restaurant_id, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+      window.websiteRestaurantSlug = <?php echo json_encode($restaurant_slug, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
     </head>
-    <body>
+    <body data-restaurant-id="<?php echo htmlspecialchars($restaurant_id, ENT_QUOTES, 'UTF-8'); ?>" data-restaurant-slug="<?php echo htmlspecialchars($restaurant_slug, ENT_QUOTES, 'UTF-8'); ?>">
         <div style="flex: 1; display: flex; flex-direction: column;">
         <script>
       // Theme colors and banners are now loaded server-side (no flash)

@@ -821,18 +821,35 @@ function openProfile(element, e) {
 
 // Get restaurant ID from URL or use default
 function getRestaurantId() {
-    const urlParams = new URLSearchParams(window.location.search);
-    // Try restaurant_id first
-    let restaurantId = urlParams.get('restaurant_id');
-    
-    // If not found, check if restaurant slug is in URL
-    if (!restaurantId) {
-        const restaurantSlug = urlParams.get('restaurant');
-        // The PHP should have already converted slug to restaurant_id, but if not, use default
-        restaurantId = 'RES001';
+    // Primary source: PHP inlined value (database verified)
+    if (window.websiteRestaurantId) {
+        return window.websiteRestaurantId;
     }
     
-    return restaurantId || 'RES001';
+    // Secondary source: data attribute on body (set by PHP)
+    const body = document.body;
+    if (body && body.dataset && body.dataset.restaurantId) {
+        window.websiteRestaurantId = body.dataset.restaurantId;
+        return window.websiteRestaurantId;
+    }
+    
+    // Fallback: meta tag (also set by PHP)
+    const metaRestaurant = document.querySelector('meta[name="restaurant-id"]');
+    if (metaRestaurant && metaRestaurant.content) {
+        window.websiteRestaurantId = metaRestaurant.content;
+        return window.websiteRestaurantId;
+    }
+    
+    // Final fallback: query parameter (may not exist for clean URLs)
+    const urlParams = new URLSearchParams(window.location.search);
+    const restaurantIdFromUrl = urlParams.get('restaurant_id');
+    if (restaurantIdFromUrl) {
+        window.websiteRestaurantId = restaurantIdFromUrl;
+        return restaurantIdFromUrl;
+    }
+    
+    // Absolute fallback - should rarely be used
+    return 'RES001';
 }
 
 // Load menus

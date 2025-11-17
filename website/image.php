@@ -2,14 +2,19 @@
 // Simple image serving script
 $imagePath = $_GET['path'] ?? '';
 
+// Normalize path to ensure it points inside uploads directory
+if (strpos($imagePath, '../uploads/') === 0) {
+    $imagePath = substr($imagePath, 3); // Remove "../"
+}
+
 // Security check - only allow images from uploads directory
 if (strpos($imagePath, 'uploads/') !== 0) {
     http_response_code(403);
     exit('Access denied');
 }
 
-// Check if file exists (look in parent directory)
-$fullPath = '../' . $imagePath;
+// Build full path relative to project root
+$fullPath = dirname(__DIR__) . '/' . $imagePath;
 if (!file_exists($fullPath)) {
     http_response_code(404);
     exit('Image not found');
