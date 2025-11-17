@@ -32,14 +32,17 @@ function findRestaurantBySlug($conn, $slug) {
 
 // Get restaurant identifier - priority: restaurant_id > restaurant slug > session > default
 $restaurant_id = null;
+$restaurant_id_param = isset($_GET['restaurant_id']) ? trim($_GET['restaurant_id']) : '';
 $restaurant_slug = isset($_GET['restaurant']) ? trim($_GET['restaurant']) : '';
+$has_id_param = $restaurant_id_param !== '';
+$has_slug_param = $restaurant_slug !== '';
 
 // First, try to get restaurant_id from URL
-if (isset($_GET['restaurant_id']) && $_GET['restaurant_id'] !== '') {
-    $restaurant_id = $_GET['restaurant_id'];
+if ($has_id_param) {
+    $restaurant_id = $restaurant_id_param;
 } 
 // If restaurant slug provided, find restaurant_id
-elseif (!empty($restaurant_slug)) {
+elseif ($has_slug_param) {
     // We'll need database connection to find restaurant by slug
     // This will be done after db connection is established
 }
@@ -76,11 +79,17 @@ try {
     // Track if restaurant was explicitly requested (not default)
     $restaurant_explicitly_requested = false;
     
-    // If we have a restaurant slug but no restaurant_id, find it
-    if (!empty($restaurant_slug)) {
+    // If we have a restaurant slug, validate it (and ensure it matches restaurant_id if provided)
+    if ($has_slug_param) {
         $restaurant_explicitly_requested = true;
         $restaurant_info = findRestaurantBySlug($conn, $restaurant_slug);
         if ($restaurant_info) {
+            if ($has_id_param && $restaurant_id_param !== $restaurant_info['restaurant_id']) {
+                // Slug does not correspond to provided restaurant_id
+                http_response_code(404);
+                include __DIR__ . '/404.php';
+                exit();
+            }
             $restaurant_id = $restaurant_info['restaurant_id'];
         } else {
             // Restaurant not found by slug - show 404
@@ -91,7 +100,7 @@ try {
     }
     
     // If restaurant_id was explicitly provided in URL, mark as requested
-    if (isset($_GET['restaurant_id']) && $_GET['restaurant_id'] !== '' && $_GET['restaurant_id'] !== 'RES001') {
+    if ($has_id_param && $restaurant_id_param !== 'RES001') {
         $restaurant_explicitly_requested = true;
     }
     
