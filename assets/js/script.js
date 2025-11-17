@@ -2821,70 +2821,78 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
   };
   
-  // Show full order details modal (from Orders page)
+  // Show full order details inline (from Orders page)
   window.showFullOrderDetails = async function(orderId) {
+    const container = document.getElementById(`orderDetails-${orderId}`);
+    if (!container) return;
+    
+    if (container.classList.contains('open')) {
+      container.classList.remove('open');
+      container.innerHTML = '';
+      return;
+    }
+    
+    container.classList.add('open');
+    container.innerHTML = '<div class="order-details-inline-loading">Loading order details...</div>';
+    
     try {
       const response = await fetch(`../api/get_order_details_by_id.php?id=${orderId}`);
       const data = await response.json();
       
       if (data.success && data.order) {
         const order = data.order;
+        const items = Array.isArray(order.items) ? order.items : [];
         
-        // Create modal HTML
-        const modalHTML = `
-          <div class="modal-overlay" id="orderDetailsModal">
-            <div class="modal-content" style="max-width: 600px;">
-              <div class="modal-header">
-                <h2>Order Details</h2>
-                <button onclick="this.closest('.modal-overlay').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
-              </div>
-              <div class="modal-body" style="padding: 2rem;">
-                <div style="margin-bottom: 1.5rem;">
-                  <p><strong>Order #:</strong> ${order.order_number}</p>
-                  <p><strong>Table:</strong> ${order.table_name || order.table_number || 'Walk-in'}</p>
-                  <p><strong>Customer:</strong> ${order.customer_name || 'N/A'}</p>
-                  <p><strong>Status:</strong> <span class="status-badge ${order.order_status.toLowerCase()}">${order.order_status}</span></p>
-                  <p><strong>Payment:</strong> <span class="status-badge ${order.payment_status.toLowerCase().replace(' ', '-')}">${order.payment_status}</span></p>
+        const itemsHtml = items.length
+          ? items.map(item => `
+              <div class="inline-item-row">
+                <div>
+                  <div class="inline-item-name">${item.item_name}</div>
+                  ${item.notes ? `<div class="inline-item-note">Note: ${item.notes}</div>` : ''}
                 </div>
-                
-                <div style="margin-bottom: 1.5rem;">
-                  <h3 style="margin-bottom: 1rem;">Items (${order.items.length})</h3>
-                  <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: #f5f5f5;">
-                      <tr>
-                        <th style="padding: 0.75rem; text-align: left;">Item</th>
-                        <th style="padding: 0.75rem;">Qty</th>
-                        <th style="padding: 0.75rem; text-align: right;">Price</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${order.items.map(item => `
-                        <tr style="border-bottom: 1px solid #eee;">
-                          <td style="padding: 0.75rem;">${item.item_name}</td>
-                          <td style="padding: 0.75rem; text-align: center;">${item.quantity}</td>
-                          <td style="padding: 0.75rem; text-align: right;">${formatCurrency(item.total_price)}</td>
-                        </tr>
-                      `).join('')}
-                    </tbody>
-                  </table>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; padding-top: 1rem; border-top: 2px solid #ddd;">
-                  <span>Total:</span>
-                  <span>${formatCurrency(order.total)}</span>
+                <div class="inline-item-meta">
+                  <span>x${item.quantity || 1}</span>
+                  <strong>${formatCurrency(item.total_price || 0)}</strong>
                 </div>
               </div>
-            </div>
+            `).join('')
+          : '<div class="inline-empty">No items found for this order.</div>';
+        
+        container.innerHTML = `
+          <div class="inline-summary">
+            <div><strong>Order #:</strong> ${order.order_number}</div>
+            <div><strong>Table:</strong> ${order.table_name || order.table_number || 'Walk-in'}</div>
+            <div><strong>Customer:</strong> ${order.customer_name || 'N/A'}</div>
+            <div><strong>Status:</strong> <span class="status-badge ${order.order_status.toLowerCase()}">${order.order_status}</span></div>
+            <div><strong>Payment:</strong> <span class="status-badge ${order.payment_status.toLowerCase().replace(' ', '-')}">${order.payment_status}</span></div>
+          </div>
+          <div class="inline-items">${itemsHtml}</div>
+          <div class="inline-totals">
+            <div><span>Subtotal</span><strong>${formatCurrency(order.subtotal || 0)}</strong></div>
+            <div><span>Tax</span><strong>${formatCurrency(order.tax || 0)}</strong></div>
+            <div><span>Total</span><strong>${formatCurrency(order.total || 0)}</strong></div>
+          </div>
+          ${order.notes ? `<div class="inline-notes">Note: ${order.notes}</div>` : ''}
+          <div class="inline-actions">
+            <button class="inline-close-btn" onclick="closeInlineOrderDetails(${order.id})">
+              Close
+            </button>
           </div>
         `;
-        
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
       } else {
-        alert('Order not found');
+        container.innerHTML = '<div class="inline-error">Unable to load order details.</div>';
       }
     } catch (error) {
       console.error('Error loading order details:', error);
-      alert('Failed to load order details');
+      container.innerHTML = '<div class="inline-error">Failed to load order details.</div>';
+    }
+  };
+  
+  window.closeInlineOrderDetails = function(orderId) {
+    const container = document.getElementById(`orderDetails-${orderId}`);
+    if (container) {
+      container.classList.remove('open');
+      container.innerHTML = '';
     }
   };
   
@@ -3976,6 +3984,7 @@ function displayOrders(orders) {
         </button>
         <button class="btn btn-danger" onclick="updateOrderStatus(${order.id}, 'Cancelled')">Cancel Order</button>
       </div>
+      <div class="order-details-inline" id="orderDetails-${order.id}"></div>
     </div>
   `).join('');
 }
