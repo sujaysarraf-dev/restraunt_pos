@@ -3974,9 +3974,6 @@ function displayOrders(orders) {
           <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle;">visibility</span>
           Show Order
         </button>
-        <button class="btn btn-primary" onclick="updateOrderStatus(${order.id}, 'Preparing')">Start Preparing</button>
-        <button class="btn btn-success" onclick="updateOrderStatus(${order.id}, 'Ready')">Mark Ready</button>
-        <button class="btn btn-warning" onclick="updateOrderStatus(${order.id}, 'Served')">Mark Served</button>
         <button class="btn btn-danger" onclick="updateOrderStatus(${order.id}, 'Cancelled')">Cancel Order</button>
       </div>
     </div>
