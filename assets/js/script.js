@@ -2824,7 +2824,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Show full order details modal (from Orders page)
   window.showFullOrderDetails = async function(orderId) {
     try {
-      const response = await fetch(`get_order_details_by_id.php?id=${orderId}`);
+      const response = await fetch(`../api/get_order_details_by_id.php?id=${orderId}`);
       const data = await response.json();
       
       if (data.success && data.order) {
