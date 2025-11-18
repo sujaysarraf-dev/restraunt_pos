@@ -369,8 +369,30 @@ session_start();
           confirmButtonColor: '#111827'
         });
       } else {
-        showSuperAlert(message);
+        alert(message);
       }
+    };
+    const showSuperPrompt = async (message, title = 'Input', defaultValue = '') => {
+      if (window.Swal) {
+        const { value } = await Swal.fire({
+          title: title,
+          text: message,
+          input: 'text',
+          inputValue: defaultValue,
+          showCancelButton: true,
+          confirmButtonColor: '#111827',
+          cancelButtonColor: '#6b7280',
+          confirmButtonText: 'OK',
+          cancelButtonText: 'Cancel',
+          inputValidator: (value) => {
+            if (!value) {
+              return 'Please enter a value';
+            }
+          }
+        });
+        return value || null;
+      }
+      return window.prompt(message, defaultValue);
     };
 
     // Dashboard Stats
@@ -528,7 +550,7 @@ session_start();
     }
 
     window.resetPassword = async function(id){
-      const p = prompt('New password for user id '+id+':');
+      const p = await showSuperPrompt('New password for user id '+id+':', 'Reset Password');
       if(!p) return;
       const res = await fetch('api.php?action=resetPassword', { method:'POST', body: JSON.stringify({id, password: p}), headers: {'Content-Type': 'application/json'} });
       const data = await res.json();

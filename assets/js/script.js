@@ -24,7 +24,115 @@ function showSweetAlert(message, type = 'info', options = {}) {
       ...options
     });
   }
-  return window.showSweetAlert(message);
+  return window.alert(message);
+}
+
+// SweetAlert confirm helper
+async function showSweetConfirm(message, title = 'Confirm') {
+  if (window.Swal) {
+    const result = await Swal.fire({
+      title: title,
+      text: message,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, proceed',
+      cancelButtonText: 'Cancel'
+    });
+    return result.isConfirmed;
+  }
+  return window.confirm(message);
+}
+
+// SweetAlert prompt helper
+async function showSweetPrompt(message, title = 'Input', defaultValue = '') {
+  if (window.Swal) {
+    const { value } = await Swal.fire({
+      title: title,
+      text: message,
+      input: 'text',
+      inputValue: defaultValue,
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'OK',
+      cancelButtonText: 'Cancel',
+      inputValidator: (value) => {
+        if (!value) {
+          return 'Please enter a value';
+        }
+      }
+    });
+    return value || null;
+  }
+  return window.prompt(message, defaultValue);
+}
+
+// Payment method selector with clickable buttons
+async function showPaymentMethodSelector() {
+  if (window.Swal) {
+    return new Promise((resolve) => {
+      Swal.fire({
+        title: 'Select Payment Method',
+        html: `
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0;">
+            <button class="payment-method-btn" data-method="Cash" style="padding: 20px; border: 2px solid #e5e7eb; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; font-size: 16px; font-weight: 600; color: #111827;">
+              <div style="font-size: 32px; margin-bottom: 8px;">💵</div>
+              <div>Cash</div>
+            </button>
+            <button class="payment-method-btn" data-method="Card" style="padding: 20px; border: 2px solid #e5e7eb; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; font-size: 16px; font-weight: 600; color: #111827;">
+              <div style="font-size: 32px; margin-bottom: 8px;">💳</div>
+              <div>Card</div>
+            </button>
+            <button class="payment-method-btn" data-method="UPI" style="padding: 20px; border: 2px solid #e5e7eb; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; font-size: 16px; font-weight: 600; color: #111827;">
+              <div style="font-size: 32px; margin-bottom: 8px;">📱</div>
+              <div>UPI</div>
+            </button>
+            <button class="payment-method-btn" data-method="Online" style="padding: 20px; border: 2px solid #e5e7eb; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; font-size: 16px; font-weight: 600; color: #111827;">
+              <div style="font-size: 32px; margin-bottom: 8px;">🌐</div>
+              <div>Online</div>
+            </button>
+          </div>
+          <style>
+            .payment-method-btn:hover {
+              border-color: #10b981 !important;
+              background: #f0fdf4 !important;
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+            }
+            .payment-method-btn:active {
+              transform: translateY(0);
+            }
+          </style>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Cancel',
+        cancelButtonColor: '#6b7280',
+        didOpen: () => {
+          const buttons = Swal.getHtmlContainer().querySelectorAll('.payment-method-btn');
+          buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+              const method = btn.getAttribute('data-method');
+              Swal.close();
+              resolve(method);
+            });
+          });
+        },
+        didClose: () => {
+          // If closed without selection, resolve with null
+          if (!Swal.isConfirmed()) {
+            resolve(null);
+          }
+        }
+      });
+    });
+  }
+  // Fallback to prompt if SweetAlert not available
+  const method = window.prompt("Select payment method:\n1. Cash\n2. Card\n3. UPI\n4. Online\n\nEnter number:", "1");
+  const methods = { '1': 'Cash', '2': 'Card', '3': 'UPI', '4': 'Online' };
+  return methods[method] || 'Cash';
 }
 
 // Format currency helper function - uses database currency symbol
@@ -1465,8 +1573,8 @@ document.addEventListener("DOMContentLoaded", () => {
     openAreaModal(true);
   };
   
-  window.deleteArea = function(areaId, areaName) {
-    if (confirm(`Are you sure you want to delete "${areaName}"? This action cannot be undone.`)) {
+  window.deleteArea = async function(areaId, areaName) {
+    if (await showSweetConfirm(`Are you sure you want to delete "${areaName}"? This action cannot be undone.`, 'Delete Area')) {
       // Call delete API
       const formData = new URLSearchParams();
       formData.append('action', 'delete');
@@ -1925,8 +2033,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
   
-  window.deleteTable = function(tableId, tableNumber) {
-    if (confirm(`Are you sure you want to delete table "${tableNumber}"? This action cannot be undone.`)) {
+  window.deleteTable = async function(tableId, tableNumber) {
+    if (await showSweetConfirm(`Are you sure you want to delete table "${tableNumber}"? This action cannot be undone.`, 'Delete Table')) {
       // Call delete API
       const formData = new URLSearchParams();
       formData.append('action', 'delete');
@@ -2299,8 +2407,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
   
-  window.deleteReservation = function(reservationId, customerName) {
-    if (confirm(`Are you sure you want to delete reservation for "${customerName}"? This action cannot be undone.`)) {
+  window.deleteReservation = async function(reservationId, customerName) {
+    if (await showSweetConfirm(`Are you sure you want to delete reservation for "${customerName}"? This action cannot be undone.`, 'Delete Reservation')) {
       // Call delete API
       const formData = new URLSearchParams();
       formData.append('action', 'delete');
@@ -2381,26 +2489,78 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   
   // Assign table to reservation
-  window.assignTable = function(reservationId) {
+  window.assignTable = async function(reservationId) {
     // Load tables for dropdown
     fetch("../api/get_tables.php")
       .then(response => response.json())
-      .then(result => {
-        if (result.success) {
-          const tableOptions = result.data.map(table => 
-            `${table.table_number} - ${table.area_name} (${table.capacity} seats)`
-          ).join('\n');
+      .then(async result => {
+        if (result.success && result.data && result.data.length > 0) {
+          // Create clickable buttons for each table
+          const tableButtons = result.data.map(table => {
+            const label = `${table.table_number} - ${table.area_name} (${table.capacity} seats)`;
+            return `<button class="table-select-btn" data-table-number="${table.table_number}" data-table-id="${table.id}" style="width: 100%; padding: 16px; margin: 8px 0; border: 2px solid #e5e7eb; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; text-align: left; font-size: 15px; font-weight: 600; color: #111827;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 24px;">🪑</span>
+                <div>
+                  <div style="font-weight: 700; color: #111827;">${table.table_number}</div>
+                  <div style="font-size: 13px; color: #6b7280; font-weight: 400;">${table.area_name} • ${table.capacity} seats</div>
+                </div>
+              </div>
+            </button>`;
+          }).join('');
           
-          const tableName = prompt("Assign Table:\n\n" + tableOptions + "\n\nEnter table number:");
-          if (tableName) {
-            const table = result.data.find(t => t.table_number === tableName);
-            if (table) {
-              updateReservationTable(reservationId, table.id);
-            } else {
-              showMessage("Table not found", "error");
+          return new Promise((resolve) => {
+            Swal.fire({
+              title: 'Assign Table',
+              html: `
+                <div style="max-height: 400px; overflow-y: auto; margin: 20px 0;">
+                  ${tableButtons}
+                </div>
+                <style>
+                  .table-select-btn:hover {
+                    border-color: #10b981 !important;
+                    background: #f0fdf4 !important;
+                    transform: translateX(4px);
+                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+                  }
+                  .table-select-btn:active {
+                    transform: translateX(0);
+                  }
+                </style>
+              `,
+              showConfirmButton: false,
+              showCancelButton: true,
+              cancelButtonText: 'Cancel',
+              cancelButtonColor: '#6b7280',
+              didOpen: () => {
+                const buttons = Swal.getHtmlContainer().querySelectorAll('.table-select-btn');
+                buttons.forEach(btn => {
+                  btn.addEventListener('click', () => {
+                    const tableId = btn.getAttribute('data-table-id');
+                    const tableNumber = btn.getAttribute('data-table-number');
+                    Swal.close();
+                    resolve({ tableId, tableNumber });
+                  });
+                });
+              },
+              didClose: () => {
+                if (!Swal.isConfirmed()) {
+                  resolve(null);
+                }
+              }
+            });
+          }).then(selected => {
+            if (selected && selected.tableId) {
+              updateReservationTable(reservationId, selected.tableId);
             }
-          }
+          });
+        } else {
+          showSweetAlert('No tables available', 'error');
         }
+      })
+      .catch(error => {
+        console.error('Error loading tables:', error);
+        showSweetAlert('Failed to load tables', 'error');
       });
   };
   
@@ -2514,8 +2674,8 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   
   // Delete customer
-  window.deleteCustomer = function(customerId, customerName) {
-    if (confirm(`Are you sure you want to delete customer "${customerName}"? This action cannot be undone.`)) {
+  window.deleteCustomer = async function(customerId, customerName) {
+    if (await showSweetConfirm(`Are you sure you want to delete customer "${customerName}"? This action cannot be undone.`, 'Delete Customer')) {
       const formData = new URLSearchParams();
       formData.append('action', 'delete');
       formData.append('customerId', customerId);
@@ -3202,8 +3362,8 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   
   // Delete staff
-  window.deleteStaff = function(staffId, memberName) {
-    if (confirm(`Are you sure you want to delete staff member "${memberName}"? This action cannot be undone.`)) {
+  window.deleteStaff = async function(staffId, memberName) {
+    if (await showSweetConfirm(`Are you sure you want to delete staff member "${memberName}"? This action cannot be undone.`, 'Delete Staff')) {
       const formData = new URLSearchParams();
       formData.append('action', 'delete');
       formData.append('staffId', staffId);
@@ -3448,8 +3608,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Clear cart
   const clearCartBtn = document.getElementById("clearCartBtn");
   if (clearCartBtn) {
-    clearCartBtn.addEventListener("click", () => {
-      if (posCart.length > 0 && confirm("Are you sure you want to clear the cart?")) {
+    clearCartBtn.addEventListener("click", async () => {
+      if (posCart.length > 0 && await showSweetConfirm("Are you sure you want to clear the cart?", 'Clear Cart')) {
         posCart = [];
         updatePOSCart();
       }
@@ -3519,14 +3679,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const selectedTable = document.getElementById("selectPosTable").value;
       
       // Show payment method selection
-      const paymentMethod = prompt("Select payment method:\n1. Cash\n2. Card\n3. UPI\n4. Online\n\nEnter number:", "1");
-      
-      let paymentMethodStr = 'Cash';
-      switch(paymentMethod) {
-        case '2': paymentMethodStr = 'Card'; break;
-        case '3': paymentMethodStr = 'UPI'; break;
-        case '4': paymentMethodStr = 'Online'; break;
-        default: paymentMethodStr = 'Cash';
+      const paymentMethodStr = await showPaymentMethodSelector();
+      if (!paymentMethodStr) {
+        return; // User cancelled
       }
       
       const formData = new URLSearchParams();
@@ -3711,7 +3866,7 @@ async function initiateRenewal() {
 window.initiateRenewal = initiateRenewal;
 
 async function logout() {
-  if (confirm("Are you sure you want to logout?")) {
+  if (await showSweetConfirm("Are you sure you want to logout?", 'Logout')) {
     try {
       const response = await fetch("../admin/auth.php", {
         method: "POST",
@@ -4125,7 +4280,7 @@ window.completeKOT = completeKOT;
 
 // Cancel KOT
 async function cancelKOT(kotId) {
-  if (confirm("Are you sure you want to cancel this KOT?")) {
+  if (await showSweetConfirm("Are you sure you want to cancel this KOT?", 'Cancel KOT')) {
     try {
       const response = await fetch('../controllers/kot_operations.php', {
         method: 'POST',
@@ -4202,8 +4357,8 @@ window.printKOT = async function(kotId) {
 };
 
 // Cancel Order
-window.cancelOrder = function(orderId) {
-  if (confirm("Are you sure you want to cancel this order?")) {
+window.cancelOrder = async function(orderId) {
+  if (await showSweetConfirm("Are you sure you want to cancel this order?", 'Cancel Order')) {
     updateKOTStatus(orderId, 'Cancelled');
   }
 };
@@ -5064,7 +5219,7 @@ async function initWebsiteThemeEditor() {
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
           const bannerId = e.currentTarget.getAttribute('data-id');
-          if (!confirm('Are you sure you want to delete this banner?')) return;
+          if (!(await showSweetConfirm('Are you sure you want to delete this banner?', 'Delete Banner'))) return;
           
           try {
             e.currentTarget.disabled = true;
