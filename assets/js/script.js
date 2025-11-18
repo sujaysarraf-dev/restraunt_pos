@@ -446,6 +446,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (pageId === "settingsPage") {
         loadSettingsData();
       }
+      
+      // Setup reports auto-reload if it's the reports page
+      if (pageId === "reportsPage") {
+        setTimeout(() => {
+          setupReportsAutoReload();
+        }, 100);
+      }
     }
   }
   
@@ -680,6 +687,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 3000);
     }
   }
+  
+  // Make showMessage globally accessible
+  window.showMessage = showMessage;
 
   // Function to show messages in menu item modal
   function showMenuItemMessage(message, type) {
@@ -3097,11 +3107,11 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         });
       } else {
-        showSweetAlert('Order not found');
+        await showSweetAlert('Order not found', 'The order you are looking for could not be found.', 'error');
       }
     } catch (error) {
       console.error('Error loading order details:', error);
-      showSweetAlert('Failed to load order details');
+      await showSweetAlert('Error', 'Failed to load order details. Please try again.', 'error');
     }
   };
   
@@ -3747,6 +3757,42 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   `;
   document.head.appendChild(style);
+  
+  // POS Clear Cart Modal functions (for backward compatibility with old modal)
+  window.closePOSClearCartModal = function() {
+    const modal = document.getElementById('posClearCartModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  };
+  
+  // POS Payment Method Modal functions (for backward compatibility with old modal)
+  window.closePOSPaymentMethodModal = function() {
+    const modal = document.getElementById('posPaymentMethodModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  };
+  
+  window.selectPaymentMethod = function(method) {
+    // Close the modal
+    closePOSPaymentMethodModal();
+    // Note: This function is for the old modal. The new implementation uses SweetAlert.
+    // If you want to use the old modal, you'll need to handle the payment processing here.
+    console.warn('selectPaymentMethod called - consider using SweetAlert implementation instead');
+  };
+  
+  // Setup clear cart confirm button if modal exists
+  const posClearCartConfirmBtn = document.getElementById('posClearCartConfirmBtn');
+  if (posClearCartConfirmBtn) {
+    posClearCartConfirmBtn.addEventListener('click', async () => {
+      if (posCart.length > 0 && await showSweetConfirm("Are you sure you want to clear the cart?", 'Clear Cart')) {
+        posCart = [];
+        updatePOSCart();
+        closePOSClearCartModal();
+      }
+    });
+  }
 });
 
 // Session management and logout functionality
@@ -3761,8 +3807,10 @@ async function loadRestaurantInfo() {
     const result = await response.json();
     
     if (result.success) {
-      document.getElementById("restaurantName").textContent = result.data.restaurant_name;
-      document.getElementById("restaurantId").textContent = result.data.restaurant_id;
+      const restaurantNameEl = document.getElementById("restaurantName");
+      const restaurantIdEl = document.getElementById("restaurantId");
+      if (restaurantNameEl) restaurantNameEl.textContent = result.data.restaurant_name;
+      if (restaurantIdEl) restaurantIdEl.textContent = result.data.restaurant_id;
       
       // Store subscription data globally
       subscriptionData = result.data;
@@ -3895,6 +3943,9 @@ async function logout() {
   }
 }
 
+// Make logout globally accessible
+window.logout = logout;
+
   // Load KOT Orders
   async function loadKOTOrders() {
     try {
@@ -3918,13 +3969,22 @@ async function logout() {
       if (data.success) {
         displayKOTOrders(data.kots);
       } else {
-        document.getElementById('kotList').innerHTML = '<div class="error">Failed to load KOT orders</div>';
+        const kotList = document.getElementById('kotList');
+        if (kotList) {
+          kotList.innerHTML = '<div class="error">Failed to load KOT orders</div>';
+        }
       }
     } catch (error) {
       console.error('Error loading KOT orders:', error);
-      document.getElementById('kotList').innerHTML = '<div class="error">Error loading KOT orders</div>';
+      const kotList = document.getElementById('kotList');
+      if (kotList) {
+        kotList.innerHTML = '<div class="error">Error loading KOT orders</div>';
+      }
     }
   }
+  
+  // Make loadKOTOrders globally accessible
+  window.loadKOTOrders = loadKOTOrders;
 
 // Display KOT Orders
 function displayKOTOrders(kots) {
@@ -4491,6 +4551,8 @@ function filterStaff() {
   // Sort cards
   const visibleCards = Array.from(cards).filter(card => card.style.display !== 'none');
   const container = document.getElementById('staffList');
+  
+  if (!container) return;
   
   visibleCards.sort((a, b) => {
     if (sortBy === 'name') {
@@ -5277,6 +5339,23 @@ async function loadReports() {
     const reportType = document.getElementById('reportType')?.value || 'sales';
     console.log('Loading reports for period:', period, 'type:', reportType);
     
+    // Show loading state
+    const totalSalesEl = document.getElementById('reportTotalSales');
+    const totalOrdersEl = document.getElementById('reportTotalOrders');
+    const totalItemsEl = document.getElementById('reportTotalItems');
+    const totalCustomersEl = document.getElementById('reportTotalCustomers');
+    const salesTable = document.getElementById('reportSalesTable');
+    const topItemsDiv = document.getElementById('reportTopItems');
+    const paymentMethodsDiv = document.getElementById('reportPaymentMethods');
+    
+    if (totalSalesEl) totalSalesEl.textContent = 'Loading...';
+    if (totalOrdersEl) totalOrdersEl.textContent = 'Loading...';
+    if (totalItemsEl) totalItemsEl.textContent = 'Loading...';
+    if (totalCustomersEl) totalCustomersEl.textContent = 'Loading...';
+    if (salesTable) salesTable.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: #666;">Loading sales data...</td></tr>';
+    if (topItemsDiv) topItemsDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;">Loading...</div>';
+    if (paymentMethodsDiv) paymentMethodsDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;">Loading...</div>';
+    
     const response = await fetch(`../api/get_sales_report.php?period=${period}&type=${reportType}`);
     const data = await response.json();
     
@@ -5289,27 +5368,21 @@ async function loadReports() {
     // Store data for export
     window.currentReportData = data;
     
-    // Update summary cards
-    const totalSalesEl = document.getElementById('reportTotalSales');
-    const totalOrdersEl = document.getElementById('reportTotalOrders');
-    const totalItemsEl = document.getElementById('reportTotalItems');
-    const totalCustomersEl = document.getElementById('reportTotalCustomers');
-    
+    // Update summary cards (use the elements we already got)
     if (totalSalesEl) {
-      totalSalesEl.textContent = formatCurrencyNoDecimals(data.summary.total_sales);
+      totalSalesEl.textContent = formatCurrencyNoDecimals(data.summary?.total_sales || 0);
     }
     if (totalOrdersEl) {
-      totalOrdersEl.textContent = data.summary.total_orders;
+      totalOrdersEl.textContent = data.summary?.total_orders || 0;
     }
     if (totalItemsEl) {
-      totalItemsEl.textContent = data.summary.total_items;
+      totalItemsEl.textContent = data.summary?.total_items || 0;
     }
     if (totalCustomersEl) {
-      totalCustomersEl.textContent = data.summary.total_customers;
+      totalCustomersEl.textContent = data.summary?.total_customers || 0;
     }
     
-    // Update sales table
-    const salesTable = document.getElementById('reportSalesTable');
+    // Update sales table (use the element we already got)
     if (salesTable) {
       if (data.sales_details && data.sales_details.length > 0) {
         salesTable.innerHTML = data.sales_details.map(order => `
@@ -5327,8 +5400,7 @@ async function loadReports() {
       }
     }
     
-    // Update top items
-    const topItemsDiv = document.getElementById('reportTopItems');
+    // Update top items (use the element we already got)
     if (topItemsDiv) {
       if (data.top_items && data.top_items.length > 0) {
         topItemsDiv.innerHTML = data.top_items.map((item, index) => `
@@ -5345,8 +5417,7 @@ async function loadReports() {
       }
     }
     
-    // Update payment methods
-    const paymentMethodsDiv = document.getElementById('reportPaymentMethods');
+    // Update payment methods (use the element we already got)
     if (paymentMethodsDiv) {
       if (data.payment_methods && data.payment_methods.length > 0) {
         paymentMethodsDiv.innerHTML = data.payment_methods.map(method => `
@@ -5363,12 +5434,30 @@ async function loadReports() {
       }
     }
     
-  console.log('Reports loaded successfully');
-  
-} catch (error) {
-  console.error('Error loading reports:', error);
-  showSweetAlert('Failed to load reports: ' + error.message);
-}
+    console.log('Reports loaded successfully');
+    
+  } catch (error) {
+    console.error('Error loading reports:', error);
+    
+    // Show error state
+    const totalSalesEl = document.getElementById('reportTotalSales');
+    const totalOrdersEl = document.getElementById('reportTotalOrders');
+    const totalItemsEl = document.getElementById('reportTotalItems');
+    const totalCustomersEl = document.getElementById('reportTotalCustomers');
+    const salesTable = document.getElementById('reportSalesTable');
+    const topItemsDiv = document.getElementById('reportTopItems');
+    const paymentMethodsDiv = document.getElementById('reportPaymentMethods');
+    
+    if (totalSalesEl) totalSalesEl.textContent = formatCurrencyNoDecimals(0);
+    if (totalOrdersEl) totalOrdersEl.textContent = '0';
+    if (totalItemsEl) totalItemsEl.textContent = '0';
+    if (totalCustomersEl) totalCustomersEl.textContent = '0';
+    if (salesTable) salesTable.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: #ef4444;">Error loading data. Please try again.</td></tr>';
+    if (topItemsDiv) topItemsDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: #ef4444;">Error loading data</div>';
+    if (paymentMethodsDiv) paymentMethodsDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: #ef4444;">Error loading data</div>';
+    
+    showNotification('Error loading reports: ' + error.message, 'error');
+  }
 }
 
 // Export Reports to CSV
@@ -5419,12 +5508,44 @@ document.addEventListener('DOMContentLoaded', function() {
     reportsLink.addEventListener('click', function() {
       setTimeout(() => {
         if (document.getElementById('reportsPage')?.classList.contains('active')) {
+          setupReportsAutoReload();
           loadReports();
         }
       }, 100);
     });
   }
+  
+  // Setup auto-reload when reports page is shown
+  setupReportsAutoReload();
+  
+  // Load reports if page is already active on page load
+  setTimeout(() => {
+    if (document.getElementById('reportsPage')?.classList.contains('active')) {
+      loadReports();
+    }
+  }, 200);
 });
+
+// Setup auto-reload for reports when period or type changes
+function setupReportsAutoReload() {
+  const reportPeriod = document.getElementById('reportPeriod');
+  const reportType = document.getElementById('reportType');
+  
+  // Add event listeners if elements exist and don't already have listeners
+  if (reportPeriod && !reportPeriod.dataset.autoReloadAttached) {
+    reportPeriod.dataset.autoReloadAttached = 'true';
+    reportPeriod.addEventListener('change', function() {
+      loadReports();
+    });
+  }
+  
+  if (reportType && !reportType.dataset.autoReloadAttached) {
+    reportType.dataset.autoReloadAttached = 'true';
+    reportType.addEventListener('change', function() {
+      loadReports();
+    });
+  }
+}
 
 // Website theme (DB-based via API)
 let websiteThemeInitialized = false;

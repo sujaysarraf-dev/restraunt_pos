@@ -11,7 +11,7 @@ session_start();
   <title>Superadmin Dashboard</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
   <style>
     :root{ --bg:#f4f6fb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280; --primary:#151A2D; --green:#10b981; --red:#ef4444; --orange:#f59e0b; }
     *{margin:0;padding:0;box-sizing:border-box;}
