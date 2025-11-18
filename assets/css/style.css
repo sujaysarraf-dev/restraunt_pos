@@ -3311,6 +3311,7 @@ select:focus {
 
 .profile-avatar-section {
   position: relative;
+  display: inline-block;
 }
 
 .profile-avatar-large {
@@ -3326,6 +3327,39 @@ select:focus {
   font-size: 3rem;
   font-weight: 700;
   border: 4px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-edit-avatar {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #F70000;
+  border: 3px solid white;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 0;
+  margin: 0;
+  z-index: 10;
+}
+
+.btn-edit-avatar:hover {
+  background: #DA020E;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(247, 0, 0, 0.3);
+}
+
+.btn-edit-avatar .material-symbols-rounded {
+  font-size: 1.1rem;
+  line-height: 1;
+  display: block;
 }
 
 .profile-title-row {
@@ -3481,29 +3515,54 @@ select:focus {
 
 .profile-contact-row {
   display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  padding: 1rem;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.875rem;
   border: 1px solid #f3f4f6;
   border-radius: 14px;
   background: #f9fafb;
+  min-height: 72px;
+}
+
+.profile-contact-row > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .profile-contact-row strong {
   display: block;
   color: #151A2D;
   font-size: 1.05rem;
+  margin-top: 0.25rem;
+  line-height: 1.5;
+}
+
+.contact-label {
+  margin: 0;
+  line-height: 1.5;
 }
 
 .contact-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.contact-icon .material-symbols-rounded {
+  font-size: 1.15rem;
+  line-height: 1;
   color: white;
+  display: block;
 }
 
 .contact-icon.accent {
@@ -3576,6 +3635,225 @@ select:focus {
   padding: 1.5rem;
 }
 
+.card-description {
+  margin: 0.5rem 0 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.settings-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  max-width: 100%;
+}
+
+/* Settings form label with icons */
+.settings-container .form-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.95rem;
+}
+
+.settings-container .form-group label .material-symbols-rounded {
+  font-size: 1.2rem;
+  color: #F70000;
+  flex-shrink: 0;
+}
+
+/* Settings form inputs - improved styling */
+.settings-container .form-group input,
+.settings-container .form-group textarea,
+.settings-container .form-group select {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  background-color: #ffffff;
+  color: #111827;
+  font-family: inherit;
+}
+
+.settings-container .form-group input:hover,
+.settings-container .form-group textarea:hover,
+.settings-container .form-group select:hover {
+  border-color: #d1d5db;
+}
+
+.settings-container .form-group input:focus,
+.settings-container .form-group textarea:focus,
+.settings-container .form-group select:focus {
+  outline: none;
+  border-color: #F70000;
+  box-shadow: 0 0 0 3px rgba(247, 0, 0, 0.1);
+}
+
+.settings-container .form-group input:read-only {
+  background-color: #f9fafb;
+  cursor: not-allowed;
+  color: #6b7280;
+}
+
+.settings-container .form-group textarea {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.5;
+}
+
+/* Settings form-row responsive */
+.settings-container .form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .settings-container .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+/* Settings checkbox labels */
+.settings-container .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #374151;
+  font-weight: 500;
+  padding: 0.5rem 0;
+  transition: color 0.2s ease;
+}
+
+.settings-container .checkbox-label:hover {
+  color: #111827;
+}
+
+.settings-container .checkmark {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.settings-container .checkbox-label input[type="checkbox"]:checked + .checkmark {
+  background: #F70000;
+  border-color: #F70000;
+}
+
+.settings-container .checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* Settings form actions */
+.settings-container .form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.settings-container .btn-save {
+  background: linear-gradient(135deg, #F70000 0%, #DA020E 100%);
+  color: white;
+  padding: 0.875rem 1.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  box-shadow: 0 2px 8px rgba(247, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.settings-container .btn-save:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(247, 0, 0, 0.3);
+}
+
+.settings-container .btn-save .material-symbols-rounded {
+  font-size: 1.2rem;
+}
+
+/* Password Criteria Styling */
+.password-criteria {
+  margin-top: 0.5rem;
+}
+
+.criteria-list {
+  margin: 0.5rem 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.criteria-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  transition: color 0.2s ease;
+}
+
+.criteria-icon {
+  font-size: 1rem;
+  vertical-align: middle;
+  transition: color 0.2s ease;
+}
+
+.criteria-item[style*="color: #10b981"] {
+  color: #10b981;
+}
+
+/* Form Error Messages */
+.form-error {
+  display: block;
+  color: #ef4444;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.form-hint {
+  display: block;
+  color: #6b7280;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Currency symbol custom input */
+.settings-container #currencySymbolSelect {
+  margin-bottom: 0.5rem;
+}
+
+.settings-container #currencySymbol.currency-custom-input {
+  margin-top: 0.5rem;
+  display: block;
+}
+
 @media (max-width: 768px) {
   .profile-container {
     padding: 1.25rem;
@@ -3598,5 +3876,30 @@ select:focus {
   
   .profile-highlight-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .settings-container {
+    gap: 1.25rem;
+  }
+  
+  .profile-card-modern {
+    border-radius: 12px;
+  }
+  
+  .profile-card-header {
+    padding: 1.25rem;
+  }
+  
+  .profile-card-body {
+    padding: 1.25rem;
+  }
+  
+  .settings-container .form-actions {
+    flex-direction: column;
+  }
+  
+  .settings-container .btn-save {
+    width: 100%;
+    justify-content: center;
   }
 }

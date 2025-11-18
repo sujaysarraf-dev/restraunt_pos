@@ -1049,7 +1049,7 @@ try {
                     <span class="material-symbols-rounded">currency_exchange</span>
                     Currency Symbol
                   </label>
-                  <select id="currencySymbolSelect" style="margin-bottom: 12px;">
+                  <select id="currencySymbolSelect">
                     <?php
                     $majorCurrencies = [
                       '₹' => '₹ Indian Rupee (INR)',
@@ -1086,7 +1086,7 @@ try {
                     echo '<option value="Custom"' . ($isCustom ? ' selected' : '') . '>Custom...</option>';
                     ?>
                   </select>
-                  <input type="text" id="currencySymbol" value="<?php echo $isCustom ? htmlspecialchars($currency_symbol) : ''; ?>" maxlength="10" placeholder="Enter custom currency symbol" style="<?php echo $isCustom ? '' : 'display: none;'; ?>">
+                  <input type="text" id="currencySymbol" value="<?php echo $isCustom ? htmlspecialchars($currency_symbol) : ''; ?>" maxlength="10" placeholder="Enter custom currency symbol" class="currency-custom-input" style="<?php echo $isCustom ? '' : 'display: none;'; ?>">
                 </div>
                 
                 <div class="form-group">
@@ -1177,7 +1177,7 @@ try {
               </div>
             </div>
             <div class="profile-actions-section">
-              <button class="btn btn-primary" id="editProfileBtn" onclick="toggleProfileEdit()">
+              <button class="btn btn-primary" id="editProfileBtn" onclick="showPage('settingsPage')">
                 <span class="material-symbols-rounded">edit</span>
                 Edit Profile
               </button>
@@ -1234,21 +1234,27 @@ try {
               </div>
               <div class="profile-card-body">
                 <div class="profile-contact-row">
-                  <span class="material-symbols-rounded contact-icon accent">call</span>
+                  <div class="contact-icon accent">
+                    <span class="material-symbols-rounded">call</span>
+                  </div>
                   <div>
                     <p class="contact-label">Phone Number</p>
                     <strong id="profilePhoneValue">Not added</strong>
                   </div>
                 </div>
                 <div class="profile-contact-row">
-                  <span class="material-symbols-rounded contact-icon info">email</span>
+                  <div class="contact-icon info">
+                    <span class="material-symbols-rounded">email</span>
+                  </div>
                   <div>
                     <p class="contact-label">Email Address</p>
                     <strong id="profileEmailValue">Not added</strong>
                   </div>
                 </div>
                 <div class="profile-contact-row">
-                  <span class="material-symbols-rounded contact-icon muted">location_on</span>
+                  <div class="contact-icon muted">
+                    <span class="material-symbols-rounded">location_on</span>
+                  </div>
                   <div>
                     <p class="contact-label">Address</p>
                     <strong id="profileAddressValue">Add your restaurant address</strong>
@@ -1310,14 +1316,24 @@ try {
                       Current Password
                     </label>
                     <input type="password" id="currentPassword" placeholder="Enter current password" required>
+                    <small class="form-error" id="currentPasswordError" style="display: none; color: #ef4444; margin-top: 0.5rem; font-size: 0.875rem;"></small>
                   </div>
                   <div class="form-group">
                     <label for="newPassword">
                       <span class="material-symbols-rounded">lock_reset</span>
                       New Password
                     </label>
-                    <input type="password" id="newPassword" placeholder="Enter new password (min. 6 characters)" required minlength="6">
-                    <small class="form-hint">Password must be at least 6 characters long</small>
+                    <input type="password" id="newPassword" placeholder="Enter new password" required minlength="6">
+                    <div class="password-criteria" id="passwordCriteria">
+                      <small class="form-hint" style="display: block; margin-top: 0.5rem; color: #6b7280; font-size: 0.875rem;">Password must meet the following criteria:</small>
+                      <ul class="criteria-list" style="margin: 0.5rem 0 0 1.25rem; padding: 0; list-style: none;">
+                        <li class="criteria-item" data-criteria="length">
+                          <span class="material-symbols-rounded criteria-icon" style="font-size: 1rem; vertical-align: middle; margin-right: 0.25rem;">close</span>
+                          <span>At least 6 characters long</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <small class="form-error" id="newPasswordError" style="display: none; color: #ef4444; margin-top: 0.5rem; font-size: 0.875rem;"></small>
                   </div>
                   <div class="form-group">
                     <label for="confirmPassword">
@@ -1325,9 +1341,11 @@ try {
                       Confirm New Password
                     </label>
                     <input type="password" id="confirmPassword" placeholder="Confirm new password" required minlength="6">
+                    <small class="form-hint" id="passwordMatchStatus" style="display: none; margin-top: 0.5rem; font-size: 0.875rem;"></small>
+                    <small class="form-error" id="confirmPasswordError" style="display: none; color: #ef4444; margin-top: 0.5rem; font-size: 0.875rem;"></small>
                   </div>
                   <div class="form-actions">
-                    <button type="submit" class="btn btn-save">
+                    <button type="submit" class="btn btn-save" id="changePasswordBtn">
                       <span class="material-symbols-rounded">lock</span>
                       Change Password
                     </button>

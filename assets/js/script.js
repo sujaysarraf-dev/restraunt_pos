@@ -431,6 +431,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // Load profile data if it's the profile page
       if (pageId === "profilePage") {
         loadProfileData();
+        // Initialize change password form handler
+        setTimeout(() => {
+          setupSettingsForms();
+        }, 100);
       }
       
       // Load payments if it's the payments page
@@ -5030,7 +5034,179 @@ function setupSettingsForms() {
     });
   }
   
-  // Security Settings Form (if exists)
+  // Change Password Form Handler
+  const changePasswordForm = document.getElementById('changePasswordForm');
+  if (changePasswordForm && !changePasswordForm.dataset.handlerAttached) {
+    changePasswordForm.dataset.handlerAttached = 'true';
+    
+    const currentPasswordInput = document.getElementById('currentPassword');
+    const newPasswordInput = document.getElementById('newPassword');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const passwordCriteria = document.getElementById('passwordCriteria');
+    const passwordMatchStatus = document.getElementById('passwordMatchStatus');
+    
+    // Real-time password criteria validation
+    if (newPasswordInput) {
+      newPasswordInput.addEventListener('input', function() {
+        validatePasswordCriteria(this.value);
+        checkPasswordMatch();
+      });
+    }
+    
+    // Real-time password match checking
+    if (confirmPasswordInput) {
+      confirmPasswordInput.addEventListener('input', function() {
+        checkPasswordMatch();
+      });
+    }
+    
+    // Password criteria validation function
+    function validatePasswordCriteria(password) {
+      if (!passwordCriteria) return;
+      
+      const lengthItem = passwordCriteria.querySelector('[data-criteria="length"]');
+      if (lengthItem) {
+        const icon = lengthItem.querySelector('.criteria-icon');
+        const isValid = password.length >= 6;
+        if (isValid) {
+          icon.textContent = 'check_circle';
+          icon.style.color = '#10b981';
+          lengthItem.style.color = '#10b981';
+        } else {
+          icon.textContent = 'close';
+          icon.style.color = '#ef4444';
+          lengthItem.style.color = '#6b7280';
+        }
+      }
+    }
+    
+    // Password match checking function
+    function checkPasswordMatch() {
+      if (!newPasswordInput || !confirmPasswordInput || !passwordMatchStatus) return;
+      
+      const newPassword = newPasswordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+      
+      if (confirmPassword.length === 0) {
+        passwordMatchStatus.style.display = 'none';
+        return;
+      }
+      
+      if (newPassword === confirmPassword && newPassword.length >= 6) {
+        passwordMatchStatus.textContent = '✓ Passwords match';
+        passwordMatchStatus.style.color = '#10b981';
+        passwordMatchStatus.style.display = 'block';
+      } else if (newPassword.length > 0) {
+        passwordMatchStatus.textContent = '✗ Passwords do not match';
+        passwordMatchStatus.style.color = '#ef4444';
+        passwordMatchStatus.style.display = 'block';
+      }
+    }
+    
+    // Form submission handler
+    changePasswordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Clear previous errors
+      document.getElementById('currentPasswordError')?.style.setProperty('display', 'none');
+      document.getElementById('newPasswordError')?.style.setProperty('display', 'none');
+      document.getElementById('confirmPasswordError')?.style.setProperty('display', 'none');
+      
+      const currentPassword = currentPasswordInput?.value.trim();
+      const newPassword = newPasswordInput?.value.trim();
+      const confirmPassword = confirmPasswordInput?.value.trim();
+      
+      // Validation
+      let hasError = false;
+      
+      if (!currentPassword) {
+        showFieldError('currentPasswordError', 'Current password is required');
+        hasError = true;
+      }
+      
+      if (!newPassword) {
+        showFieldError('newPasswordError', 'New password is required');
+        hasError = true;
+      } else if (newPassword.length < 6) {
+        showFieldError('newPasswordError', 'Password must be at least 6 characters long');
+        hasError = true;
+      }
+      
+      if (!confirmPassword) {
+        showFieldError('confirmPasswordError', 'Please confirm your new password');
+        hasError = true;
+      } else if (newPassword !== confirmPassword) {
+        showFieldError('confirmPasswordError', 'Passwords do not match');
+        hasError = true;
+      }
+      
+      if (hasError) {
+        return;
+      }
+      
+      // Disable submit button
+      const submitBtn = document.getElementById('changePasswordBtn');
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Changing...';
+      }
+      
+      try {
+        const response = await fetch('../admin/auth.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=changePassword&currentPassword=${encodeURIComponent(currentPassword)}&newPassword=${encodeURIComponent(newPassword)}`
+        });
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          throw new Error('Server error. Please try again.');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          await showSweetAlert('Success!', 'Your password has been changed successfully.', 'success');
+          changePasswordForm.reset();
+          if (passwordMatchStatus) passwordMatchStatus.style.display = 'none';
+          validatePasswordCriteria('');
+        } else {
+          // Handle specific error messages
+          const errorMsg = result.message || 'Error changing password';
+          if (errorMsg.toLowerCase().includes('incorrect') || errorMsg.toLowerCase().includes('current password')) {
+            showFieldError('currentPasswordError', errorMsg);
+            await showSweetAlert('Incorrect Password', errorMsg, 'error');
+          } else {
+            await showSweetAlert('Error', errorMsg, 'error');
+          }
+        }
+      } catch (error) {
+        console.error('Error changing password:', error);
+        await showSweetAlert('Error', 'An error occurred while changing your password. Please try again.', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
+      }
+    });
+    
+    // Helper function to show field errors
+    function showFieldError(errorId, message) {
+      const errorEl = document.getElementById(errorId);
+      if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+      }
+    }
+  }
+  
+  // Security Settings Form (if exists - for backward compatibility)
   const securitySettingsForm = document.getElementById('securitySettingsForm');
   if (securitySettingsForm && !securitySettingsForm.dataset.handlerAttached) {
     securitySettingsForm.dataset.handlerAttached = 'true';
@@ -5042,17 +5218,17 @@ function setupSettingsForms() {
       const confirmPassword = document.getElementById('confirmPassword')?.value.trim();
       
       if (!currentPassword || !newPassword || !confirmPassword) {
-        showNotification('Please fill in all fields', 'error');
+        await showSweetAlert('Validation Error', 'Please fill in all fields', 'error');
         return;
       }
       
       if (newPassword.length < 6) {
-        showNotification('New password must be at least 6 characters', 'error');
+        await showSweetAlert('Validation Error', 'New password must be at least 6 characters', 'error');
         return;
       }
       
       if (newPassword !== confirmPassword) {
-        showNotification('New passwords do not match', 'error');
+        await showSweetAlert('Validation Error', 'New passwords do not match', 'error');
         return;
       }
       
@@ -5076,14 +5252,14 @@ function setupSettingsForms() {
         const result = await response.json();
         
         if (result.success) {
-          showNotification('Password changed successfully', 'success');
+          await showSweetAlert('Success!', 'Password changed successfully', 'success');
           securitySettingsForm.reset();
         } else {
-          showNotification(result.message || 'Error changing password', 'error');
+          await showSweetAlert('Error', result.message || 'Error changing password', 'error');
         }
       } catch (error) {
         console.error('Error changing password:', error);
-        showNotification('Error changing password', 'error');
+        await showSweetAlert('Error', 'Error changing password', 'error');
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
