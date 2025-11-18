@@ -1151,16 +1151,24 @@ try {
               </button>
             </div>
             <div class="profile-info-section">
-              <h2 id="profileName">Loading...</h2>
+              <div class="profile-title-row">
+                <h2 id="profileName">Loading...</h2>
+                <span class="profile-status-pill" id="profileSubscriptionStatusBadge">Loading...</span>
+              </div>
               <p id="profileRole" class="profile-role-badge">Administrator</p>
+              <p class="profile-email" id="profileEmail">Loading...</p>
               <div class="profile-details-list">
-                <div class="profile-detail-item">
-                  <span class="material-symbols-rounded">email</span>
-                  <span id="profileEmail">Loading...</span>
-                </div>
                 <div class="profile-detail-item">
                   <span class="material-symbols-rounded">restaurant</span>
                   <span>Restaurant ID: <strong id="profileRestaurantName">Loading...</strong></span>
+                </div>
+                <div class="profile-detail-item">
+                  <span class="material-symbols-rounded">call</span>
+                  <span>Phone: <strong id="profilePhoneValueInline">Not added</strong></span>
+                </div>
+                <div class="profile-detail-item">
+                  <span class="material-symbols-rounded">schedule</span>
+                  <span>Timezone: <strong id="profileTimezoneTextInline">--</strong></span>
                 </div>
                 <div class="profile-detail-item">
                   <span class="material-symbols-rounded">calendar_today</span>
@@ -1173,11 +1181,81 @@ try {
                 <span class="material-symbols-rounded">edit</span>
                 Edit Profile
               </button>
+              <button class="btn btn-secondary" type="button" onclick="showPage('settingsPage')">
+                <span class="material-symbols-rounded">workspace_premium</span>
+                Manage Subscription
+              </button>
+            </div>
+          </div>
+
+          <div class="profile-highlight-grid">
+            <div class="profile-highlight-card">
+              <div class="highlight-icon success">
+                <span class="material-symbols-rounded">verified</span>
+              </div>
+              <div>
+                <p class="highlight-label">Subscription</p>
+                <h3 id="profileSubscriptionStatusText">Loading...</h3>
+                <p class="highlight-subtext">Renews on <strong id="profileRenewalDateText">--</strong></p>
+              </div>
+            </div>
+            <div class="profile-highlight-card">
+              <div class="highlight-icon warning">
+                <span class="material-symbols-rounded">calendar_month</span>
+              </div>
+              <div>
+                <p class="highlight-label">Trial Ends</p>
+                <h3 id="profileTrialEndText">--</h3>
+                <p class="highlight-subtext">Timezone <strong id="profileTimezoneText">--</strong></p>
+              </div>
+            </div>
+            <div class="profile-highlight-card">
+              <div class="highlight-icon info">
+                <span class="material-symbols-rounded">event_available</span>
+              </div>
+              <div>
+                <p class="highlight-label">Member Since</p>
+                <h3 id="profileMemberSinceHighlight">--</h3>
+                <p class="highlight-subtext">Restaurant ID <strong id="profileRestaurantIdHighlight">--</strong></p>
+              </div>
             </div>
           </div>
 
           <!-- Profile Content Grid -->
           <div class="profile-content-grid">
+            <!-- Contact Card -->
+            <div class="profile-card-modern profile-contact-card">
+              <div class="profile-card-header">
+                <h3>
+                  <span class="material-symbols-rounded">contact_page</span>
+                  Contact Details
+                </h3>
+                <p class="card-description">Keep your contact information up to date</p>
+              </div>
+              <div class="profile-card-body">
+                <div class="profile-contact-row">
+                  <span class="material-symbols-rounded contact-icon accent">call</span>
+                  <div>
+                    <p class="contact-label">Phone Number</p>
+                    <strong id="profilePhoneValue">Not added</strong>
+                  </div>
+                </div>
+                <div class="profile-contact-row">
+                  <span class="material-symbols-rounded contact-icon info">email</span>
+                  <div>
+                    <p class="contact-label">Email Address</p>
+                    <strong id="profileEmailValue">Not added</strong>
+                  </div>
+                </div>
+                <div class="profile-contact-row">
+                  <span class="material-symbols-rounded contact-icon muted">location_on</span>
+                  <div>
+                    <p class="contact-label">Address</p>
+                    <strong id="profileAddressValue">Add your restaurant address</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
             <!-- Edit Profile Form (Hidden by default) -->
             <div class="profile-card-modern" id="editProfileCard" style="display: none;">
               <div class="profile-card-header">

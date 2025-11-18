@@ -4513,17 +4513,25 @@ async function loadProfileData() {
       const user = result.data;
       const username = user.username || 'User';
       const initials = username.split(' ').map(w => w.charAt(0).toUpperCase()).join('').substring(0, 2);
+      const formatReadableDate = (dateStr) => {
+        if (!dateStr) return '--';
+        const date = new Date(dateStr);
+        if (Number.isNaN(date.getTime())) return '--';
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      };
       
       // Basic profile elements
       const profileInitialsEl = document.getElementById('profileInitials');
       const profileNameEl = document.getElementById('profileName');
       const profileRoleEl = document.getElementById('profileRole');
       const profileEmailEl = document.getElementById('profileEmail');
+      const profileEmailValueEl = document.getElementById('profileEmailValue');
       
       if (profileInitialsEl) profileInitialsEl.textContent = initials;
       if (profileNameEl) profileNameEl.textContent = username;
       if (profileRoleEl) profileRoleEl.textContent = user.role || 'Administrator';
       if (profileEmailEl) profileEmailEl.textContent = user.email || 'No email';
+      if (profileEmailValueEl) profileEmailValueEl.textContent = user.email || 'Not added';
       
       // Restaurant logo in profile
       const profileRestaurantLogoEl = document.getElementById('profileRestaurantLogo');
@@ -4545,14 +4553,22 @@ async function loadProfileData() {
       // Restaurant name and member since date
       const profileRestaurantNameEl = document.getElementById('profileRestaurantName');
       const profileMemberSinceDateEl = document.getElementById('profileMemberSinceDate');
+      const profileMemberSinceHighlightEl = document.getElementById('profileMemberSinceHighlight');
+      const profileRestaurantIdHighlightEl = document.getElementById('profileRestaurantIdHighlight');
       
       if (profileRestaurantNameEl) {
         profileRestaurantNameEl.textContent = user.restaurant_id || 'N/A';
       }
+      if (profileRestaurantIdHighlightEl) {
+        profileRestaurantIdHighlightEl.textContent = user.restaurant_id || 'N/A';
+      }
       
       if (profileMemberSinceDateEl && user.created_at) {
-        const joinDate = new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const joinDate = formatReadableDate(user.created_at);
         profileMemberSinceDateEl.textContent = joinDate;
+        if (profileMemberSinceHighlightEl) {
+          profileMemberSinceHighlightEl.textContent = joinDate;
+        }
       }
       
       // Optional info elements (may not exist in all dashboard versions)
@@ -4560,6 +4576,15 @@ async function loadProfileData() {
       const infoEmailEl = document.getElementById('infoEmail');
       const infoRoleEl = document.getElementById('infoRole');
       const infoMemberSinceEl = document.getElementById('infoMemberSince');
+      const profilePhoneInlineEl = document.getElementById('profilePhoneValueInline');
+      const profilePhoneValueEl = document.getElementById('profilePhoneValue');
+      const profileAddressValueEl = document.getElementById('profileAddressValue');
+      const profileTimezoneTextEl = document.getElementById('profileTimezoneText');
+      const profileTimezoneTextInlineEl = document.getElementById('profileTimezoneTextInline');
+      const profileSubscriptionStatusTextEl = document.getElementById('profileSubscriptionStatusText');
+      const profileSubscriptionStatusBadgeEl = document.getElementById('profileSubscriptionStatusBadge');
+      const profileRenewalDateTextEl = document.getElementById('profileRenewalDateText');
+      const profileTrialEndTextEl = document.getElementById('profileTrialEndText');
       
       if (infoUsernameEl) infoUsernameEl.textContent = username;
       if (infoEmailEl) infoEmailEl.textContent = user.email || 'N/A';
@@ -4567,6 +4592,34 @@ async function loadProfileData() {
       if (infoMemberSinceEl && user.created_at) {
         const joinDate = new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
         infoMemberSinceEl.textContent = joinDate;
+      }
+
+      const phoneValue = user.phone || 'Add a phone number';
+      if (profilePhoneInlineEl) profilePhoneInlineEl.textContent = phoneValue;
+      if (profilePhoneValueEl) profilePhoneValueEl.textContent = phoneValue;
+      if (profileAddressValueEl) profileAddressValueEl.textContent = user.address || 'Add your restaurant address';
+
+      const timezoneValue = user.timezone || 'Asia/Kolkata';
+      if (profileTimezoneTextEl) profileTimezoneTextEl.textContent = timezoneValue;
+      if (profileTimezoneTextInlineEl) profileTimezoneTextInlineEl.textContent = timezoneValue;
+
+      const subscriptionRaw = (user.subscription_status || 'Active').toString().replace(/_/g, ' ');
+      const subscriptionFormatted = subscriptionRaw.replace(/\b\w/g, (char) => char.toUpperCase());
+      if (profileSubscriptionStatusTextEl) profileSubscriptionStatusTextEl.textContent = subscriptionFormatted;
+      if (profileSubscriptionStatusBadgeEl) {
+        profileSubscriptionStatusBadgeEl.textContent = subscriptionFormatted;
+        const normalized = subscriptionFormatted.toLowerCase();
+        let statusClass = 'active';
+        if (normalized.includes('trial')) statusClass = 'trial';
+        if (normalized.includes('expired') || normalized.includes('cancel')) statusClass = 'expired';
+        profileSubscriptionStatusBadgeEl.className = `profile-status-pill ${statusClass}`;
+      }
+
+      if (profileRenewalDateTextEl) {
+        profileRenewalDateTextEl.textContent = user.renewal_date ? formatReadableDate(user.renewal_date) : '--';
+      }
+      if (profileTrialEndTextEl) {
+        profileTrialEndTextEl.textContent = user.trial_end_date ? formatReadableDate(user.trial_end_date) : '--';
       }
     }
   } catch (error) {
