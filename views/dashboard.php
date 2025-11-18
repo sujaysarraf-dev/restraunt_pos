@@ -1045,11 +1045,48 @@ try {
             <div class="profile-card-body">
               <form id="systemSettingsForm">
                 <div class="form-group">
-                  <label for="currencySymbol">
+                  <label for="currencySymbolSelect">
                     <span class="material-symbols-rounded">currency_exchange</span>
                     Currency Symbol
                   </label>
-                  <input type="text" id="currencySymbol" value="<?php echo htmlspecialchars($currency_symbol); ?>" maxlength="3" placeholder="Currency symbol">
+                  <select id="currencySymbolSelect" style="margin-bottom: 12px;">
+                    <?php
+                    $majorCurrencies = [
+                      '₹' => '₹ Indian Rupee (INR)',
+                      '$' => '$ US Dollar (USD)',
+                      '€' => '€ Euro (EUR)',
+                      '£' => '£ British Pound (GBP)',
+                      '¥' => '¥ Japanese Yen (JPY)',
+                      'A$' => 'A$ Australian Dollar (AUD)',
+                      'C$' => 'C$ Canadian Dollar (CAD)',
+                      'CHF' => 'CHF Swiss Franc',
+                      'CN¥' => 'CN¥ Chinese Yuan (CNY)',
+                      'HK$' => 'HK$ Hong Kong Dollar (HKD)',
+                      'NZ$' => 'NZ$ New Zealand Dollar (NZD)',
+                      'S$' => 'S$ Singapore Dollar (SGD)',
+                      '₽' => '₽ Russian Ruble (RUB)',
+                      '₩' => '₩ South Korean Won (KRW)',
+                      'R' => 'R South African Rand (ZAR)',
+                      '₦' => '₦ Nigerian Naira (NGN)',
+                      '₨' => '₨ Pakistani Rupee (PKR)',
+                      '৳' => '৳ Bangladeshi Taka (BDT)',
+                      'Rs' => 'Rs Sri Lankan Rupee (LKR)',
+                      'Custom' => 'Custom...'
+                    ];
+                    $isCustom = true;
+                    foreach ($majorCurrencies as $symbol => $label) {
+                      if ($symbol === 'Custom') continue;
+                      if ($currency_symbol === $symbol) {
+                        $isCustom = false;
+                        echo '<option value="' . htmlspecialchars($symbol) . '" selected>' . htmlspecialchars($label) . '</option>';
+                      } else {
+                        echo '<option value="' . htmlspecialchars($symbol) . '">' . htmlspecialchars($label) . '</option>';
+                      }
+                    }
+                    echo '<option value="Custom"' . ($isCustom ? ' selected' : '') . '>Custom...</option>';
+                    ?>
+                  </select>
+                  <input type="text" id="currencySymbol" value="<?php echo $isCustom ? htmlspecialchars($currency_symbol) : ''; ?>" maxlength="10" placeholder="Enter custom currency symbol" style="<?php echo $isCustom ? '' : 'display: none;'; ?>">
                 </div>
                 
                 <div class="form-group">

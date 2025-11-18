@@ -4714,14 +4714,32 @@ async function loadSettingsData() {
       }
       
       // System Settings - Currency and timezone are already set by PHP, but update if needed
-      const currencySymbol = document.getElementById('currencySymbol');
+      const currencySymbolSelect = document.getElementById('currencySymbolSelect');
+      const currencySymbolInput = document.getElementById('currencySymbol');
       const timezone = document.getElementById('timezone');
       const autoSync = document.getElementById('autoSync');
       const notifications = document.getElementById('notifications');
       
-      // Currency symbol is already set by PHP, don't override unless empty
-      if (currencySymbol && !currencySymbol.value && user.currency_symbol) {
-        currencySymbol.value = user.currency_symbol;
+      // Handle currency symbol dropdown
+      if (currencySymbolSelect && user.currency_symbol) {
+        const majorCurrencies = ['₹', '$', '€', '£', '¥', 'A$', 'C$', 'CHF', 'CN¥', 'HK$', 'NZ$', 'S$', '₽', '₩', 'R', '₦', '₨', '৳', 'Rs'];
+        const currentSymbol = user.currency_symbol.trim();
+        
+        if (majorCurrencies.includes(currentSymbol)) {
+          // Set dropdown to the matching currency
+          currencySymbolSelect.value = currentSymbol;
+          if (currencySymbolInput) {
+            currencySymbolInput.style.display = 'none';
+            currencySymbolInput.value = currentSymbol;
+          }
+        } else {
+          // Set to Custom and show input
+          currencySymbolSelect.value = 'Custom';
+          if (currencySymbolInput) {
+            currencySymbolInput.style.display = 'block';
+            currencySymbolInput.value = currentSymbol;
+          }
+        }
       }
       
       // Timezone is already set by PHP, but update if not set
@@ -4745,6 +4763,28 @@ async function loadSettingsData() {
 
 // Setup Settings Forms
 function setupSettingsForms() {
+  // Currency symbol dropdown handler
+  const currencySymbolSelect = document.getElementById('currencySymbolSelect');
+  const currencySymbolInput = document.getElementById('currencySymbol');
+  
+  if (currencySymbolSelect && currencySymbolInput) {
+    currencySymbolSelect.addEventListener('change', function() {
+      if (this.value === 'Custom') {
+        currencySymbolInput.style.display = 'block';
+        currencySymbolInput.focus();
+        currencySymbolInput.value = '';
+      } else {
+        currencySymbolInput.style.display = 'none';
+        currencySymbolInput.value = this.value;
+      }
+    });
+    
+    // Initialize on page load
+    if (currencySymbolSelect.value === 'Custom') {
+      currencySymbolInput.style.display = 'block';
+    }
+  }
+  
   // Restaurant Settings Form
   const restaurantSettingsForm = document.getElementById('restaurantSettingsForm');
   if (restaurantSettingsForm && !restaurantSettingsForm.dataset.handlerAttached) {
@@ -4870,7 +4910,16 @@ function setupSettingsForms() {
     systemSettingsForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const currencySymbol = document.getElementById('currencySymbol')?.value.trim();
+      // Get currency symbol from dropdown or custom input
+      const currencySymbolSelect = document.getElementById('currencySymbolSelect');
+      const currencySymbolInput = document.getElementById('currencySymbol');
+      let currencySymbol = '';
+      
+      if (currencySymbolSelect && currencySymbolSelect.value === 'Custom') {
+        currencySymbol = currencySymbolInput?.value.trim() || '₹';
+      } else {
+        currencySymbol = currencySymbolSelect?.value || currencySymbolInput?.value.trim() || '₹';
+      }
       const timezone = document.getElementById('timezone')?.value.trim();
       const autoSync = document.getElementById('autoSync')?.checked;
       const notifications = document.getElementById('notifications')?.checked;
