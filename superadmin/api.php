@@ -123,6 +123,48 @@ try {
       echo json_encode(['success'=>true,'stats'=>$stats]);
       break;
 
+    case 'getPayments':
+      $search = trim($_GET['search'] ?? '');
+      $status = trim($_GET['status'] ?? '');
+      $limit = min(200, max(10, (int)($_GET['limit'] ?? 100)));
+      $offset = max(0, (int)($_GET['offset'] ?? 0));
+
+      $sql = "SELECT 
+                p.id,
+                p.transaction_id,
+                p.restaurant_id,
+                p.amount,
+                p.payment_method,
+                p.payment_status,
+                p.subscription_type,
+                p.created_at,
+                u.restaurant_name
+              FROM payments p
+              LEFT JOIN users u ON u.restaurant_id = p.restaurant_id
+              WHERE 1=1";
+      $params = [];
+      if ($search !== '') {
+        $sql .= " AND (p.transaction_id LIKE :search OR p.restaurant_id LIKE :search OR u.restaurant_name LIKE :search)";
+        $params[':search'] = "%$search%";
+      }
+      if ($status !== '') {
+        $sql .= " AND p.payment_status = :status";
+        $params[':status'] = $status;
+      }
+      $sql .= " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
+      $stmt = $pdo->prepare($sql);
+      foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value);
+      }
+      $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+      $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+      $stmt->execute();
+      echo json_encode([
+        'success' => true,
+        'payments' => $stmt->fetchAll()
+      ]);
+      break;
+
     default:
       echo json_encode(['success' => false, 'message' => 'Invalid action']);
   }

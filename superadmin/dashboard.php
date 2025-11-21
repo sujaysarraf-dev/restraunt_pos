@@ -11,7 +11,7 @@ session_start();
   <title>Superadmin Dashboard</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
-  <script src="https://unpkg.com/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+  <script src="../assets/js/sweetalert2.all.min.js"></script>
   <style>
     :root{ --bg:#f4f6fb; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280; --primary:#151A2D; --green:#10b981; --red:#ef4444; --orange:#f59e0b; }
     *{margin:0;padding:0;box-sizing:border-box;}
@@ -361,6 +361,7 @@ session_start();
 
     // Global variables
     let saPage = 1, saLimit = 10, saQuery = '';
+    let paymentSearchTerm = '', paymentStatus = '';
     const showSuperAlert = (message, type = 'info') => {
       if (window.Swal) {
         Swal.fire({
@@ -433,23 +434,28 @@ session_start();
         const res = await fetch('api.php?'+qs);
         const data = await res.json();
         const tbody = document.getElementById('restaurantsTbody');
-        tbody.innerHTML = (data.restaurants||[]).map(r => `
-          <tr>
-            <td>${r.id}</td>
-            <td>${r.username}</td>
-            <td><span class="badge badge-info">${r.restaurant_id}</span></td>
-            <td>${r.restaurant_name}</td>
-            <td>${r.trial_status === 'Active' ? `<span class="badge badge-success">${r.days_left} days</span>` : 
-                r.trial_status === 'Disabled' ? `<span class="badge badge-warning">Disabled</span>` : 
-                `<span class="badge badge-danger">Expired</span>`}</td>
-            <td>${r.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
-            <td>${r.created_at?.split(' ')[0] || ''}</td>
-            <td>
-              <button class="btn btn-outline" onclick="toggleRestaurant(${r.id}, ${r.is_active?0:1})">${r.is_active?'Disable':'Enable'}</button>
-              <button class="btn btn-outline" onclick="resetPassword(${r.id})">Reset PW</button>
-            </td>
-          </tr>
-        `).join('');
+        tbody.innerHTML = (data.restaurants||[]).map(r => {
+          const isActive = Number(r.is_active) === 1;
+          const trialStatus = r.trial_status;
+          return `
+            <tr>
+              <td>${r.id}</td>
+              <td>${r.username}</td>
+              <td><span class="badge badge-info">${r.restaurant_id}</span></td>
+              <td>${r.restaurant_name}</td>
+              <td>${trialStatus === 'Active' ? `<span class="badge badge-success">${r.days_left} days</span>` : 
+                  trialStatus === 'Disabled' ? `<span class="badge badge-warning">Disabled</span>` : 
+                  `<span class="badge badge-danger">Expired</span>`}</td>
+              <td>${isActive ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
+              <td>${r.created_at?.split(' ')[0] || ''}</td>
+              <td style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-outline" onclick="toggleRestaurant(${r.id}, 1)" ${isActive ? 'disabled' : ''}>Enable</button>
+                <button class="btn btn-outline" onclick="toggleRestaurant(${r.id}, 0)" ${isActive ? '' : 'disabled'}>Disable</button>
+                <button class="btn btn-outline" onclick="resetPassword(${r.id})">Reset PW</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
         const total = data.total||0;
         const pages = Math.max(1, Math.ceil(total/saLimit));
         document.getElementById('pageInfo').textContent = `Page ${saPage} of ${pages}`;
@@ -464,9 +470,12 @@ session_start();
         const res = await fetch('api.php?action=getRestaurants&limit=100');
         const d = await res.json();
         if(d.success){
-          const restaurants = d.restaurants || [];
-          const active = restaurants.filter(r => r.is_active && r.trial_status === 'Active').length;
+          const restaurants = (d.restaurants || []).map(r => ({
+            ...r,
+            isActive: Number(r.is_active) === 1
+          }));
           const trial = restaurants.filter(r => r.trial_status === 'Active').length;
+          const active = restaurants.filter(r => r.isActive && r.trial_status === 'Active').length;
           const expired = restaurants.filter(r => r.trial_status === 'Expired').length;
           
           document.getElementById('subActive').textContent = active;
@@ -483,8 +492,9 @@ session_start();
                   '<span class="badge badge-warning">Disabled</span>'}</td>
               <td>${r.trial_end_date || 'N/A'}</td>
               <td>${r.renewal_date || 'N/A'}</td>
-              <td>
-                <button class="btn btn-outline" onclick="toggleRestaurant(${r.id}, ${r.is_active?0:1})">${r.is_active?'Disable':'Enable'}</button>
+              <td style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-outline" onclick="toggleRestaurant(${r.id}, 1)" ${r.isActive ? 'disabled' : ''}>Enable</button>
+                <button class="btn btn-outline" onclick="toggleRestaurant(${r.id}, 0)" ${r.isActive ? '' : 'disabled'}>Disable</button>
               </td>
             </tr>
           `).join('');
@@ -495,7 +505,11 @@ session_start();
     // Payments
     async function loadPayments(){
       try {
-        const res = await fetch('../get_payments.php?all=1');
+        const params = new URLSearchParams();
+        if (paymentSearchTerm) params.append('search', paymentSearchTerm);
+        if (paymentStatus) params.append('status', paymentStatus);
+        const query = params.toString();
+        const res = await fetch(`api.php?action=getPayments${query ? '&'+query : ''}`);
         const d = await res.json();
         if(d.success){
           const tbody = document.getElementById('paymentsTbody');
@@ -554,13 +568,19 @@ session_start();
       if(!p) return;
       const res = await fetch('api.php?action=resetPassword', { method:'POST', body: JSON.stringify({id, password: p}), headers: {'Content-Type': 'application/json'} });
       const data = await res.json();
-      if (!data.success) showSuperAlert(data.message||'Error');
+      if (data.success) {
+        showSuperAlert('Password reset successfully','success');
+      } else {
+        showSuperAlert(data.message||'Error','error');
+      }
     }
 
     // Search and pagination
     document.getElementById('saSearch')?.addEventListener('input', (e)=>{ saQuery = e.target.value.trim(); saPage = 1; fetchRestaurants(); });
     document.getElementById('prevPage')?.addEventListener('click', ()=>{ if(saPage>1){ saPage--; fetchRestaurants(); }});
-    document.getElementById('nextPage')?.addEventListener('click', ()=>{ saPage++; fetchRestaurants(); });
+        document.getElementById('nextPage')?.addEventListener('click', ()=>{ saPage++; fetchRestaurants(); });
+        document.getElementById('paymentSearch')?.addEventListener('input', (e)=>{ paymentSearchTerm = e.target.value.trim(); loadPayments(); });
+        document.getElementById('paymentStatusFilter')?.addEventListener('change', (e)=>{ paymentStatus = e.target.value; loadPayments(); });
     document.getElementById('btnExport')?.addEventListener('click', ()=>{
       const rows = Array.from(document.querySelectorAll('#restaurantsTbody tr')).map(tr=>Array.from(tr.children).slice(0,6).map(td=>`"${td.textContent}"`).join(','));
       const header = 'ID,Username,Restaurant ID,Name,Status,Created';
