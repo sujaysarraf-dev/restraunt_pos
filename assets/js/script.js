@@ -4727,42 +4727,236 @@ window.cancelKOT = cancelKOT;
 // Print KOT
 window.printKOT = async function(kotId) {
   try {
+    // Fetch KOT data
     const res = await fetch('../api/get_kot.php');
     const data = await res.json();
     if (!data.success) { showSweetAlert('Unable to load KOT'); return; }
     const kot = (data.kots || []).find(k => String(k.id) === String(kotId));
     if (!kot) { showSweetAlert('KOT not found'); return; }
 
-    // Build printable HTML
+    // Fetch restaurant info
+    let restaurantInfo = {
+      name: 'Restaurant Name',
+      logo: '',
+      address: '',
+      phone: '',
+      email: ''
+    };
+    
+    try {
+      const infoRes = await fetch('../admin/get_session.php');
+      const infoData = await infoRes.json();
+      if (infoData.success && infoData.data) {
+        restaurantInfo.name = infoData.data.restaurant_name || restaurantInfo.name;
+        restaurantInfo.logo = infoData.data.restaurant_logo || '';
+        restaurantInfo.address = infoData.data.address || '';
+        restaurantInfo.phone = infoData.data.phone || '';
+        restaurantInfo.email = infoData.data.email || '';
+      }
+    } catch (e) {
+      console.warn('Could not load restaurant info:', e);
+    }
+
+    // Build printable HTML with enhanced design
     const now = new Date(kot.created_at);
-    const dateStr = now.toLocaleString();
-    const itemsHtml = (kot.items || []).map(it => `<tr><td>${it.quantity} x ${escapeHtml(it.item_name)}</td></tr>`).join('');
-    const tableOrType = kot.table_name ? kot.table_name : kot.order_type;
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    
+    const itemsHtml = (kot.items || []).map((it, idx) => `
+      <tr>
+        <td style="padding: 8px 0; border-bottom: 1px dashed #e5e7eb;">
+          <div style="font-weight: 600; font-size: 15px; color: #111827; margin-bottom: 4px;">${escapeHtml(it.item_name || it.name)}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #6b7280; font-size: 13px;">Qty: <strong style="color: #111827;">${it.quantity}</strong></span>
+            ${(it.notes || it.special_instructions) ? `<span style="color: #f59e0b; font-size: 12px; font-style: italic;">📝 ${escapeHtml(it.notes || it.special_instructions)}</span>` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+    
+    const tableOrType = kot.table_number ? `Table ${kot.table_number}${kot.area_name ? ' - ' + escapeHtml(kot.area_name) : ''}` : (kot.order_type || 'Takeaway');
+    
+    // Logo HTML
+    let logoHtml = '';
+    if (restaurantInfo.logo) {
+      const logoPath = restaurantInfo.logo.startsWith('http') 
+        ? restaurantInfo.logo 
+        : (restaurantInfo.logo.startsWith('uploads/') 
+          ? '../' + restaurantInfo.logo 
+          : '../uploads/' + restaurantInfo.logo);
+      logoHtml = `<img src="${logoPath}" alt="Logo" style="max-width: 80px; max-height: 80px; object-fit: contain; margin-bottom: 10px;" onerror="this.style.display='none';">`;
+    }
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>KOT ${kot.kot_number}</title>
       <style>
-        body{font-family: Arial, sans-serif; padding: 8px;}
-        .center{text-align:center}
-        h2{margin:6px 0}
-        .meta{font-size:12px;margin:4px 0}
-        table{width:100%; border-collapse:collapse; margin-top:8px}
-        td{padding:4px 0; font-size:14px}
-        hr{border:none;border-top:1px dashed #333;margin:8px 0}
+        @media print {
+          @page { margin: 10mm; size: 80mm auto; }
+          body { margin: 0; padding: 0; }
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          padding: 15px;
+          max-width: 300px;
+          margin: 0 auto;
+          background: white;
+          color: #111827;
+        }
+        .header {
+          text-align: center;
+          border-bottom: 2px solid #dc2626;
+          padding-bottom: 12px;
+          margin-bottom: 15px;
+        }
+        .logo {
+          margin-bottom: 8px;
+        }
+        .restaurant-name {
+          font-size: 20px;
+          font-weight: 700;
+          color: #dc2626;
+          margin-bottom: 6px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .restaurant-details {
+          font-size: 11px;
+          color: #6b7280;
+          line-height: 1.4;
+          margin-top: 6px;
+        }
+        .kot-title {
+          text-align: center;
+          margin: 15px 0;
+          padding: 10px;
+          background: #fef2f2;
+          border-radius: 6px;
+        }
+        .kot-title h2 {
+          font-size: 24px;
+          font-weight: 700;
+          color: #dc2626;
+          margin-bottom: 4px;
+          letter-spacing: 1px;
+        }
+        .kot-number {
+          font-size: 16px;
+          font-weight: 600;
+          color: #111827;
+        }
+        .order-info {
+          background: #f9fafb;
+          padding: 12px;
+          border-radius: 6px;
+          margin-bottom: 15px;
+          border-left: 3px solid #dc2626;
+        }
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 6px;
+          font-size: 13px;
+        }
+        .info-row:last-child {
+          margin-bottom: 0;
+        }
+        .info-label {
+          color: #6b7280;
+          font-weight: 500;
+        }
+        .info-value {
+          color: #111827;
+          font-weight: 600;
+        }
+        .items-section {
+          margin: 15px 0;
+        }
+        .items-title {
+          font-size: 14px;
+          font-weight: 700;
+          color: #111827;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 10px;
+          padding-bottom: 6px;
+          border-bottom: 2px solid #e5e7eb;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .footer {
+          margin-top: 20px;
+          padding-top: 15px;
+          border-top: 2px dashed #e5e7eb;
+          text-align: center;
+        }
+        .footer-text {
+          font-size: 11px;
+          color: #6b7280;
+          margin-bottom: 4px;
+        }
+        .total-items {
+          font-size: 13px;
+          font-weight: 600;
+          color: #111827;
+          margin-top: 8px;
+        }
+        .divider {
+          border: none;
+          border-top: 1px dashed #d1d5db;
+          margin: 12px 0;
+        }
       </style>
-    </head><body onload="window.print(); setTimeout(()=>window.close(), 300);">
-      <div class="center">
-        <h2>KOT</h2>
-        <div class="meta">${escapeHtml(kot.kot_number)}</div>
+    </head><body onload="window.print(); setTimeout(()=>window.close(), 500);">
+      <div class="header">
+        ${logoHtml}
+        <div class="restaurant-name">${escapeHtml(restaurantInfo.name)}</div>
+        ${restaurantInfo.address ? `<div class="restaurant-details">${escapeHtml(restaurantInfo.address)}</div>` : ''}
+        ${restaurantInfo.phone ? `<div class="restaurant-details">📞 ${escapeHtml(restaurantInfo.phone)}</div>` : ''}
+        ${restaurantInfo.email ? `<div class="restaurant-details">✉ ${escapeHtml(restaurantInfo.email)}</div>` : ''}
       </div>
-      <div class="meta">${escapeHtml(tableOrType || '')}</div>
-      <div class="meta">${dateStr}</div>
-      <hr>
-      <table>${itemsHtml}</table>
-      <hr>
-      <div class="meta">Items: ${(kot.items||[]).length}</div>
+      
+      <div class="kot-title">
+        <h2>KOT</h2>
+        <div class="kot-number">#${escapeHtml(kot.kot_number || kot.id)}</div>
+      </div>
+      
+      <div class="order-info">
+        <div class="info-row">
+          <span class="info-label">📍 Location:</span>
+          <span class="info-value">${escapeHtml(tableOrType)}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📅 Date:</span>
+          <span class="info-value">${dateStr}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">🕐 Time:</span>
+          <span class="info-value">${timeStr}</span>
+        </div>
+        ${kot.order_number ? `
+        <div class="info-row">
+          <span class="info-label">Order #:</span>
+          <span class="info-value">${escapeHtml(kot.order_number)}</span>
+        </div>
+        ` : ''}
+      </div>
+      
+      <div class="items-section">
+        <div class="items-title">Items Ordered</div>
+        <table>${itemsHtml}</table>
+      </div>
+      
+      <div class="footer">
+        <div class="total-items">Total Items: ${(kot.items||[]).length}</div>
+        <div class="divider"></div>
+        <div class="footer-text">Thank you for your order!</div>
+        <div class="footer-text">Kitchen Order Ticket</div>
+      </div>
     </body></html>`;
 
-    const w = window.open('', 'PRINT', 'height=600,width=400');
+    const w = window.open('', 'PRINT', 'height=700,width=400');
     if (!w) { showSweetAlert('Popup blocked. Allow popups to print.'); return; }
     w.document.write(html);
     w.document.close();

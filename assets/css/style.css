@@ -3940,6 +3940,45 @@ select:focus {
   box-sizing: border-box;
 }
 
+/* Align reservation list with toolbar */
+/* Page-content has 30px padding, toolbar has 1.5rem (24px) padding inside
+   So toolbar content starts at 30px + 24px = 54px from page-content left
+   Cards should also start at 54px, which means 24px margin-left */
+#reservationList {
+  padding-left: 0 !important;
+  margin-left: 1.5rem !important; /* Default margin to align with toolbar */
+}
+
+/* Match toolbar padding for alignment - cards should start where toolbar content starts */
+@media (min-width: 769px) {
+  #reservationList {
+    margin-left: 1.5rem !important; /* 24px to align with toolbar inner padding */
+    padding-left: 0 !important;
+  }
+}
+
+/* Additional push for better alignment on larger screens */
+@media (min-width: 1024px) {
+  #reservationList {
+    margin-left: 1.5rem !important;
+  }
+}
+
+/* Ensure proper alignment on all screens */
+@media (max-width: 768px) {
+  #reservationList {
+    margin-left: 1rem !important; /* Slightly less on smaller screens */
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  #reservationList {
+    margin-left: 0.75rem !important; /* Even less on mobile */
+    padding-left: 0;
+  }
+}
+
 /* Page header responsive */
 @media (max-width: 768px) {
   #reservationsPage .page-header {

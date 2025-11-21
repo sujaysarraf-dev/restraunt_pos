@@ -1439,7 +1439,7 @@ try {
         <p>View and manage customer reservations</p>
       </div>
       <div class="page-content">
-        <div class="page-toolbar reservation-toolbar" style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: center; background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <div class="page-toolbar reservation-toolbar" style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: center; background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-left: 0; margin-right: 0;">
           <div class="toolbar-left" style="display: flex; gap: 1rem; flex: 1; flex-wrap: wrap; align-items: center; min-width: 0;">
             <div class="search-wrapper" style="flex: 1; min-width: 250px; max-width: 100%; position: relative; border: 2px solid #e5e7eb; border-radius: 10px; padding: 0 0.75rem 0 2.75rem; background: white;">
               <span class="material-symbols-rounded" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 1.2rem; pointer-events: none; z-index: 1;">search</span>
