@@ -456,12 +456,27 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           if (reservationDateFrom && !reservationDateFrom.dataset.listenerAttached) {
             reservationDateFrom.addEventListener('change', filterReservations);
+            reservationDateFrom.addEventListener('blur', function() {
+              this.style.borderColor = '#e5e7eb';
+              this.style.boxShadow = 'none';
+            });
             reservationDateFrom.dataset.listenerAttached = 'true';
+            // Ensure it's not focused on page load
+            reservationDateFrom.blur();
           }
           if (reservationDateTo && !reservationDateTo.dataset.listenerAttached) {
             reservationDateTo.addEventListener('change', filterReservations);
+            reservationDateTo.addEventListener('blur', function() {
+              this.style.borderColor = '#e5e7eb';
+              this.style.boxShadow = 'none';
+            });
             reservationDateTo.dataset.listenerAttached = 'true';
+            // Ensure it's not focused on page load
+            reservationDateTo.blur();
           }
+          // Ensure no inputs are focused when page loads
+          if (reservationSearch) reservationSearch.blur();
+          if (reservationStatusFilter) reservationStatusFilter.blur();
         }, 100);
       }
       
