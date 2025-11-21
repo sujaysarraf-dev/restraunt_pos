@@ -1470,14 +1470,14 @@ try {
               <option value="Cancelled">Cancelled</option>
               <option value="No Show">No Show</option>
             </select>
-            <button class="btn btn-primary" id="addReservationBtn" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.875rem 1.5rem; background: #f70000 !important; color: #ffffff !important; border: 2px solid #f70000 !important; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 1rem; transition: all 0.2s; box-shadow: 0 2px 4px rgba(247,0,0,0.3); letter-spacing: 0.3px; white-space: nowrap; flex-shrink: 0; width: 100%; justify-content: center;" onmouseover="this.style.background='#d60000'; this.style.borderColor='#d60000'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(247,0,0,0.4)';" onmouseout="this.style.background='#f70000'; this.style.borderColor='#f70000'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(247,0,0,0.3)';">
+            <button class="btn btn-primary" id="addReservationBtn" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.875rem 1rem; background: #f70000 !important; color: #ffffff !important; border: 2px solid #f70000 !important; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 1rem; transition: all 0.2s; box-shadow: 0 2px 4px rgba(247,0,0,0.3); letter-spacing: 0.3px; white-space: nowrap; flex-shrink: 0; width: auto; justify-content: center;" onmouseover="this.style.background='#d60000'; this.style.borderColor='#d60000'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(247,0,0,0.4)';" onmouseout="this.style.background='#f70000'; this.style.borderColor='#f70000'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(247,0,0,0.3)';">
               <span class="material-symbols-rounded" style="font-size: 1.3rem; font-weight: 600; color: #ffffff !important;">add_circle</span>
               <span style="color: #ffffff !important; font-weight: 700;">Add Reservation</span>
             </button>
           </div>
         </div>
         
-        <div class="menu-list" id="reservationList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr)); gap: 1.5rem;">
+        <div class="menu-list" id="reservationList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr)); gap: 1.5rem; max-width: 100%;">
           <!-- Reservations will be loaded here dynamically -->
           <div class="loading">Loading reservations...</div>
         </div>

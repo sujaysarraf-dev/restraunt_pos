@@ -3932,10 +3932,49 @@ select:focus {
 }
 
 /* Responsive styles for Reservations page */
+/* Page content responsive */
+#reservationsPage .page-content {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Page header responsive */
+@media (max-width: 768px) {
+  #reservationsPage .page-header {
+    padding: 1rem 0 !important;
+  }
+  
+  #reservationsPage .page-header h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  #reservationsPage .page-header p {
+    font-size: 0.875rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #reservationsPage .page-header {
+    padding: 0.75rem 0 !important;
+  }
+  
+  #reservationsPage .page-header h1 {
+    font-size: 1.25rem !important;
+  }
+  
+  #reservationsPage .page-header p {
+    font-size: 0.8125rem !important;
+  }
+}
+
+/* Toolbar responsive */
 @media (max-width: 1024px) {
   .reservation-toolbar {
     flex-direction: column;
     align-items: stretch !important;
+    padding: 1.25rem !important;
   }
   
   .reservation-toolbar .toolbar-left,
@@ -3992,6 +4031,55 @@ select:focus {
   .reservation-card > div:first-child > div:last-child {
     text-align: left !important;
     width: 100% !important;
+  }
+}
+
+/* Medium screens (tablets in landscape) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .reservation-toolbar {
+    padding: 1.25rem !important;
+  }
+  
+  .reservation-toolbar .toolbar-left {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .reservation-toolbar .date-range-wrapper {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .reservation-toolbar .date-range-wrapper > div {
+    flex: 1;
+    min-width: 150px;
+  }
+  
+  #reservationList {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)) !important;
+  }
+}
+
+/* Ensure all elements are responsive */
+@media (max-width: 1200px) {
+  #reservationsPage {
+    padding: 1rem !important;
+  }
+  
+  #reservationsPage .page-content {
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  #reservationsPage {
+    padding: 0.75rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #reservationsPage {
+    padding: 0.5rem !important;
   }
 }
 
@@ -4148,6 +4236,153 @@ select:focus {
   .reservation-card > div:nth-child(3) > div > div:last-child {
     word-break: break-word;
     overflow-wrap: break-word;
+  }
+}
+
+/* Laptop screen optimizations (1024px - 1400px) */
+@media (min-width: 1024px) and (max-width: 1400px) {
+  .reservation-card[data-reservation-id] {
+    padding: 0.875rem !important;
+    border-radius: 10px !important;
+  }
+  
+  #reservationList {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)) !important;
+    gap: 1rem !important;
+  }
+  
+  /* Reduce avatar size */
+  .reservation-card > div:first-child > div:first-child > div:first-child > div:first-child {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 0.95rem !important;
+    border-radius: 8px !important;
+  }
+  
+  /* Reduce name font size */
+  .reservation-card > div:first-child > div:first-child > div:first-child > div:last-child > div:first-child {
+    font-size: 0.95rem !important;
+    margin-bottom: 0.2rem !important;
+  }
+  
+  /* Reduce status badge size */
+  .reservation-card > div:first-child > div:first-child > div:first-child > div:last-child > div:last-child {
+    font-size: 0.65rem !important;
+    padding: 0.15rem 0.5rem !important;
+  }
+  
+  /* Reduce header spacing */
+  .reservation-card > div:first-child {
+    margin-bottom: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  
+  .reservation-card > div:first-child > div:first-child > div:first-child {
+    gap: 0.625rem !important;
+    margin-bottom: 0.625rem !important;
+  }
+  
+  /* Reduce table info/assign button */
+  .reservation-card > div:first-child > div:first-child > div:nth-child(2) > div,
+  .reservation-card > div:first-child > div:first-child > div:nth-child(2) > button {
+    padding: 0.4rem 0.625rem !important;
+    font-size: 0.8rem !important;
+    margin-top: 0.375rem !important;
+  }
+  
+  .reservation-card > div:first-child > div:first-child > div:nth-child(2) > div > span,
+  .reservation-card > div:first-child > div:first-child > div:nth-child(2) > button > span {
+    font-size: 0.95rem !important;
+  }
+  
+  /* Reduce guests badge */
+  .reservation-card > div:first-child > div:last-child > div {
+    padding: 0.4rem 0.625rem !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .reservation-card > div:first-child > div:last-child > div > span {
+    font-size: 0.95rem !important;
+  }
+  
+  /* Reduce date & time section padding */
+  .reservation-card > div:nth-child(2) {
+    padding: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+    gap: 0.5rem !important;
+  }
+  
+  .reservation-card > div:nth-child(2) > span {
+    font-size: 1.1rem !important;
+  }
+  
+  .reservation-card > div:nth-child(2) > div > div:first-child {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.15rem !important;
+  }
+  
+  .reservation-card > div:nth-child(2) > div > div:last-child {
+    font-size: 0.875rem !important;
+  }
+  
+  /* Reduce contact info spacing */
+  .reservation-card > div:nth-child(3) {
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .reservation-card > div:nth-child(3) > div {
+    padding: 0.35rem 0 !important;
+    font-size: 0.85rem !important;
+    gap: 0.625rem !important;
+  }
+  
+  .reservation-card > div:nth-child(3) > div > span {
+    font-size: 0.95rem !important;
+  }
+  
+  /* Reduce special request padding */
+  .reservation-card > div:nth-child(4) {
+    padding: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .reservation-card > div:nth-child(4) > div {
+    gap: 0.4rem !important;
+  }
+  
+  .reservation-card > div:nth-child(4) > div > span {
+    font-size: 0.95rem !important;
+  }
+  
+  .reservation-card > div:nth-child(4) > div > div:last-child > div:first-child {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.15rem !important;
+  }
+  
+  .reservation-card > div:nth-child(4) > div > div:last-child > div:last-child {
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Reduce action buttons padding */
+  .reservation-card > div:last-child {
+    gap: 0.5rem !important;
+  }
+  
+  .reservation-card > div:last-child select,
+  .reservation-card > div:last-child button {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .reservation-card > div:last-child button > span {
+    font-size: 1rem !important;
+  }
+  
+  /* Reduce Add Reservation button horizontal padding on laptop */
+  #addReservationBtn {
+    padding-left: 0.875rem !important;
+    padding-right: 0.875rem !important;
   }
 }
 
@@ -4413,13 +4648,25 @@ select:focus {
 
 /* Large screens - ensure proper spacing */
 @media (min-width: 1400px) {
-  .reservation-card {
-    padding: 1.75rem !important;
+  .reservation-card[data-reservation-id] {
+    padding: 1rem !important;
   }
   
   #reservationList {
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)) !important;
-    gap: 2rem !important;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)) !important;
+    gap: 1.5rem !important;
+  }
+}
+
+/* Default desktop/laptop sizes - make cards more compact */
+@media (min-width: 1024px) {
+  .reservation-card[data-reservation-id] {
+    padding: 0.875rem !important;
+  }
+  
+  #reservationList {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)) !important;
+    gap: 1.25rem !important;
   }
 }
 
