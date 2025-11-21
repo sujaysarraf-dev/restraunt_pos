@@ -440,6 +440,29 @@ document.addEventListener("DOMContentLoaded", () => {
       // Load reservations if it's the reservations page
       if (pageId === "reservationsPage") {
         loadReservations();
+        // Set up reservation search and filter listeners
+        setTimeout(() => {
+          const reservationSearch = document.getElementById('reservationSearch');
+          const reservationStatusFilter = document.getElementById('reservationStatusFilter');
+          const reservationDateFrom = document.getElementById('reservationDateFrom');
+          const reservationDateTo = document.getElementById('reservationDateTo');
+          if (reservationSearch && !reservationSearch.dataset.listenerAttached) {
+            reservationSearch.addEventListener('input', filterReservations);
+            reservationSearch.dataset.listenerAttached = 'true';
+          }
+          if (reservationStatusFilter && !reservationStatusFilter.dataset.listenerAttached) {
+            reservationStatusFilter.addEventListener('change', filterReservations);
+            reservationStatusFilter.dataset.listenerAttached = 'true';
+          }
+          if (reservationDateFrom && !reservationDateFrom.dataset.listenerAttached) {
+            reservationDateFrom.addEventListener('change', filterReservations);
+            reservationDateFrom.dataset.listenerAttached = 'true';
+          }
+          if (reservationDateTo && !reservationDateTo.dataset.listenerAttached) {
+            reservationDateTo.addEventListener('change', filterReservations);
+            reservationDateTo.dataset.listenerAttached = 'true';
+          }
+        }, 100);
       }
       
       // Load customers if it's the customers page
@@ -2505,12 +2528,87 @@ document.addEventListener("DOMContentLoaded", () => {
   function displayReservations(reservations) {
     const reservationList = document.getElementById("reservationList");
     
+    // Store for filtering
+    window.currentReservationsData = reservations;
+    
     if (reservations.length === 0) {
       reservationList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">inbox</span><h3>No reservations found</h3><p>Create your first reservation to get started.</p></div>';
       return;
     }
 
-    reservationList.innerHTML = reservations.map(reservation => {
+    refreshReservationList();
+  }
+  
+  function refreshReservationList() {
+    const reservationList = document.getElementById("reservationList");
+    const reservations = window.currentReservationsData || [];
+    
+    if (reservations.length === 0) {
+      reservationList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">inbox</span><h3>No reservations found</h3><p>Create your first reservation to get started.</p></div>';
+      return;
+    }
+    
+    // Get filter values
+    const searchTerm = (document.getElementById('reservationSearch')?.value || '').toLowerCase().trim();
+    const statusFilter = document.getElementById('reservationStatusFilter')?.value || '';
+    const dateFrom = document.getElementById('reservationDateFrom')?.value || '';
+    const dateTo = document.getElementById('reservationDateTo')?.value || '';
+    
+    // Filter reservations
+    let filtered = reservations.filter(reservation => {
+      // Search filter
+      if (searchTerm) {
+        const name = (reservation.customer_name || '').toLowerCase();
+        const phone = (reservation.phone || '').toLowerCase();
+        const email = (reservation.email || '').toLowerCase();
+        if (!name.includes(searchTerm) && !phone.includes(searchTerm) && !email.includes(searchTerm)) {
+          return false;
+        }
+      }
+      
+      // Status filter
+      if (statusFilter && reservation.status !== statusFilter) {
+        return false;
+      }
+      
+      // Date range filter
+      if (dateFrom || dateTo) {
+        const resDate = new Date(reservation.reservation_date);
+        resDate.setHours(0, 0, 0, 0);
+        
+        if (dateFrom) {
+          const fromDate = new Date(dateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          if (resDate < fromDate) {
+            return false;
+          }
+        }
+        
+        if (dateTo) {
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          if (resDate > toDate) {
+            return false;
+          }
+        }
+      }
+      
+      return true;
+    });
+    
+    if (filtered.length === 0) {
+      reservationList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">search_off</span><h3>No reservations match your filters</h3><p>Try adjusting your search or filter criteria.</p></div>';
+      return;
+    }
+    
+    // Sort by date (most recent first)
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.reservation_date + ' ' + a.time_slot);
+      const dateB = new Date(b.reservation_date + ' ' + b.time_slot);
+      return dateB - dateA;
+    });
+
+    reservationList.innerHTML = filtered.map(reservation => {
       // Format date
       const date = new Date(reservation.reservation_date);
       const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -2528,58 +2626,81 @@ document.addEventListener("DOMContentLoaded", () => {
       };
       
       return `
-        <div class="reservation-card" data-reservation-id="${reservation.id}">
-          <div class="reservation-card-header">
-            <div>
-              <button class="btn-assign-table" onclick="assignTable(${reservation.id})">
-                <span class="material-symbols-rounded">table_chart</span>
-                Assign Table
-              </button>
-              ${reservation.table_number ? `
-                <div class="assigned-table-info" style="margin-top: 10px; padding: 8px 12px; background: #e7f5ff; border-radius: 8px; color: #0066cc; font-size: 0.9rem; font-weight: 500;">
-                  <span class="material-symbols-rounded" style="font-size: 1rem;">table_restaurant</span>
-                  Table ${reservation.table_number} - ${reservation.area_name}
+        <div class="reservation-card" data-reservation-id="${reservation.id}" style="background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid #e5e7eb;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 2px solid #f3f4f6;">
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${statusColors[reservation.status] || '#6c757d'}, ${statusColors[reservation.status] || '#6c757d'}dd); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.2rem;">
+                  ${escapeHtml(reservation.customer_name).charAt(0).toUpperCase()}
                 </div>
-              ` : ''}
-              <div class="reservation-status" style="background-color: ${statusColors[reservation.status] || '#6c757d'}; margin-top: 10px;">
-                ${reservation.status.toUpperCase()}
+                <div style="flex: 1;">
+                  <div style="font-size: 1.1rem; font-weight: 700; color: #111827; margin-bottom: 0.25rem;">${escapeHtml(reservation.customer_name)}</div>
+                  <div style="display: inline-block; padding: 0.25rem 0.75rem; background: ${statusColors[reservation.status] || '#6c757d'}; color: white; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
+                    ${reservation.status}
+                  </div>
+                </div>
               </div>
+              ${reservation.table_number ? `
+                <div style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: #e7f5ff; border-radius: 8px; color: #0066cc; font-size: 0.875rem; font-weight: 600; margin-top: 0.5rem;">
+                  <span class="material-symbols-rounded" style="font-size: 1.1rem;">table_restaurant</span>
+                  Table ${reservation.table_number}${reservation.area_name ? ' - ' + escapeHtml(reservation.area_name) : ''}
+                </div>
+              ` : `
+                <button onclick="assignTable(${reservation.id})" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; color: #374151; font-size: 0.875rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; transition: all 0.2s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                  <span class="material-symbols-rounded" style="font-size: 1.1rem;">table_chart</span>
+                  Assign Table
+                </button>
+              `}
             </div>
-            <div class="reservation-header-right">
-              <div class="reservation-guests">
-                <span class="material-symbols-rounded">people</span>
-                ${reservation.no_of_guests} Guests
-              </div>
-            </div>
-          </div>
-          <div class="reservation-datetime">
-            <span class="material-symbols-rounded">schedule</span>
-            ${formattedDate}
-          </div>
-          <div class="reservation-info-box">
-            <div class="reservation-guest-info">
-              <div class="guest-name">
-                <span class="material-symbols-rounded">person</span>
-                ${escapeHtml(reservation.customer_name)}
-              </div>
-              <div class="guest-phone">
-                <span class="material-symbols-rounded">phone</span>
-                ${escapeHtml(reservation.phone)}
-              </div>
-              <div class="guest-email">
-                <span class="material-symbols-rounded">email</span>
-                ${escapeHtml(reservation.email || 'N/A')}
+            <div style="text-align: right;">
+              <div style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: #fef3c7; border-radius: 8px; color: #92400e; font-size: 0.875rem; font-weight: 600;">
+                <span class="material-symbols-rounded" style="font-size: 1.1rem;">people</span>
+                ${reservation.no_of_guests} Guest${reservation.no_of_guests !== 1 ? 's' : ''}
               </div>
             </div>
           </div>
+          
+          <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 10px; margin-bottom: 1rem;">
+            <span class="material-symbols-rounded" style="color: var(--primary-red); font-size: 1.3rem;">schedule</span>
+            <div>
+              <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Date & Time</div>
+              <div style="font-size: 1rem; font-weight: 600; color: #111827;">${formattedDate}</div>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6;">
+              <span class="material-symbols-rounded" style="color: #6b7280; font-size: 1.1rem;">phone</span>
+              <div style="flex: 1; font-size: 0.95rem; color: #374151;">${escapeHtml(reservation.phone)}</div>
+            </div>
+            ${reservation.email ? `
+              <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6;">
+                <span class="material-symbols-rounded" style="color: #6b7280; font-size: 1.1rem;">email</span>
+                <div style="flex: 1; font-size: 0.95rem; color: #374151;">${escapeHtml(reservation.email)}</div>
+              </div>
+            ` : ''}
+            ${reservation.meal_type ? `
+              <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0;">
+                <span class="material-symbols-rounded" style="color: #6b7280; font-size: 1.1rem;">restaurant</span>
+                <div style="flex: 1; font-size: 0.95rem; color: #374151; font-weight: 600;">${escapeHtml(reservation.meal_type)}</div>
+              </div>
+            ` : ''}
+          </div>
+          
           ${reservation.special_request ? `
-            <div class="reservation-notes">
-              <span class="material-symbols-rounded">note</span>
-              ${escapeHtml(reservation.special_request)}
+            <div style="padding: 0.75rem; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 8px; margin-bottom: 1rem;">
+              <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                <span class="material-symbols-rounded" style="color: #92400e; font-size: 1.1rem; margin-top: 0.1rem;">note</span>
+                <div style="flex: 1;">
+                  <div style="font-size: 0.75rem; color: #92400e; font-weight: 600; margin-bottom: 0.25rem; text-transform: uppercase;">Special Request</div>
+                  <div style="font-size: 0.875rem; color: #78350f; line-height: 1.5;">${escapeHtml(reservation.special_request)}</div>
+                </div>
+              </div>
             </div>
           ` : ''}
-          <div class="reservation-status-select">
-            <select class="status-select" onchange="updateReservationStatus(${reservation.id}, this.value)">
+          
+          <div style="display: flex; gap: 0.5rem;">
+            <select class="status-select" onchange="updateReservationStatus(${reservation.id}, this.value)" style="flex: 1; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.9rem; font-weight: 600; background: white; color: #374151; cursor: pointer; transition: all 0.2s;" onfocus="this.style.borderColor='var(--primary-red)'" onblur="this.style.borderColor='#e5e7eb'">
               <option value="Pending" ${reservation.status === 'Pending' ? 'selected' : ''}>Pending</option>
               <option value="Confirmed" ${reservation.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
               <option value="Checked In" ${reservation.status === 'Checked In' ? 'selected' : ''}>Checked In</option>
@@ -2587,10 +2708,27 @@ document.addEventListener("DOMContentLoaded", () => {
               <option value="Completed" ${reservation.status === 'Completed' ? 'selected' : ''}>Completed</option>
               <option value="Cancelled" ${reservation.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
             </select>
+            <button onclick="editReservation(${reservation.id}, '${escapeHtml(reservation.customer_name).replace(/'/g, "\\'")}', '${reservation.reservation_date}', '${reservation.time_slot}', ${reservation.no_of_guests}, '${reservation.meal_type || ''}', '${reservation.phone}', '${reservation.email || ''}', '${escapeHtml(reservation.special_request || '').replace(/'/g, "\\'")}', '${reservation.table_id || ''}')" style="padding: 0.75rem 1rem; background: #f3f4f6; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; color: #374151; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'" title="Edit Reservation">
+              <span class="material-symbols-rounded" style="font-size: 1.2rem;">edit</span>
+            </button>
           </div>
         </div>
       `;
     }).join('');
+  }
+  
+  // Filter reservations
+  function filterReservations() {
+    refreshReservationList();
+  }
+  
+  // Clear date range
+  window.clearDateRange = function() {
+    const dateFrom = document.getElementById('reservationDateFrom');
+    const dateTo = document.getElementById('reservationDateTo');
+    if (dateFrom) dateFrom.value = '';
+    if (dateTo) dateTo.value = '';
+    filterReservations();
   }
   
   // Make functions globally accessible

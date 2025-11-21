@@ -1439,14 +1439,45 @@ try {
         <p>View and manage customer reservations</p>
       </div>
       <div class="page-content">
-        <div class="menu-actions">
-          <button class="btn btn-primary" id="addReservationBtn">
-            <span class="material-symbols-rounded">add</span>
-            New Reservation
-          </button>
+        <div class="page-toolbar" style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: center; background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+          <div class="toolbar-left" style="display: flex; gap: 1rem; flex: 1; flex-wrap: wrap; align-items: center;">
+            <div class="search-wrapper" style="flex: 1; min-width: 250px; position: relative;">
+              <span class="material-symbols-rounded" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 1.2rem; pointer-events: none;">search</span>
+              <input type="text" id="reservationSearch" placeholder="Search by name, phone, email..." style="width: 100%; padding: 0.875rem 1rem 0.875rem 2.75rem; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 0.95rem; transition: all 0.2s;" onfocus="this.style.borderColor='var(--primary-red)'; this.style.boxShadow='0 0 0 3px rgba(247,0,0,0.1)'" onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center; background: #f9fafb; padding: 0.5rem; border-radius: 10px; border: 1px solid #e5e7eb;">
+              <div style="position: relative;">
+                <input type="date" id="reservationDateFrom" style="padding: 0.875rem 2.5rem 0.875rem 1rem; border: 2px solid #e5e7eb; border-radius: 8px; min-width: 160px; font-size: 0.95rem; background: white; cursor: pointer; transition: all 0.2s;" onfocus="this.style.borderColor='var(--primary-red)'; this.style.boxShadow='0 0 0 3px rgba(247,0,0,0.1)'" onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
+                <span class="material-symbols-rounded" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #6b7280; font-size: 1.2rem; pointer-events: none; cursor: pointer;" onclick="document.getElementById('reservationDateFrom').showPicker()">calendar_today</span>
+              </div>
+              <span style="color: #6b7280; font-weight: 600; font-size: 0.9rem; padding: 0 0.25rem;">to</span>
+              <div style="position: relative;">
+                <input type="date" id="reservationDateTo" style="padding: 0.875rem 2.5rem 0.875rem 1rem; border: 2px solid #e5e7eb; border-radius: 8px; min-width: 160px; font-size: 0.95rem; background: white; cursor: pointer; transition: all 0.2s;" onfocus="this.style.borderColor='var(--primary-red)'; this.style.boxShadow='0 0 0 3px rgba(247,0,0,0.1)'" onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
+                <span class="material-symbols-rounded" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #6b7280; font-size: 1.2rem; pointer-events: none; cursor: pointer;" onclick="document.getElementById('reservationDateTo').showPicker()">calendar_today</span>
+              </div>
+              <button onclick="clearDateRange()" style="padding: 0.875rem; background: white; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; color: #6b7280; display: flex; align-items: center; justify-content: center; transition: all 0.2s; min-width: 42px; height: 42px;" onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#d1d5db'" onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb'" title="Clear date range">
+                <span class="material-symbols-rounded" style="font-size: 1.3rem;">close</span>
+              </button>
+            </div>
+          </div>
+          <div class="toolbar-right" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <select id="reservationStatusFilter" class="filter-select" style="padding: 0.875rem 2.5rem 0.875rem 1rem; border: 2px solid #e5e7eb; border-radius: 10px; min-width: 160px; font-size: 0.95rem; background: white; cursor: pointer; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%236b7280\' stroke-width=\'2\'><polyline points=\'6 9 12 15 18 9\'></polyline></svg>'); background-repeat: no-repeat; background-position: right 0.75rem center; transition: all 0.2s;" onfocus="this.style.borderColor='var(--primary-red)'; this.style.boxShadow='0 0 0 3px rgba(247,0,0,0.1)'" onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
+              <option value="">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Checked In">Checked In</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+              <option value="No Show">No Show</option>
+            </select>
+            <button class="btn btn-primary" id="addReservationBtn" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.875rem 1.5rem; background: var(--primary-red); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: all 0.2s; box-shadow: 0 2px 4px rgba(247,0,0,0.2);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(247,0,0,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(247,0,0,0.2)'">
+              <span class="material-symbols-rounded" style="font-size: 1.2rem;">add</span>
+              New Reservation
+            </button>
+          </div>
         </div>
         
-        <div class="menu-list" id="reservationList">
+        <div class="menu-list" id="reservationList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
           <!-- Reservations will be loaded here dynamically -->
           <div class="loading">Loading reservations...</div>
         </div>
