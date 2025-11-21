@@ -4598,6 +4598,10 @@ function displayOrders(orders) {
           <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle;">visibility</span>
           Show Order
         </button>
+        <button class="btn btn-print" onclick="printOrder(${order.id})" style="background: #6b7280; color: white; border: none; display: flex; align-items: center; gap: 0.25rem;">
+          <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle;">print</span>
+          Print
+        </button>
         <button class="btn btn-danger" onclick="updateOrderStatus(${order.id}, 'Cancelled')">Cancel Order</button>
       </div>
     </div>
@@ -4963,6 +4967,312 @@ window.printKOT = async function(kotId) {
   } catch (e) {
     console.error('Print error', e);
     showSweetAlert('Failed to print KOT');
+  }
+};
+
+// Print Order
+window.printOrder = async function(orderId) {
+  try {
+    // Fetch order details
+    const response = await fetch(`../api/get_order_details_by_id.php?id=${orderId}`);
+    const data = await response.json();
+    
+    if (!data.success || !data.order) {
+      showSweetAlert('Unable to load order details');
+      return;
+    }
+    
+    const order = data.order;
+    const items = Array.isArray(order.items) ? order.items : [];
+
+    // Fetch restaurant info
+    let restaurantInfo = {
+      name: 'Restaurant Name',
+      logo: '',
+      address: '',
+      phone: '',
+      email: ''
+    };
+    
+    try {
+      const infoRes = await fetch('../admin/get_session.php');
+      const infoData = await infoRes.json();
+      if (infoData.success && infoData.data) {
+        restaurantInfo.name = infoData.data.restaurant_name || restaurantInfo.name;
+        restaurantInfo.logo = infoData.data.restaurant_logo || '';
+        restaurantInfo.address = infoData.data.address || '';
+        restaurantInfo.phone = infoData.data.phone || '';
+        restaurantInfo.email = infoData.data.email || '';
+      }
+    } catch (e) {
+      console.warn('Could not load restaurant info:', e);
+    }
+
+    // Build printable HTML
+    const now = new Date(order.created_at);
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    
+    const itemsHtml = items.map((it, idx) => {
+      const itemTotal = (parseFloat(it.total_price) || 0).toFixed(2);
+      return `
+        <tr>
+          <td style="padding: 8px 0; border-bottom: 1px dashed #e5e7eb;">
+            <div style="font-weight: 600; font-size: 15px; color: #111827; margin-bottom: 4px;">${escapeHtml(it.item_name || it.name)}</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: #6b7280; font-size: 13px;">Qty: <strong style="color: #111827;">${it.quantity}</strong> × ${formatCurrency(parseFloat(it.price) || 0)}</span>
+              <span style="font-weight: 600; color: #111827; font-size: 14px;">${formatCurrency(itemTotal)}</span>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    
+    const subtotal = parseFloat(order.subtotal || order.total || 0);
+    const tax = parseFloat(order.tax || 0);
+    const discount = parseFloat(order.discount || 0);
+    const total = parseFloat(order.total || 0);
+    
+    const tableOrType = order.table_name || order.table_number ? `Table ${order.table_name || order.table_number}${order.area_name ? ' - ' + escapeHtml(order.area_name) : ''}` : (order.order_type || 'Walk-in');
+    
+    // Logo HTML
+    let logoHtml = '';
+    if (restaurantInfo.logo) {
+      const logoPath = restaurantInfo.logo.startsWith('http') 
+        ? restaurantInfo.logo 
+        : (restaurantInfo.logo.startsWith('uploads/') 
+          ? '../' + restaurantInfo.logo 
+          : '../uploads/' + restaurantInfo.logo);
+      logoHtml = `<img src="${logoPath}" alt="Logo" style="max-width: 80px; max-height: 80px; object-fit: contain; margin-bottom: 10px;" onerror="this.style.display='none';">`;
+    }
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Order ${order.order_number}</title>
+      <style>
+        @media print {
+          @page { margin: 10mm; size: 80mm auto; }
+          body { margin: 0; padding: 0; }
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          padding: 15px;
+          max-width: 300px;
+          margin: 0 auto;
+          background: white;
+          color: #111827;
+        }
+        .header {
+          text-align: center;
+          border-bottom: 2px solid #dc2626;
+          padding-bottom: 12px;
+          margin-bottom: 15px;
+        }
+        .logo {
+          margin-bottom: 8px;
+        }
+        .restaurant-name {
+          font-size: 20px;
+          font-weight: 700;
+          color: #dc2626;
+          margin-bottom: 6px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .restaurant-details {
+          font-size: 11px;
+          color: #6b7280;
+          line-height: 1.4;
+          margin-top: 6px;
+        }
+        .order-title {
+          text-align: center;
+          margin: 15px 0;
+          padding: 10px;
+          background: #fef2f2;
+          border-radius: 6px;
+        }
+        .order-title h2 {
+          font-size: 24px;
+          font-weight: 700;
+          color: #dc2626;
+          margin-bottom: 4px;
+          letter-spacing: 1px;
+        }
+        .order-number {
+          font-size: 16px;
+          font-weight: 600;
+          color: #111827;
+        }
+        .order-info {
+          background: #f9fafb;
+          padding: 12px;
+          border-radius: 6px;
+          margin-bottom: 15px;
+          border-left: 3px solid #dc2626;
+        }
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 6px;
+          font-size: 13px;
+        }
+        .info-row:last-child {
+          margin-bottom: 0;
+        }
+        .info-label {
+          color: #6b7280;
+          font-weight: 500;
+        }
+        .info-value {
+          color: #111827;
+          font-weight: 600;
+        }
+        .items-section {
+          margin: 15px 0;
+        }
+        .items-title {
+          font-size: 14px;
+          font-weight: 700;
+          color: #111827;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 10px;
+          padding-bottom: 6px;
+          border-bottom: 2px solid #e5e7eb;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .totals-section {
+          margin-top: 15px;
+          padding-top: 15px;
+          border-top: 2px solid #e5e7eb;
+        }
+        .total-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+          font-size: 14px;
+        }
+        .total-row.grand-total {
+          font-size: 18px;
+          font-weight: 700;
+          color: #dc2626;
+          padding-top: 8px;
+          border-top: 2px solid #dc2626;
+          margin-top: 8px;
+        }
+        .total-label {
+          color: #6b7280;
+        }
+        .total-value {
+          color: #111827;
+          font-weight: 600;
+        }
+        .footer {
+          margin-top: 20px;
+          padding-top: 15px;
+          border-top: 2px dashed #e5e7eb;
+          text-align: center;
+        }
+        .footer-text {
+          font-size: 11px;
+          color: #6b7280;
+          margin-bottom: 4px;
+        }
+        .divider {
+          border: none;
+          border-top: 1px dashed #d1d5db;
+          margin: 12px 0;
+        }
+      </style>
+    </head><body onload="window.print(); setTimeout(()=>window.close(), 500);">
+      <div class="header">
+        ${logoHtml}
+        <div class="restaurant-name">${escapeHtml(restaurantInfo.name)}</div>
+        ${restaurantInfo.address ? `<div class="restaurant-details">${escapeHtml(restaurantInfo.address)}</div>` : ''}
+        ${restaurantInfo.phone ? `<div class="restaurant-details">📞 ${escapeHtml(restaurantInfo.phone)}</div>` : ''}
+        ${restaurantInfo.email ? `<div class="restaurant-details">✉ ${escapeHtml(restaurantInfo.email)}</div>` : ''}
+      </div>
+      
+      <div class="order-title">
+        <h2>ORDER</h2>
+        <div class="order-number">#${escapeHtml(order.order_number || order.id)}</div>
+      </div>
+      
+      <div class="order-info">
+        <div class="info-row">
+          <span class="info-label">📍 Location:</span>
+          <span class="info-value">${escapeHtml(tableOrType)}</span>
+        </div>
+        ${order.customer_name ? `
+        <div class="info-row">
+          <span class="info-label">👤 Customer:</span>
+          <span class="info-value">${escapeHtml(order.customer_name)}</span>
+        </div>
+        ` : ''}
+        <div class="info-row">
+          <span class="info-label">📅 Date:</span>
+          <span class="info-value">${dateStr}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">🕐 Time:</span>
+          <span class="info-value">${timeStr}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status:</span>
+          <span class="info-value">${escapeHtml(order.order_status || 'Pending')}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Payment:</span>
+          <span class="info-value">${escapeHtml(order.payment_status || 'Pending')}</span>
+        </div>
+      </div>
+      
+      <div class="items-section">
+        <div class="items-title">Items Ordered</div>
+        <table>${itemsHtml}</table>
+      </div>
+      
+      <div class="totals-section">
+        ${subtotal > 0 ? `
+        <div class="total-row">
+          <span class="total-label">Subtotal:</span>
+          <span class="total-value">${formatCurrency(subtotal)}</span>
+        </div>
+        ` : ''}
+        ${tax > 0 ? `
+        <div class="total-row">
+          <span class="total-label">Tax:</span>
+          <span class="total-value">${formatCurrency(tax)}</span>
+        </div>
+        ` : ''}
+        ${discount > 0 ? `
+        <div class="total-row">
+          <span class="total-label">Discount:</span>
+          <span class="total-value">-${formatCurrency(discount)}</span>
+        </div>
+        ` : ''}
+        <div class="total-row grand-total">
+          <span class="total-label">TOTAL:</span>
+          <span class="total-value">${formatCurrency(total)}</span>
+        </div>
+      </div>
+      
+      <div class="footer">
+        <div class="footer-text">Thank you for your order!</div>
+        <div class="footer-text">Order Receipt</div>
+      </div>
+    </body></html>`;
+
+    const w = window.open('', 'PRINT', 'height=700,width=400');
+    if (!w) { showSweetAlert('Popup blocked. Allow popups to print.'); return; }
+    w.document.write(html);
+    w.document.close();
+  } catch (e) {
+    console.error('Print error', e);
+    showSweetAlert('Failed to print order');
   }
 };
 
