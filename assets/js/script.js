@@ -5620,7 +5620,7 @@ function renderPaymentMethods() {
   if (!listEl) return;
 
   if (!paymentMethodsCache.length) {
-    listEl.innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;">No payment methods found. Click "Add Method" to create one.</div>';
+    listEl.innerHTML = '';
     return;
   }
 
