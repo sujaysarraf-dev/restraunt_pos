@@ -3930,3 +3930,109 @@ select:focus {
 .emoji-btn:active {
   transform: scale(0.95);
 }
+
+/* Responsive styles for Reservations page */
+@media (max-width: 1024px) {
+  .reservation-toolbar {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  
+  .reservation-toolbar .toolbar-left,
+  .reservation-toolbar .toolbar-right {
+    width: 100% !important;
+    flex-direction: column;
+  }
+  
+  .reservation-toolbar .search-wrapper {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .reservation-toolbar .date-range-wrapper {
+    width: 100% !important;
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  
+  .reservation-toolbar .date-range-wrapper > div {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  
+  .reservation-toolbar .date-range-wrapper span {
+    display: none;
+  }
+  
+  .reservation-toolbar #reservationStatusFilter {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .reservation-toolbar #addReservationBtn {
+    width: 100% !important;
+  }
+  
+  #reservationList {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .reservation-toolbar {
+    padding: 1rem !important;
+  }
+  
+  .reservation-toolbar .toolbar-left,
+  .reservation-toolbar .toolbar-right {
+    gap: 0.75rem !important;
+  }
+  
+  .reservation-toolbar .search-wrapper {
+    min-width: 100% !important;
+  }
+  
+  .reservation-toolbar input[type="date"],
+  .reservation-toolbar select,
+  .reservation-toolbar button {
+    font-size: 0.875rem !important;
+    padding: 0.75rem !important;
+  }
+  
+  #reservationList {
+    gap: 1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reservation-toolbar {
+    padding: 0.75rem !important;
+    gap: 0.75rem !important;
+  }
+  
+  .reservation-toolbar .search-wrapper {
+    padding: 0 0.5rem 0 2.25rem !important;
+  }
+  
+  .reservation-toolbar .search-wrapper .material-symbols-rounded {
+    left: 8px !important;
+    font-size: 1rem !important;
+  }
+  
+  .reservation-toolbar input[type="text"],
+  .reservation-toolbar input[type="date"],
+  .reservation-toolbar select {
+    font-size: 0.8125rem !important;
+    padding: 0.625rem !important;
+  }
+  
+  .reservation-toolbar #addReservationBtn {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  .reservation-toolbar #addReservationBtn .material-symbols-rounded {
+    font-size: 1.1rem !important;
+  }
+}
