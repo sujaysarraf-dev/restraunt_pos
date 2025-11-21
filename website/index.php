@@ -50,9 +50,11 @@ elseif ($has_slug_param) {
 elseif (isset($_SESSION['restaurant_id']) && $_SESSION['restaurant_id'] !== '') {
     $restaurant_id = $_SESSION['restaurant_id'];
 }
-// Default
+// Default: no restaurant context available, show 404
 else {
-    $restaurant_id = 'RES001';
+    http_response_code(404);
+    include __DIR__ . '/404.php';
+    exit();
 }
 
 // Default currency symbol - will be loaded from database

@@ -402,6 +402,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (pageId === "menuItemsPage") {
         loadMenuItems();
         loadMenusForFilter();
+        // Set up menu items filter listeners
+        setTimeout(() => {
+          const menuFilterEl = document.getElementById("menuFilter");
+          const categoryFilterEl = document.getElementById("categoryFilter");
+          const typeFilterEl = document.getElementById("typeFilter");
+          if (menuFilterEl && !menuFilterEl.dataset.listenerAttached) {
+            menuFilterEl.addEventListener("change", loadMenuItems);
+            menuFilterEl.dataset.listenerAttached = 'true';
+          }
+          if (categoryFilterEl && !categoryFilterEl.dataset.listenerAttached) {
+            categoryFilterEl.addEventListener("change", loadMenuItems);
+            categoryFilterEl.dataset.listenerAttached = 'true';
+          }
+          if (typeFilterEl && !typeFilterEl.dataset.listenerAttached) {
+            typeFilterEl.addEventListener("change", loadMenuItems);
+            typeFilterEl.dataset.listenerAttached = 'true';
+          }
+        }, 100);
       }
       
       // Load areas if it's the area page
@@ -427,11 +445,37 @@ document.addEventListener("DOMContentLoaded", () => {
       // Load customers if it's the customers page
       if (pageId === "customersPage") {
         loadCustomers();
+        // Set up customer search and filter listeners
+        setTimeout(() => {
+          const customerSearch = document.getElementById('customerSearch');
+          const customerSortBy = document.getElementById('customerSortBy');
+          if (customerSearch && !customerSearch.dataset.listenerAttached) {
+            customerSearch.addEventListener('input', filterCustomers);
+            customerSearch.dataset.listenerAttached = 'true';
+          }
+          if (customerSortBy && !customerSortBy.dataset.listenerAttached) {
+            customerSortBy.addEventListener('change', filterCustomers);
+            customerSortBy.dataset.listenerAttached = 'true';
+          }
+        }, 100);
       }
       
       // Load staff if it's the staff page
       if (pageId === "staffPage") {
         loadStaff();
+        // Set up staff search and filter listeners
+        setTimeout(() => {
+          const staffSearch = document.getElementById('staffSearch');
+          const staffSortBy = document.getElementById('staffSortBy');
+          if (staffSearch && !staffSearch.dataset.listenerAttached) {
+            staffSearch.addEventListener('input', filterStaff);
+            staffSearch.dataset.listenerAttached = 'true';
+          }
+          if (staffSortBy && !staffSortBy.dataset.listenerAttached) {
+            staffSortBy.addEventListener('change', filterStaff);
+            staffSortBy.dataset.listenerAttached = 'true';
+          }
+        }, 100);
       }
       
       // Load POS if it's the POS page
@@ -440,12 +484,43 @@ document.addEventListener("DOMContentLoaded", () => {
         loadTablesForPOS();
         loadMenusForPOSFilters();
         loadCategoriesForPOSFilters();
+        // Set up POS filter listeners
+        setTimeout(() => {
+          const posMenuFilter = document.getElementById("posMenuFilter");
+          const posCategoryFilter = document.getElementById("posCategoryFilter");
+          const posTypeFilter = document.getElementById("posTypeFilter");
+          if (posMenuFilter && !posMenuFilter.dataset.listenerAttached) {
+            posMenuFilter.addEventListener("change", loadPOSMenuItems);
+            posMenuFilter.dataset.listenerAttached = 'true';
+          }
+          if (posCategoryFilter && !posCategoryFilter.dataset.listenerAttached) {
+            posCategoryFilter.addEventListener("change", loadPOSMenuItems);
+            posCategoryFilter.dataset.listenerAttached = 'true';
+          }
+          if (posTypeFilter && !posTypeFilter.dataset.listenerAttached) {
+            posTypeFilter.addEventListener("change", loadPOSMenuItems);
+            posTypeFilter.dataset.listenerAttached = 'true';
+          }
+        }, 100);
       }
       
       // Load KOT if it's the KOT page
       if (pageId === "kotPage") {
         loadKOTOrders();
         loadTablesForKOT();
+        // Set up KOT filter listeners
+        setTimeout(() => {
+          const kotStatusFilter = document.getElementById('kotStatusFilter');
+          const kotTableFilter = document.getElementById('kotTableFilter');
+          if (kotStatusFilter && !kotStatusFilter.dataset.listenerAttached) {
+            kotStatusFilter.addEventListener('change', loadKOTOrders);
+            kotStatusFilter.dataset.listenerAttached = 'true';
+          }
+          if (kotTableFilter && !kotTableFilter.dataset.listenerAttached) {
+            kotTableFilter.addEventListener('change', loadKOTOrders);
+            kotTableFilter.dataset.listenerAttached = 'true';
+          }
+        }, 100);
         // Start auto-refresh when KOT page is active (5 seconds)
         if (window.kotAutoRefresh) {
           clearInterval(window.kotAutoRefresh);
@@ -488,6 +563,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (pageId === "ordersPage") {
         loadOrders();
         loadTablesForOrders();
+        // Set up orders filter listeners
+        setTimeout(() => {
+          const ordersStatusFilter = document.getElementById('ordersStatusFilter');
+          const ordersPaymentFilter = document.getElementById('ordersPaymentFilter');
+          const ordersTypeFilter = document.getElementById('ordersTypeFilter');
+          if (ordersStatusFilter && !ordersStatusFilter.dataset.listenerAttached) {
+            ordersStatusFilter.addEventListener('change', () => loadOrders());
+            ordersStatusFilter.dataset.listenerAttached = 'true';
+          }
+          if (ordersPaymentFilter && !ordersPaymentFilter.dataset.listenerAttached) {
+            ordersPaymentFilter.addEventListener('change', () => loadOrders());
+            ordersPaymentFilter.dataset.listenerAttached = 'true';
+          }
+          if (ordersTypeFilter && !ordersTypeFilter.dataset.listenerAttached) {
+            ordersTypeFilter.addEventListener('change', () => loadOrders());
+            ordersTypeFilter.dataset.listenerAttached = 'true';
+          }
+        }, 100);
       }
       
       // Load waiter requests if it's the waiter requests page
@@ -507,6 +600,30 @@ document.addEventListener("DOMContentLoaded", () => {
       // Load payments if it's the payments page
       if (pageId === "paymentsPage") {
         loadPayments();
+        // Set up payment filter listeners
+        setTimeout(() => {
+          const paymentSearch = document.getElementById('paymentSearch');
+          const paymentMethodFilter = document.getElementById('paymentMethodFilter');
+          const paymentStatusFilter = document.getElementById('paymentStatusFilter');
+          if (paymentSearch && !paymentSearch.dataset.listenerAttached) {
+            paymentSearch.addEventListener('input', debounce(() => {
+              loadPayments();
+            }, 300));
+            paymentSearch.dataset.listenerAttached = 'true';
+          }
+          if (paymentMethodFilter && !paymentMethodFilter.dataset.listenerAttached) {
+            paymentMethodFilter.addEventListener('change', () => {
+              loadPayments();
+            });
+            paymentMethodFilter.dataset.listenerAttached = 'true';
+          }
+          if (paymentStatusFilter && !paymentStatusFilter.dataset.listenerAttached) {
+            paymentStatusFilter.addEventListener('change', () => {
+              loadPayments();
+            });
+            paymentStatusFilter.dataset.listenerAttached = 'true';
+          }
+        }, 100);
       }
       
       // Load settings data if it's the settings page
@@ -526,17 +643,29 @@ document.addEventListener("DOMContentLoaded", () => {
   // Make showPage globally accessible for onclick handlers
   window.showPage = showPage;
 
-  // Restore previously active page (if available)
+  // Restore previously active page (if available), unless forced to dashboard after login
   try {
     const ordersListContainer = document.getElementById('ordersList');
     if (ordersListContainer) {
       ordersListContainer.innerHTML = '<div class="loading">Refreshing orders...</div>';
     }
-    const savedPageId = localStorage.getItem('admin_active_page');
-    if (savedPageId && document.getElementById(savedPageId)) {
-      showPage(savedPageId);
-    } else {
+
+    const forceDashboard = sessionStorage.getItem('forceDashboard');
+    if (forceDashboard) {
+      sessionStorage.removeItem('forceDashboard');
+      try {
+        localStorage.removeItem('admin_active_page');
+      } catch (storageErr) {
+        console.warn('Unable to clear saved admin page', storageErr);
+      }
       showPage('dashboardPage');
+    } else {
+      const savedPageId = localStorage.getItem('admin_active_page');
+      if (savedPageId && document.getElementById(savedPageId)) {
+        showPage(savedPageId);
+      } else {
+        showPage('dashboardPage');
+      }
     }
   } catch (err) {
     console.warn('Unable to restore saved page, defaulting to dashboard', err);
@@ -3377,6 +3506,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error loading staff:", error);
       staffList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Network Error</h3><p>Please check your connection and try again.</p></div>';
     }
+
   }
   
   // Display staff
@@ -4566,77 +4696,101 @@ document.addEventListener('DOMContentLoaded', function() {
 function filterCustomers() {
   const searchTerm = document.getElementById('customerSearch')?.value.toLowerCase() || '';
   const sortBy = document.getElementById('customerSortBy')?.value || 'name';
-  const cards = document.querySelectorAll('#customerList .modern-card');
+  const rows = document.querySelectorAll('#customerList tr[data-customer-id]');
+  const container = document.getElementById('customerList');
   
-  cards.forEach(card => {
-    const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
-    const phone = card.querySelector('.detail-row span:last-child')?.textContent.toLowerCase() || '';
+  if (!container) return;
+  
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    if (cells.length < 6) return;
     
-    if (name.includes(searchTerm) || phone.includes(searchTerm)) {
-      card.style.display = '';
+    const name = (cells[1]?.textContent || '').toLowerCase();
+    const phone = (cells[2]?.textContent || '').toLowerCase();
+    const email = (cells[3]?.textContent || '').toLowerCase();
+    
+    if (!searchTerm || name.includes(searchTerm) || phone.includes(searchTerm) || email.includes(searchTerm)) {
+      row.style.display = '';
     } else {
-      card.style.display = 'none';
+      row.style.display = 'none';
     }
   });
   
-  // Sort cards
-  const visibleCards = Array.from(cards).filter(card => card.style.display !== 'none');
-  const container = document.getElementById('customerList');
+  // Sort visible rows
+  const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
   
-  visibleCards.sort((a, b) => {
+  visibleRows.sort((a, b) => {
+    const cellsA = a.querySelectorAll('td');
+    const cellsB = b.querySelectorAll('td');
+    
     if (sortBy === 'name') {
-      const nameA = a.querySelector('h3')?.textContent || '';
-      const nameB = b.querySelector('h3')?.textContent || '';
+      const nameA = (cellsA[1]?.textContent || '').toLowerCase();
+      const nameB = (cellsB[1]?.textContent || '').toLowerCase();
       return nameA.localeCompare(nameB);
     } else if (sortBy === 'visits') {
-      const visitsA = parseInt(a.querySelector('.stat-value')?.textContent) || 0;
-      const visitsB = parseInt(b.querySelector('.stat-value')?.textContent) || 0;
+      const visitsA = parseInt(cellsA[4]?.textContent) || 0;
+      const visitsB = parseInt(cellsB[4]?.textContent) || 0;
       return visitsB - visitsA;
+    } else if (sortBy === 'recent') {
+      // For recent, we'd need to store the date in data attribute or parse from display
+      // For now, just sort by name
+      const nameA = (cellsA[1]?.textContent || '').toLowerCase();
+      const nameB = (cellsB[1]?.textContent || '').toLowerCase();
+      return nameA.localeCompare(nameB);
     }
     return 0;
   });
   
-  visibleCards.forEach(card => container.appendChild(card));
+  // Reorder rows in DOM
+  visibleRows.forEach(row => container.appendChild(row));
 }
 
 // Filter staff
 function filterStaff() {
   const searchTerm = document.getElementById('staffSearch')?.value.toLowerCase() || '';
   const sortBy = document.getElementById('staffSortBy')?.value || 'name';
-  const cards = document.querySelectorAll('#staffList .modern-card');
-  
-  cards.forEach(card => {
-    const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
-    const email = card.querySelector('.detail-row span:last-child')?.textContent.toLowerCase() || '';
-    const role = card.querySelectorAll('.detail-row')[2]?.querySelector('span:last-child')?.textContent.toLowerCase() || '';
-    
-    if (name.includes(searchTerm) || email.includes(searchTerm) || role.includes(searchTerm)) {
-      card.style.display = '';
-    } else {
-      card.style.display = 'none';
-    }
-  });
-  
-  // Sort cards
-  const visibleCards = Array.from(cards).filter(card => card.style.display !== 'none');
+  const rows = document.querySelectorAll('#staffList tr[data-staff-id]');
   const container = document.getElementById('staffList');
   
   if (!container) return;
   
-  visibleCards.sort((a, b) => {
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    if (cells.length < 6) return;
+    
+    const name = (cells[1]?.textContent || '').toLowerCase();
+    const email = (cells[2]?.textContent || '').toLowerCase();
+    const phone = (cells[3]?.textContent || '').toLowerCase();
+    const role = (cells[4]?.textContent || '').toLowerCase();
+    
+    if (!searchTerm || name.includes(searchTerm) || email.includes(searchTerm) || phone.includes(searchTerm) || role.includes(searchTerm)) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+  
+  // Sort visible rows
+  const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+  
+  visibleRows.sort((a, b) => {
+    const cellsA = a.querySelectorAll('td');
+    const cellsB = b.querySelectorAll('td');
+    
     if (sortBy === 'name') {
-      const nameA = a.querySelector('h3')?.textContent || '';
-      const nameB = b.querySelector('h3')?.textContent || '';
+      const nameA = (cellsA[1]?.textContent || '').toLowerCase();
+      const nameB = (cellsB[1]?.textContent || '').toLowerCase();
       return nameA.localeCompare(nameB);
     } else if (sortBy === 'role') {
-      const roleA = a.querySelectorAll('.detail-row')[2]?.querySelector('span:last-child')?.textContent || '';
-      const roleB = b.querySelectorAll('.detail-row')[2]?.querySelector('span:last-child')?.textContent || '';
+      const roleA = (cellsA[4]?.textContent || '').toLowerCase();
+      const roleB = (cellsB[4]?.textContent || '').toLowerCase();
       return roleA.localeCompare(roleB);
     }
     return 0;
   });
   
-  visibleCards.forEach(card => container.appendChild(card));
+  // Reorder rows in DOM
+  visibleRows.forEach(row => container.appendChild(row));
 }
 // Load Profile Data
 async function loadProfileData() {
@@ -6507,4 +6661,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
 

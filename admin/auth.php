@@ -146,15 +146,8 @@ function handleLogin() {
         $_SESSION['user_type'] = 'staff';
         $_SESSION['role'] = $staff['role'];
         
-        // Determine redirect based on role
-        $redirect = '../views/dashboard.php'; // Default
-        if ($staff['role'] === 'Chef') {
-            $redirect = '../views/chef_dashboard.php';
-        } elseif ($staff['role'] === 'Waiter') {
-            $redirect = '../views/waiter_dashboard.php';
-        } elseif ($staff['role'] === 'Manager') {
-            $redirect = '../views/manager_dashboard.php';
-        }
+        // Always redirect to main dashboard first
+        $redirect = '../views/dashboard.php';
         
         echo json_encode([
             'success' => true,

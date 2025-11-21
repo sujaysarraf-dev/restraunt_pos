@@ -265,6 +265,12 @@
                 if (result.success) {
                     showMessage('Login successful! Redirecting...', 'success');
                     setTimeout(() => {
+                        try {
+                            sessionStorage.setItem('forceDashboard', '1');
+                            localStorage.removeItem('admin_active_page');
+                        } catch (storageErr) {
+                            console.warn('Unable to set dashboard preference', storageErr);
+                        }
                         window.location.href = result.redirect || '../views/dashboard.php';
                     }, 1000);
                 } else {
