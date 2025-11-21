@@ -69,10 +69,77 @@ async function showSweetPrompt(message, title = 'Input', defaultValue = '') {
   return window.prompt(message, defaultValue);
 }
 
-// Payment method selector with clickable buttons
+// Payment method selector with clickable buttons - loads from database
 async function showPaymentMethodSelector() {
   if (window.Swal) {
+    try {
+      // Load payment methods from database
+      const response = await fetch('../api/get_payment_methods.php');
+      const data = await response.json();
+      
+      if (data.success && data.data && data.data.length > 0) {
+        // Filter only active methods
+        const activeMethods = data.data.filter(m => m.is_active == 1);
+        
+        if (activeMethods.length > 0) {
+          return new Promise((resolve) => {
+            let resolved = false;
+            const buttonsHtml = activeMethods.map(method => `
+              <button class="payment-method-btn" data-method="${method.method_name}" style="padding: 20px; border: 2px solid #e5e7eb; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; font-size: 16px; font-weight: 600; color: #111827;">
+                <div style="font-size: 32px; margin-bottom: 8px;">${method.emoji || '💳'}</div>
+                <div>${method.method_name}</div>
+              </button>
+            `).join('');
+            
+            Swal.fire({
+              title: 'Select Payment Method',
+              html: `
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0;">
+                  ${buttonsHtml}
+                </div>
+                <style>
+                  .payment-method-btn:hover {
+                    border-color: #10b981 !important;
+                    background: #f0fdf4 !important;
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+                  }
+                  .payment-method-btn:active {
+                    transform: translateY(0);
+                  }
+                </style>
+              `,
+              showConfirmButton: false,
+              showCancelButton: true,
+              cancelButtonText: 'Cancel',
+              cancelButtonColor: '#6b7280',
+              didOpen: () => {
+                const buttons = Swal.getHtmlContainer().querySelectorAll('.payment-method-btn');
+                buttons.forEach(btn => {
+                  btn.addEventListener('click', () => {
+                    const method = btn.getAttribute('data-method');
+                    resolved = true;
+                    Swal.close();
+                    resolve(method);
+                  });
+                });
+              },
+              didClose: () => {
+                if (!resolved) {
+                  resolve(null);
+                }
+              }
+            });
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading payment methods:', error);
+    }
+    
+    // Fallback to default methods if database fails
     return new Promise((resolve) => {
+      let resolved = false;
       Swal.fire({
         title: 'Select Payment Method',
         html: `
@@ -115,14 +182,14 @@ async function showPaymentMethodSelector() {
           buttons.forEach(btn => {
             btn.addEventListener('click', () => {
               const method = btn.getAttribute('data-method');
+              resolved = true;
               Swal.close();
               resolve(method);
             });
           });
         },
         didClose: () => {
-          // If closed without selection, resolve with null
-          if (!Swal.isConfirmed()) {
+          if (!resolved) {
             resolve(null);
           }
         }
@@ -2524,6 +2591,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }).join('');
           
           return new Promise((resolve) => {
+            let resolved = false;
             Swal.fire({
               title: 'Assign Table',
               html: `
@@ -2552,13 +2620,14 @@ document.addEventListener("DOMContentLoaded", () => {
                   btn.addEventListener('click', () => {
                     const tableId = btn.getAttribute('data-table-id');
                     const tableNumber = btn.getAttribute('data-table-number');
+                    resolved = true;
                     Swal.close();
                     resolve({ tableId, tableNumber });
                   });
                 });
               },
               didClose: () => {
-                if (!Swal.isConfirmed()) {
+                if (!resolved) {
                   resolve(null);
                 }
               }
@@ -4693,6 +4762,262 @@ async function loadProfileData() {
   }
 }
 
+let paymentMethodsCache = [];
+let paymentMethodsLoading = false;
+
+function getCachedPaymentMethod(id) {
+  return paymentMethodsCache.find(method => Number(method.id) === Number(id));
+}
+
+async function loadPaymentMethods(force = false) {
+  const listEl = document.getElementById('paymentMethodsList');
+  const filterEl = document.getElementById('paymentMethodFilter');
+
+  if (paymentMethodsLoading && !force) {
+    return;
+  }
+
+  if (listEl && (!paymentMethodsCache.length || force)) {
+    listEl.innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;">Loading payment methods...</div>';
+  }
+
+  paymentMethodsLoading = true;
+
+  try {
+    const response = await fetch(`../api/get_payment_methods.php?ts=${Date.now()}`);
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to load payment methods');
+    }
+
+    paymentMethodsCache = Array.isArray(data.data) ? data.data : [];
+    renderPaymentMethods();
+    updatePaymentMethodFilterOptions(filterEl);
+  } catch (error) {
+    console.error('Error loading payment methods:', error);
+    if (listEl) {
+      listEl.innerHTML = `<div style="text-align: center; padding: 2rem; color: #ef4444;">${error.message || 'Unable to load payment methods'}</div>`;
+    }
+  } finally {
+    paymentMethodsLoading = false;
+  }
+}
+
+function renderPaymentMethods() {
+  const listEl = document.getElementById('paymentMethodsList');
+  if (!listEl) return;
+
+  if (!paymentMethodsCache.length) {
+    listEl.innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;">No payment methods found. Click "Add Method" to create one.</div>';
+    return;
+  }
+
+  listEl.innerHTML = paymentMethodsCache.map(method => `
+    <div class="payment-method-card" style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; background: white; display: flex; flex-direction: column; gap: 0.75rem; position: relative; box-shadow: 0 5px 15px rgba(15,23,42,0.08);">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="font-size: 2rem;">${method.emoji || '💳'}</div>
+        <div>
+          <div style="font-weight: 700; font-size: 1rem;">${method.method_name}</div>
+          <div style="font-size: 0.85rem; color: #6b7280;">Display order: ${method.display_order ?? 0}</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: ${method.is_active == 1 ? '#d1fae5' : '#fee2e2'}; color: ${method.is_active == 1 ? '#065f46' : '#b91c1c'};">
+          ${method.is_active == 1 ? 'Active' : 'Inactive'}
+        </span>
+        <div style="display: flex; gap: 0.5rem;">
+          <button onclick="editPaymentMethodEntry(${method.id})" style="padding: 0.4rem 0.75rem; border-radius: 8px; border: none; background: #e5e7eb; cursor: pointer; font-weight: 600; color: #111827;">Edit</button>
+          <button onclick="togglePaymentMethodStatus(${method.id})" style="padding: 0.4rem 0.75rem; border-radius: 8px; border: none; background: ${method.is_active == 1 ? '#fef3c7' : '#dcfce7'}; cursor: pointer; font-weight: 600; color: #92400e;">
+            ${method.is_active == 1 ? 'Disable' : 'Enable'}
+          </button>
+          <button onclick="deletePaymentMethodEntry(${method.id})" style="padding: 0.4rem 0.75rem; border-radius: 8px; border: none; background: #fee2e2; cursor: pointer; font-weight: 600; color: #b91c1c;">Delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updatePaymentMethodFilterOptions(filterEl = document.getElementById('paymentMethodFilter')) {
+  if (!filterEl) return;
+
+  const previousValue = filterEl.value;
+  filterEl.innerHTML = '<option value="">All Methods</option>';
+
+  paymentMethodsCache
+    .filter(method => method.is_active == 1)
+    .forEach(method => {
+      const option = document.createElement('option');
+      option.value = method.method_name;
+      option.textContent = method.method_name;
+      filterEl.appendChild(option);
+    });
+
+  if (previousValue && Array.from(filterEl.options).some(opt => opt.value === previousValue)) {
+    filterEl.value = previousValue;
+  }
+}
+
+async function openPaymentMethodModal(existingMethod = null) {
+  if (window.Swal) {
+    const result = await Swal.fire({
+      title: existingMethod ? 'Edit Payment Method' : 'Add Payment Method',
+      html: `
+        <div style="text-align: left;">
+          <label style="display:block;font-weight:600;margin-bottom:0.25rem;">Method Name</label>
+          <input id="paymentMethodNameInput" type="text" style="width:100%;padding:0.5rem;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:0.75rem;" placeholder="e.g. Cash, UPI" value="${existingMethod ? existingMethod.method_name.replace(/"/g, '&quot;') : ''}">
+          <label style="display:block;font-weight:600;margin-bottom:0.25rem;">Emoji/Icon</label>
+          <input id="paymentMethodEmojiInput" type="text" style="width:100%;padding:0.5rem;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:0.75rem;" placeholder="e.g. 💳" value="${existingMethod ? (existingMethod.emoji || '') : ''}">
+          <label style="display:block;font-weight:600;margin-bottom:0.25rem;">Display Order</label>
+          <input id="paymentMethodOrderInput" type="number" min="0" style="width:100%;padding:0.5rem;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:0.75rem;" value="${existingMethod ? (existingMethod.display_order ?? 0) : paymentMethodsCache.length}">
+          ${existingMethod ? `
+            <label style="display:block;font-weight:600;margin-bottom:0.25rem;">Status</label>
+            <select id="paymentMethodStatusInput" style="width:100%;padding:0.5rem;border:1px solid #e5e7eb;border-radius:8px;">
+              <option value="1" ${existingMethod.is_active == 1 ? 'selected' : ''}>Active</option>
+              <option value="0" ${existingMethod.is_active != 1 ? 'selected' : ''}>Inactive</option>
+            </select>
+          ` : ''}
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: existingMethod ? 'Save Changes' : 'Add Method',
+      confirmButtonColor: '#dc2626',
+      focusConfirm: false,
+      preConfirm: () => {
+        const nameInput = document.getElementById('paymentMethodNameInput');
+        const emojiInput = document.getElementById('paymentMethodEmojiInput');
+        const orderInput = document.getElementById('paymentMethodOrderInput');
+        const statusInput = document.getElementById('paymentMethodStatusInput');
+
+        if (!nameInput.value.trim()) {
+          Swal.showValidationMessage('Method name is required');
+          return false;
+        }
+
+        return {
+          method_name: nameInput.value.trim(),
+          emoji: emojiInput.value.trim(),
+          display_order: orderInput.value ? Number(orderInput.value) : 0,
+          is_active: statusInput ? Number(statusInput.value) : 1
+        };
+      }
+    });
+
+    if (result.isConfirmed) {
+      if (existingMethod) {
+        await submitPaymentMethod('update', { id: existingMethod.id, ...result.value });
+      } else {
+        await submitPaymentMethod('add', result.value);
+      }
+    }
+  } else {
+    const methodName = window.prompt('Enter payment method name:', existingMethod ? existingMethod.method_name : '');
+    if (!methodName) return;
+    const emoji = window.prompt('Emoji/Icon (optional):', existingMethod ? (existingMethod.emoji || '') : '');
+    const displayOrderRaw = window.prompt('Display order (0 for default):', existingMethod ? (existingMethod.display_order ?? 0) : paymentMethodsCache.length);
+    const payload = {
+      method_name: methodName.trim(),
+      emoji: emoji ? emoji.trim() : '',
+      display_order: displayOrderRaw ? Number(displayOrderRaw) : 0
+    };
+    if (existingMethod) {
+      payload.id = existingMethod.id;
+      payload.is_active = existingMethod.is_active;
+      await submitPaymentMethod('update', payload);
+    } else {
+      await submitPaymentMethod('add', payload);
+    }
+  }
+}
+
+async function submitPaymentMethod(action, payload) {
+  try {
+    const formData = new FormData();
+    formData.append('action', action);
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value);
+      }
+    });
+
+    const response = await fetch('../api/manage_payment_methods.php', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Unable to save payment method');
+    }
+
+    showNotification(data.message || 'Payment method saved successfully', 'success');
+    await loadPaymentMethods(true);
+  } catch (error) {
+    console.error('Error saving payment method:', error);
+    showNotification(error.message || 'Error saving payment method', 'error');
+  }
+}
+
+async function openAddPaymentMethodModal() {
+  await openPaymentMethodModal(null);
+}
+
+async function editPaymentMethodEntry(id) {
+  let method = getCachedPaymentMethod(id);
+  if (!method) {
+    await loadPaymentMethods(true);
+    method = getCachedPaymentMethod(id);
+  }
+  if (!method) {
+    showNotification('Unable to find that payment method', 'error');
+    return;
+  }
+  await openPaymentMethodModal(method);
+}
+
+async function togglePaymentMethodStatus(id) {
+  const method = getCachedPaymentMethod(id);
+  if (!method) {
+    showNotification('Payment method not found', 'error');
+    return;
+  }
+  await submitPaymentMethod('update', {
+    id,
+    method_name: method.method_name,
+    emoji: method.emoji || '',
+    display_order: method.display_order ?? 0,
+    is_active: method.is_active == 1 ? 0 : 1
+  });
+}
+
+async function deletePaymentMethodEntry(id) {
+  if (await showSweetConfirm('Are you sure you want to delete this payment method?', 'Delete Payment Method')) {
+    try {
+      const formData = new FormData();
+      formData.append('action', 'delete');
+      formData.append('id', id);
+      const response = await fetch('../api/manage_payment_methods.php', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Unable to delete payment method');
+      }
+      showNotification(data.message || 'Payment method deleted', 'success');
+      await loadPaymentMethods(true);
+    } catch (error) {
+      console.error('Error deleting payment method:', error);
+      showNotification(error.message || 'Error deleting payment method', 'error');
+    }
+  }
+}
+
+window.openAddPaymentMethodModal = openAddPaymentMethodModal;
+window.editPaymentMethodEntry = editPaymentMethodEntry;
+window.togglePaymentMethodStatus = togglePaymentMethodStatus;
+window.deletePaymentMethodEntry = deletePaymentMethodEntry;
+
 // Load Payments
 async function loadPayments() {
   console.log('Loading payments...');
@@ -4700,6 +5025,9 @@ async function loadPayments() {
   if (!tbody) return;
   
   tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;"><div class="loading">Loading payments...</div></td></tr>';
+  
+  // Also load payment methods when loading payments
+  loadPaymentMethods();
   
   try {
     const search = document.getElementById('paymentSearch')?.value || '';

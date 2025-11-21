@@ -3903,3 +3903,30 @@ select:focus {
     justify-content: center;
   }
 }
+
+/* Payment Method Emoji Buttons */
+.emoji-btn {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+  margin: 0;
+}
+
+.emoji-btn:hover {
+  border-color: var(--primary-red);
+  background: #fef2f2;
+  transform: scale(1.1);
+}
+
+.emoji-btn:active {
+  transform: scale(0.95);
+}

@@ -2,7 +2,7 @@
 (function ensureSweetAlert(){
     if (!window.Swal) {
         const script = document.createElement('script');
-        script.src = 'https://unpkg.com/sweetalert2@11/dist/sweetalert2.all.min.js';
+        script.src = '../assets/js/sweetalert2.all.min.js';
         script.defer = true;
         document.head.appendChild(script);
     }

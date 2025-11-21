@@ -142,7 +142,7 @@ try {
   <link rel="stylesheet" href="../assets/css/style.css">
   <!-- Linking Google fonts for icons -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
-  <script src="https://unpkg.com/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+  <script src="../assets/js/sweetalert2.all.min.js"></script>
   <script>
     // Currency symbol loaded from server-side PHP (exactly like restaurant logo/name)
     // NO JavaScript updates needed - value is already correct in HTML from PHP
@@ -735,16 +735,28 @@ try {
         <p>View and manage all payment transactions</p>
       </div>
       <div class="page-content">
+        <!-- Payment Methods Management Section -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #e5e7eb;">
+            <div>
+              <h2 style="margin: 0; font-size: 1.3rem; color: var(--primary-red);">Payment Methods</h2>
+              <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.9rem;">Manage your payment methods and add custom ones</p>
+            </div>
+            <button onclick="openAddPaymentMethodModal()" style="padding: 0.75rem 1.5rem; background: var(--primary-red); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+              <span class="material-symbols-rounded" style="font-size: 1rem;">add</span>
+              Add Method
+            </button>
+          </div>
+          <div id="paymentMethodsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+            <div style="text-align: center; padding: 2rem; color: #6b7280;">Loading payment methods...</div>
+          </div>
+        </div>
+
         <!-- Filters -->
         <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
           <input type="text" id="paymentSearch" placeholder="Search by order, amount..." style="flex: 1; min-width: 250px; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px;" />
           <select id="paymentMethodFilter" style="padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px;">
             <option value="">All Methods</option>
-            <option value="Cash">Cash</option>
-            <option value="Card">Card</option>
-            <option value="UPI">UPI</option>
-            <option value="Online">Online</option>
-            <option value="Wallet">Wallet</option>
           </select>
           <select id="paymentStatusFilter" style="padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px;">
             <option value="">All Status</option>
@@ -2198,6 +2210,55 @@ try {
             Cancel
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Method Modal (Add/Edit) -->
+  <div id="paymentMethodModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2 id="paymentMethodModalTitle">Add Payment Method</h2>
+        <span class="close" onclick="closePaymentMethodModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="paymentMethodForm">
+          <input type="hidden" id="paymentMethodId" />
+          <div class="form-group">
+            <label for="paymentMethodName">Method Name *</label>
+            <input type="text" id="paymentMethodName" placeholder="e.g., PayPal, Apple Pay" required />
+          </div>
+          <div class="form-group">
+            <label for="paymentMethodEmoji">Emoji (Optional)</label>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input type="text" id="paymentMethodEmoji" placeholder="💳 or click below" maxlength="10" style="flex: 1;" />
+              <div style="display: flex; gap: 0.25rem; flex-wrap: wrap; max-width: 200px;">
+                <button type="button" class="emoji-btn" onclick="selectEmoji('💵')" title="Cash">💵</button>
+                <button type="button" class="emoji-btn" onclick="selectEmoji('💳')" title="Card">💳</button>
+                <button type="button" class="emoji-btn" onclick="selectEmoji('📱')" title="UPI">📱</button>
+                <button type="button" class="emoji-btn" onclick="selectEmoji('🌐')" title="Online">🌐</button>
+                <button type="button" class="emoji-btn" onclick="selectEmoji('👛')" title="Wallet">👛</button>
+                <button type="button" class="emoji-btn" onclick="selectEmoji('🏦')" title="Bank">🏦</button>
+                <button type="button" class="emoji-btn" onclick="selectEmoji('📝')" title="Cheque">📝</button>
+                <button type="button" class="emoji-btn" onclick="selectEmoji('₿')" title="Crypto">₿</button>
+                <button type="button" class="emoji-btn" onclick="selectEmoji('💎')" title="Diamond">💎</button>
+                <button type="button" class="emoji-btn" onclick="selectEmoji('🎁')" title="Gift">🎁</button>
+                <button type="button" class="emoji-btn" onclick="selectEmoji('💰')" title="Money">💰</button>
+                <button type="button" class="emoji-btn" onclick="selectEmoji('💸')" title="Money Wings">💸</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="paymentMethodActive" checked />
+              Active (visible in payment options)
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-cancel" onclick="closePaymentMethodModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Method</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
