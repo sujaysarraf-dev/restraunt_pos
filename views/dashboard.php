@@ -50,20 +50,25 @@ try {
     // Try to get all user settings from database to prevent FOUC
     // Load exactly like restaurant logo - server-side before HTML renders
     try {
-        $stmt = $conn->prepare("SELECT restaurant_logo, currency_symbol, timezone, email, phone, address, role FROM users WHERE id = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT id, restaurant_logo, currency_symbol, timezone, email, phone, address, role FROM users WHERE id = ? LIMIT 1");
         $stmt->execute([$_SESSION['user_id']]);
         $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($userRow) {
             // Restaurant logo - load exactly like this
             if (!empty($userRow['restaurant_logo'])) {
-                $restaurant_logo = $userRow['restaurant_logo'];
-                // Ensure proper path format - from views/ folder, need ../uploads/
-                if (strpos($restaurant_logo, 'http') !== 0) {
-                    // If it already starts with uploads/, add ../ prefix
+                // Check if logo is stored in database (starts with 'db:')
+                if (strpos($userRow['restaurant_logo'], 'db:') === 0) {
+                    // Use API endpoint for database-stored image
+                    $restaurant_logo = '../api/image.php?type=logo&id=' . ($userRow['id'] ?? $_SESSION['user_id']);
+                } elseif (strpos($userRow['restaurant_logo'], 'http') === 0) {
+                    // External URL
+                    $restaurant_logo = $userRow['restaurant_logo'];
+                } else {
+                    // File-based image (backward compatibility)
+                    $restaurant_logo = $userRow['restaurant_logo'];
                     if (strpos($restaurant_logo, 'uploads/') === 0) {
                         $restaurant_logo = '../' . $restaurant_logo;
                     } elseif (strpos($restaurant_logo, '../') !== 0) {
-                        // If it doesn't have ../ prefix, add it
                         $restaurant_logo = '../uploads/' . $restaurant_logo;
                     }
                 }
@@ -92,19 +97,24 @@ try {
     } catch (PDOException $e) {
         // If columns don't exist, try without them
         try {
-            $stmt = $conn->prepare("SELECT restaurant_logo, currency_symbol FROM users WHERE id = ? LIMIT 1");
+            $stmt = $conn->prepare("SELECT id, restaurant_logo, currency_symbol FROM users WHERE id = ? LIMIT 1");
             $stmt->execute([$_SESSION['user_id']]);
             $logoRow = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($logoRow) {
                 if (!empty($logoRow['restaurant_logo'])) {
-                    $restaurant_logo = $logoRow['restaurant_logo'];
-                    // Ensure proper path format - from views/ folder, need ../uploads/
-                    if (strpos($restaurant_logo, 'http') !== 0) {
-                        // If it already starts with uploads/, add ../ prefix
+                    // Check if logo is stored in database (starts with 'db:')
+                    if (strpos($logoRow['restaurant_logo'], 'db:') === 0) {
+                        // Use API endpoint for database-stored image
+                        $restaurant_logo = '../api/image.php?type=logo&id=' . ($logoRow['id'] ?? $_SESSION['user_id']);
+                    } elseif (strpos($logoRow['restaurant_logo'], 'http') === 0) {
+                        // External URL
+                        $restaurant_logo = $logoRow['restaurant_logo'];
+                    } else {
+                        // File-based image (backward compatibility)
+                        $restaurant_logo = $logoRow['restaurant_logo'];
                         if (strpos($restaurant_logo, 'uploads/') === 0) {
                             $restaurant_logo = '../' . $restaurant_logo;
                         } elseif (strpos($restaurant_logo, '../') !== 0) {
-                            // If it doesn't have ../ prefix, add it
                             $restaurant_logo = '../uploads/' . $restaurant_logo;
                         }
                     }

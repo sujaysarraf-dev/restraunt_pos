@@ -137,22 +137,44 @@ function handleAddMenuItemBase64($conn, $restaurant_id, $menuId, $itemNameEn, $i
         throw new Exception('Selected menu does not exist');
     }
     
-    // Handle base64 image
-    $itemImage = null;
+    // Handle base64 image - store in database
+    $itemImageData = null;
+    $itemImageMimeType = null;
+    $itemImagePath = null;
+    
     if (isset($_POST['itemImageBase64']) && !empty($_POST['itemImageBase64'])) {
-        $itemImage = handleBase64Image($_POST['itemImageBase64']);
+        $imageInfo = handleBase64Image($_POST['itemImageBase64']);
+        if (is_array($imageInfo)) {
+            $itemImageData = $imageInfo['data'];
+            $itemImageMimeType = $imageInfo['mime_type'];
+            $itemImagePath = 'db:' . uniqid(); // Reference ID for database storage
+        } else {
+            $itemImagePath = $imageInfo; // Fallback for old format
+        }
     }
     
-    // Insert new menu item
+    // Ensure columns exist
+    try {
+        $checkCol = $conn->query("SHOW COLUMNS FROM menu_items LIKE 'image_data'");
+        if ($checkCol->rowCount() == 0) {
+            $conn->exec("ALTER TABLE menu_items ADD COLUMN image_data LONGBLOB NULL AFTER item_image");
+            $conn->exec("ALTER TABLE menu_items ADD COLUMN image_mime_type VARCHAR(50) NULL AFTER image_data");
+        }
+    } catch (PDOException $e) {
+        // Columns might already exist, continue
+    }
+    
+    // Insert new menu item with image data
     $insertStmt = $conn->prepare("
         INSERT INTO menu_items 
-        (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, image_data, image_mime_type, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     ");
     
     $result = $insertStmt->execute([
         $restaurant_id, $menuId, $itemNameEn, $itemDescriptionEn, $itemCategory, $itemType, 
-        $preparationTime, $isAvailable, $basePrice, $hasVariations, $itemImage
+        $preparationTime, $isAvailable, $basePrice, $hasVariations, 
+        $itemImagePath, $itemImageData, $itemImageMimeType
     ]);
     
     if ($result) {
@@ -189,28 +211,51 @@ function handleUpdateMenuItemBase64($conn, $restaurant_id, $menuItemId, $menuId,
         throw new Exception('Selected menu does not exist');
     }
     
-    // Handle base64 image
-    $itemImage = $existingItem['item_image']; // Keep existing image by default
+    // Handle base64 image - store in database
+    $itemImageData = $existingItem['image_data'] ?? null; // Keep existing image by default
+    $itemImageMimeType = $existingItem['image_mime_type'] ?? null;
+    $itemImagePath = $existingItem['item_image'] ?? null;
+    
     if (isset($_POST['itemImageBase64']) && !empty($_POST['itemImageBase64'])) {
-        // Delete old image file if it exists
-        if (!empty($existingItem['item_image']) && file_exists($existingItem['item_image'])) {
-            unlink($existingItem['item_image']);
+        // Delete old image file if exists (for backward compatibility)
+        if (!empty($existingItem['item_image']) && strpos($existingItem['item_image'], 'db:') !== 0 && file_exists($existingItem['item_image'])) {
+            @unlink($existingItem['item_image']);
         }
-        $itemImage = handleBase64Image($_POST['itemImageBase64']);
+        
+        $imageInfo = handleBase64Image($_POST['itemImageBase64']);
+        if (is_array($imageInfo)) {
+            $itemImageData = $imageInfo['data'];
+            $itemImageMimeType = $imageInfo['mime_type'];
+            $itemImagePath = 'db:' . uniqid(); // Reference ID for database storage
+        } else {
+            $itemImagePath = $imageInfo; // Fallback for old format
+        }
     }
     
-    // Update menu item
+    // Ensure columns exist
+    try {
+        $checkCol = $conn->query("SHOW COLUMNS FROM menu_items LIKE 'image_data'");
+        if ($checkCol->rowCount() == 0) {
+            $conn->exec("ALTER TABLE menu_items ADD COLUMN image_data LONGBLOB NULL AFTER item_image");
+            $conn->exec("ALTER TABLE menu_items ADD COLUMN image_mime_type VARCHAR(50) NULL AFTER image_data");
+        }
+    } catch (PDOException $e) {
+        // Columns might already exist, continue
+    }
+    
+    // Update menu item with image data
     $updateStmt = $conn->prepare("
         UPDATE menu_items SET 
         menu_id = ?, item_name_en = ?, item_description_en = ?, item_category = ?, 
         item_type = ?, preparation_time = ?, is_available = ?, base_price = ?, 
-        has_variations = ?, item_image = ?, updated_at = NOW()
+        has_variations = ?, item_image = ?, image_data = ?, image_mime_type = ?, updated_at = NOW()
         WHERE id = ? AND restaurant_id = ?
     ");
     
     $result = $updateStmt->execute([
         $menuId, $itemNameEn, $itemDescriptionEn, $itemCategory, $itemType, 
-        $preparationTime, $isAvailable, $basePrice, $hasVariations, $itemImage, $menuItemId, $restaurant_id
+        $preparationTime, $isAvailable, $basePrice, $hasVariations, 
+        $itemImagePath, $itemImageData, $itemImageMimeType, $menuItemId, $restaurant_id
     ]);
     
     if ($result) {
@@ -262,8 +307,11 @@ function handleDeleteMenuItemBase64($conn, $restaurant_id, $menuItemId) {
 }
 
 function handleBase64Image($base64String) {
-    // Remove data URL prefix if present
+    // Remove data URL prefix if present and extract MIME type
+    $mimeType = 'image/jpeg'; // Default
     if (strpos($base64String, 'data:image/') === 0) {
+        $mimePart = substr($base64String, 5, strpos($base64String, ';') - 5);
+        $mimeType = str_replace('data:', '', $mimePart);
         $base64String = substr($base64String, strpos($base64String, ',') + 1);
     }
     
@@ -291,38 +339,21 @@ function handleBase64Image($base64String) {
         throw new Exception('Invalid image type. Only JPEG, PNG, GIF, and WebP images are allowed.');
     }
     
-    // Create uploads directory if it doesn't exist
-    $uploadDir = __DIR__ . '/../uploads/';
-    if (!file_exists($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-    }
+    // Determine MIME type from image info
+    $mimeTypes = [
+        IMAGETYPE_JPEG => 'image/jpeg',
+        IMAGETYPE_PNG => 'image/png',
+        IMAGETYPE_GIF => 'image/gif',
+        IMAGETYPE_WEBP => 'image/webp'
+    ];
+    $mimeType = $mimeTypes[$imageInfo[2]] ?? $mimeType;
     
-    // Generate unique filename
-    $extension = '';
-    switch ($imageInfo[2]) {
-        case IMAGETYPE_JPEG:
-            $extension = '.jpg';
-            break;
-        case IMAGETYPE_PNG:
-            $extension = '.png';
-            break;
-        case IMAGETYPE_GIF:
-            $extension = '.gif';
-            break;
-        case IMAGETYPE_WEBP:
-            $extension = '.webp';
-            break;
-    }
-    
-    $filename = 'item_' . uniqid() . '_' . time() . $extension;
-    $filepath = $uploadDir . $filename;
-    
-    // Save image file
-    if (file_put_contents($filepath, $imageData) === false) {
-        throw new Exception('Failed to save image file');
-    }
-    
-    return '../uploads/' . $filename;
+    // Return array with image data and MIME type for database storage
+    return [
+        'data' => $imageData,
+        'mime_type' => $mimeType,
+        'size' => strlen($imageData)
+    ];
 }
 ?>
 

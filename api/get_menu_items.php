@@ -76,8 +76,11 @@ try {
     $categoryFilter = isset($_GET['category']) ? trim($_GET['category']) : '';
     $typeFilter = isset($_GET['type']) ? trim($_GET['type']) : '';
     
-    // Build the query
-    $sql = "SELECT mi.*, m.menu_name 
+    // Build the query - explicitly select columns (exclude binary image_data to avoid JSON issues)
+    $sql = "SELECT mi.id, mi.restaurant_id, mi.menu_id, mi.item_name_en, mi.item_description_en, 
+                   mi.item_category, mi.item_type, mi.preparation_time, mi.is_available, 
+                   mi.base_price, mi.has_variations, mi.item_image, 
+                   mi.sort_order, mi.created_at, mi.updated_at, m.menu_name 
             FROM menu_items mi 
             JOIN menu m ON mi.menu_id = m.id 
             WHERE mi.restaurant_id = ? AND mi.is_available = TRUE";
@@ -102,14 +105,47 @@ try {
     $sql .= " ORDER BY mi.sort_order ASC, mi.created_at DESC";
     
     // Execute query
-    $stmt = $conn->prepare($sql);
-    $stmt->execute($params);
-    $menuItems = $stmt->fetchAll();
+    try {
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($params);
+        $menuItems = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        // If columns don't exist, try with basic columns only
+        if (strpos($e->getMessage(), 'image_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
+            $sql = "SELECT mi.id, mi.restaurant_id, mi.menu_id, mi.item_name_en, mi.item_description_en, 
+                           mi.item_category, mi.item_type, mi.preparation_time, mi.is_available, 
+                           mi.base_price, mi.has_variations, mi.item_image, 
+                           mi.sort_order, mi.created_at, mi.updated_at, m.menu_name 
+                    FROM menu_items mi 
+                    JOIN menu m ON mi.menu_id = m.id 
+                    WHERE mi.restaurant_id = ? AND mi.is_available = TRUE";
+            
+            if ($menuFilter > 0) {
+                $sql .= " AND mi.menu_id = ?";
+            }
+            if (!empty($categoryFilter)) {
+                $sql .= " AND mi.item_category = ?";
+            }
+            if (!empty($typeFilter)) {
+                $sql .= " AND mi.item_type = ?";
+            }
+            $sql .= " ORDER BY mi.sort_order ASC, mi.created_at DESC";
+            
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($params);
+            $menuItems = $stmt->fetchAll();
+        } else {
+            throw $e;
+        }
+    }
     
     // Get unique categories for this restaurant
     $categoryStmt = $conn->prepare("SELECT DISTINCT item_category FROM menu_items WHERE restaurant_id = ? AND item_category IS NOT NULL AND item_category != '' ORDER BY item_category");
     $categoryStmt->execute([$restaurant_id]);
     $categories = $categoryStmt->fetchAll(PDO::FETCH_COLUMN);
+    
+    // Note: image_data and image_mime_type are not selected to avoid binary data in JSON
+    // Images are served via image.php endpoint using item_image reference
     
     // Return success response
     echo json_encode([

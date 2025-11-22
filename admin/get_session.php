@@ -41,7 +41,7 @@ try {
     }
     // Try to get all fields, handle missing columns gracefully
     try {
-        $stmt = $conn->prepare("SELECT subscription_status, trial_end_date, renewal_date, created_at, email, role, phone, address, currency_symbol, timezone, restaurant_logo FROM users WHERE id = :id LIMIT 1");
+        $stmt = $conn->prepare("SELECT id, subscription_status, trial_end_date, renewal_date, created_at, email, role, phone, address, currency_symbol, timezone, restaurant_logo FROM users WHERE id = :id LIMIT 1");
         $stmt->execute([':id' => $_SESSION['user_id']]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     } catch (PDOException $e) {
@@ -80,6 +80,7 @@ try {
     echo json_encode([
         'success' => true,
         'data' => [
+            'id' => $row['id'] ?? $_SESSION['user_id'],
             'user_id' => $_SESSION['user_id'],
             'username' => $_SESSION['username'],
             'restaurant_id' => $_SESSION['restaurant_id'],

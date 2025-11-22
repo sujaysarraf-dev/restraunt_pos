@@ -1,4 +1,14 @@
 <?php
+// Suppress error display, log errors instead
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Ensure no output before headers
+if (ob_get_level()) {
+    ob_clean();
+}
+
 session_start();
 require_once 'db_config.php';
 
@@ -39,7 +49,12 @@ try {
             $category = isset($_GET['category']) ? $_GET['category'] : null;
             $type = isset($_GET['type']) ? $_GET['type'] : null;
             
-            $query = "SELECT mi.*, m.menu_name FROM menu_items mi 
+            // Explicitly select columns to avoid issues with binary data and missing columns
+            $query = "SELECT mi.id, mi.restaurant_id, mi.menu_id, mi.item_name_en, mi.item_description_en, 
+                             mi.item_category, mi.item_type, mi.preparation_time, mi.is_available, 
+                             mi.base_price, mi.has_variations, mi.item_image, 
+                             mi.sort_order, mi.created_at, mi.updated_at, m.menu_name 
+                      FROM menu_items mi 
                       JOIN menu m ON mi.menu_id = m.id 
                       WHERE mi.is_available = 1 AND mi.restaurant_id = :rid";
             
@@ -62,11 +77,54 @@ try {
             
             $query .= " ORDER BY mi.sort_order, mi.item_name_en";
             
-            $stmt = $pdo->prepare($query);
-            $stmt->execute($params);
-            $items = $stmt->fetchAll();
-            
-            echo json_encode($items);
+            try {
+                $stmt = $pdo->prepare($query);
+                $stmt->execute($params);
+                $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                // Clean up any binary data that might have been included
+                foreach ($items as &$item) {
+                    if (isset($item['image_data'])) {
+                        unset($item['image_data']); // Remove binary data from JSON
+                    }
+                    if (isset($item['image_mime_type'])) {
+                        // Keep mime_type if needed, but we don't need it in the list
+                        // unset($item['image_mime_type']);
+                    }
+                }
+                unset($item);
+                
+                echo json_encode($items);
+            } catch (PDOException $e) {
+                // If columns don't exist, try with basic columns only
+                if (strpos($e->getMessage(), 'image_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
+                    $query = "SELECT mi.id, mi.restaurant_id, mi.menu_id, mi.item_name_en, mi.item_description_en, 
+                                     mi.item_category, mi.item_type, mi.preparation_time, mi.is_available, 
+                                     mi.base_price, mi.has_variations, mi.item_image, 
+                                     mi.sort_order, mi.created_at, mi.updated_at, m.menu_name 
+                              FROM menu_items mi 
+                              JOIN menu m ON mi.menu_id = m.id 
+                              WHERE mi.is_available = 1 AND mi.restaurant_id = :rid";
+                    
+                    if ($menuId) {
+                        $query .= " AND mi.menu_id = :menu_id";
+                    }
+                    if ($category) {
+                        $query .= " AND mi.item_category = :category";
+                    }
+                    if ($type) {
+                        $query .= " AND mi.item_type = :type";
+                    }
+                    $query .= " ORDER BY mi.sort_order, mi.item_name_en";
+                    
+                    $stmt = $pdo->prepare($query);
+                    $stmt->execute($params);
+                    $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    echo json_encode($items);
+                } else {
+                    throw $e;
+                }
+            }
             break;
             
         case 'getCategories':
@@ -78,15 +136,51 @@ try {
             
         case 'searchItems':
             $searchTerm = isset($_GET['q']) ? $_GET['q'] : '';
-            $stmt = $pdo->prepare("SELECT mi.*, m.menu_name FROM menu_items mi 
-                                   JOIN menu m ON mi.menu_id = m.id 
-                                   WHERE (mi.item_name_en LIKE :search OR mi.item_description_en LIKE :search OR mi.item_category LIKE :search)
-                                   AND mi.is_available = 1 AND mi.restaurant_id = :rid
-                                   ORDER BY mi.item_name_en LIMIT 20");
+            // Explicitly select columns to avoid binary data issues
+            $query = "SELECT mi.id, mi.restaurant_id, mi.menu_id, mi.item_name_en, mi.item_description_en, 
+                             mi.item_category, mi.item_type, mi.preparation_time, mi.is_available, 
+                             mi.base_price, mi.has_variations, mi.item_image, 
+                             mi.sort_order, mi.created_at, mi.updated_at, m.menu_name 
+                      FROM menu_items mi 
+                      JOIN menu m ON mi.menu_id = m.id 
+                      WHERE (mi.item_name_en LIKE :search OR mi.item_description_en LIKE :search OR mi.item_category LIKE :search)
+                      AND mi.is_available = 1 AND mi.restaurant_id = :rid
+                      ORDER BY mi.item_name_en LIMIT 20";
             $like = '%' . $searchTerm . '%';
-            $stmt->execute([':search' => $like, ':rid' => $restaurantId]);
-            $items = $stmt->fetchAll();
-            echo json_encode($items);
+            try {
+                $stmt = $pdo->prepare($query);
+                $stmt->execute([':search' => $like, ':rid' => $restaurantId]);
+                $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                // Clean up any binary data
+                foreach ($items as &$item) {
+                    if (isset($item['image_data'])) {
+                        unset($item['image_data']);
+                    }
+                }
+                unset($item);
+                
+                echo json_encode($items);
+            } catch (PDOException $e) {
+                // If columns don't exist, try with basic columns
+                if (strpos($e->getMessage(), 'image_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
+                    $query = "SELECT mi.id, mi.restaurant_id, mi.menu_id, mi.item_name_en, mi.item_description_en, 
+                                     mi.item_category, mi.item_type, mi.preparation_time, mi.is_available, 
+                                     mi.base_price, mi.has_variations, mi.item_image, 
+                                     mi.sort_order, mi.created_at, mi.updated_at, m.menu_name 
+                              FROM menu_items mi 
+                              JOIN menu m ON mi.menu_id = m.id 
+                              WHERE (mi.item_name_en LIKE :search OR mi.item_description_en LIKE :search OR mi.item_category LIKE :search)
+                              AND mi.is_available = 1 AND mi.restaurant_id = :rid
+                              ORDER BY mi.item_name_en LIMIT 20";
+                    $stmt = $pdo->prepare($query);
+                    $stmt->execute([':search' => $like, ':rid' => $restaurantId]);
+                    $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    echo json_encode($items);
+                } else {
+                    throw $e;
+                }
+            }
             break;
             
         case 'getCustomerOrders':

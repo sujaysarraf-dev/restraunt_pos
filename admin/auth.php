@@ -635,53 +635,61 @@ function handleUploadRestaurantLogo() {
             break;
     }
     
-    $filename = 'logo_' . $_SESSION['restaurant_id'] . '_' . uniqid() . '_' . time() . $extension;
-    $filepath = $uploadDir . $filename;
-    
-    // Move uploaded file
-    if (!move_uploaded_file($file['tmp_name'], $filepath)) {
-        throw new Exception('Failed to save uploaded file');
+    // Read image data for database storage
+    $logoData = file_get_contents($file['tmp_name']);
+    if ($logoData === false) {
+        throw new Exception('Failed to read image file');
     }
     
-    $logoPath = 'uploads/' . $filename;
-    
+    $logoPath = 'db:' . uniqid(); // Reference ID for database storage
     $userId = $_SESSION['user_id'];
     
-    // Delete old logo if exists
+    // Delete old logo file if exists (for backward compatibility)
     try {
         $oldLogoStmt = $pdo->prepare("SELECT restaurant_logo FROM users WHERE id = ?");
         $oldLogoStmt->execute([$userId]);
         $oldLogo = $oldLogoStmt->fetchColumn();
         
-        if ($oldLogo && file_exists(__DIR__ . '/../' . $oldLogo)) {
+        if ($oldLogo && strpos($oldLogo, 'db:') !== 0 && file_exists(__DIR__ . '/../' . $oldLogo)) {
             @unlink(__DIR__ . '/../' . $oldLogo);
         }
     } catch (PDOException $e) {
         // Ignore if column doesn't exist yet
     }
     
+    // Ensure logo_data and logo_mime_type columns exist
+    try {
+        $checkCol = $pdo->query("SHOW COLUMNS FROM users LIKE 'logo_data'");
+        if ($checkCol->rowCount() == 0) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN logo_data LONGBLOB NULL AFTER restaurant_logo");
+            $pdo->exec("ALTER TABLE users ADD COLUMN logo_mime_type VARCHAR(50) NULL AFTER logo_data");
+        }
+    } catch (PDOException $e) {
+        // Columns might already exist, continue
+    }
+    
     // Update restaurant logo - handle column existence gracefully
     try {
-        $updateStmt = $pdo->prepare("UPDATE users SET restaurant_logo = ?, updated_at = NOW() WHERE id = ?");
-        $result = $updateStmt->execute([$logoPath, $userId]);
-    } catch (PDOException $e) {
-        // If column doesn't exist, we need to add it first
-        if (strpos($e->getMessage(), 'restaurant_logo') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
-            // Add column if it doesn't exist
-            try {
-                $alterStmt = $pdo->prepare("ALTER TABLE users ADD COLUMN restaurant_logo VARCHAR(255) NULL AFTER restaurant_name");
-                $alterStmt->execute();
-                
-                // Try update again
-                $updateStmt = $pdo->prepare("UPDATE users SET restaurant_logo = ?, updated_at = NOW() WHERE id = ?");
-                $result = $updateStmt->execute([$logoPath, $userId]);
-            } catch (PDOException $e2) {
-                // If alter fails (column might already exist), try update again
-                $updateStmt = $pdo->prepare("UPDATE users SET restaurant_logo = ?, updated_at = NOW() WHERE id = ?");
-                $result = $updateStmt->execute([$logoPath, $userId]);
+        // First ensure restaurant_logo column exists
+        try {
+            $checkLogoCol = $pdo->query("SHOW COLUMNS FROM users LIKE 'restaurant_logo'");
+            if ($checkLogoCol->rowCount() == 0) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN restaurant_logo VARCHAR(255) NULL AFTER restaurant_name");
             }
-        } else {
-            throw $e;
+        } catch (PDOException $e) {
+            // Column might already exist
+        }
+        
+        // Update with logo data in database
+        $updateStmt = $pdo->prepare("UPDATE users SET restaurant_logo = ?, logo_data = ?, logo_mime_type = ?, updated_at = NOW() WHERE id = ?");
+        $result = $updateStmt->execute([$logoPath, $logoData, $mimeType, $userId]);
+    } catch (PDOException $e) {
+        // Fallback: try without logo_data columns
+        try {
+            $updateStmt = $pdo->prepare("UPDATE users SET restaurant_logo = ?, updated_at = NOW() WHERE id = ?");
+            $result = $updateStmt->execute([$logoPath, $userId]);
+        } catch (PDOException $e2) {
+            throw new Exception('Failed to update restaurant logo: ' . $e2->getMessage());
         }
     }
     
@@ -690,7 +698,8 @@ function handleUploadRestaurantLogo() {
             'success' => true,
             'message' => 'Restaurant logo uploaded successfully',
             'data' => [
-                'restaurant_logo' => $logoPath
+                'restaurant_logo' => $logoPath,
+                'logo_url' => 'api/image.php?type=logo&id=' . $userId
             ]
         ]);
     } else {

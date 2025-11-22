@@ -124,11 +124,11 @@ try {
         
         // Now get all user details including currency (same as dashboard)
         if ($user_id) {
-            $stmt = $conn->prepare("SELECT restaurant_name, restaurant_logo, currency_symbol, phone, email, address FROM users WHERE id = ? LIMIT 1");
+            $stmt = $conn->prepare("SELECT id, restaurant_name, restaurant_logo, currency_symbol, phone, email, address FROM users WHERE id = ? LIMIT 1");
             $stmt->execute([$user_id]);
         } else {
             // Fallback: try by restaurant_id directly
-            $stmt = $conn->prepare("SELECT restaurant_name, restaurant_logo, currency_symbol, phone, email, address FROM users WHERE restaurant_id = ? LIMIT 1");
+            $stmt = $conn->prepare("SELECT id, restaurant_name, restaurant_logo, currency_symbol, phone, email, address FROM users WHERE restaurant_id = ? LIMIT 1");
             $stmt->execute([$restaurant_id]);
         }
         $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -148,12 +148,21 @@ try {
             }
             // Restaurant logo
             if (!empty($userRow['restaurant_logo'])) {
-                $restaurant_logo = $userRow['restaurant_logo'];
-                // Ensure proper path format
-                if (strpos($restaurant_logo, 'http') !== 0 && strpos($restaurant_logo, 'uploads/') !== 0) {
-                    $restaurant_logo = '../uploads/' . $restaurant_logo;
-                } else if (strpos($restaurant_logo, 'uploads/') === 0) {
-                    $restaurant_logo = '../' . $restaurant_logo;
+                // Check if logo is stored in database (starts with 'db:')
+                if (strpos($userRow['restaurant_logo'], 'db:') === 0) {
+                    // Use API endpoint for database-stored image
+                    $restaurant_logo = '../api/image.php?type=logo&id=' . ($userRow['id'] ?? $user_id ?? '');
+                } elseif (strpos($userRow['restaurant_logo'], 'http') === 0) {
+                    // External URL
+                    $restaurant_logo = $userRow['restaurant_logo'];
+                } else {
+                    // File-based image (backward compatibility)
+                    $restaurant_logo = $userRow['restaurant_logo'];
+                    if (strpos($restaurant_logo, 'uploads/') !== 0) {
+                        $restaurant_logo = '../uploads/' . $restaurant_logo;
+                    } else if (strpos($restaurant_logo, 'uploads/') === 0) {
+                        $restaurant_logo = '../' . $restaurant_logo;
+                    }
                 }
             }
             // Currency symbol - load server-side to prevent flash (same as dashboard)
@@ -374,14 +383,34 @@ try {
                     $bannerPath = htmlspecialchars($banner['banner_path'], ENT_QUOTES, 'UTF-8');
                     $activeClass = $index === 0 ? ' active' : '';
                     echo '<div class="banner-slide' . $activeClass . '">';
-                    echo '<img src="../' . $bannerPath . '" alt="Banner ' . ($index + 1) . '" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">';
+                    // Check if banner is stored in database (starts with 'db:')
+                    if (strpos($bannerPath, 'db:') === 0) {
+                        // Use API endpoint for database-stored banner
+                        $bannerUrl = '../api/image.php?type=banner&id=' . htmlspecialchars($banner['id'], ENT_QUOTES, 'UTF-8');
+                    } elseif (strpos($bannerPath, 'http') === 0) {
+                        // External URL
+                        $bannerUrl = $bannerPath;
+                    } else {
+                        // File-based image (backward compatibility)
+                        $bannerUrl = '../' . $bannerPath;
+                    }
+                    echo '<img src="' . $bannerUrl . '" alt="Banner ' . ($index + 1) . '" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">';
                     echo '</div>';
                 }
             } elseif (!empty($banner_image)) {
                 // Fallback to single banner (backward compatibility)
                 $bannerPath = htmlspecialchars($banner_image, ENT_QUOTES, 'UTF-8');
                 echo '<div class="banner-slide active">';
-                echo '<img src="../' . $bannerPath . '" alt="Banner" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">';
+                // Check if banner is stored in database
+                if (strpos($bannerPath, 'db:') === 0) {
+                    // For single banner from website_settings, we'd need the ID - use path for now
+                    $bannerUrl = '../api/image.php?path=' . urlencode($bannerPath);
+                } elseif (strpos($bannerPath, 'http') === 0) {
+                    $bannerUrl = $bannerPath;
+                } else {
+                    $bannerUrl = '../' . $bannerPath;
+                }
+                echo '<img src="' . $bannerUrl . '" alt="Banner" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">';
                 echo '</div>';
             }
             ?>

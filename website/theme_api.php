@@ -50,6 +50,7 @@ try {
   }
   
   if ($action === 'get_banners' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Get banners (exclude binary data from JSON)
     $bannersStmt = $pdo->prepare('SELECT id, banner_path, display_order FROM website_banners WHERE restaurant_id = :rid ORDER BY display_order ASC, id ASC');
     $bannersStmt->execute([':rid' => $restaurant_id]);
     $banners = $bannersStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -131,8 +132,24 @@ try {
     $orderResult = $orderStmt->fetch();
     $nextOrder = ($orderResult['max_order'] ?? 0) + 1;
     
+    // Ensure banner_data and banner_mime_type columns exist
+    try {
+      $checkCol = $pdo->query("SHOW COLUMNS FROM website_banners LIKE 'banner_data'");
+      if ($checkCol->rowCount() == 0) {
+        $pdo->exec("ALTER TABLE website_banners ADD COLUMN banner_data LONGBLOB NULL AFTER banner_path");
+        $pdo->exec("ALTER TABLE website_banners ADD COLUMN banner_mime_type VARCHAR(50) NULL AFTER banner_data");
+      }
+    } catch (PDOException $e) {
+      // Columns might already exist, continue
+    }
+    
     foreach ($files as $file) {
-      if (!in_array($file['type'], $allowedTypes)) {
+      // Verify MIME type from file content
+      $finfo = finfo_open(FILEINFO_MIME_TYPE);
+      $actualMimeType = finfo_file($finfo, $file['tmp_name']);
+      finfo_close($finfo);
+      
+      if (!in_array($actualMimeType, $allowedTypes)) {
         continue; // Skip invalid files
       }
       
@@ -140,22 +157,51 @@ try {
         continue; // Skip files larger than 5MB
       }
       
-      $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-      $filename = 'banner_' . $restaurant_id . '_' . time() . '_' . uniqid() . '.' . $extension;
-      $filepath = $uploadDir . $filename;
+      // Read image data for database storage
+      $bannerData = file_get_contents($file['tmp_name']);
+      if ($bannerData === false) {
+        continue; // Skip if failed to read
+      }
       
-      if (move_uploaded_file($file['tmp_name'], $filepath)) {
-        $bannerPath = 'uploads/banners/' . $filename;
-        $stmt = $pdo->prepare('INSERT INTO website_banners (restaurant_id, banner_path, display_order) VALUES (:rid, :path, :order)');
+      $bannerPath = 'db:' . uniqid(); // Reference ID for database storage
+      
+      try {
+        $stmt = $pdo->prepare('INSERT INTO website_banners (restaurant_id, banner_path, banner_data, banner_mime_type, display_order) VALUES (:rid, :path, :data, :mime, :order)');
         $stmt->execute([
           ':rid' => $restaurant_id,
           ':path' => $bannerPath,
+          ':data' => $bannerData,
+          ':mime' => $actualMimeType,
           ':order' => $nextOrder++
         ]);
         $uploadedBanners[] = [
           'id' => $pdo->lastInsertId(),
-          'banner_path' => $bannerPath
+          'banner_path' => $bannerPath,
+          'banner_url' => 'image.php?type=banner&id=' . $pdo->lastInsertId()
         ];
+      } catch (PDOException $e) {
+        // If columns don't exist, fall back to file-based storage
+        if (strpos($e->getMessage(), 'banner_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
+          $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+          $filename = 'banner_' . $restaurant_id . '_' . time() . '_' . uniqid() . '.' . $extension;
+          $filepath = $uploadDir . $filename;
+          
+          if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            $bannerPath = 'uploads/banners/' . $filename;
+            $stmt = $pdo->prepare('INSERT INTO website_banners (restaurant_id, banner_path, display_order) VALUES (:rid, :path, :order)');
+            $stmt->execute([
+              ':rid' => $restaurant_id,
+              ':path' => $bannerPath,
+              ':order' => $nextOrder++
+            ]);
+            $uploadedBanners[] = [
+              'id' => $pdo->lastInsertId(),
+              'banner_path' => $bannerPath
+            ];
+          }
+        } else {
+          throw $e;
+        }
       }
     }
     
@@ -176,9 +222,11 @@ try {
       $stmt->execute([':id' => $bannerId, ':rid' => $restaurant_id]);
       $banner = $stmt->fetch();
       
-      if ($banner && file_exists(__DIR__ . '/../' . $banner['banner_path'])) {
+      // Delete old banner file if exists (for backward compatibility - only if not in database)
+      if ($banner && strpos($banner['banner_path'], 'db:') !== 0 && file_exists(__DIR__ . '/../' . $banner['banner_path'])) {
         @unlink(__DIR__ . '/../' . $banner['banner_path']);
       }
+      // Banner data in database will be automatically deleted when row is deleted
       
       $deleteStmt = $pdo->prepare('DELETE FROM website_banners WHERE id = :id AND restaurant_id = :rid');
       $deleteStmt->execute([':id' => $bannerId, ':rid' => $restaurant_id]);
@@ -190,11 +238,11 @@ try {
       $oldStmt = $pdo->prepare('SELECT banner_image FROM website_settings WHERE restaurant_id = :rid');
       $oldStmt->execute([':rid' => $restaurant_id]);
       $old = $oldStmt->fetch();
-      if ($old && $old['banner_image'] && file_exists(__DIR__ . '/../' . $old['banner_image'])) {
+      if ($old && $old['banner_image'] && strpos($old['banner_image'], 'db:') !== 0 && file_exists(__DIR__ . '/../' . $old['banner_image'])) {
         @unlink(__DIR__ . '/../' . $old['banner_image']);
       }
       
-      $stmt = $pdo->prepare('UPDATE website_settings SET banner_image = NULL WHERE restaurant_id = :rid');
+      $stmt = $pdo->prepare('UPDATE website_settings SET banner_image = NULL, banner_data = NULL, banner_mime_type = NULL WHERE restaurant_id = :rid');
       $stmt->execute([':rid' => $restaurant_id]);
       
       echo json_encode(['success' => true]);

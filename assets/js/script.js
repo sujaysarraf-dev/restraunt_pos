@@ -1340,12 +1340,21 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('itemType').value = data.item_type;
     }
     
-    // Show existing image if available
+    // Show existing image if available with cache-busting
     if (data.item_image) {
       const imagePreview = document.getElementById('imagePreview');
       const previewImg = document.getElementById('previewImg');
       if (imagePreview && previewImg) {
-        previewImg.src = `../api/image.php?path=${encodeURIComponent(data.item_image)}`;
+        const timestamp = Date.now();
+        let imageUrl;
+        if (data.item_image.startsWith('db:')) {
+          imageUrl = `../api/image.php?path=${encodeURIComponent(data.item_image)}&t=${timestamp}`;
+        } else if (data.item_image.startsWith('http')) {
+          imageUrl = data.item_image + (data.item_image.includes('?') ? '&' : '?') + `t=${timestamp}`;
+        } else {
+          imageUrl = `../api/image.php?path=${encodeURIComponent(data.item_image)}&t=${timestamp}`;
+        }
+        previewImg.src = imageUrl;
         imagePreview.style.display = 'block';
       }
     }
@@ -4753,6 +4762,7 @@ window.printKOT = async function(kotId) {
       if (infoData.success && infoData.data) {
         restaurantInfo.name = infoData.data.restaurant_name || restaurantInfo.name;
         restaurantInfo.logo = infoData.data.restaurant_logo || '';
+        restaurantInfo.user_id = infoData.data.user_id || infoData.data.id || '';
         restaurantInfo.address = infoData.data.address || '';
         restaurantInfo.phone = infoData.data.phone || '';
         restaurantInfo.email = infoData.data.email || '';
@@ -4783,11 +4793,21 @@ window.printKOT = async function(kotId) {
     // Logo HTML
     let logoHtml = '';
     if (restaurantInfo.logo) {
-      const logoPath = restaurantInfo.logo.startsWith('http') 
-        ? restaurantInfo.logo 
-        : (restaurantInfo.logo.startsWith('uploads/') 
-          ? '../' + restaurantInfo.logo 
-          : '../uploads/' + restaurantInfo.logo);
+      let logoPath;
+      if (restaurantInfo.logo.startsWith('db:')) {
+        // Database-stored image - need user ID from restaurantInfo
+        const userId = restaurantInfo.user_id || restaurantInfo.id || '';
+        logoPath = `../api/image.php?type=logo&id=${userId}`;
+      } else if (restaurantInfo.logo.startsWith('http')) {
+        // External URL
+        logoPath = restaurantInfo.logo;
+      } else if (restaurantInfo.logo.startsWith('uploads/')) {
+        // File-based image
+        logoPath = '../' + restaurantInfo.logo;
+      } else {
+        // Relative path
+        logoPath = '../uploads/' + restaurantInfo.logo;
+      }
       logoHtml = `<img src="${logoPath}" alt="Logo" style="max-width: 80px; max-height: 80px; object-fit: contain; margin-bottom: 10px;" onerror="this.style.display='none';">`;
     }
 
@@ -5000,6 +5020,7 @@ window.printOrder = async function(orderId) {
       if (infoData.success && infoData.data) {
         restaurantInfo.name = infoData.data.restaurant_name || restaurantInfo.name;
         restaurantInfo.logo = infoData.data.restaurant_logo || '';
+        restaurantInfo.user_id = infoData.data.user_id || infoData.data.id || '';
         restaurantInfo.address = infoData.data.address || '';
         restaurantInfo.phone = infoData.data.phone || '';
         restaurantInfo.email = infoData.data.email || '';
@@ -5038,11 +5059,21 @@ window.printOrder = async function(orderId) {
     // Logo HTML
     let logoHtml = '';
     if (restaurantInfo.logo) {
-      const logoPath = restaurantInfo.logo.startsWith('http') 
-        ? restaurantInfo.logo 
-        : (restaurantInfo.logo.startsWith('uploads/') 
-          ? '../' + restaurantInfo.logo 
-          : '../uploads/' + restaurantInfo.logo);
+      let logoPath;
+      if (restaurantInfo.logo.startsWith('db:')) {
+        // Database-stored image - need user ID from restaurantInfo
+        const userId = restaurantInfo.user_id || restaurantInfo.id || '';
+        logoPath = `../api/image.php?type=logo&id=${userId}`;
+      } else if (restaurantInfo.logo.startsWith('http')) {
+        // External URL
+        logoPath = restaurantInfo.logo;
+      } else if (restaurantInfo.logo.startsWith('uploads/')) {
+        // File-based image
+        logoPath = '../' + restaurantInfo.logo;
+      } else {
+        // Relative path
+        logoPath = '../uploads/' + restaurantInfo.logo;
+      }
       logoHtml = `<img src="${logoPath}" alt="Logo" style="max-width: 80px; max-height: 80px; object-fit: contain; margin-bottom: 10px;" onerror="this.style.display='none';">`;
     }
 
@@ -5482,14 +5513,22 @@ async function loadProfileData() {
       // Restaurant logo in profile
       const profileRestaurantLogoEl = document.getElementById('profileRestaurantLogo');
       if (profileRestaurantLogoEl && user.restaurant_logo) {
-        let logoPath = user.restaurant_logo;
-        // Ensure proper path format - from views/ folder, need ../uploads/
-        if (logoPath && !logoPath.startsWith('http') && !logoPath.startsWith('../')) {
-          if (logoPath.startsWith('uploads/')) {
-            logoPath = '../' + logoPath;
-          } else {
-            logoPath = '../uploads/' + logoPath;
-          }
+        let logoPath;
+        const timestamp = Date.now(); // Cache-busting timestamp
+        if (user.restaurant_logo.startsWith('db:')) {
+          // Database-stored image - add cache-busting
+          logoPath = `../api/image.php?type=logo&id=${user.id || user.user_id || ''}&t=${timestamp}`;
+        } else if (user.restaurant_logo.startsWith('http')) {
+          // External URL
+          logoPath = user.restaurant_logo + (user.restaurant_logo.includes('?') ? '&' : '?') + `t=${timestamp}`;
+        } else if (user.restaurant_logo.startsWith('uploads/')) {
+          // File-based image
+          logoPath = `../${user.restaurant_logo}?t=${timestamp}`;
+        } else if (!user.restaurant_logo.startsWith('../')) {
+          // Relative path
+          logoPath = `../uploads/${user.restaurant_logo}?t=${timestamp}`;
+        } else {
+          logoPath = `${user.restaurant_logo}?t=${timestamp}`;
         }
         profileRestaurantLogoEl.src = logoPath;
         profileRestaurantLogoEl.style.display = 'block';
@@ -6726,7 +6765,17 @@ async function initWebsiteThemeEditor() {
       }
       
       banners.forEach((banner, index) => {
-        const imagePath = banner.banner_path.startsWith('http') ? banner.banner_path : '../' + banner.banner_path;
+        let imagePath;
+        if (banner.banner_path.startsWith('db:')) {
+          // Database-stored banner
+          imagePath = `../api/image.php?type=banner&id=${banner.id}`;
+        } else if (banner.banner_path.startsWith('http')) {
+          // External URL
+          imagePath = banner.banner_path;
+        } else {
+          // File-based image (backward compatibility)
+          imagePath = '../' + banner.banner_path;
+        }
         const bannerCard = document.createElement('div');
         bannerCard.setAttribute('draggable', 'true');
         bannerCard.setAttribute('data-banner-id', banner.id);
@@ -7240,9 +7289,33 @@ async function uploadRestaurantLogo() {
       }
       // Reload dashboard logo
       const dashboardLogo = document.getElementById('dashboardRestaurantLogo');
-      if (dashboardLogo && result.logo_path) {
+      if (dashboardLogo && result.data && result.data.restaurant_logo) {
+        let logoPath;
+        const logo = result.data.restaurant_logo;
+        if (logo.startsWith('db:')) {
+          // Database-stored image
+          const userId = result.data.id || result.data.user_id || '';
+          logoPath = `../api/image.php?type=logo&id=${userId}`;
+        } else if (logo.startsWith('http')) {
+          // External URL
+          logoPath = logo;
+        } else if (logo.startsWith('uploads/')) {
+          // File-based image
+          logoPath = '../' + logo;
+        } else if (!logo.startsWith('../')) {
+          // Relative path
+          logoPath = '../uploads/' + logo;
+        } else {
+          logoPath = logo;
+        }
+        dashboardLogo.src = logoPath;
+      } else if (dashboardLogo && result.logo_path) {
+        // Fallback for old response format
         let logoPath = result.logo_path;
-        if (logoPath && !logoPath.startsWith('http') && !logoPath.startsWith('../')) {
+        if (logoPath.startsWith('db:')) {
+          const userId = result.user_id || result.id || '';
+          logoPath = `../api/image.php?type=logo&id=${userId}`;
+        } else if (!logoPath.startsWith('http') && !logoPath.startsWith('../')) {
           if (logoPath.startsWith('uploads/')) {
             logoPath = '../' + logoPath;
           } else {

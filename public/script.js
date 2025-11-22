@@ -3863,11 +3863,20 @@ async function loadRestaurantInfo() {
       // Update dashboard logo
       const dashboardLogo = document.getElementById("dashboardRestaurantLogo");
       if (dashboardLogo && result.data.restaurant_logo) {
-        const logoPath = result.data.restaurant_logo.startsWith('http') 
-          ? result.data.restaurant_logo 
-          : (result.data.restaurant_logo.startsWith('uploads/') 
-            ? result.data.restaurant_logo 
-            : 'uploads/' + result.data.restaurant_logo);
+        let logoPath;
+        if (result.data.restaurant_logo.startsWith('db:')) {
+          // Database-stored image
+          logoPath = `image.php?type=logo&id=${result.data.id || result.data.user_id || ''}`;
+        } else if (result.data.restaurant_logo.startsWith('http')) {
+          // External URL
+          logoPath = result.data.restaurant_logo;
+        } else if (result.data.restaurant_logo.startsWith('uploads/')) {
+          // File-based image
+          logoPath = result.data.restaurant_logo;
+        } else {
+          // Relative path
+          logoPath = 'uploads/' + result.data.restaurant_logo;
+        }
         dashboardLogo.src = logoPath;
         dashboardLogo.style.borderRadius = '50%';
         dashboardLogo.style.objectFit = 'cover';
@@ -4656,11 +4665,20 @@ async function loadProfileData() {
       if (user.restaurant_logo) {
         const logoImg = document.getElementById('profileRestaurantLogo');
         const initialsSpan = document.getElementById('profileInitials');
-        const logoPath = user.restaurant_logo.startsWith('http') 
-          ? user.restaurant_logo 
-          : (user.restaurant_logo.startsWith('uploads/') 
-            ? user.restaurant_logo 
-            : 'uploads/' + user.restaurant_logo);
+        let logoPath;
+        if (user.restaurant_logo.startsWith('db:')) {
+          // Database-stored image
+          logoPath = `image.php?type=logo&id=${user.id || user.user_id || ''}`;
+        } else if (user.restaurant_logo.startsWith('http')) {
+          // External URL
+          logoPath = user.restaurant_logo;
+        } else if (user.restaurant_logo.startsWith('uploads/')) {
+          // File-based image
+          logoPath = user.restaurant_logo;
+        } else {
+          // Relative path
+          logoPath = 'uploads/' + user.restaurant_logo;
+        }
         logoImg.src = logoPath;
         logoImg.style.display = 'block';
         initialsSpan.style.display = 'none';
@@ -5431,7 +5449,17 @@ async function initWebsiteThemeEditor() {
       
       banners.forEach((banner, index) => {
         console.log('Rendering banner:', banner);
-        const imagePath = banner.banner_path;
+        let imagePath;
+        if (banner.banner_path.startsWith('db:')) {
+          // Database-stored banner
+          imagePath = `image.php?type=banner&id=${banner.id}`;
+        } else if (banner.banner_path.startsWith('http')) {
+          // External URL
+          imagePath = banner.banner_path;
+        } else {
+          // File-based image (backward compatibility)
+          imagePath = banner.banner_path;
+        }
         console.log('Image path:', imagePath);
         const bannerCard = document.createElement('div');
         bannerCard.setAttribute('draggable', 'true');
@@ -5862,9 +5890,31 @@ async function uploadRestaurantLogo() {
       closeLogoUploadModal();
       // Reload profile data to show new logo
       await loadProfileData();
-      // Also reload restaurant info to update dashboard logo
+      // Also reload restaurant info to update dashboard logo with cache-busting
       if (typeof loadRestaurantInfo === 'function') {
         await loadRestaurantInfo();
+      }
+      // Force update dashboard logo immediately with cache-busting
+      const dashboardLogo = document.getElementById("dashboardRestaurantLogo");
+      if (dashboardLogo && result.data && result.data.restaurant_logo) {
+        let logoPath;
+        const logo = result.data.restaurant_logo;
+        const timestamp = Date.now(); // Cache-busting timestamp
+        if (logo.startsWith('db:')) {
+          const userId = result.data.id || result.data.user_id || '';
+          logoPath = `image.php?type=logo&id=${userId}&t=${timestamp}`;
+        } else if (logo.startsWith('http')) {
+          logoPath = logo + (logo.includes('?') ? '&' : '?') + `t=${timestamp}`;
+        } else if (logo.startsWith('uploads/')) {
+          logoPath = `${logo}?t=${timestamp}`;
+        } else {
+          logoPath = `uploads/${logo}?t=${timestamp}`;
+        }
+        // Force image reload
+        dashboardLogo.src = '';
+        setTimeout(() => {
+          dashboardLogo.src = logoPath;
+        }, 10);
       }
     } else {
       showNotification(result.message || 'Failed to upload logo', 'error');

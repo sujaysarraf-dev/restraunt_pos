@@ -129,22 +129,44 @@ function handleAddMenuItem($conn, $uploadDir) {
         throw new Exception('Selected menu does not exist');
     }
     
-    // Handle file upload
-    $itemImage = null;
+    // Handle file upload - store in database
+    $itemImageData = null;
+    $itemImageMimeType = null;
+    $itemImagePath = null;
+    
     if (isset($_FILES['itemImage']) && $_FILES['itemImage']['error'] === UPLOAD_ERR_OK) {
-        $itemImage = handleFileUpload($_FILES['itemImage'], $uploadDir);
+        $imageInfo = handleFileUpload($_FILES['itemImage'], $uploadDir);
+        if (is_array($imageInfo)) {
+            $itemImageData = $imageInfo['data'];
+            $itemImageMimeType = $imageInfo['mime_type'];
+            $itemImagePath = 'db:' . uniqid(); // Reference ID for database storage
+        } else {
+            $itemImagePath = $imageInfo; // Fallback for old format
+        }
     }
     
-    // Insert new menu item
+    // Ensure columns exist
+    try {
+        $checkCol = $conn->query("SHOW COLUMNS FROM menu_items LIKE 'image_data'");
+        if ($checkCol->rowCount() == 0) {
+            $conn->exec("ALTER TABLE menu_items ADD COLUMN image_data LONGBLOB NULL AFTER item_image");
+            $conn->exec("ALTER TABLE menu_items ADD COLUMN image_mime_type VARCHAR(50) NULL AFTER image_data");
+        }
+    } catch (PDOException $e) {
+        // Columns might already exist, continue
+    }
+    
+    // Insert new menu item with image data
     $insertStmt = $conn->prepare("
         INSERT INTO menu_items 
-        (menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        (menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, image_data, image_mime_type, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     ");
     
     $result = $insertStmt->execute([
         $menuId, $itemNameEn, $itemDescriptionEn, $itemCategory, $itemType, 
-        $preparationTime, $isAvailable, $basePrice, $hasVariations, $itemImage
+        $preparationTime, $isAvailable, $basePrice, $hasVariations, 
+        $itemImagePath, $itemImageData, $itemImageMimeType
     ]);
     
     if ($result) {
@@ -203,28 +225,51 @@ function handleUpdateMenuItem($conn, $menuItemId, $uploadDir) {
         throw new Exception('Selected menu does not exist');
     }
     
-    // Handle file upload
-    $itemImage = $existingItem['item_image']; // Keep existing image by default
+    // Handle file upload - store in database
+    $itemImageData = $existingItem['image_data'] ?? null; // Keep existing image by default
+    $itemImageMimeType = $existingItem['image_mime_type'] ?? null;
+    $itemImagePath = $existingItem['item_image'] ?? null;
+    
     if (isset($_FILES['itemImage']) && $_FILES['itemImage']['error'] === UPLOAD_ERR_OK) {
-        // Delete old image if exists
-        if ($existingItem['item_image'] && file_exists($existingItem['item_image'])) {
-            unlink($existingItem['item_image']);
+        // Delete old image file if exists (for backward compatibility)
+        if ($existingItem['item_image'] && strpos($existingItem['item_image'], 'db:') !== 0 && file_exists($existingItem['item_image'])) {
+            @unlink($existingItem['item_image']);
         }
-        $itemImage = handleFileUpload($_FILES['itemImage'], $uploadDir);
+        
+        $imageInfo = handleFileUpload($_FILES['itemImage'], $uploadDir);
+        if (is_array($imageInfo)) {
+            $itemImageData = $imageInfo['data'];
+            $itemImageMimeType = $imageInfo['mime_type'];
+            $itemImagePath = 'db:' . uniqid(); // Reference ID for database storage
+        } else {
+            $itemImagePath = $imageInfo; // Fallback for old format
+        }
     }
     
-    // Update menu item
+    // Ensure columns exist
+    try {
+        $checkCol = $conn->query("SHOW COLUMNS FROM menu_items LIKE 'image_data'");
+        if ($checkCol->rowCount() == 0) {
+            $conn->exec("ALTER TABLE menu_items ADD COLUMN image_data LONGBLOB NULL AFTER item_image");
+            $conn->exec("ALTER TABLE menu_items ADD COLUMN image_mime_type VARCHAR(50) NULL AFTER image_data");
+        }
+    } catch (PDOException $e) {
+        // Columns might already exist, continue
+    }
+    
+    // Update menu item with image data
     $updateStmt = $conn->prepare("
         UPDATE menu_items SET 
         menu_id = ?, item_name_en = ?, item_description_en = ?, item_category = ?, 
         item_type = ?, preparation_time = ?, is_available = ?, base_price = ?, 
-        has_variations = ?, item_image = ?, updated_at = NOW()
+        has_variations = ?, item_image = ?, image_data = ?, image_mime_type = ?, updated_at = NOW()
         WHERE id = ?
     ");
     
     $result = $updateStmt->execute([
         $menuId, $itemNameEn, $itemDescriptionEn, $itemCategory, $itemType, 
-        $preparationTime, $isAvailable, $basePrice, $hasVariations, $itemImage, $menuItemId
+        $preparationTime, $isAvailable, $basePrice, $hasVariations, 
+        $itemImagePath, $itemImageData, $itemImageMimeType, $menuItemId
     ]);
     
     if ($result) {
@@ -280,9 +325,18 @@ function handleDeleteMenuItem($conn, $menuItemId) {
 }
 
 function handleFileUpload($file, $uploadDir) {
+    global $pdo;
+    
     // Validate file type
     $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!in_array($file['type'], $allowedTypes)) {
+    $mimeType = $file['type'];
+    
+    // Verify MIME type from file content
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $actualMimeType = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    
+    if (!in_array($actualMimeType, $allowedTypes)) {
         throw new Exception('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.');
     }
     
@@ -292,16 +346,35 @@ function handleFileUpload($file, $uploadDir) {
         throw new Exception('File size too large. Maximum size is 5MB.');
     }
     
-    // Generate unique filename
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = 'item_' . uniqid() . '_' . time() . '.' . $extension;
-    $filepath = $uploadDir . $filename;
+    // Read image data
+    $imageData = file_get_contents($file['tmp_name']);
+    if ($imageData === false) {
+        throw new Exception('Failed to read image file');
+    }
     
-    // Move uploaded file
-    if (move_uploaded_file($file['tmp_name'], $filepath)) {
-        return 'uploads/' . $filename;
-    } else {
-        throw new Exception('Failed to upload file');
+    // Store in database and return image ID
+    try {
+        // Ensure image_data and image_mime_type columns exist
+        try {
+            $checkCol = $pdo->query("SHOW COLUMNS FROM menu_items LIKE 'image_data'");
+            if ($checkCol->rowCount() == 0) {
+                $pdo->exec("ALTER TABLE menu_items ADD COLUMN image_data LONGBLOB NULL AFTER item_image");
+                $pdo->exec("ALTER TABLE menu_items ADD COLUMN image_mime_type VARCHAR(50) NULL AFTER image_data");
+            }
+        } catch (PDOException $e) {
+            // Columns might already exist, continue
+        }
+        
+        // Insert image into a temporary table or use a reference
+        // For now, we'll store directly in menu_items when the item is saved
+        // Return a reference that will be used to store the image data
+        return [
+            'data' => $imageData,
+            'mime_type' => $actualMimeType,
+            'size' => $file['size']
+        ];
+    } catch (Exception $e) {
+        throw new Exception('Failed to process image: ' . $e->getMessage());
     }
 }
 ?>
