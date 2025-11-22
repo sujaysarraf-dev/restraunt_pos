@@ -779,6 +779,11 @@ function handleForgotPassword() {
     $host = $_SERVER['HTTP_HOST'];
     $resetLink = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']) . '/reset_password.php?token=' . $token;
     
+    // Include email configuration if available
+    if (file_exists(__DIR__ . '/../config/email_config.php')) {
+        require_once __DIR__ . '/../config/email_config.php';
+    }
+    
     // Send email
     $subject = 'Password Reset Request - ' . $user['restaurant_name'];
     $message = "
@@ -818,9 +823,41 @@ function handleForgotPassword() {
     </html>
     ";
     
-    $headers = "MIME-Version: 1.0" . "\r\n";
-    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-    $headers .= "From: Restaurant POS System <noreply@" . $host . ">" . "\r\n";
+    // Try to send email using the email helper function if available
+    $mailSent = false;
+    $mailError = '';
+    
+    if (function_exists('sendEmail')) {
+        // Use SMTP email function
+        $emailResult = sendEmail($email, $subject, $message);
+        if (is_array($emailResult)) {
+            $mailSent = $emailResult['success'] ?? false;
+            $mailError = $emailResult['error'] ?? '';
+        } else {
+            // Legacy boolean return
+            $mailSent = $emailResult;
+        }
+        
+        if (!$mailSent) {
+            if (empty($mailError)) {
+                $mailError = 'SMTP email sending failed';
+            }
+            error_log("Failed to send password reset email via SMTP to: " . $email . " - Error: " . $mailError);
+        }
+    } else {
+        // Fallback to PHP mail() function
+        $headers = "MIME-Version: 1.0" . "\r\n";
+        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+        $headers .= "From: Restaurant POS System <noreply@" . $host . ">" . "\r\n";
+        
+        $mailSent = @mail($email, $subject, $message, $headers);
+        
+        if (!$mailSent) {
+            $lastError = error_get_last();
+            $mailError = $lastError ? ($lastError['message'] ?? 'Mail function failed') : 'Mail function returned false';
+            error_log("Failed to send password reset email to: " . $email . " - Error: " . $mailError);
+        }
+    }
     
     // Check if we're in development mode (localhost or local IP)
     $isDevelopment = (
@@ -832,16 +869,6 @@ function handleForgotPassword() {
         (isset($_SERVER['SERVER_NAME']) && $_SERVER['SERVER_NAME'] === 'localhost') ||
         (isset($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR'] === '127.0.0.1')
     );
-    
-    // Always try to send email
-    $mailSent = @mail($email, $subject, $message, $headers);
-    $mailError = '';
-    
-    if (!$mailSent) {
-        $lastError = error_get_last();
-        $mailError = $lastError ? ($lastError['message'] ?? 'Mail function failed') : 'Mail function returned false';
-        error_log("Failed to send password reset email to: " . $email . " - Error: " . $mailError);
-    }
     
     // Always return the reset link (especially useful when email doesn't work)
     // This ensures users can still reset their password even if email fails
