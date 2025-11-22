@@ -29,6 +29,16 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
+// Include validation and rate limiting
+if (file_exists(__DIR__ . '/../config/validation.php')) {
+    require_once __DIR__ . '/../config/validation.php';
+}
+if (file_exists(__DIR__ . '/../config/rate_limit.php')) {
+    require_once __DIR__ . '/../config/rate_limit.php';
+    // Apply rate limiting: 60 requests per minute for GET requests
+    applyRateLimit(60, 60);
+}
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
     http_response_code(401);
@@ -58,8 +68,39 @@ try {
         $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     }
     
-    // Get filter parameters
+    // Get and validate filter parameters
     $dateFilter = isset($_GET['date']) ? trim($_GET['date']) : '';
+    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+    $statusFilter = isset($_GET['status']) ? trim($_GET['status']) : '';
+    $dateRange = isset($_GET['date_range']) ? trim($_GET['date_range']) : '';
+    
+    // Validate date filter if provided
+    if (!empty($dateFilter)) {
+        $dateValidation = validateDate($dateFilter, 'Y-m-d');
+        if (!$dateValidation['valid']) {
+            throw new Exception($dateValidation['message']);
+        }
+        $dateFilter = $dateValidation['value'];
+    }
+    
+    // Validate date range if provided (format: "start_date,end_date")
+    if (!empty($dateRange)) {
+        $dates = explode(',', $dateRange);
+        if (count($dates) === 2) {
+            $rangeValidation = validateDateRange(trim($dates[0]), trim($dates[1]), 'Y-m-d');
+            if (!$rangeValidation['valid']) {
+                throw new Exception($rangeValidation['message']);
+            }
+        }
+    }
+    
+    // Sanitize search input
+    if (!empty($search)) {
+        $search = sanitizeString($search);
+        if (strlen($search) > 100) {
+            throw new Exception('Search term is too long');
+        }
+    }
     
     // Build the query
     $sql = "SELECT r.*, t.table_number, a.area_name 
@@ -73,6 +114,31 @@ try {
     if (!empty($dateFilter)) {
         $sql .= " AND r.reservation_date = ?";
         $params[] = $dateFilter;
+    }
+    
+    // Add date range filter if provided
+    if (!empty($dateRange)) {
+        $dates = explode(',', $dateRange);
+        if (count($dates) === 2) {
+            $sql .= " AND r.reservation_date BETWEEN ? AND ?";
+            $params[] = trim($dates[0]);
+            $params[] = trim($dates[1]);
+        }
+    }
+    
+    // Add status filter if provided
+    if (!empty($statusFilter) && in_array($statusFilter, ['Pending', 'Confirmed', 'Cancelled', 'Completed', 'No Show'])) {
+        $sql .= " AND r.status = ?";
+        $params[] = $statusFilter;
+    }
+    
+    // Add search filter if provided
+    if (!empty($search)) {
+        $sql .= " AND (r.customer_name LIKE ? OR r.phone LIKE ? OR r.email LIKE ?)";
+        $searchParam = '%' . $search . '%';
+        $params[] = $searchParam;
+        $params[] = $searchParam;
+        $params[] = $searchParam;
     }
     
     $sql .= " ORDER BY r.reservation_date DESC, r.time_slot ASC";

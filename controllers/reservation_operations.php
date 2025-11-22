@@ -25,6 +25,26 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
+// Include validation and rate limiting
+if (file_exists(__DIR__ . '/../config/validation.php')) {
+    require_once __DIR__ . '/../config/validation.php';
+}
+if (file_exists(__DIR__ . '/../config/rate_limit.php')) {
+    require_once __DIR__ . '/../config/rate_limit.php';
+    // Apply rate limiting: 30 requests per minute
+    applyRateLimit(30, 60);
+}
+
+// Check request size (max 5MB for POST requests)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $sizeCheck = checkRequestSize(5);
+    if (!$sizeCheck['valid']) {
+        http_response_code(413);
+        echo json_encode(['success' => false, 'message' => $sizeCheck['message']]);
+        exit();
+    }
+}
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
     http_response_code(401);
@@ -77,22 +97,58 @@ try {
         throw new Exception('Action is required');
     }
     
-    // Validate required fields for add and update actions
+    // Validate required fields for add and update actions using validation functions
     if (in_array($action, ['add', 'update'])) {
-        if (empty($reservationDate)) {
-            throw new Exception('Reservation date is required');
+        // Validate date
+        $dateValidation = validateDate($reservationDate, 'Y-m-d');
+        if (!$dateValidation['valid']) {
+            throw new Exception($dateValidation['message']);
         }
-        if (empty($timeSlot)) {
-            throw new Exception('Time slot is required');
+        $reservationDate = $dateValidation['value'];
+        
+        // Validate time slot
+        $timeValidation = validateTime($timeSlot);
+        if (!$timeValidation['valid']) {
+            throw new Exception($timeValidation['message']);
         }
-        if (empty($customerName)) {
-            throw new Exception('Customer name is required');
+        $timeSlot = $timeValidation['value'];
+        
+        // Validate customer name
+        $nameValidation = validateString($customerName, 2, 100, true);
+        if (!$nameValidation['valid']) {
+            throw new Exception($nameValidation['message']);
         }
-        if (empty($phone)) {
-            throw new Exception('Phone number is required');
+        $customerName = sanitizeString($nameValidation['value']);
+        
+        // Validate phone number
+        $phoneValidation = validatePhone($phone);
+        if (!$phoneValidation['valid']) {
+            throw new Exception($phoneValidation['message']);
         }
-        if ($noOfGuests <= 0) {
-            throw new Exception('Number of guests must be greater than 0');
+        $phone = $phoneValidation['value'];
+        
+        // Validate email if provided
+        if (!empty($email)) {
+            $emailValidation = validateEmail($email);
+            if (!$emailValidation['valid']) {
+                throw new Exception($emailValidation['message']);
+            }
+            $email = $emailValidation['value'];
+        }
+        
+        // Validate number of guests
+        $guestsValidation = validateInteger($noOfGuests, 1, 50);
+        if (!$guestsValidation['valid']) {
+            throw new Exception($guestsValidation['message']);
+        }
+        $noOfGuests = $guestsValidation['value'];
+        
+        // Sanitize special request
+        if (!empty($specialRequest)) {
+            $specialRequest = sanitizeString($specialRequest);
+            if (strlen($specialRequest) > 500) {
+                throw new Exception('Special request must be less than 500 characters');
+            }
         }
     }
     
