@@ -168,6 +168,70 @@
             margin: 5px 0;
             color: #1976d2;
         }
+        
+        .forgot-password-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .forgot-password-modal.active {
+            display: flex;
+        }
+        
+        .forgot-password-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .forgot-password-content h2 {
+            margin: 0 0 10px 0;
+            color: #151A2D;
+            font-size: 1.5rem;
+        }
+        
+        .forgot-password-content p {
+            color: #666;
+            margin: 0 0 20px 0;
+            font-size: 0.9rem;
+        }
+        
+        .close-modal {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-modal:hover {
+            color: #151A2D;
+        }
+        
+        .btn-outline {
+            background: #f5f5f5;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .btn-outline:hover {
+            background: #e0e0e0;
+        }
     </style>
 </head>
 <body>
@@ -191,6 +255,9 @@
             <div class="form-group">
                 <label for="loginPassword">Password:</label>
                 <input type="password" id="loginPassword" name="password" required placeholder="Enter your password">
+            </div>
+            <div style="text-align: right; margin-bottom: 15px;">
+                <a href="#" id="forgotPasswordLink" style="color: #151A2D; text-decoration: none; font-size: 0.9rem; font-weight: 500;">Forgot Password?</a>
             </div>
             <button type="submit" class="btn btn-primary" id="loginBtn">Sign In</button>
         </form>
@@ -217,6 +284,23 @@
             <p><strong>Admin:</strong> Use your username</p>
             <p><strong>Staff:</strong> Use your email or phone number</p>
             <p style="margin-top: 10px; font-size: 0.8rem; color: #1976d2;">Staff members can login with email/phone from staff table</p>
+        </div>
+    </div>
+    
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="forgot-password-modal">
+        <div class="forgot-password-content">
+            <button class="close-modal" onclick="closeForgotPasswordModal()">&times;</button>
+            <h2>Forgot Password</h2>
+            <p>Enter your restaurant email address and we'll send you a password reset link.</p>
+            <form id="forgotPasswordForm">
+                <div class="form-group">
+                    <label for="forgotEmail">Email Address:</label>
+                    <input type="email" id="forgotEmail" name="email" required placeholder="Enter your restaurant email">
+                </div>
+                <button type="submit" class="btn btn-primary" id="forgotPasswordBtn">Send Reset Link</button>
+                <button type="button" class="btn btn-outline" onclick="closeForgotPasswordModal()" style="background: #f5f5f5; color: #333; border: 2px solid #e0e0e0;">Cancel</button>
+            </form>
         </div>
     </div>
 
@@ -347,7 +431,117 @@
             messageDiv.textContent = message;
             
             const activeForm = document.querySelector('.auth-form.active');
-            activeForm.insertBefore(messageDiv, activeForm.firstChild);
+            if (activeForm) {
+                activeForm.insertBefore(messageDiv, activeForm.firstChild);
+            }
+        }
+        
+        // Forgot Password functionality
+        document.getElementById('forgotPasswordLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('forgotPasswordModal').classList.add('active');
+        });
+        
+        function closeForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').classList.remove('active');
+            document.getElementById('forgotPasswordForm').reset();
+            const messages = document.querySelectorAll('#forgotPasswordForm .message');
+            messages.forEach(msg => msg.remove());
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('forgotPasswordModal').addEventListener('click', (e) => {
+            if (e.target.id === 'forgotPasswordModal') {
+                closeForgotPasswordModal();
+            }
+        });
+        
+        // Forgot Password Form Submission
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('forgotEmail').value.trim();
+            const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+            
+            if (!email) {
+                showForgotPasswordMessage('Please enter your email address.', 'error');
+                return;
+            }
+            
+            if (!email.includes('@')) {
+                showForgotPasswordMessage('Please enter a valid email address.', 'error');
+                return;
+            }
+            
+            forgotPasswordBtn.disabled = true;
+            forgotPasswordBtn.textContent = 'Sending...';
+            
+            try {
+                const response = await fetch('auth.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `action=forgotPassword&email=${encodeURIComponent(email)}`
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = result.message || 'Password reset link has been sent to your email. Please check your inbox.';
+                    
+                    // If in development mode or email failed, show the reset link
+                    if (result.reset_link) {
+                        message += '<br><br><strong>Reset Link (Click to copy):</strong><br>';
+                        message += '<div style="background: #f5f5f5; padding: 10px; border-radius: 5px; margin-top: 10px; word-break: break-all; cursor: pointer; border: 1px solid #ddd;" onclick="copyToClipboard(this.textContent)">' + result.reset_link + '</div>';
+                        message += '<small style="color: #666; margin-top: 5px; display: block;">Click the link above to copy it</small>';
+                    }
+                    
+                    showForgotPasswordMessage(message, 'success');
+                    
+                    // Only auto-close if email was actually sent
+                    if (result.email_sent && !result.development_mode) {
+                        setTimeout(() => {
+                            closeForgotPasswordModal();
+                        }, 5000);
+                    }
+                } else {
+                    showForgotPasswordMessage(result.message || 'Email not found. Please check your email address.', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showForgotPasswordMessage('Network error. Please try again.', 'error');
+            } finally {
+                forgotPasswordBtn.disabled = false;
+                forgotPasswordBtn.textContent = 'Send Reset Link';
+            }
+        });
+        
+        function showForgotPasswordMessage(message, type) {
+            const form = document.getElementById('forgotPasswordForm');
+            const existingMessage = form.querySelector('.message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = message; // Use innerHTML to support HTML content
+            form.insertBefore(messageDiv, form.firstChild);
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Show temporary feedback
+                const feedback = document.createElement('div');
+                feedback.textContent = 'Copied!';
+                feedback.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 10px 20px; border-radius: 5px; z-index: 10000;';
+                document.body.appendChild(feedback);
+                setTimeout(() => feedback.remove(), 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy. Please select and copy manually.');
+            });
         }
     </script>
 </body>
