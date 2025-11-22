@@ -1,5 +1,11 @@
 <?php
-session_start();
+// Include secure session configuration
+if (file_exists(__DIR__ . '/config/session_config.php')) {
+    require_once __DIR__ . '/config/session_config.php';
+    configureSecureSession();
+} else {
+    session_start();
+}
 
 // Check if user is logged in (admin has user_id, staff has staff_id)
 if ((isset($_SESSION['user_id']) || isset($_SESSION['staff_id'])) && isset($_SESSION['username']) && isset($_SESSION['restaurant_id'])) {

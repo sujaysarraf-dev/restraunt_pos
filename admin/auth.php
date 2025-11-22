@@ -4,7 +4,13 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-session_start();
+// Include secure session configuration
+if (file_exists(__DIR__ . '/../config/session_config.php')) {
+    require_once __DIR__ . '/../config/session_config.php';
+    configureSecureSession();
+} else {
+    session_start();
+}
 
 // Ensure no output before headers
 if (ob_get_level()) {
@@ -23,14 +29,24 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     throw new Exception('Database connection file not found');
 }
 
+// Include CSRF protection
+if (file_exists(__DIR__ . '/../config/csrf.php')) {
+    require_once __DIR__ . '/../config/csrf.php';
+}
+
 try {
     // Check if request method is POST
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         throw new Exception('Only POST method is allowed');
     }
     
-    // Get the action and data from POST
+    // Validate CSRF token for all state-changing operations (including login)
     $action = isset($_POST['action']) ? trim($_POST['action']) : '';
+    
+    // Validate CSRF token for all POST requests (including login, signup, etc.)
+    if (!empty($action) && function_exists('validateCSRFPost')) {
+        validateCSRFPost();
+    }
     
     // Validate action
     if (empty($action)) {
@@ -141,6 +157,18 @@ function handleLogin() {
     }
     
     if ($user && password_verify($password, $user['password'])) {
+        // Regenerate session ID to prevent session fixation
+        if (function_exists('regenerateSessionId')) {
+            regenerateSessionId();
+        } else {
+            session_regenerate_id(true);
+        }
+        
+        // Regenerate CSRF token after successful login
+        if (function_exists('regenerateCSRFToken')) {
+            regenerateCSRFToken();
+        }
+        
         // Admin/User login
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
@@ -148,6 +176,7 @@ function handleLogin() {
         $_SESSION['restaurant_name'] = $user['restaurant_name'];
         $_SESSION['user_type'] = 'admin';
         $_SESSION['role'] = 'Admin';
+        $_SESSION['last_activity'] = time();
         
         echo json_encode([
             'success' => true,
@@ -171,6 +200,18 @@ function handleLogin() {
     $staff = $staffStmt->fetch(PDO::FETCH_ASSOC);
     
     if ($staff && password_verify($password, $staff['password'])) {
+        // Regenerate session ID to prevent session fixation
+        if (function_exists('regenerateSessionId')) {
+            regenerateSessionId();
+        } else {
+            session_regenerate_id(true);
+        }
+        
+        // Regenerate CSRF token after successful login
+        if (function_exists('regenerateCSRFToken')) {
+            regenerateCSRFToken();
+        }
+        
         // Staff login
         $_SESSION['staff_id'] = $staff['id'];
         $_SESSION['username'] = $staff['member_name'];
@@ -179,6 +220,7 @@ function handleLogin() {
         $_SESSION['restaurant_name'] = $staff['restaurant_name'] ?? 'Restaurant';
         $_SESSION['user_type'] = 'staff';
         $_SESSION['role'] = $staff['role'];
+        $_SESSION['last_activity'] = time();
         
         // Always redirect to main dashboard first
         $redirect = '../views/dashboard.php';

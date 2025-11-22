@@ -30,3 +30,4 @@ INSERT IGNORE INTO payment_methods (restaurant_id, method_name, emoji, display_o
 
 
 
+

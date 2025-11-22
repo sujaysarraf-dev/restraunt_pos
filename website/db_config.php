@@ -21,29 +21,39 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     }
 }
 
-// If $pdo is not set, create it directly
+// If $pdo is not set, create it using secure config
 if (!isset($pdo)) {
-    $host = 'localhost';
-    $dbname = 'restro2';
-    $username = 'root';
-    $password = '';
-    
-    try {
-        $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        error_log("Database connection error: " . $e->getMessage());
-        if (!headers_sent()) {
-            header('Content-Type: application/json');
-            echo json_encode([
-                'error' => 'Database connection failed. Please check your database configuration.'
-            ]);
-            exit();
-        } else {
-            die("Database connection failed. Please check your database configuration.");
+    if (file_exists(__DIR__ . '/../config/database_config.php')) {
+        require_once __DIR__ . '/../config/database_config.php';
+        try {
+            $pdo = createSecurePDOConnection();
+        } catch (Exception $e) {
+            error_log("Database connection error: " . $e->getMessage());
+            die('Database connection failed');
+        }
+    } else {
+        // Fallback to environment variables
+        $host = getenv('DB_HOST') ?: 'localhost';
+        $dbname = getenv('DB_NAME') ?: 'restro2';
+        $username = getenv('DB_USER') ?: 'root';
+        $password = getenv('DB_PASS') ?: '';
+        
+        try {
+            $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Database connection error: " . $e->getMessage());
+            if (!headers_sent()) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'error' => 'Database connection failed. Please check your database configuration.'
+                ]);
+                exit();
+            } else {
+                die("Database connection failed. Please check your database configuration.");
+            }
         }
     }
 }
 ?>
-

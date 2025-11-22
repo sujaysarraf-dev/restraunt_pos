@@ -14,6 +14,32 @@ let subscriptionData = null;
 // This is loaded server-side to prevent flash of default currency
 let globalCurrencySymbol = window.globalCurrencySymbol || '₹';
 
+// CSRF token from meta tag
+let csrfToken = window.csrfToken || '';
+
+// Helper function to add CSRF token to form data
+function addCSRFToken(formData) {
+  if (csrfToken) {
+    if (formData instanceof FormData) {
+      formData.append('csrf_token', csrfToken);
+    } else if (typeof formData === 'object') {
+      formData.csrf_token = csrfToken;
+    }
+  }
+  return formData;
+}
+
+// Helper function to add CSRF token to fetch headers
+function getCSRFHeaders() {
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  if (csrfToken) {
+    headers['X-CSRF-Token'] = csrfToken;
+  }
+  return headers;
+}
+
 // SweetAlert helper for consistent modals
 function showSweetAlert(message, type = 'info', options = {}) {
   if (window.Swal) {

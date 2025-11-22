@@ -68,14 +68,13 @@ try {
     if (isset($pdo) && $pdo instanceof PDO) {
         $conn = $pdo;
     } else {
-        // Fallback connection if needed
-        $host = 'localhost';
-        $dbname = 'restro2';
-        $username = 'root';
-        $password = '';
-        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        // Secure fallback connection
+        if (file_exists(__DIR__ . '/../config/db_fallback.php')) {
+            require_once __DIR__ . '/../config/db_fallback.php';
+            $conn = getSecureFallbackConnection();
+        } else {
+            die('Database configuration not available');
+        }
     }
     
     // Track if restaurant was explicitly requested (not default)

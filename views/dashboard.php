@@ -1,5 +1,24 @@
 <?php
-session_start();
+// Include secure session configuration
+if (file_exists(__DIR__ . '/../config/session_config.php')) {
+    require_once __DIR__ . '/../config/session_config.php';
+    configureSecureSession();
+} else {
+    session_start();
+}
+
+// Check if session is valid (includes timeout check)
+if (function_exists('isSessionValid') && !isSessionValid()) {
+    // Session expired or invalid
+    if (function_exists('destroySession')) {
+        destroySession();
+    } else {
+        session_unset();
+        session_destroy();
+    }
+    header('Location: ../admin/login.php?expired=1');
+    exit();
+}
 
 // Check if user is logged in (admin has user_id, staff has staff_id)
 if ((!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id'])) || !isset($_SESSION['username']) || !isset($_SESSION['restaurant_id'])) {
@@ -37,14 +56,13 @@ try {
     } elseif (function_exists('getConnection')) {
         $conn = getConnection();
     } else {
-        // If getConnection doesn't exist, create connection directly
-        $host = 'localhost';
-        $dbname = 'restro2';
-        $username = 'root';
-        $password = '';
-        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        // Secure fallback connection
+        if (file_exists(__DIR__ . '/../config/db_fallback.php')) {
+            require_once __DIR__ . '/../config/db_fallback.php';
+            $conn = getSecureFallbackConnection();
+        } else {
+            die('Database configuration not available');
+        }
     }
     
     // Try to get all user settings from database to prevent FOUC
@@ -148,6 +166,13 @@ try {
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+  <?php
+  // Include CSRF protection and add token to page
+  if (file_exists(__DIR__ . '/../config/csrf.php')) {
+      require_once __DIR__ . '/../config/csrf.php';
+      echo getCSRFTokenMeta();
+  }
+  ?>
   <title>Restaurant Management System</title>
   <link rel="stylesheet" href="../assets/css/style.css">
   <!-- Linking Google fonts for icons -->

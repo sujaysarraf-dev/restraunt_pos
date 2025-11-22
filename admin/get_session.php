@@ -4,7 +4,13 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-session_start();
+// Include secure session configuration
+if (file_exists(__DIR__ . '/../config/session_config.php')) {
+    require_once __DIR__ . '/../config/session_config.php';
+    configureSecureSession();
+} else {
+    session_start();
+}
 
 // Ensure no output before headers
 if (ob_get_level()) {

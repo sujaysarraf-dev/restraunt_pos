@@ -1,8 +1,32 @@
+<?php
+// Start session for CSRF token generation
+if (session_status() === PHP_SESSION_NONE) {
+    if (file_exists(__DIR__ . '/../config/session_config.php')) {
+        require_once __DIR__ . '/../config/session_config.php';
+        configureSecureSession();
+    } else {
+        session_start();
+    }
+}
+
+// Generate CSRF token for login form
+if (file_exists(__DIR__ . '/../config/csrf.php')) {
+    require_once __DIR__ . '/../config/csrf.php';
+    $csrfToken = getCSRFToken();
+} else {
+    // Fallback if CSRF config doesn't exist
+    if (!isset($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    $csrfToken = $_SESSION['csrf_token'];
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
     <title>Admin Login - Restaurant Management</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
@@ -248,6 +272,7 @@
         
         <!-- Login Form -->
         <form id="loginForm" class="auth-form active">
+            <input type="hidden" name="csrf_token" id="loginCSRFToken" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
             <div class="form-group">
                 <label for="loginUsername">Username / Email / Phone:</label>
                 <input type="text" id="loginUsername" name="username" required placeholder="Enter username, email or phone">
@@ -264,6 +289,7 @@
         
         <!-- Signup Form -->
         <form id="signupForm" class="auth-form">
+            <input type="hidden" name="csrf_token" id="signupCSRFToken" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
             <div class="form-group">
                 <label for="signupUsername">Username:</label>
                 <input type="text" id="signupUsername" name="username" required placeholder="Choose a username">
@@ -336,12 +362,16 @@
             loginBtn.textContent = 'Signing In...';
             
             try {
+                // Get CSRF token from meta tag or hidden input
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
+                                 document.getElementById('loginCSRFToken')?.value || '';
+                
                 const response = await fetch('auth.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: `action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+                    body: `action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&csrf_token=${encodeURIComponent(csrfToken)}`
                 });
                 
                 const result = await response.json();
@@ -392,12 +422,16 @@
             signupBtn.textContent = 'Creating Account...';
             
             try {
+                // Get CSRF token from meta tag or hidden input
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
+                                 document.getElementById('signupCSRFToken')?.value || '';
+                
                 const response = await fetch('auth.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: `action=signup&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&restaurant_name=${encodeURIComponent(restaurantName)}`
+                    body: `action=signup&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&restaurant_name=${encodeURIComponent(restaurantName)}&csrf_token=${encodeURIComponent(csrfToken)}`
                 });
                 
                 const result = await response.json();
@@ -477,12 +511,15 @@
             forgotPasswordBtn.textContent = 'Sending...';
             
             try {
+                // Get CSRF token from meta tag
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                
                 const response = await fetch('auth.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: `action=forgotPassword&email=${encodeURIComponent(email)}`
+                    body: `action=forgotPassword&email=${encodeURIComponent(email)}&csrf_token=${encodeURIComponent(csrfToken)}`
                 });
                 
                 const result = await response.json();

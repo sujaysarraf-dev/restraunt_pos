@@ -88,35 +88,76 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
 }
 
 // Fallback: File-based image (backward compatibility)
-// Security check - only allow images from uploads directory
-if (empty($imagePath) || (strpos($imagePath, 'uploads/') !== 0 && strpos($imagePath, '../uploads/') !== 0)) {
+// Security: Strict path validation to prevent path traversal attacks
+
+// Whitelist of allowed image extensions
+$allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+$allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+
+// Validate that path starts with uploads/
+if (empty($imagePath) || strpos($imagePath, 'uploads/') !== 0) {
     http_response_code(404);
     header('Content-Type: text/plain');
     exit('Image not found');
 }
 
-// Normalize path - remove ../uploads/ prefix if present, keep uploads/
-$normalizedPath = str_replace('../uploads/', 'uploads/', $imagePath);
+// Remove 'uploads/' prefix and get just the filename
+$relativePath = substr($imagePath, 8); // Remove 'uploads/' (8 characters)
 
-// Build full path from root
+// Use basename to prevent directory traversal (removes any ../ or ./)
+$filename = basename($relativePath);
+
+// Validate filename is not empty and doesn't contain path separators
+if (empty($filename) || strpos($filename, '/') !== false || strpos($filename, '\\') !== false) {
+    http_response_code(403);
+    header('Content-Type: text/plain');
+    exit('Invalid file path');
+}
+
+// Get file extension and validate
+$extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+if (!in_array($extension, $allowedExtensions)) {
+    http_response_code(403);
+    header('Content-Type: text/plain');
+    exit('File type not allowed');
+}
+
+// Build full path - use realpath to resolve actual path
 $rootDir = dirname(__DIR__);
-$fullPath = $rootDir . '/' . $normalizedPath;
+$uploadsDir = realpath($rootDir . '/uploads');
+$fullPath = realpath($uploadsDir . '/' . $filename);
+
+// Critical security check: Ensure resolved path is within uploads directory
+if ($fullPath === false || strpos($fullPath, $uploadsDir) !== 0) {
+    http_response_code(403);
+    header('Content-Type: text/plain');
+    exit('Access denied');
+}
 
 // Check if file exists
-if (!file_exists($fullPath)) {
+if (!file_exists($fullPath) || !is_file($fullPath)) {
     http_response_code(404);
+    header('Content-Type: text/plain');
     exit('Image not found');
 }
 
-// Get file info
+// Get file info and validate MIME type
 $finfo = finfo_open(FILEINFO_MIME_TYPE);
 $mimeType = finfo_file($finfo, $fullPath);
 finfo_close($finfo);
+
+// Validate MIME type matches allowed types
+if (!in_array($mimeType, $allowedMimeTypes)) {
+    http_response_code(403);
+    header('Content-Type: text/plain');
+    exit('Invalid file type');
+}
 
 // Set appropriate headers
 header('Content-Type: ' . $mimeType);
 header('Content-Length: ' . filesize($fullPath));
 header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
+header('X-Content-Type-Options: nosniff'); // Prevent MIME type sniffing
 
 // Output the image
 readfile($fullPath);

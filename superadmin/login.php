@@ -1,25 +1,70 @@
 <?php
-session_start();
+// Start session for CSRF token generation
+if (session_status() === PHP_SESSION_NONE) {
+    if (file_exists(__DIR__ . '/../config/session_config.php')) {
+        require_once __DIR__ . '/../config/session_config.php';
+        configureSecureSession();
+    } else {
+        session_start();
+    }
+}
+
+// Generate CSRF token for login form
+if (file_exists(__DIR__ . '/../config/csrf.php')) {
+    require_once __DIR__ . '/../config/csrf.php';
+    $csrfToken = getCSRFToken();
+} else {
+    // Fallback if CSRF config doesn't exist
+    if (!isset($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    $csrfToken = $_SESSION['csrf_token'];
+}
+
 require_once __DIR__ . '/../db_connection.php';
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
-    try {
-        $stmt = $pdo->prepare('SELECT * FROM super_admins WHERE username = :u AND is_active = 1 LIMIT 1');
-        $stmt->execute([':u' => $username]);
-        $sa = $stmt->fetch();
-        if ($sa && password_verify($password, $sa['password_hash'])) {
-            $_SESSION['superadmin_id'] = $sa['id'];
-            $_SESSION['superadmin_username'] = $sa['username'];
-            header('Location: dashboard.php');
-            exit();
-        } else {
-            $error = 'Invalid credentials';
+    // Validate CSRF token
+    if (function_exists('validateCSRFPost')) {
+        try {
+            validateCSRFPost();
+        } catch (Exception $e) {
+            $error = 'Invalid security token. Please refresh the page and try again.';
         }
-    } catch (Exception $e) {
-        $error = $e->getMessage();
+    }
+    
+    if (empty($error)) {
+        $username = trim($_POST['username'] ?? '');
+        $password = $_POST['password'] ?? '';
+        try {
+            $stmt = $pdo->prepare('SELECT * FROM super_admins WHERE username = :u AND is_active = 1 LIMIT 1');
+            $stmt->execute([':u' => $username]);
+            $sa = $stmt->fetch();
+            if ($sa && password_verify($password, $sa['password_hash'])) {
+                // Regenerate session ID to prevent session fixation
+                if (function_exists('regenerateSessionId')) {
+                    regenerateSessionId();
+                } else {
+                    session_regenerate_id(true);
+                }
+                
+                // Regenerate CSRF token after successful login
+                if (function_exists('regenerateCSRFToken')) {
+                    regenerateCSRFToken();
+                }
+                
+                $_SESSION['superadmin_id'] = $sa['id'];
+                $_SESSION['superadmin_username'] = $sa['username'];
+                $_SESSION['last_activity'] = time();
+                header('Location: dashboard.php');
+                exit();
+            } else {
+                $error = 'Invalid credentials';
+            }
+        } catch (Exception $e) {
+            $error = $e->getMessage();
+        }
     }
 }
 ?>
@@ -47,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <h1>Superadmin Login</h1>
       <?php if($error): ?><div class="error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
       <form method="post">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
         <div class="form-group">
           <label for="username">Username</label>
           <input type="text" id="username" name="username" required>
