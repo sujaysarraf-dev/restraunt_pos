@@ -6766,15 +6766,16 @@ async function initWebsiteThemeEditor() {
       
       banners.forEach((banner, index) => {
         let imagePath;
+        const timestamp = Date.now(); // Cache-busting timestamp
         if (banner.banner_path.startsWith('db:')) {
-          // Database-stored banner
-          imagePath = `../api/image.php?type=banner&id=${banner.id}`;
+          // Database-stored banner - add cache-busting
+          imagePath = `../api/image.php?type=banner&id=${banner.id}&t=${timestamp}`;
         } else if (banner.banner_path.startsWith('http')) {
           // External URL
-          imagePath = banner.banner_path;
+          imagePath = banner.banner_path + (banner.banner_path.includes('?') ? '&' : '?') + `t=${timestamp}`;
         } else {
           // File-based image (backward compatibility)
-          imagePath = '../' + banner.banner_path;
+          imagePath = `../${banner.banner_path}?t=${timestamp}`;
         }
         const bannerCard = document.createElement('div');
         bannerCard.setAttribute('draggable', 'true');
@@ -7287,28 +7288,33 @@ async function uploadRestaurantLogo() {
       if (typeof loadRestaurantInfo === 'function') {
         await loadRestaurantInfo();
       }
-      // Reload dashboard logo
+      // Reload dashboard logo with cache-busting timestamp to force immediate refresh
       const dashboardLogo = document.getElementById('dashboardRestaurantLogo');
       if (dashboardLogo && result.data && result.data.restaurant_logo) {
         let logoPath;
         const logo = result.data.restaurant_logo;
+        const timestamp = Date.now(); // Cache-busting timestamp
         if (logo.startsWith('db:')) {
-          // Database-stored image
+          // Database-stored image - add timestamp to force refresh
           const userId = result.data.id || result.data.user_id || '';
-          logoPath = `../api/image.php?type=logo&id=${userId}`;
+          logoPath = `../api/image.php?type=logo&id=${userId}&t=${timestamp}`;
         } else if (logo.startsWith('http')) {
           // External URL
-          logoPath = logo;
+          logoPath = logo + (logo.includes('?') ? '&' : '?') + `t=${timestamp}`;
         } else if (logo.startsWith('uploads/')) {
           // File-based image
-          logoPath = '../' + logo;
+          logoPath = `../${logo}?t=${timestamp}`;
         } else if (!logo.startsWith('../')) {
           // Relative path
-          logoPath = '../uploads/' + logo;
+          logoPath = `../uploads/${logo}?t=${timestamp}`;
         } else {
-          logoPath = logo;
+          logoPath = `${logo}?t=${timestamp}`;
         }
-        dashboardLogo.src = logoPath;
+        // Force image reload by setting src to empty first, then new URL
+        dashboardLogo.src = '';
+        setTimeout(() => {
+          dashboardLogo.src = logoPath;
+        }, 10);
       } else if (dashboardLogo && result.logo_path) {
         // Fallback for old response format
         let logoPath = result.logo_path;
