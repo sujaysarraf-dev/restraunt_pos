@@ -5888,34 +5888,10 @@ async function uploadRestaurantLogo() {
     if (result.success) {
       showNotification('Restaurant logo updated successfully', 'success');
       closeLogoUploadModal();
-      // Reload profile data to show new logo
-      await loadProfileData();
-      // Also reload restaurant info to update dashboard logo with cache-busting
-      if (typeof loadRestaurantInfo === 'function') {
-        await loadRestaurantInfo();
-      }
-      // Force update dashboard logo immediately with cache-busting
-      const dashboardLogo = document.getElementById("dashboardRestaurantLogo");
-      if (dashboardLogo && result.data && result.data.restaurant_logo) {
-        let logoPath;
-        const logo = result.data.restaurant_logo;
-        const timestamp = Date.now(); // Cache-busting timestamp
-        if (logo.startsWith('db:')) {
-          const userId = result.data.id || result.data.user_id || '';
-          logoPath = `image.php?type=logo&id=${userId}&t=${timestamp}`;
-        } else if (logo.startsWith('http')) {
-          logoPath = logo + (logo.includes('?') ? '&' : '?') + `t=${timestamp}`;
-        } else if (logo.startsWith('uploads/')) {
-          logoPath = `${logo}?t=${timestamp}`;
-        } else {
-          logoPath = `uploads/${logo}?t=${timestamp}`;
-        }
-        // Force image reload
-        dashboardLogo.src = '';
-        setTimeout(() => {
-          dashboardLogo.src = logoPath;
-        }, 10);
-      }
+      // Refresh the page after a short delay to show the new logo
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } else {
       showNotification(result.message || 'Failed to upload logo', 'error');
       saveBtn.disabled = false;

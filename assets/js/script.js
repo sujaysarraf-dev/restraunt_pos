@@ -7282,54 +7282,10 @@ async function uploadRestaurantLogo() {
     if (result.success) {
       showNotification('Restaurant logo updated successfully', 'success');
       closeLogoUploadModal();
-      // Reload profile data to show new logo
-      await loadProfileData();
-      // Also reload restaurant info to update dashboard logo
-      if (typeof loadRestaurantInfo === 'function') {
-        await loadRestaurantInfo();
-      }
-      // Reload dashboard logo with cache-busting timestamp to force immediate refresh
-      const dashboardLogo = document.getElementById('dashboardRestaurantLogo');
-      if (dashboardLogo && result.data && result.data.restaurant_logo) {
-        let logoPath;
-        const logo = result.data.restaurant_logo;
-        const timestamp = Date.now(); // Cache-busting timestamp
-        if (logo.startsWith('db:')) {
-          // Database-stored image - add timestamp to force refresh
-          const userId = result.data.id || result.data.user_id || '';
-          logoPath = `../api/image.php?type=logo&id=${userId}&t=${timestamp}`;
-        } else if (logo.startsWith('http')) {
-          // External URL
-          logoPath = logo + (logo.includes('?') ? '&' : '?') + `t=${timestamp}`;
-        } else if (logo.startsWith('uploads/')) {
-          // File-based image
-          logoPath = `../${logo}?t=${timestamp}`;
-        } else if (!logo.startsWith('../')) {
-          // Relative path
-          logoPath = `../uploads/${logo}?t=${timestamp}`;
-        } else {
-          logoPath = `${logo}?t=${timestamp}`;
-        }
-        // Force image reload by setting src to empty first, then new URL
-        dashboardLogo.src = '';
-        setTimeout(() => {
-          dashboardLogo.src = logoPath;
-        }, 10);
-      } else if (dashboardLogo && result.logo_path) {
-        // Fallback for old response format
-        let logoPath = result.logo_path;
-        if (logoPath.startsWith('db:')) {
-          const userId = result.user_id || result.id || '';
-          logoPath = `../api/image.php?type=logo&id=${userId}`;
-        } else if (!logoPath.startsWith('http') && !logoPath.startsWith('../')) {
-          if (logoPath.startsWith('uploads/')) {
-            logoPath = '../' + logoPath;
-          } else {
-            logoPath = '../uploads/' + logoPath;
-          }
-        }
-        dashboardLogo.src = logoPath;
-      }
+      // Refresh the page after a short delay to show the new logo
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } else {
       showNotification(result.message || 'Failed to upload logo', 'error');
       if (saveBtn) {
