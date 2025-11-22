@@ -3860,24 +3860,29 @@ async function loadRestaurantInfo() {
       document.getElementById("restaurantName").textContent = result.data.restaurant_name;
       document.getElementById("restaurantId").textContent = result.data.restaurant_id;
       
-      // Update dashboard logo
+      // Update dashboard logo with cache-busting
       const dashboardLogo = document.getElementById("dashboardRestaurantLogo");
       if (dashboardLogo && result.data.restaurant_logo) {
         let logoPath;
+        const timestamp = Date.now(); // Cache-busting timestamp
         if (result.data.restaurant_logo.startsWith('db:')) {
           // Database-stored image
-          logoPath = `image.php?type=logo&id=${result.data.id || result.data.user_id || ''}`;
+          logoPath = `image.php?type=logo&id=${result.data.id || result.data.user_id || ''}&t=${timestamp}`;
         } else if (result.data.restaurant_logo.startsWith('http')) {
           // External URL
-          logoPath = result.data.restaurant_logo;
+          logoPath = result.data.restaurant_logo + (result.data.restaurant_logo.includes('?') ? '&' : '?') + `t=${timestamp}`;
         } else if (result.data.restaurant_logo.startsWith('uploads/')) {
           // File-based image
-          logoPath = result.data.restaurant_logo;
+          logoPath = `${result.data.restaurant_logo}?t=${timestamp}`;
         } else {
           // Relative path
-          logoPath = 'uploads/' + result.data.restaurant_logo;
+          logoPath = `uploads/${result.data.restaurant_logo}?t=${timestamp}`;
         }
-        dashboardLogo.src = logoPath;
+        // Force image reload
+        dashboardLogo.src = '';
+        setTimeout(() => {
+          dashboardLogo.src = logoPath;
+        }, 10);
         dashboardLogo.style.borderRadius = '50%';
         dashboardLogo.style.objectFit = 'cover';
         dashboardLogo.onerror = function() {
