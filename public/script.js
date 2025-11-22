@@ -2766,7 +2766,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (result.success) {
         displayCustomers(result.data);
       } else {
-        customerList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>' + result.message + '</p></div>';
+        customerList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>' + escapeHtml(result.message) + '</p></div>';
       }
     } catch (error) {
       console.error("Error loading customers:", error);
@@ -2831,7 +2831,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (result.success) {
         displayWaiterRequestsByArea(result.requests_by_area || {});
       } else {
-        requestsList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>' + result.message + '</p></div>';
+        requestsList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>' + escapeHtml(result.message) + '</p></div>';
       }
     } catch (error) {
       console.error("Error loading waiter requests:", error);
@@ -3267,7 +3267,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (result.success) {
         displayStaff(result.data);
       } else {
-        staffList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>' + result.message + '</p></div>';
+        staffList.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>' + escapeHtml(result.message) + '</p></div>';
       }
     } catch (error) {
       console.error("Error loading staff:", error);
@@ -3397,7 +3397,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (result.success) {
         displayPOSMenuItems(result.data);
       } else {
-        posMenuItemsContainer.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>' + result.message + '</p></div>';
+        posMenuItemsContainer.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">error</span><h3>Error</h3><p>' + escapeHtml(result.message) + '</p></div>';
       }
     } catch (error) {
       console.error("Error loading POS menu items:", error);
