@@ -29,21 +29,16 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
-// Check if user is logged in (admin or staff)
-if (!isset($_SESSION['restaurant_id']) && (!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id']))) {
-    // Allow restaurant_id from query parameter for staff logins
-    if (!isset($_GET['restaurant_id'])) {
-        http_response_code(401);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Please login to continue',
-            'data' => []
-        ]);
-        exit();
-    }
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
 }
 
-$restaurant_id = $_GET['restaurant_id'] ?? $_SESSION['restaurant_id'] ?? null;
+// Require authentication
+requireAuth();
+
+// Get restaurant_id from query parameter or session
+$restaurant_id = $_GET['restaurant_id'] ?? getRestaurantId();
 
 if (!$restaurant_id) {
     http_response_code(400);
@@ -54,6 +49,9 @@ if (!$restaurant_id) {
     ]);
     exit();
 }
+
+// Verify restaurant access
+requireRestaurantAccess($restaurant_id);
 
 try {
     if (isset($pdo) && $pdo instanceof PDO) {

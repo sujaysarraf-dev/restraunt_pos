@@ -29,6 +29,30 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
+}
+
+// Include CSRF protection
+if (file_exists(__DIR__ . '/../config/csrf.php')) {
+    require_once __DIR__ . '/../config/csrf.php';
+    // Validate CSRF token for POST requests
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && function_exists('validateCSRFPost')) {
+        validateCSRFPost();
+    }
+}
+
+// Require authentication and restaurant access
+requireAuth();
+requireRestaurantAccess();
+
+// KOT operations can be performed by admin or staff with order management permissions
+if (getUserType() === 'staff') {
+    // Staff can create and update KOTs
+    // No specific action required for basic KOT access
+}
+
 $action = $_POST['action'] ?? '';
 
 try {
@@ -103,7 +127,7 @@ function handleCreateKOT() {
             exit();
         }
     }
-    $restaurant_id = $_SESSION['restaurant_id'];
+    $restaurant_id = getRestaurantId();
     $table_id = $_POST['tableId'] ?? null;
     $order_type = $_POST['orderType'] ?? 'Dine-in';
     $customer_name = $_POST['customerName'] ?? '';
@@ -199,7 +223,7 @@ function handleUpdateKOTStatus() {
     }
     $kot_id = intval($_POST['kotId']);
     $status = $_POST['status'];
-    $restaurant_id = $_SESSION['restaurant_id'] ?? $_GET['restaurant_id'] ?? null;
+    $restaurant_id = getRestaurantId() ?? $_GET['restaurant_id'] ?? null;
     
     if (!$restaurant_id) {
         // Check session for staff_id
@@ -350,7 +374,7 @@ function handleCompleteKOT() {
         }
     }
     $kot_id = intval($_POST['kotId']);
-    $restaurant_id = $_SESSION['restaurant_id'] ?? $_GET['restaurant_id'] ?? null;
+    $restaurant_id = getRestaurantId() ?? $_GET['restaurant_id'] ?? null;
     
     if (!$restaurant_id) {
         // Check session for staff_id

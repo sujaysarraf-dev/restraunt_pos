@@ -22,12 +22,14 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
-// Check if user is logged in (admin or staff)
-if (!isset($_SESSION['restaurant_id']) && (!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id']))) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit();
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
 }
+
+// Require authentication
+requireAuth();
+requireRestaurantAccess();
 
 $table_id = $_GET['table_id'] ?? null;
 

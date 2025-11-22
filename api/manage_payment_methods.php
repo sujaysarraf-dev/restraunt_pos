@@ -2,6 +2,11 @@
 session_start();
 header('Content-Type: application/json');
 
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
+}
+
 // Include database connection
 if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
@@ -11,11 +16,17 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
-// Check if user is logged in
-if (!isset($_SESSION['restaurant_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit();
+// Require admin access - only admin can manage payment methods
+requireAuth();
+requireRestaurantAccess();
+requireAdmin();
+
+// Include CSRF protection
+if (file_exists(__DIR__ . '/../config/csrf.php')) {
+    require_once __DIR__ . '/../config/csrf.php';
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        validateCSRFPost();
+    }
 }
 
 try {
@@ -35,7 +46,7 @@ try {
         }
     }
 
-    $restaurant_id = $_SESSION['restaurant_id'];
+    $restaurant_id = getRestaurantId();
     $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
     switch ($action) {

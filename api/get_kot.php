@@ -12,14 +12,19 @@ if (ob_get_level()) {
 session_start();
 header('Content-Type: application/json');
 
-// Check if user is logged in (admin or staff)
-if (!isset($_SESSION['restaurant_id']) && (!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id']))) {
-    // Allow restaurant_id from query parameter for staff logins
-    if (!isset($_GET['restaurant_id'])) {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-        exit();
-    }
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
+}
+
+// Require authentication
+requireAuth();
+
+// Get restaurant_id from query parameter or session
+$restaurant_id = $_GET['restaurant_id'] ?? getRestaurantId();
+
+if ($restaurant_id) {
+    requireRestaurantAccess($restaurant_id);
 }
 
 // Include database connection

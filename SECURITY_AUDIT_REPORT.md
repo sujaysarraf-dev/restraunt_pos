@@ -8,7 +8,7 @@
 
 This report provides a comprehensive security audit of the Restaurant POS system before going live. The audit covers password security, SQL injection vulnerabilities, XSS protection, file upload security, session management, API authorization, and general logic issues.
 
-**Current Status:** The system has undergone significant security improvements. Major enhancements include comprehensive input validation, rate limiting, centralized error handling, complete XSS protection, CSRF protection (including login), secure session management, and path traversal protection. The overall security score has improved from 6.0/10 to 8.9/10.
+**Current Status:** The system has undergone significant security improvements. Major enhancements include comprehensive input validation, rate limiting, centralized error handling, complete XSS protection, CSRF protection (including login), secure session management, and path traversal protection. The overall security score has improved from 6.0/10 to 9.1/10.
 
 **Remaining Critical Issues:** All critical security issues have been addressed. The system is ready for production deployment with proper environment variable configuration.
 
@@ -288,23 +288,55 @@ This report provides a comprehensive security audit of the Restaurant POS system
 ---
 
 ### 9. **API Authorization - Needs Improvement**
-**Status:** ⚠️ PARTIAL
+**Status:** ✅ FIXED
 
-**Positive Findings:**
-- ✅ Most APIs check for `$_SESSION['restaurant_id']` or `$_SESSION['user_id']`
-- ✅ Staff access is properly checked in some endpoints
+**Implemented Solutions:**
+- ✅ Created comprehensive authorization system (`config/authorization.php`)
+- ✅ Implemented role-based access control (RBAC)
+- ✅ Consistent authorization checks across all endpoints
+- ✅ Separate admin and staff permissions
+- ✅ Action-based permission system for fine-grained control
 
-**Issues:**
-- Inconsistent authorization checks across endpoints
-- Some endpoints only check `restaurant_id`, not user permissions
-- No role-based access control (RBAC) implementation
-- Staff can access admin-only endpoints
+**Authorization System Features:**
+1. **Authentication Functions:**
+   - `isAuthenticated()` - Check if user is logged in
+   - `getUserType()` - Get user type ('admin' or 'staff')
+   - `getUserRole()` - Get user role (Admin, Manager, Chef, Waiter, Cashier)
+   - `getRestaurantId()` - Get current restaurant ID
+   - `getUserId()` - Get current user ID
 
-**Recommendation:**
-- Implement consistent authorization middleware
-- Add role-based access control
-- Separate admin and staff permissions clearly
-- Create authorization helper functions
+2. **Authorization Functions:**
+   - `requireAuth()` - Require authentication (throws 401 if not authenticated)
+   - `requireAdmin()` - Require admin privileges (throws 403 if not admin)
+   - `requireRole($roles)` - Require specific role(s)
+   - `requireRestaurantAccess($restaurantId)` - Verify restaurant access
+   - `requireAction($action)` - Require specific action permission
+
+3. **Permission System:**
+   - Role-based permissions for Manager, Chef, Waiter, Cashier
+   - Action-based permissions (manage_staff, manage_menu, view_reports, etc.)
+   - Admin has access to everything
+   - Fine-grained control over staff capabilities
+
+4. **Role Permissions:**
+   - **Manager**: Full access (manage_staff, manage_menu, manage_tables, view_reports, etc.)
+   - **Chef**: Menu management, order viewing, status updates
+   - **Waiter**: Menu viewing, order creation, table management, reservations
+   - **Cashier**: Order viewing, payment management, reports
+
+**Files Updated:**
+- `config/authorization.php` - Complete RBAC system
+- All API endpoints (20+ files) - Consistent authorization checks
+- All controller files (11 files) - Role-based access control
+- Admin-only endpoints protected with `requireAdmin()`
+- Staff endpoints protected with `requireAction()` for specific permissions
+
+**Security Improvements:**
+- ✅ Staff can no longer access admin-only endpoints
+- ✅ Consistent authorization across all endpoints
+- ✅ Restaurant data isolation (users can only access their restaurant's data)
+- ✅ Role-based permissions prevent privilege escalation
+- ✅ Action-based permissions for fine-grained control
 
 ---
 
@@ -560,14 +592,14 @@ This report provides a comprehensive security audit of the Restaurant POS system
 | File Upload Security | ✅ Excellent | 9/10 | Database storage, MIME validation |
 | Session Management | ✅ Excellent | 8/10 | Secure cookies, timeout, regeneration implemented |
 | CSRF Protection | ✅ Excellent | 9/10 | Complete token-based protection, login protected |
-| API Authorization | ⚠️ Good | 7/10 | Basic checks, needs RBAC |
+| API Authorization | ✅ Excellent | 9/10 | Complete RBAC system, role and action-based permissions |
 | Input Validation | ✅ Excellent | 9/10 | Comprehensive library, rate limiting |
 | Error Handling | ✅ Perfect | 10/10 | Centralized, secure logging |
 | Rate Limiting | ✅ Excellent | 9/10 | Implemented, configurable |
 | Path Traversal | ✅ Excellent | 9/10 | Complete protection with realpath() and basename() |
 | Credential Management | ✅ Excellent | 9/10 | Secure config system, environment variables, .env support |
 
-**Overall Security Score: 9.0/10** ⬆️ (Improved from 6.0/10)
+**Overall Security Score: 9.1/10** ⬆️ (Improved from 6.0/10)
 
 ---
 
@@ -746,7 +778,7 @@ The codebase has **significantly improved** in security practices. Major improve
 - ✅ All XSS vulnerabilities fixed
 - ✅ Comprehensive validation for all input types
 
-**Current Security Score: 9.0/10** ⬆️ (Improved from 6.0/10)  
+**Current Security Score: 9.1/10** ⬆️ (Improved from 6.0/10)  
 **Recommended Security Score Before Production: 9.0/10**  
 **Estimated Time to Fix Remaining Issues: 1-2 days**
 

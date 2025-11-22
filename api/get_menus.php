@@ -27,6 +27,14 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
+}
+
+// Require authentication (menus can be viewed by anyone authenticated)
+requireAuth();
+
 // Get connection
 try {
     if (isset($pdo) && $pdo instanceof PDO) {

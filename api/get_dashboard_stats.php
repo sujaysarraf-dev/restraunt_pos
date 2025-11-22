@@ -13,11 +13,27 @@ if (ob_get_level()) {
 
 header('Content-Type: application/json');
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit();
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
+}
+
+// Include validation and rate limiting
+if (file_exists(__DIR__ . '/../config/validation.php')) {
+    require_once __DIR__ . '/../config/validation.php';
+}
+if (file_exists(__DIR__ . '/../config/rate_limit.php')) {
+    require_once __DIR__ . '/../config/rate_limit.php';
+    applyRateLimit(60, 60);
+}
+
+// Require authentication and restaurant access
+requireAuth();
+requireRestaurantAccess();
+
+// Dashboard stats require admin or manager role (or view_reports permission)
+if (getUserType() === 'staff') {
+    requireAction('view_reports');
 }
 
 // Include database connection
@@ -47,7 +63,7 @@ try {
             exit();
         }
     }
-    $restaurant_id = $_SESSION['restaurant_id'];
+    $restaurant_id = getRestaurantId();
     
     // Get today's date
     $today = date('Y-m-d');

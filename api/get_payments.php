@@ -22,11 +22,18 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit();
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
+}
+
+// Require authentication and restaurant access
+requireAuth();
+requireRestaurantAccess();
+
+// Payments can be viewed by admin or staff with manage_payments permission
+if (getUserType() === 'staff') {
+    requireAction('manage_payments');
 }
 
 try {
@@ -45,7 +52,7 @@ try {
             exit();
         }
     }
-    $restaurant_id = $_SESSION['restaurant_id'];
+    $restaurant_id = getRestaurantId();
     
     $sql = "SELECT 
                 p.*,

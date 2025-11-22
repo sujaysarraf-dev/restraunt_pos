@@ -13,6 +13,11 @@ if (ob_get_level()) {
 
 header('Content-Type: application/json');
 
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
+}
+
 // Include database connection
 if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
@@ -22,14 +27,14 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit();
+// Require admin access - only admin or manager can view staff list
+requireAuth();
+requireRestaurantAccess();
+if (getUserType() === 'staff') {
+    requireAction('manage_staff');
 }
 
-$restaurant_id = $_SESSION['restaurant_id'];
+$restaurant_id = getRestaurantId();
 
 try {
     if (isset($pdo) && $pdo instanceof PDO) {

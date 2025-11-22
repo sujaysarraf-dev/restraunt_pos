@@ -21,14 +21,16 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit();
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
 }
 
-$restaurant_id = $_SESSION['restaurant_id'];
+// Require authentication and restaurant access
+requireAuth();
+requireRestaurantAccess();
+
+$restaurant_id = getRestaurantId();
 
 try {
     if (isset($pdo) && $pdo instanceof PDO) {

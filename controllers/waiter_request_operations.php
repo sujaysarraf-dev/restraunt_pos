@@ -22,6 +22,11 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
+}
+
 // Include CSRF protection
 if (file_exists(__DIR__ . '/../config/csrf.php')) {
     require_once __DIR__ . '/../config/csrf.php';
@@ -31,14 +36,12 @@ if (file_exists(__DIR__ . '/../config/csrf.php')) {
     }
 }
 
-// Check if user is logged in (admin or staff)
-if (!isset($_SESSION['restaurant_id']) && (!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id']))) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit();
-}
+// Require authentication and restaurant access
+requireAuth();
+requireRestaurantAccess();
 
-$restaurant_id = $_SESSION['restaurant_id'];
+// Waiter requests can be created/viewed by all staff
+$restaurant_id = getRestaurantId();
 $action = $_POST['action'] ?? '';
 
 try {

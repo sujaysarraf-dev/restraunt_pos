@@ -39,18 +39,22 @@ if (file_exists(__DIR__ . '/../config/rate_limit.php')) {
     applyRateLimit(60, 60);
 }
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
-    http_response_code(401);
-    echo json_encode([
-        'success' => false,
-        'message' => 'Please login to continue',
-        'data' => []
-    ]);
-    exit();
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
 }
 
-$restaurant_id = $_SESSION['restaurant_id'];
+// Require authentication and restaurant access
+requireAuth();
+requireRestaurantAccess();
+
+// Reservations can be viewed by admin or staff with appropriate permissions
+if (getUserType() === 'staff') {
+    // Staff can view reservations if they have manage_reservations permission
+    // This is allowed for all staff roles by default
+}
+
+$restaurant_id = getRestaurantId();
 
 try {
     if (isset($pdo) && $pdo instanceof PDO) {

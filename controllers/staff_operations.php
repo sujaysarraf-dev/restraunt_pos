@@ -22,14 +22,25 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit();
+// Include authorization system
+if (file_exists(__DIR__ . '/../config/authorization.php')) {
+    require_once __DIR__ . '/../config/authorization.php';
 }
 
-$restaurant_id = $_SESSION['restaurant_id'];
+// Require admin access - only admin can manage staff
+requireAuth();
+requireRestaurantAccess();
+requireAdmin();
+
+// Include CSRF protection
+if (file_exists(__DIR__ . '/../config/csrf.php')) {
+    require_once __DIR__ . '/../config/csrf.php';
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        validateCSRFPost();
+    }
+}
+
+$restaurant_id = getRestaurantId();
 $action = $_POST['action'] ?? '';
 
 try {

@@ -64,7 +64,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
     exit();
 }
 
-$restaurant_id = $_SESSION['restaurant_id'];
+$restaurant_id = getRestaurantId();
 
 try {
     // Check if request method is POST
