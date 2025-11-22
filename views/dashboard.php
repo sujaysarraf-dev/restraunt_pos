@@ -165,7 +165,7 @@ try {
     <!-- Sidebar header -->
     <header class="sidebar-header">
       <a href="#" class="header-logo">
-        <img id="dashboardRestaurantLogo" src="<?php echo htmlspecialchars($restaurant_logo) . (strpos($restaurant_logo, '?') !== false ? '&' : '?') . 't=' . time(); ?>" alt="Restaurant Management" onerror="this.src='../assets/images/logo.png'; this.style.borderRadius='50%'; this.style.objectFit='cover';" style="border-radius: 50%; object-fit: cover; width: 46px; height: 46px;">
+        <img id="dashboardRestaurantLogo" src="<?php echo htmlspecialchars($restaurant_logo) . (strpos($restaurant_logo, '?') !== false ? '&' : '?') . 't=' . (time() . '_' . mt_rand(1000, 9999)); ?>" alt="Restaurant Management" onerror="this.src='../assets/images/logo.png'; this.style.borderRadius='50%'; this.style.objectFit='cover';" style="border-radius: 50%; object-fit: cover; width: 46px; height: 46px;">
         <div class="restaurant-info">
           <div class="restaurant-name" id="restaurantName"><?php echo htmlspecialchars($restaurant_name); ?></div>
           <div class="restaurant-id" id="restaurantId"><?php echo htmlspecialchars($restaurant_id); ?></div>
