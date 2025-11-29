@@ -721,6 +721,22 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup profile form
     setupProfileForm();
+    
+    // Setup item modal close button
+    const closeItemModalBtn = document.getElementById('closeItemModal');
+    if (closeItemModalBtn) {
+        closeItemModalBtn.addEventListener('click', closeItemModal);
+    }
+    
+    // Close item modal on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const itemModal = document.getElementById('itemModal');
+            if (itemModal && itemModal.classList.contains('active')) {
+                closeItemModal();
+            }
+        }
+    });
 });
 
 // Setup capacity validation on guests input
@@ -972,23 +988,47 @@ function createMenuItemCard(item) {
     
     card.innerHTML = `
         <div class="menu-card-image">
-            ${imageUrl ? `<img src="${imageUrl}" alt="${item.item_name_en}" style="width: 100%; height: 100%; object-fit: cover;">` : '🍽️'}
+            ${imageUrl ? `<img src="${imageUrl}" alt="${escapeHtml(item.item_name_en)}" style="width: 100%; height: 100%; object-fit: cover;">` : '🍽️'}
         </div>
         <div class="menu-card-content">
             <div class="menu-card-header">
-                <div class="menu-card-name">${item.item_name_en}</div>
+                <div class="menu-card-name">${escapeHtml(item.item_name_en)}</div>
                 <div class="menu-type-badge">${typeBadge}</div>
             </div>
-            <div class="menu-card-description">${item.item_description_en || 'Delicious food item'}</div>
+            <div class="menu-card-description">${escapeHtml(item.item_description_en || 'Delicious food item')}</div>
             <div class="menu-card-footer">
                 <div class="menu-card-price">${formatCurrency(item.base_price)}</div>
-                <button class="add-to-cart-btn" onclick="addToCart(${item.id}, '${item.item_name_en}', ${item.base_price}, '${item.item_image || ''}')">
+                <button class="add-to-cart-btn" data-item-id="${item.id}">
                     <span class="material-symbols-rounded">add_shopping_cart</span>
                     Add
                 </button>
             </div>
         </div>
     `;
+    
+    // Make the entire card clickable (except the add button)
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', function(e) {
+        // Don't open modal if clicking the add button
+        if (e.target.closest('.add-to-cart-btn')) {
+            return;
+        }
+        console.log('Card clicked, opening modal for item:', item.id);
+        if (typeof openItemModal === 'function') {
+            openItemModal(item.id);
+        } else {
+            console.error('openItemModal function not found!');
+        }
+    });
+    
+    // Add to cart button click handler
+    const addBtn = card.querySelector('.add-to-cart-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent card click
+            addToCart(item.id, item.item_name_en, item.base_price, item.item_image || '');
+        });
+    }
     
     return card;
 }
@@ -1796,6 +1836,190 @@ async function loadOrderHistory() {
         console.error('Error loading order history:', error);
         orderHistoryDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-light);">Error loading order history</div>';
     }
+}
+
+// Item Details Modal Functions - Make sure it's globally accessible
+window.openItemModal = function(itemId) {
+    console.log('openItemModal called with itemId:', itemId);
+    console.log('Available menuItems:', menuItems.length);
+    
+    const item = menuItems.find(i => i.id === itemId);
+    if (!item) {
+        console.error('Item not found:', itemId, 'Available items:', menuItems.map(i => i.id));
+        return;
+    }
+    
+    console.log('Item found:', item);
+    
+    const modal = document.getElementById('itemModal');
+    const modalBody = document.getElementById('itemModalBody');
+    
+    if (!modal || !modalBody) {
+        console.error('Item modal elements not found. Modal:', modal, 'ModalBody:', modalBody);
+        return;
+    }
+    
+    console.log('Opening modal...');
+    
+    const typeBadge = item.item_type === 'Veg' ? '🌱 Veg' : 
+                      item.item_type === 'Non Veg' ? '🍖 Non Veg' :
+                      item.item_type === 'Egg' ? '🥚 Egg' :
+                      item.item_type === 'Drink' ? '🥤 Drink' : '';
+    
+    const imageUrl = item.item_image ? `image.php?path=${encodeURIComponent(item.item_image)}` : '';
+    const existingCartItem = cart.find(c => c.id === item.id);
+    const currentQuantity = existingCartItem ? existingCartItem.quantity : 1;
+    itemModalQuantity = currentQuantity;
+    currentItemModalItem = item;
+    
+    modalBody.innerHTML = `
+        <div class="item-modal-image">
+            ${imageUrl ? `<img src="${imageUrl}" alt="${escapeHtml(item.item_name_en)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+            <div class="item-modal-image-placeholder" style="display: ${imageUrl ? 'none' : 'flex'};">
+                <span class="material-symbols-rounded" style="font-size: 5rem; opacity: 0.3;">restaurant_menu</span>
+            </div>
+        </div>
+        <div class="item-modal-info">
+            <div class="item-modal-header">
+                <h2 class="item-modal-name">${escapeHtml(item.item_name_en)}</h2>
+                <div class="item-modal-type-badge">${typeBadge}</div>
+            </div>
+            <div class="item-modal-price">${formatCurrency(item.base_price)}</div>
+            <div class="item-modal-description">
+                <h3>Description</h3>
+                <p>${escapeHtml(item.item_description_en || 'Delicious food item. Order now to enjoy this amazing dish!')}</p>
+            </div>
+            <div class="item-modal-actions">
+                <div class="item-quantity-controls">
+                    <button class="quantity-btn" id="itemModalQuantityDecrease">
+                        <span class="material-symbols-rounded">remove</span>
+                    </button>
+                    <input type="number" id="itemModalQuantity" class="quantity-input" value="${currentQuantity}" min="1">
+                    <button class="quantity-btn" id="itemModalQuantityIncrease">
+                        <span class="material-symbols-rounded">add</span>
+                    </button>
+                </div>
+                <button class="add-to-cart-modal-btn" id="addToCartFromModalBtn" data-item-id="${item.id}">
+                    <span class="material-symbols-rounded">add_shopping_cart</span>
+                    <span>Add to Cart</span>
+                    <span class="item-modal-total-price">${formatCurrency(item.base_price * currentQuantity)}</span>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    // Setup event listeners for modal controls
+    setTimeout(() => {
+        const decreaseBtn = document.getElementById('itemModalQuantityDecrease');
+        const increaseBtn = document.getElementById('itemModalQuantityIncrease');
+        const quantityInput = document.getElementById('itemModalQuantity');
+        const addToCartBtn = document.getElementById('addToCartFromModalBtn');
+        
+        if (decreaseBtn) {
+            decreaseBtn.onclick = () => updateItemModalQuantity(-1);
+        }
+        
+        if (increaseBtn) {
+            increaseBtn.onclick = () => updateItemModalQuantity(1);
+        }
+        
+        if (quantityInput) {
+            quantityInput.onchange = (e) => updateItemModalQuantityInput(e.target.value);
+        }
+        
+        if (addToCartBtn) {
+            addToCartBtn.onclick = () => {
+                addToCartFromModal(item.id, item.item_name_en, item.base_price, item.item_image || '');
+            };
+        }
+    }, 10);
+}
+
+window.closeItemModal = function() {
+    const modal = document.getElementById('itemModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+window.closeItemModalOnOverlay = function(event) {
+    if (event.target.id === 'itemModal') {
+        closeItemModal();
+    }
+}
+
+let itemModalQuantity = 1;
+let currentItemModalItem = null;
+
+function updateItemModalQuantity(change) {
+    const quantityInput = document.getElementById('itemModalQuantity');
+    if (!quantityInput) return;
+    
+    const currentValue = parseInt(quantityInput.value) || 1;
+    const newValue = Math.max(1, currentValue + change);
+    quantityInput.value = newValue;
+    itemModalQuantity = newValue;
+    
+    updateItemModalTotalPrice();
+}
+
+function updateItemModalQuantityInput(value) {
+    const newValue = Math.max(1, parseInt(value) || 1);
+    itemModalQuantity = newValue;
+    const quantityInput = document.getElementById('itemModalQuantity');
+    if (quantityInput) {
+        quantityInput.value = newValue;
+    }
+    updateItemModalTotalPrice();
+}
+
+function updateItemModalTotalPrice() {
+    const totalPriceElement = document.querySelector('.item-modal-total-price');
+    if (!totalPriceElement) return;
+    
+    // Find the current item from the modal
+    const modalBody = document.getElementById('itemModalBody');
+    if (!modalBody) return;
+    
+    const priceElement = modalBody.querySelector('.item-modal-price');
+    if (!priceElement) return;
+    
+    // Extract price from the price element text
+    const priceText = priceElement.textContent;
+    const price = parseFloat(priceText.replace(/[^\d.]/g, '')) || 0;
+    const quantity = itemModalQuantity || 1;
+    const total = price * quantity;
+    
+    totalPriceElement.textContent = formatCurrency(total);
+}
+
+function addToCartFromModal(itemId, itemName, itemPrice, itemImage) {
+    const quantityInput = document.getElementById('itemModalQuantity');
+    const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+    
+    const existingItem = cart.find(item => item.id === itemId);
+    
+    if (existingItem) {
+        existingItem.quantity += quantity;
+    } else {
+        cart.push({
+            id: itemId,
+            name: itemName,
+            price: parseFloat(itemPrice),
+            image: itemImage,
+            quantity: quantity
+        });
+    }
+    
+    updateCartStorage();
+    updateCartUI();
+    showCartNotification();
+    closeItemModal();
+    showNotification(`${quantity}x ${itemName} added to cart!`, 'success');
 }
 
 // Process Order

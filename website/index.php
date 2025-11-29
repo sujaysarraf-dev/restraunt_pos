@@ -609,6 +609,18 @@ try {
         </div>
     </div>
 
+    <!-- Item Details Modal -->
+    <div class="item-modal" id="itemModal" onclick="closeItemModalOnOverlay(event)">
+        <div class="item-modal-content" onclick="event.stopPropagation();">
+            <button class="close-modal" id="closeItemModal">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+            <div class="item-modal-body" id="itemModalBody">
+                <!-- Item details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
     <!-- Profile Modal -->
     <div class="waiter-modal" id="profileModal" onclick="closeProfileModalOnOverlay(event)">
         <div class="waiter-modal-content profile-modal-content" onclick="event.stopPropagation();">

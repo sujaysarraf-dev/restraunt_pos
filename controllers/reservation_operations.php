@@ -1,28 +1,125 @@
 <?php
+// Start output buffering to catch any unexpected output
+ob_start();
+
 // Suppress error display, log errors instead
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-// Include secure session configuration
-require_once __DIR__ . '/../config/session_config.php';
-startSecureSession();
+// Set error handler to catch fatal errors
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error !== NULL && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        ob_clean(); // Clear any output
+        http_response_code(500);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'A fatal error occurred: ' . $error['message'],
+            'error' => $error['message'],
+            'file' => basename($error['file']),
+            'line' => $error['line'],
+            'type' => 'FatalError'
+        ]);
+        exit();
+    }
+});
 
-// Include authorization configuration
-require_once __DIR__ . '/../config/authorization_config.php';
+// Set custom error handler for warnings/notices
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    if (error_reporting() === 0) {
+        return false;
+    }
+    error_log("PHP Error [$errno]: $errstr in $errfile on line $errline");
+    return false; // Let PHP handle it normally
+});
+
+try {
+    // Include secure session configuration
+    require_once __DIR__ . '/../config/session_config.php';
+    startSecureSession();
+} catch (Exception $e) {
+    ob_clean();
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'message' => 'Session initialization failed: ' . $e->getMessage(),
+        'error' => $e->getMessage(),
+        'type' => 'SessionError'
+    ]);
+    exit();
+} catch (Error $e) {
+    ob_clean();
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'message' => 'Fatal error during initialization: ' . $e->getMessage(),
+        'error' => $e->getMessage(),
+        'type' => 'InitError'
+    ]);
+    exit();
+}
+
+try {
+    // Include authorization configuration
+    require_once __DIR__ . '/../config/authorization_config.php';
+} catch (Exception $e) {
+    ob_clean();
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'message' => 'Authorization config error: ' . $e->getMessage(),
+        'error' => $e->getMessage(),
+        'type' => 'AuthConfigError'
+    ]);
+    exit();
+} catch (Error $e) {
+    ob_clean();
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'message' => 'Fatal error in authorization: ' . $e->getMessage(),
+        'error' => $e->getMessage(),
+        'type' => 'AuthError'
+    ]);
+    exit();
+}
 
 // Ensure no output before headers
-if (ob_get_level()) {
-    ob_clean();
-}
+ob_clean();
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Require permission to manage reservations
-requirePermission(PERMISSION_MANAGE_RESERVATIONS);
+try {
+    // Require permission to manage reservations
+    requirePermission(PERMISSION_MANAGE_RESERVATIONS);
+} catch (Exception $e) {
+    http_response_code(403);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Permission denied: ' . $e->getMessage(),
+        'error' => $e->getMessage(),
+        'type' => 'PermissionError'
+    ]);
+    exit();
+} catch (Error $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Permission check error: ' . $e->getMessage(),
+        'error' => $e->getMessage(),
+        'type' => 'PermissionCheckError'
+    ]);
+    exit();
+}
 
 // Include database connection
 if (file_exists(__DIR__ . '/../db_connection.php')) {
@@ -87,7 +184,7 @@ try {
     $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
     $email = isset($_POST['email']) ? trim($_POST['email']) : '';
     $specialRequest = isset($_POST['specialRequest']) ? trim($_POST['specialRequest']) : '';
-    $tableId = isset($_POST['selectTable']) ? (int)$_POST['selectTable'] : NULL;
+    $tableId = isset($_POST['selectTable']) && $_POST['selectTable'] !== '' ? (int)$_POST['selectTable'] : NULL;
     $status = isset($_POST['status']) ? trim($_POST['status']) : 'Pending';
     
     // Validate action
@@ -95,21 +192,44 @@ try {
         throw new Exception('Action is required');
     }
     
+    // Log received data for debugging
+    error_log("=== Reservation Operation Debug ===");
+    error_log("Action: " . $action);
+    error_log("Reservation ID: " . $reservationId);
+    error_log("Reservation Date: " . $reservationDate);
+    error_log("Time Slot: " . $timeSlot);
+    error_log("Number of Guests: " . $noOfGuests);
+    error_log("Meal Type: " . $mealType);
+    error_log("Customer Name: " . $customerName);
+    error_log("Phone: " . $phone);
+    error_log("Email: " . $email);
+    error_log("Table ID: " . ($tableId ?? 'NULL'));
+    error_log("Status: " . $status);
+    error_log("POST Data: " . print_r($_POST, true));
+    
     // Validate required fields for add and update actions using validation functions
     if (in_array($action, ['add', 'update'])) {
+        error_log("Starting validation for action: $action");
+        
         // Validate date
+        error_log("Validating date: $reservationDate");
         $dateValidation = validateDate($reservationDate, 'Y-m-d');
         if (!$dateValidation['valid']) {
+            error_log("Date validation failed: " . $dateValidation['message']);
             throw new Exception($dateValidation['message']);
         }
         $reservationDate = $dateValidation['value'];
+        error_log("Date validation passed: $reservationDate");
         
         // Validate time slot
+        error_log("Validating time slot: $timeSlot");
         $timeValidation = validateTime($timeSlot);
         if (!$timeValidation['valid']) {
+            error_log("Time validation failed: " . $timeValidation['message']);
             throw new Exception($timeValidation['message']);
         }
         $timeSlot = $timeValidation['value'];
+        error_log("Time validation passed: $timeSlot");
         
         // Validate customer name
         $nameValidation = validateString($customerName, 2, 100, true);
@@ -274,19 +394,54 @@ try {
     }
     
 } catch (PDOException $e) {
-    error_log("PDO Error in reservation_operations.php: " . $e->getMessage());
+    error_log("=== PDO Exception ===");
+    error_log("Message: " . $e->getMessage());
+    error_log("Code: " . $e->getCode());
+    error_log("File: " . $e->getFile());
+    error_log("Line: " . $e->getLine());
+    error_log("Trace: " . $e->getTraceAsString());
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Database error occurred. Please try again later.'
+        'message' => 'Database error occurred. Please try again later.',
+        'error' => $e->getMessage(),
+        'type' => 'PDOException',
+        'file' => $e->getFile(),
+        'line' => $e->getLine()
     ]);
     exit();
 } catch (Exception $e) {
-    error_log("Error in reservation_operations.php: " . $e->getMessage());
+    error_log("=== Exception ===");
+    error_log("Message: " . $e->getMessage());
+    error_log("Code: " . $e->getCode());
+    error_log("File: " . $e->getFile());
+    error_log("Line: " . $e->getLine());
+    error_log("Trace: " . $e->getTraceAsString());
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
+        'error' => $e->getMessage(),
+        'type' => 'Exception',
+        'file' => $e->getFile(),
+        'line' => $e->getLine()
+    ]);
+    exit();
+} catch (Error $e) {
+    error_log("=== Fatal Error ===");
+    error_log("Message: " . $e->getMessage());
+    error_log("Code: " . $e->getCode());
+    error_log("File: " . $e->getFile());
+    error_log("Line: " . $e->getLine());
+    error_log("Trace: " . $e->getTraceAsString());
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'A fatal error occurred. Please check the server logs.',
+        'error' => $e->getMessage(),
+        'type' => 'Error',
+        'file' => $e->getFile(),
+        'line' => $e->getLine()
     ]);
     exit();
 }

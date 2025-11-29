@@ -2086,7 +2086,7 @@ try {
             </div>
             <div class="form-group">
               <label for="email">Email Address:</label>
-              <input type="email" id="email" name="email" required placeholder="Enter email address">
+              <input type="email" id="email" name="email" placeholder="Enter email address (optional)">
             </div>
           </div>
           <div class="form-group">

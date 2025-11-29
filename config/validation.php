@@ -187,11 +187,35 @@ function validateTime($time) {
         return ['valid' => false, 'message' => 'Time is required'];
     }
     
-    if (!preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9](:([0-5][0-9]))?$/', $time)) {
-        return ['valid' => false, 'message' => 'Invalid time format. Expected: HH:MM or HH:MM:SS'];
+    $time = trim($time);
+    
+    // Check if it's in 24-hour format (HH:MM or HH:MM:SS)
+    if (preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9](:([0-5][0-9]))?$/', $time)) {
+        // Extract just HH:MM if seconds are included
+        $parts = explode(':', $time);
+        $hour = isset($parts[0]) ? $parts[0] : '00';
+        $minute = isset($parts[1]) ? $parts[1] : '00';
+        return ['valid' => true, 'value' => sprintf('%02d:%02d', (int)$hour, (int)$minute)];
     }
     
-    return ['valid' => true, 'value' => $time];
+    // Check if it's in 12-hour format (H:MM AM/PM or HH:MM AM/PM)
+    if (preg_match('/^([0]?[1-9]|1[0-2]):([0-5][0-9])\s*(AM|PM)$/i', $time, $matches)) {
+        // Convert 12-hour to 24-hour format
+        $hour = (int)$matches[1];
+        $minute = (int)$matches[2];
+        $ampm = strtoupper(trim($matches[3]));
+        
+        if ($ampm === 'PM' && $hour !== 12) {
+            $hour += 12;
+        } elseif ($ampm === 'AM' && $hour === 12) {
+            $hour = 0;
+        }
+        
+        $time24 = sprintf('%02d:%02d', $hour, $minute);
+        return ['valid' => true, 'value' => $time24];
+    }
+    
+    return ['valid' => false, 'message' => 'Invalid time format. Expected: HH:MM (24-hour) or H:MM AM/PM (12-hour)'];
 }
 
 /**

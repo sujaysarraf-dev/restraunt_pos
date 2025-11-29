@@ -2357,19 +2357,24 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   function openReservationModal(isEdit = false) {
+    if (!reservationModal) {
+      console.error('Reservation modal not found');
+      return;
+    }
+    
     if (isEdit) {
-      reservationModalTitle.textContent = "Edit Reservation";
-      reservationSaveBtn.textContent = "Update Reservation";
+      if (reservationModalTitle) reservationModalTitle.textContent = "Edit Reservation";
+      if (reservationSaveBtn) reservationSaveBtn.textContent = "Update Reservation";
     } else {
-      reservationModalTitle.textContent = "New Reservation";
-      reservationForm.reset();
-      reservationIdInput.value = "";
+      if (reservationModalTitle) reservationModalTitle.textContent = "New Reservation";
+      if (reservationForm) reservationForm.reset();
+      if (reservationIdInput) reservationIdInput.value = "";
       const today = new Date().toISOString().split('T')[0];
-      reservationDateInput.value = today;
-      noOfGuestsInput.value = 1;
-      mealTypeSelect.value = "Lunch";
+      if (reservationDateInput) reservationDateInput.value = today;
+      if (noOfGuestsInput) noOfGuestsInput.value = 1;
+      if (mealTypeSelect) mealTypeSelect.value = "Lunch";
       selectedTimeSlot = null;
-      reservationSaveBtn.textContent = "Reserve Now";
+      if (reservationSaveBtn) reservationSaveBtn.textContent = "Reserve Now";
     }
     
     loadTablesForDropdown();
@@ -2379,14 +2384,16 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.style.overflow = "hidden";
     
     setTimeout(() => {
-      customerNameInput.focus();
+      if (customerNameInput) customerNameInput.focus();
     }, 150);
   }
   
   function closeReservationModal() {
-    reservationModal.style.display = "none";
+    if (reservationModal) {
+      reservationModal.style.display = "none";
+    }
     document.body.style.overflow = "auto";
-    reservationForm.reset();
+    if (reservationForm) reservationForm.reset();
     currentReservationId = null;
     selectedTimeSlot = null;
   }
@@ -2395,9 +2402,63 @@ document.addEventListener("DOMContentLoaded", () => {
     reservationCancelBtn.addEventListener("click", closeReservationModal);
   }
   
+  // Convert 24-hour format to 12-hour format
+  function convertTo12Hour(time24) {
+    if (!time24) return '';
+    // Handle formats like "13:00", "13:00:00", "01:00 PM", etc.
+    if (time24.includes('PM') || time24.includes('AM')) {
+      return time24; // Already in 12-hour format
+    }
+    const [hours, minutes] = time24.split(':');
+    const hour = parseInt(hours);
+    if (hour === 0) return `12:${minutes || '00'} AM`;
+    if (hour === 12) return `12:${minutes || '00'} PM`;
+    if (hour < 12) return `${hour}:${minutes || '00'} AM`;
+    return `${hour - 12}:${minutes || '00'} PM`;
+  }
+  
+  // Convert 12-hour format to 24-hour format
+  function convertTo24Hour(time12) {
+    if (!time12) return '';
+    const timeStr = time12.trim();
+    
+    // Handle formats like "13:00", "13:00:00" (already 24-hour)
+    if (!/AM|PM/i.test(timeStr)) {
+      // Already in 24-hour format, just ensure it's in HH:MM format
+      const parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        const hour = parseInt(parts[0]) || 0;
+        const minute = parseInt(parts[1]) || 0;
+        return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      }
+      return timeStr;
+    }
+    
+    // Extract AM/PM
+    const isPM = /PM/i.test(timeStr);
+    const time = timeStr.replace(/\s*(AM|PM)/i, '').trim();
+    const [hours, minutes] = time.split(':');
+    let hour = parseInt(hours) || 0;
+    const minute = parseInt(minutes) || 0;
+    
+    // Convert to 24-hour format
+    if (isPM && hour !== 12) {
+      hour += 12;
+    } else if (!isPM && hour === 12) {
+      hour = 0;
+    }
+    
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  }
+  
   // Generate time slots
   function generateTimeSlots() {
-    const slots = ['12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM'];
+    const slots = ['12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM', '09:00 PM', '10:00 PM'];
+    
+    if (!timeSlotsDiv) {
+      console.error('Time slots div not found');
+      return;
+    }
     
     timeSlotsDiv.innerHTML = slots.map(slot => `
       <button type="button" class="time-slot-btn" data-slot="${slot}">${slot}</button>
@@ -2412,11 +2473,19 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
     
-    // Set previously selected slot if editing
+    // Set previously selected slot if editing (convert from 24-hour to 12-hour if needed)
     if (selectedTimeSlot) {
-      const btn = document.querySelector(`.time-slot-btn[data-slot="${selectedTimeSlot}"]`);
+      const slot12Hour = convertTo12Hour(selectedTimeSlot);
+      const btn = document.querySelector(`.time-slot-btn[data-slot="${slot12Hour}"]`);
       if (btn) {
         btn.classList.add('active');
+        selectedTimeSlot = slot12Hour; // Update to 12-hour format
+      } else {
+        // Try to find by exact match
+        const btnExact = document.querySelector(`.time-slot-btn[data-slot="${selectedTimeSlot}"]`);
+        if (btnExact) {
+          btnExact.classList.add('active');
+        }
       }
     }
   }
@@ -2448,7 +2517,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       
       const reservationDate = reservationDateInput.value;
-      const timeSlot = selectedTimeSlot;
+      let timeSlot = selectedTimeSlot;
       const noOfGuests = parseInt(noOfGuestsInput.value) || 1;
       const mealType = mealTypeSelect.value;
       const customerName = customerNameInput.value.trim();
@@ -2473,12 +2542,37 @@ document.addEventListener("DOMContentLoaded", () => {
         showMessage("Please select a time slot.", "error");
         return;
       }
+      
+      // Convert time slot to 24-hour format for database (if in 12-hour format)
+      timeSlot = convertTo24Hour(timeSlot);
+      
+      // Validate time slot after conversion
+      if (!timeSlot || !/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeSlot)) {
+        console.error("Invalid time slot after conversion:", timeSlot);
+        showMessage("Invalid time slot format. Please select a time slot again.", "error");
+        return;
+      }
 
       // Disable save button and show loading
       reservationSaveBtn.disabled = true;
       reservationSaveBtn.textContent = isEdit ? "Updating..." : "Reserving...";
 
       try {
+        // Log form data before sending
+        console.log("=== Reservation Form Submission ===");
+        console.log("Action:", isEdit ? 'update' : 'add');
+        console.log("Reservation Date:", reservationDate);
+        console.log("Time Slot (before conversion):", selectedTimeSlot);
+        console.log("Time Slot (after conversion):", timeSlot);
+        console.log("Number of Guests:", noOfGuests);
+        console.log("Meal Type:", mealType);
+        console.log("Customer Name:", customerName);
+        console.log("Phone:", phone);
+        console.log("Email:", email);
+        console.log("Special Request:", specialRequest);
+        console.log("Table ID:", tableId);
+        console.log("Reservation ID:", reservationId);
+        
         const formData = new URLSearchParams();
         formData.append('action', isEdit ? 'update' : 'add');
         formData.append('reservationDate', reservationDate);
@@ -2496,6 +2590,9 @@ document.addEventListener("DOMContentLoaded", () => {
           formData.append('reservationId', reservationId);
         }
 
+        console.log("Form Data:", formData.toString());
+        console.log("Sending request to: ../controllers/reservation_operations.php");
+
         const response = await fetch("../controllers/reservation_operations.php", {
           method: "POST",
           headers: {
@@ -2504,21 +2601,86 @@ document.addEventListener("DOMContentLoaded", () => {
           body: formData
         });
 
-        const result = await response.json();
+        console.log("Response Status:", response.status, response.statusText);
+        console.log("Response OK:", response.ok);
+        console.log("Response Headers:", Object.fromEntries(response.headers.entries()));
+
+        let result;
+        let responseText = '';
+        try {
+          responseText = await response.text();
+          console.log("Raw Response Text Length:", responseText.length);
+          console.log("Raw Response Text:", responseText);
+          
+          // Check if response is empty
+          if (!responseText || responseText.trim() === '') {
+            console.error("=== Empty Response ===");
+            console.error("Response Status:", response.status);
+            showMessage("Server returned empty response. Please check server logs.", "error");
+            return;
+          }
+          
+          // Try to parse as JSON
+          try {
+            result = JSON.parse(responseText);
+            console.log("Parsed Response:", result);
+          } catch (parseError) {
+            console.error("=== JSON Parse Error ===");
+            console.error("Parse Error:", parseError);
+            console.error("Response Text (first 500 chars):", responseText.substring(0, 500));
+            console.error("Response Status:", response.status);
+            
+            // Check if it's an HTML error page
+            if (responseText.includes('<html') || responseText.includes('<!DOCTYPE')) {
+              console.error("Server returned HTML instead of JSON - likely a PHP error page");
+              showMessage("Server error: PHP error page returned. Check server logs for details.", "error");
+            } else {
+              showMessage("Server returned invalid JSON. Check console for details.", "error");
+            }
+            return;
+          }
+        } catch (textError) {
+          console.error("=== Response Text Read Error ===");
+          console.error("Error:", textError);
+          console.error("Response Status:", response.status);
+          showMessage("Failed to read server response. Check console for details.", "error");
+          return;
+        }
+
+        if (!response.ok) {
+          console.error("=== HTTP Error ===");
+          console.error("Status:", response.status);
+          console.error("Status Text:", response.statusText);
+          console.error("Response:", result);
+          const errorMsg = result.message || result.error || `Server error (${response.status}). Please try again.`;
+          console.error("Error Message:", errorMsg);
+          showMessage(errorMsg, "error");
+          return;
+        }
 
         if (result.success) {
+          console.log("=== Success ===");
+          console.log("Message:", result.message);
           showMessage(result.message, "success");
           setTimeout(() => {
             closeReservationModal();
             loadReservations(); // Refresh the reservation list
           }, 1500);
         } else {
-          showMessage(result.message || "Error processing request. Please try again.", "error");
+          console.error("=== Request Failed ===");
+          console.error("Response:", result);
+          const errorMsg = result.message || result.error || "Error processing request. Please try again.";
+          console.error("Error Message:", errorMsg);
+          showMessage(errorMsg, "error");
         }
         
       } catch (error) {
-        console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        console.error("=== Network/Request Error ===");
+        console.error("Error Type:", error.constructor.name);
+        console.error("Error Message:", error.message);
+        console.error("Error Stack:", error.stack);
+        console.error("Full Error Object:", error);
+        showMessage("Network error: " + error.message + ". Check console for details.", "error");
       } finally {
         // Re-enable save button
         reservationSaveBtn.disabled = false;
@@ -2758,21 +2920,22 @@ document.addEventListener("DOMContentLoaded", () => {
   // Make functions globally accessible
   window.editReservation = function(reservationId, customerName, reservationDate, timeSlot, noOfGuests, mealType, phone, email, specialRequest, tableId) {
     currentReservationId = reservationId;
-    selectedTimeSlot = timeSlot;
+    // Convert time slot to 12-hour format for display (if in 24-hour format)
+    selectedTimeSlot = convertTo12Hour(timeSlot);
     
     // Set form values
-    reservationIdInput.value = reservationId;
-    reservationDateInput.value = reservationDate;
-    noOfGuestsInput.value = noOfGuests;
-    mealTypeSelect.value = mealType;
-    customerNameInput.value = customerName;
-    phoneInput.value = phone;
-    emailInput.value = email;
-    specialRequestInput.value = specialRequest;
+    if (reservationIdInput) reservationIdInput.value = reservationId;
+    if (reservationDateInput) reservationDateInput.value = reservationDate;
+    if (noOfGuestsInput) noOfGuestsInput.value = noOfGuests;
+    if (mealTypeSelect) mealTypeSelect.value = mealType || 'Lunch';
+    if (customerNameInput) customerNameInput.value = customerName || '';
+    if (phoneInput) phoneInput.value = phone || '';
+    if (emailInput) emailInput.value = email || '';
+    if (specialRequestInput) specialRequestInput.value = specialRequest || '';
     
     // Open modal
     loadTablesForDropdown().then(() => {
-      if (tableId && tableId !== 'null') {
+      if (tableId && tableId !== 'null' && selectTableSelect) {
         selectTableSelect.value = tableId;
       }
       openReservationModal(true);
@@ -2826,7 +2989,7 @@ document.addEventListener("DOMContentLoaded", () => {
             formData.append('reservationDate', reservation.reservation_date);
             formData.append('timeSlot', reservation.time_slot);
             formData.append('noOfGuests', reservation.no_of_guests);
-            formData.append('mealType', reservation.meal_type);
+            formData.append('mealType', reservation.meal_type || 'Lunch');
             formData.append('customerName', reservation.customer_name);
             formData.append('phone', reservation.phone);
             formData.append('email', reservation.email || '');
@@ -2953,12 +3116,12 @@ document.addEventListener("DOMContentLoaded", () => {
             formData.append('reservationDate', reservation.reservation_date);
             formData.append('timeSlot', reservation.time_slot);
             formData.append('noOfGuests', reservation.no_of_guests);
-            formData.append('mealType', reservation.meal_type);
+            formData.append('mealType', reservation.meal_type || 'Lunch');
             formData.append('customerName', reservation.customer_name);
             formData.append('phone', reservation.phone);
             formData.append('email', reservation.email || '');
             formData.append('specialRequest', reservation.special_request || '');
-            formData.append('status', reservation.status);
+            formData.append('status', reservation.status || 'Pending');
             
             fetch("../controllers/reservation_operations.php", {
               method: "POST",
