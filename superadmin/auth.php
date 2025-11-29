@@ -1,8 +1,10 @@
 <?php
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 
 function require_superadmin() {
-    if (!isset($_SESSION['superadmin_id'])) {
+    if (!isSessionValid() || !isset($_SESSION['superadmin_id'])) {
         header('Location: login.php');
         exit();
     }

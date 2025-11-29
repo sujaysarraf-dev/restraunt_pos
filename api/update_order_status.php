@@ -1,13 +1,15 @@
 <?php
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
 header('Content-Type: application/json');
 
-// Check if user is logged in (admin or staff)
-if (!isset($_SESSION['restaurant_id']) && (!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id']))) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit();
-}
+// Require permission to manage orders
+requirePermission(PERMISSION_MANAGE_ORDERS);
 
 if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';

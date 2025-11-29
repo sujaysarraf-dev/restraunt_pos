@@ -6,7 +6,9 @@
  * Or: website/restaurant-name (via .htaccess rewrite)
  */
 
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 
 // Get restaurant identifier from URL
 $restaurant_slug = isset($_GET['restaurant']) ? trim($_GET['restaurant']) : '';

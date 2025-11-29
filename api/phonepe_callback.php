@@ -1,5 +1,7 @@
 <?php
-session_start();
+// Include secure session configuration (callback may not need auth, but session config is safe)
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
 }

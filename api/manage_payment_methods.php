@@ -1,6 +1,15 @@
 <?php
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
 header('Content-Type: application/json');
+
+// Require admin permission to manage payment methods
+requireAdmin();
 
 // Include database connection
 if (file_exists(__DIR__ . '/../db_connection.php')) {
@@ -8,13 +17,6 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
 } else {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Database connection file not found']);
-    exit();
-}
-
-// Check if user is logged in
-if (!isset($_SESSION['restaurant_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit();
 }
 

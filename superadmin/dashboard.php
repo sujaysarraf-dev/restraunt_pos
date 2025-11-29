@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/auth.php';
 require_superadmin();
-session_start();
+// Session already started in auth.php
 ?>
 <!DOCTYPE html>
 <html lang="en">

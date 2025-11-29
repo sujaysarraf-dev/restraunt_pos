@@ -1,15 +1,18 @@
 <?php
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit();
-}
+// Require permission to manage payments
+requirePermission(PERMISSION_MANAGE_PAYMENTS);
 
 if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';

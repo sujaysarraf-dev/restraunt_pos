@@ -4,7 +4,9 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 
 // Ensure no output before headers
 if (ob_get_level()) {
@@ -149,6 +151,9 @@ function handleLogin() {
         $_SESSION['user_type'] = 'admin';
         $_SESSION['role'] = 'Admin';
         
+        // Regenerate session ID after successful login for security
+        regenerateSessionAfterLogin();
+        
         echo json_encode([
             'success' => true,
             'message' => 'Login successful',
@@ -180,8 +185,26 @@ function handleLogin() {
         $_SESSION['user_type'] = 'staff';
         $_SESSION['role'] = $staff['role'];
         
-        // Always redirect to main dashboard first
-        $redirect = '../views/dashboard.php';
+        // Regenerate session ID after successful login for security
+        regenerateSessionAfterLogin();
+        
+        // Redirect based on role to appropriate dashboard
+        $role = $staff['role'];
+        switch ($role) {
+            case 'Waiter':
+                $redirect = '../views/waiter_dashboard.php';
+                break;
+            case 'Chef':
+                $redirect = '../views/chef_dashboard.php';
+                break;
+            case 'Manager':
+                $redirect = '../views/manager_dashboard.php';
+                break;
+            case 'Admin':
+            default:
+                $redirect = '../views/dashboard.php';
+                break;
+        }
         
         echo json_encode([
             'success' => true,
@@ -263,16 +286,8 @@ function handleSignup() {
 }
 
 function handleLogout() {
-    // Clear all session variables
-    $_SESSION = array();
-    
-    // Destroy the session cookie if it exists
-    if (isset($_COOKIE[session_name()])) {
-        setcookie(session_name(), '', time() - 3600, '/');
-    }
-    
-    // Destroy the session
-    session_destroy();
+    // Use secure session destruction
+    destroySession();
     
     echo json_encode([
         'success' => true,

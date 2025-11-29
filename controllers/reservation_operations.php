@@ -4,7 +4,12 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
 
 // Ensure no output before headers
 if (ob_get_level()) {
@@ -15,6 +20,9 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
+
+// Require permission to manage reservations
+requirePermission(PERMISSION_MANAGE_RESERVATIONS);
 
 // Include database connection
 if (file_exists(__DIR__ . '/../db_connection.php')) {
@@ -43,16 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(['success' => false, 'message' => $sizeCheck['message']]);
         exit();
     }
-}
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
-    http_response_code(401);
-    echo json_encode([
-        'success' => false,
-        'message' => 'Please login to continue'
-    ]);
-    exit();
 }
 
 $restaurant_id = $_SESSION['restaurant_id'];

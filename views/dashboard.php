@@ -1,10 +1,29 @@
 <?php
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 
-// Check if user is logged in (admin has user_id, staff has staff_id)
-if ((!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id'])) || !isset($_SESSION['username']) || !isset($_SESSION['restaurant_id'])) {
+// Check if user is logged in (admin has user_id, staff has staff_id) and session is valid
+if (!isSessionValid() || (!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id'])) || !isset($_SESSION['username']) || !isset($_SESSION['restaurant_id'])) {
     header('Location: ../admin/login.php');
     exit();
+}
+
+// If staff member, redirect to their role-specific dashboard
+if (isset($_SESSION['staff_id']) && isset($_SESSION['role'])) {
+    $role = $_SESSION['role'];
+    switch ($role) {
+        case 'Waiter':
+            header('Location: waiter_dashboard.php');
+            exit();
+        case 'Chef':
+            header('Location: chef_dashboard.php');
+            exit();
+        case 'Manager':
+            header('Location: manager_dashboard.php');
+            exit();
+        // Admin staff can access main dashboard, so no redirect needed
+    }
 }
 
 // Load restaurant info from database to prevent flash of default content

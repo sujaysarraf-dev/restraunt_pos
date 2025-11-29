@@ -1,5 +1,7 @@
 <?php
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 require_once __DIR__ . '/../db_connection.php';
 
 $error = '';
@@ -13,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($sa && password_verify($password, $sa['password_hash'])) {
             $_SESSION['superadmin_id'] = $sa['id'];
             $_SESSION['superadmin_username'] = $sa['username'];
+            // Regenerate session ID after successful login for security
+            regenerateSessionAfterLogin();
             header('Location: dashboard.php');
             exit();
         } else {

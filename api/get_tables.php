@@ -9,11 +9,20 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 header('Access-Control-Allow-Headers: Content-Type');
+
+// Require permission to manage tables
+requirePermission(PERMISSION_MANAGE_TABLES);
 
 // Include database connection
 if (file_exists(__DIR__ . '/../db_connection.php')) {

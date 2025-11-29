@@ -9,7 +9,13 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
@@ -29,18 +35,19 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
-// Check if user is logged in (admin or staff)
-if (!isset($_SESSION['restaurant_id']) && (!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id']))) {
-    // Allow restaurant_id from query parameter for staff logins
-    if (!isset($_GET['restaurant_id'])) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Please login to continue',
-            'data' => [],
-            'categories' => []
-        ]);
-        exit();
-    }
+// Menu items can be public (for website), but if logged in, require permission
+// Allow public access if restaurant_id is provided in query, otherwise require login
+if (isLoggedIn()) {
+    requirePermission(PERMISSION_MANAGE_MENU);
+} elseif (!isset($_GET['restaurant_id'])) {
+    // If not logged in and no restaurant_id provided, return error
+    echo json_encode([
+        'success' => false,
+        'message' => 'Restaurant ID required',
+        'data' => [],
+        'categories' => []
+    ]);
+    exit();
 }
 
 $restaurant_id = $_GET['restaurant_id'] ?? $_SESSION['restaurant_id'] ?? null;

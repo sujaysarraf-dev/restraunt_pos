@@ -1,7 +1,8 @@
 <?php
-session_start();
-session_unset();
-session_destroy();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+destroySession();
 header('Location: login.php');
 exit();
 ?>

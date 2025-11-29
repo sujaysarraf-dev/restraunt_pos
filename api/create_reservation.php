@@ -4,7 +4,18 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
+// Require permission to manage reservations (or allow public if not logged in - for website)
+// If user is logged in, check permission; if not, allow (public reservation)
+if (isLoggedIn()) {
+    requirePermission(PERMISSION_MANAGE_RESERVATIONS);
+}
 if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
 }

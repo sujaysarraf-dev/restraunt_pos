@@ -9,8 +9,17 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
 header('Content-Type: application/json');
+
+// Require permission to manage customers
+requirePermission(PERMISSION_MANAGE_CUSTOMERS);
 
 // Include database connection
 if (file_exists(__DIR__ . '/../db_connection.php')) {
@@ -18,13 +27,6 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
 } else {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Database connection file not found']);
-    exit();
-}
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit();
 }
 

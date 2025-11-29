@@ -9,18 +9,17 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
 header('Content-Type: application/json');
 
-// Check if user is logged in (admin or staff)
-if (!isset($_SESSION['restaurant_id']) && (!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id']))) {
-    // Allow restaurant_id from query parameter for staff logins
-    if (!isset($_GET['restaurant_id'])) {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-        exit();
-    }
-}
+// Require permission to view KOT
+requirePermission(PERMISSION_VIEW_KOT);
 
 // Include database connection
 if (file_exists(__DIR__ . '/../db_connection.php')) {

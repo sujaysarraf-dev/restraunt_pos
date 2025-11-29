@@ -4,7 +4,9 @@ header('Content-Type: application/json');
 
 $action = $_GET['action'] ?? 'get';
 // When opened from admin, restaurant_id comes from session; when opened directly, query param can be used
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 $restaurant_id = $_GET['restaurant_id'] ?? ($_SESSION['restaurant_id'] ?? 'RES001');
 
 // Ensure $pdo is available

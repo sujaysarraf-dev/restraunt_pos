@@ -1,11 +1,15 @@
 <?php
-session_start();
-require_once '../db_connection.php';
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
-    die("Unauthorized access");
-}
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
+// Require admin permission to update menu items
+requireAdmin();
+
+require_once '../db_connection.php';
 
 $restaurant_id = $_SESSION['restaurant_id'];
 

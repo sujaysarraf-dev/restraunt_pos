@@ -1,7 +1,9 @@
 <?php
 // Load currency symbol from database server-side (same as dashboard)
 // Get restaurant_id from URL, restaurant name slug, session, or default to RES001
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 
 // Function to create URL-friendly slug from restaurant name
 function createRestaurantSlug($name) {

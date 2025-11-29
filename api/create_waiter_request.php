@@ -4,7 +4,18 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
+// Require permission to manage orders (waiter requests are part of order management)
+// Allow public access for customers calling waiter
+if (isLoggedIn()) {
+    requirePermission(PERMISSION_MANAGE_ORDERS);
+}
 if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
 }

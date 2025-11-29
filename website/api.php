@@ -9,7 +9,9 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 require_once 'db_config.php';
 
 header('Content-Type: application/json');

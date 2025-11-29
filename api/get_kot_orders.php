@@ -1,12 +1,13 @@
 <?php
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit();
-}
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
+// Require permission to view KOT
+requirePermission(PERMISSION_VIEW_KOT);
 
 require_once '../db_connection.php';
 

@@ -1,16 +1,10 @@
 <?php
-session_start();
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 
-// Clear all session variables
-$_SESSION = array();
-
-// Destroy the session cookie if it exists
-if (isset($_COOKIE[session_name()])) {
-    setcookie(session_name(), '', time() - 3600, '/');
-}
-
-// Destroy the session
-session_destroy();
+// Use secure session destruction
+destroySession();
 
 // Redirect to login page (correct path from controllers/ folder)
 header('Location: ../admin/login.php');

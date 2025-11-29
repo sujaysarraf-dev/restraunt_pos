@@ -1,6 +1,8 @@
 <?php
-session_start();
-if (!isset($_SESSION['staff_id']) || !isset($_SESSION['restaurant_id']) || $_SESSION['role'] !== 'Manager') {
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+if (!isSessionValid() || !isset($_SESSION['staff_id']) || !isset($_SESSION['restaurant_id']) || $_SESSION['role'] !== 'Manager') {
     header('Location: ../admin/login.php');
     exit();
 }
