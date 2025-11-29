@@ -211,62 +211,93 @@ try {
     if (in_array($action, ['add', 'update'])) {
         error_log("Starting validation for action: $action");
         
+        $validationErrors = [];
+        $fieldErrors = [];
+        
         // Validate date
         error_log("Validating date: $reservationDate");
         $dateValidation = validateDate($reservationDate, 'Y-m-d');
         if (!$dateValidation['valid']) {
             error_log("Date validation failed: " . $dateValidation['message']);
-            throw new Exception($dateValidation['message']);
+            $validationErrors[] = $dateValidation['message'];
+            $fieldErrors['reservationDate'] = $dateValidation['message'];
+        } else {
+            $reservationDate = $dateValidation['value'];
+            error_log("Date validation passed: $reservationDate");
         }
-        $reservationDate = $dateValidation['value'];
-        error_log("Date validation passed: $reservationDate");
         
         // Validate time slot
         error_log("Validating time slot: $timeSlot");
         $timeValidation = validateTime($timeSlot);
         if (!$timeValidation['valid']) {
             error_log("Time validation failed: " . $timeValidation['message']);
-            throw new Exception($timeValidation['message']);
+            $validationErrors[] = $timeValidation['message'];
+            $fieldErrors['timeSlot'] = $timeValidation['message'];
+        } else {
+            $timeSlot = $timeValidation['value'];
+            error_log("Time validation passed: $timeSlot");
         }
-        $timeSlot = $timeValidation['value'];
-        error_log("Time validation passed: $timeSlot");
         
         // Validate customer name
         $nameValidation = validateString($customerName, 2, 100, true);
         if (!$nameValidation['valid']) {
-            throw new Exception($nameValidation['message']);
+            $validationErrors[] = $nameValidation['message'];
+            $fieldErrors['customerName'] = $nameValidation['message'];
+        } else {
+            $customerName = sanitizeString($nameValidation['value']);
         }
-        $customerName = sanitizeString($nameValidation['value']);
         
-        // Validate phone number
-        $phoneValidation = validatePhone($phone);
-        if (!$phoneValidation['valid']) {
-            throw new Exception($phoneValidation['message']);
+        // Validate phone number - must be exactly 10 digits
+        $phoneDigits = preg_replace('/\D/', '', $phone); // Remove all non-digit characters
+        if (empty($phoneDigits)) {
+            $validationErrors[] = 'Phone number is required';
+            $fieldErrors['phone'] = 'Phone number is required';
+        } elseif (strlen($phoneDigits) !== 10) {
+            $validationErrors[] = 'Phone number must be exactly 10 digits';
+            $fieldErrors['phone'] = 'Phone number must be exactly 10 digits. Please enter a valid 10-digit phone number.';
+        } else {
+            $phone = $phoneDigits; // Use cleaned phone number
         }
-        $phone = $phoneValidation['value'];
         
         // Validate email if provided
         if (!empty($email)) {
             $emailValidation = validateEmail($email);
             if (!$emailValidation['valid']) {
-                throw new Exception($emailValidation['message']);
+                $validationErrors[] = $emailValidation['message'];
+                $fieldErrors['email'] = $emailValidation['message'];
+            } else {
+                $email = $emailValidation['value'];
             }
-            $email = $emailValidation['value'];
         }
         
         // Validate number of guests
         $guestsValidation = validateInteger($noOfGuests, 1, 50);
         if (!$guestsValidation['valid']) {
-            throw new Exception($guestsValidation['message']);
+            $validationErrors[] = $guestsValidation['message'];
+            $fieldErrors['noOfGuests'] = $guestsValidation['message'];
+        } else {
+            $noOfGuests = $guestsValidation['value'];
         }
-        $noOfGuests = $guestsValidation['value'];
         
         // Sanitize special request
         if (!empty($specialRequest)) {
             $specialRequest = sanitizeString($specialRequest);
             if (strlen($specialRequest) > 500) {
-                throw new Exception('Special request must be less than 500 characters');
+                $validationErrors[] = 'Special request must be less than 500 characters';
+                $fieldErrors['specialRequest'] = 'Special request must be less than 500 characters';
             }
+        }
+        
+        // If there are validation errors, return them
+        if (!empty($validationErrors)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Validation failed. Please check the form for errors.',
+                'errors' => $validationErrors,
+                'field_errors' => $fieldErrors
+            ]);
+            exit();
         }
     }
     

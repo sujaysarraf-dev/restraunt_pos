@@ -2044,49 +2044,64 @@ try {
         <span class="close">&times;</span>
       </div>
       <div class="modal-body">
+        <div id="reservationFormErrors" style="display: none; background: #fee; border: 2px solid #fcc; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; color: #c33;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <span class="material-symbols-rounded" style="color: #c33;">error</span>
+            <strong>Please fix the following errors:</strong>
+          </div>
+          <ul id="reservationErrorList" style="margin: 0; padding-left: 1.5rem; color: #c33;"></ul>
+        </div>
         <form id="reservationForm">
           <input type="hidden" id="reservationId" name="reservationId" value="">
           <div class="form-row">
             <div class="form-group">
-              <label for="reservationDate">Date:</label>
+              <label for="reservationDate">Date: <span style="color: red;">*</span></label>
               <input type="date" id="reservationDate" name="reservationDate" required>
+              <span class="field-error" id="reservationDateError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
             </div>
             <div class="form-group">
-              <label for="noOfGuests">Guests:</label>
+              <label for="noOfGuests">Guests: <span style="color: red;">*</span></label>
               <input type="number" id="noOfGuests" name="noOfGuests" min="1" value="1" required placeholder="Number of guests">
+              <span class="field-error" id="noOfGuestsError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
             </div>
           </div>
           <div class="form-group">
-            <label for="mealType">Meal Type:</label>
+            <label for="mealType">Meal Type: <span style="color: red;">*</span></label>
             <select id="mealType" name="mealType" required>
               <option value="Breakfast">Breakfast</option>
               <option value="Lunch" selected>Lunch</option>
               <option value="Dinner">Dinner</option>
               <option value="Snacks">Snacks</option>
             </select>
+            <span class="field-error" id="mealTypeError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
           </div>
           <div class="form-group">
-            <label for="timeSlot">Select Time Slot:</label>
+            <label for="timeSlot">Select Time Slot: <span style="color: red;">*</span></label>
             <div id="timeSlots" class="time-slots">
               <!-- Time slots will be added dynamically -->
             </div>
+            <span class="field-error" id="timeSlotError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
           </div>
           <div class="form-group">
             <label for="specialRequest">Any special request?</label>
             <textarea id="specialRequest" name="specialRequest" rows="3" placeholder="Enter any special requests..."></textarea>
+            <span class="field-error" id="specialRequestError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
           </div>
           <div class="form-group">
-            <label for="customerName">Customer Name:</label>
+            <label for="customerName">Customer Name: <span style="color: red;">*</span></label>
             <input type="text" id="customerName" name="customerName" required placeholder="Enter customer name">
+            <span class="field-error" id="customerNameError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="phone">Phone:</label>
+              <label for="phone">Phone: <span style="color: red;">*</span></label>
               <input type="tel" id="phone" name="phone" required placeholder="Enter phone number">
+              <span class="field-error" id="phoneError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
             </div>
             <div class="form-group">
               <label for="email">Email Address:</label>
               <input type="email" id="email" name="email" placeholder="Enter email address (optional)">
+              <span class="field-error" id="emailError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
             </div>
           </div>
           <div class="form-group">
@@ -2094,6 +2109,7 @@ try {
             <select id="selectTable" name="selectTable">
               <option value="">-- Select Table --</option>
             </select>
+            <span class="field-error" id="selectTableError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
           </div>
           <div class="form-actions">
             <button type="button" class="btn btn-cancel" id="reservationCancelBtn">Cancel</button>

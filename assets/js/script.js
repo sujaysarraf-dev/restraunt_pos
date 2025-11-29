@@ -2362,6 +2362,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
+    // Clear all errors when opening modal
+    clearReservationFormErrors();
+    
     if (isEdit) {
       if (reservationModalTitle) reservationModalTitle.textContent = "Edit Reservation";
       if (reservationSaveBtn) reservationSaveBtn.textContent = "Update Reservation";
@@ -2374,6 +2377,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (noOfGuestsInput) noOfGuestsInput.value = 1;
       if (mealTypeSelect) mealTypeSelect.value = "Lunch";
       selectedTimeSlot = null;
+      if (selectTableSelect) selectTableSelect.value = "";
       if (reservationSaveBtn) reservationSaveBtn.textContent = "Reserve Now";
     }
     
@@ -2394,9 +2398,171 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     document.body.style.overflow = "auto";
     if (reservationForm) reservationForm.reset();
+    clearReservationFormErrors();
     currentReservationId = null;
     selectedTimeSlot = null;
   }
+  
+  // Add real-time validation for all fields
+  if (reservationForm) {
+    // Phone number validation - must be 10 digits
+    if (phoneInput) {
+      phoneInput.addEventListener('input', function(e) {
+        const phone = e.target.value.trim();
+        if (phone === '') {
+          clearFieldError('phone');
+        } else {
+          const phoneDigits = phone.replace(/\D/g, '');
+          if (phoneDigits.length !== 10) {
+            showFieldError('phone', 'Phone number must be exactly 10 digits. Please enter a valid 10-digit phone number.');
+          } else {
+            clearFieldError('phone');
+          }
+        }
+      });
+      
+      phoneInput.addEventListener('blur', function(e) {
+        const phone = e.target.value.trim();
+        if (phone === '') {
+          showFieldError('phone', 'Phone number is required');
+        } else {
+          const phoneDigits = phone.replace(/\D/g, '');
+          if (phoneDigits.length !== 10) {
+            showFieldError('phone', 'Phone number must be exactly 10 digits. Please enter a valid 10-digit phone number.');
+          } else {
+            clearFieldError('phone');
+          }
+        }
+      });
+    }
+    
+    // Customer name validation
+    if (customerNameInput) {
+      customerNameInput.addEventListener('blur', function(e) {
+        const name = e.target.value.trim();
+        if (name === '') {
+          showFieldError('customerName', 'Customer name is required');
+        } else if (name.length < 2) {
+          showFieldError('customerName', 'Customer name must be at least 2 characters long.');
+        } else if (name.length > 100) {
+          showFieldError('customerName', 'Customer name must be less than 100 characters.');
+        } else {
+          clearFieldError('customerName');
+        }
+      });
+      
+      customerNameInput.addEventListener('input', function(e) {
+        const name = e.target.value.trim();
+        if (name.length > 100) {
+          showFieldError('customerName', 'Customer name must be less than 100 characters.');
+        } else if (name.length >= 2 || name === '') {
+          clearFieldError('customerName');
+        }
+      });
+    }
+    
+    // Email validation
+    if (emailInput) {
+      emailInput.addEventListener('blur', function(e) {
+        const email = e.target.value.trim();
+        if (email !== '') {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) {
+            showFieldError('email', 'Invalid email format. Please enter a valid email address.');
+          } else {
+            clearFieldError('email');
+          }
+        } else {
+          clearFieldError('email');
+        }
+      });
+    }
+    
+    // Number of guests validation
+    if (noOfGuestsInput) {
+      noOfGuestsInput.addEventListener('blur', function(e) {
+        const guests = parseInt(e.target.value) || 0;
+        if (guests < 1) {
+          showFieldError('noOfGuests', 'Number of guests must be at least 1.');
+        } else if (guests > 50) {
+          showFieldError('noOfGuests', 'Number of guests cannot exceed 50.');
+        } else {
+          clearFieldError('noOfGuests');
+        }
+      });
+      
+      noOfGuestsInput.addEventListener('input', function(e) {
+        const guests = parseInt(e.target.value) || 0;
+        if (guests > 50) {
+          showFieldError('noOfGuests', 'Number of guests cannot exceed 50.');
+        } else if (guests >= 1 || e.target.value === '') {
+          clearFieldError('noOfGuests');
+        }
+      });
+    }
+    
+    // Date validation
+    if (reservationDateInput) {
+      reservationDateInput.addEventListener('change', function(e) {
+        const date = e.target.value;
+        if (!date) {
+          showFieldError('reservationDate', 'Reservation date is required');
+        } else {
+          const selectedDate = new Date(date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (selectedDate < today) {
+            showFieldError('reservationDate', 'Reservation date cannot be in the past.');
+          } else {
+            clearFieldError('reservationDate');
+          }
+        }
+      });
+    }
+    
+    // Special request validation
+    if (specialRequestInput) {
+      specialRequestInput.addEventListener('input', function(e) {
+        const text = e.target.value.trim();
+        if (text.length > 500) {
+          showFieldError('specialRequest', 'Special request must be less than 500 characters.');
+        } else {
+          clearFieldError('specialRequest');
+        }
+      });
+    }
+    
+    // Meal type validation
+    if (mealTypeSelect) {
+      mealTypeSelect.addEventListener('change', function(e) {
+        if (!e.target.value) {
+          showFieldError('mealType', 'Meal type is required');
+        } else {
+          clearFieldError('mealType');
+        }
+      });
+    }
+    
+    // General input/change handlers to clear errors when user types
+    reservationForm.addEventListener('input', function(e) {
+      if (e.target.id && !['phone', 'customerName', 'email', 'noOfGuests', 'specialRequest'].includes(e.target.id)) {
+        clearFieldError(e.target.id);
+      }
+    });
+    
+    reservationForm.addEventListener('change', function(e) {
+      if (e.target.id && !['phone', 'customerName', 'email', 'noOfGuests', 'mealType', 'reservationDate'].includes(e.target.id)) {
+        clearFieldError(e.target.id);
+      }
+    });
+  }
+  
+  // Clear time slot error when a slot is selected
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('time-slot-btn')) {
+      clearFieldError('timeSlot');
+    }
+  });
   
   if (reservationCancelBtn) {
     reservationCancelBtn.addEventListener("click", closeReservationModal);
@@ -2496,15 +2662,25 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch("../api/get_tables.php");
       const result = await response.json();
       
-      if (result.success) {
+      if (result.success && selectTableSelect) {
+        // Store current value if editing
+        const currentValue = selectTableSelect.value;
+        
         selectTableSelect.innerHTML = '<option value="">-- Select Table --</option>';
         
-        result.data.forEach(table => {
-          const option = document.createElement('option');
-          option.value = table.id;
-          option.textContent = `${table.table_number} - ${table.area_name} (${table.capacity} seats)`;
-          selectTableSelect.appendChild(option);
-        });
+        if (result.data && Array.isArray(result.data)) {
+          result.data.forEach(table => {
+            const option = document.createElement('option');
+            option.value = table.id;
+            option.textContent = `${table.table_number} - ${table.area_name} (${table.capacity} seats)`;
+            selectTableSelect.appendChild(option);
+          });
+        }
+        
+        // Restore previous value if it exists
+        if (currentValue && currentValue !== '') {
+          selectTableSelect.value = currentValue;
+        }
       }
     } catch (error) {
       console.error("Error loading tables for dropdown:", error);
@@ -2528,27 +2704,127 @@ document.addEventListener("DOMContentLoaded", () => {
       const reservationId = reservationIdInput.value;
       const isEdit = reservationId !== "";
       
-      if (!customerName) {
-        showMessage("Please enter customer name.", "error");
-        return;
+      // Clear previous errors
+      clearReservationFormErrors();
+      
+      // Validate all fields
+      const errors = [];
+      
+      if (!reservationDate) {
+        errors.push("Reservation date is required");
+        showFieldError('reservationDate', 'Date is required');
+      } else {
+        clearFieldError('reservationDate');
       }
       
-      if (!phone) {
-        showMessage("Please enter phone number.", "error");
-        return;
+      if (!noOfGuests || noOfGuests < 1) {
+        errors.push("Number of guests must be at least 1");
+        showFieldError('noOfGuests', 'Number of guests must be at least 1');
+      } else {
+        clearFieldError('noOfGuests');
+      }
+      
+      if (!mealType) {
+        errors.push("Meal type is required");
+        showFieldError('mealType', 'Meal type is required');
+      } else {
+        clearFieldError('mealType');
       }
       
       if (!selectedTimeSlot) {
-        showMessage("Please select a time slot.", "error");
+        errors.push("Please select a time slot");
+        showFieldError('timeSlot', 'Time slot is required');
+      } else {
+        clearFieldError('timeSlot');
+      }
+      
+      if (!customerName || customerName.trim() === '') {
+        errors.push("Customer name is required");
+        showFieldError('customerName', 'Customer name is required');
+      } else {
+        clearFieldError('customerName');
+      }
+      
+      // Validate phone number
+      if (!phone || phone.trim() === '') {
+        errors.push("Phone number is required");
+        showFieldError('phone', 'Phone number is required');
+      } else {
+        // Remove all non-digit characters for validation
+        const phoneDigits = phone.replace(/\D/g, '');
+        if (phoneDigits.length !== 10) {
+          errors.push("Phone number must be exactly 10 digits");
+          showFieldError('phone', 'Phone number must be exactly 10 digits. Please enter a valid 10-digit phone number.');
+        } else {
+          clearFieldError('phone');
+        }
+      }
+      
+      // Validate email format if provided
+      if (email && email.trim() !== '') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          errors.push("Invalid email format");
+          showFieldError('email', 'Invalid email format. Please enter a valid email address.');
+        } else {
+          clearFieldError('email');
+        }
+      } else {
+        clearFieldError('email');
+      }
+      
+      // Validate customer name length
+      if (customerName && customerName.trim() !== '') {
+        if (customerName.trim().length < 2) {
+          errors.push("Customer name must be at least 2 characters");
+          showFieldError('customerName', 'Customer name must be at least 2 characters long.');
+        } else if (customerName.trim().length > 100) {
+          errors.push("Customer name must be less than 100 characters");
+          showFieldError('customerName', 'Customer name must be less than 100 characters.');
+        } else {
+          clearFieldError('customerName');
+        }
+      }
+      
+      // Validate number of guests
+      if (noOfGuests) {
+        if (noOfGuests < 1) {
+          errors.push("Number of guests must be at least 1");
+          showFieldError('noOfGuests', 'Number of guests must be at least 1.');
+        } else if (noOfGuests > 50) {
+          errors.push("Number of guests cannot exceed 50");
+          showFieldError('noOfGuests', 'Number of guests cannot exceed 50.');
+        } else {
+          clearFieldError('noOfGuests');
+        }
+      }
+      
+      // Validate special request length
+      if (specialRequest && specialRequest.trim() !== '') {
+        if (specialRequest.trim().length > 500) {
+          errors.push("Special request must be less than 500 characters");
+          showFieldError('specialRequest', 'Special request must be less than 500 characters.');
+        } else {
+          clearFieldError('specialRequest');
+        }
+      }
+      
+      // Show errors if any
+      if (errors.length > 0) {
+        showReservationFormErrors(errors);
+        showMessage("Please fix the errors in the form", "error");
         return;
       }
       
       // Convert time slot to 24-hour format for database (if in 12-hour format)
-      timeSlot = convertTo24Hour(timeSlot);
+      timeSlot = convertTo24Hour(selectedTimeSlot);
       
       // Validate time slot after conversion
       if (!timeSlot || !/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeSlot)) {
         console.error("Invalid time slot after conversion:", timeSlot);
+        errors.push("Invalid time slot format. Please select a time slot again.");
+        showFieldError('timeSlot', 'Invalid time slot format');
+        showReservationFormErrors(errors);
         showMessage("Invalid time slot format. Please select a time slot again.", "error");
         return;
       }
@@ -2661,6 +2937,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (result.success) {
           console.log("=== Success ===");
           console.log("Message:", result.message);
+          clearReservationFormErrors();
           showMessage(result.message, "success");
           setTimeout(() => {
             closeReservationModal();
@@ -2671,7 +2948,21 @@ document.addEventListener("DOMContentLoaded", () => {
           console.error("Response:", result);
           const errorMsg = result.message || result.error || "Error processing request. Please try again.";
           console.error("Error Message:", errorMsg);
+          
+          // Show error in form
+          const errors = [errorMsg];
+          if (result.errors && Array.isArray(result.errors)) {
+            errors.push(...result.errors);
+          }
+          showReservationFormErrors(errors);
           showMessage(errorMsg, "error");
+          
+          // Show field-specific errors if provided
+          if (result.field_errors && typeof result.field_errors === 'object') {
+            Object.keys(result.field_errors).forEach(fieldId => {
+              showFieldError(fieldId, result.field_errors[fieldId]);
+            });
+          }
         }
         
       } catch (error) {
@@ -2923,24 +3214,111 @@ document.addEventListener("DOMContentLoaded", () => {
     // Convert time slot to 12-hour format for display (if in 24-hour format)
     selectedTimeSlot = convertTo12Hour(timeSlot);
     
+    // Clear any previous errors
+    clearReservationFormErrors();
+    
     // Set form values
-    if (reservationIdInput) reservationIdInput.value = reservationId;
-    if (reservationDateInput) reservationDateInput.value = reservationDate;
-    if (noOfGuestsInput) noOfGuestsInput.value = noOfGuests;
+    if (reservationIdInput) reservationIdInput.value = reservationId || '';
+    if (reservationDateInput) reservationDateInput.value = reservationDate || '';
+    if (noOfGuestsInput) noOfGuestsInput.value = noOfGuests || 1;
     if (mealTypeSelect) mealTypeSelect.value = mealType || 'Lunch';
     if (customerNameInput) customerNameInput.value = customerName || '';
     if (phoneInput) phoneInput.value = phone || '';
     if (emailInput) emailInput.value = email || '';
     if (specialRequestInput) specialRequestInput.value = specialRequest || '';
     
-    // Open modal
+    // Open modal first
+    openReservationModal(true);
+    
+    // Load tables and set the selected table after loading
     loadTablesForDropdown().then(() => {
-      if (tableId && tableId !== 'null' && selectTableSelect) {
-        selectTableSelect.value = tableId;
-      }
-      openReservationModal(true);
+      // Wait a bit for the select to be populated
+      setTimeout(() => {
+        if (tableId && tableId !== 'null' && tableId !== '' && selectTableSelect) {
+          // Try to set the value
+          selectTableSelect.value = tableId;
+          
+          // If value didn't set (option doesn't exist), try to find and select it
+          if (selectTableSelect.value !== tableId) {
+            const option = Array.from(selectTableSelect.options).find(opt => opt.value == tableId);
+            if (option) {
+              selectTableSelect.value = tableId;
+            } else {
+              console.warn('Table ID', tableId, 'not found in dropdown');
+            }
+          }
+        }
+      }, 100);
     });
   };
+  
+  // Function to clear all form errors
+  function clearReservationFormErrors() {
+    const errorContainer = document.getElementById('reservationFormErrors');
+    const errorList = document.getElementById('reservationErrorList');
+    if (errorContainer) errorContainer.style.display = 'none';
+    if (errorList) errorList.innerHTML = '';
+    
+    // Clear all field errors
+    document.querySelectorAll('.field-error').forEach(el => {
+      el.style.display = 'none';
+      el.textContent = '';
+    });
+    
+    // Remove error styling from inputs
+    document.querySelectorAll('#reservationForm input, #reservationForm select, #reservationForm textarea').forEach(el => {
+      el.style.borderColor = '';
+      el.style.borderWidth = '';
+    });
+  }
+  
+  // Function to show form errors
+  function showReservationFormErrors(errors) {
+    const errorContainer = document.getElementById('reservationFormErrors');
+    const errorList = document.getElementById('reservationErrorList');
+    
+    if (!errorContainer || !errorList) return;
+    
+    if (errors && errors.length > 0) {
+      errorContainer.style.display = 'block';
+      errorList.innerHTML = errors.map(err => `<li>${escapeHtml(err)}</li>`).join('');
+    } else {
+      errorContainer.style.display = 'none';
+      errorList.innerHTML = '';
+    }
+  }
+  
+  // Function to show field-specific error
+  function showFieldError(fieldId, message) {
+    const errorEl = document.getElementById(fieldId + 'Error');
+    const inputEl = document.getElementById(fieldId);
+    
+    if (errorEl) {
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+    }
+    
+    if (inputEl) {
+      inputEl.style.borderColor = '#c33';
+      inputEl.style.borderWidth = '2px';
+    }
+  }
+  
+  // Function to clear field-specific error
+  function clearFieldError(fieldId) {
+    const errorEl = document.getElementById(fieldId + 'Error');
+    const inputEl = document.getElementById(fieldId);
+    
+    if (errorEl) {
+      errorEl.style.display = 'none';
+      errorEl.textContent = '';
+    }
+    
+    if (inputEl) {
+      inputEl.style.borderColor = '';
+      inputEl.style.borderWidth = '';
+    }
+  }
   
   window.deleteReservation = async function(reservationId, customerName) {
     if (await showSweetConfirm(`Are you sure you want to delete reservation for "${customerName}"? This action cannot be undone.`, 'Delete Reservation')) {
