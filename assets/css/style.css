@@ -2481,6 +2481,189 @@ select:focus {
   }
 }
 
+/* Mobile POS Styles */
+@media (max-width: 768px) {
+  .pos-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding-bottom: 5rem; /* Space for sticky button */
+  }
+  
+  .pos-menu-section {
+    padding: 1rem;
+  }
+  
+  /* Mobile Add Item Button */
+  .mobile-add-item-btn {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 999;
+    background: var(--primary-red, #f70000);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(247, 0, 0, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .mobile-add-item-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(247, 0, 0, 0.5);
+  }
+  
+  .mobile-add-item-btn:active {
+    transform: translateY(0);
+  }
+  
+  .mobile-add-item-btn .material-symbols-rounded {
+    font-size: 1.25rem;
+  }
+  
+  /* Mobile POS Menu Items - Smaller */
+  .pos-menu-items {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .pos-menu-item {
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
+  
+  .pos-menu-item .item-image {
+    height: 80px;
+    margin-bottom: 0.5rem;
+  }
+  
+  .pos-menu-item .item-name {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .pos-menu-item .item-category {
+    font-size: 0.7rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .pos-menu-item .item-price {
+    font-size: 0.95rem;
+  }
+  
+  /* Mobile POS Filters - Smaller */
+  .pos-filters {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .pos-filters .filter-select {
+    font-size: 0.8rem;
+    padding: 0.6rem;
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: calc(50% - 0.25rem);
+  }
+  
+  /* Mobile Cart Actions - Hide on mobile, use bottom buttons instead */
+  .pos-cart-actions {
+    display: none;
+  }
+  
+  /* Mobile Cart Items - Compact */
+  .pos-cart-items {
+    max-height: 40vh;
+  }
+  
+  /* Mobile Item Card in Modal */
+  .mobile-item-card:hover {
+    border-color: #f70000;
+    box-shadow: 0 2px 8px rgba(247, 0, 0, 0.2);
+  }
+  
+  .mobile-item-card:active {
+    transform: scale(0.98);
+  }
+  
+  /* Mobile Sticky Bottom Actions */
+  .mobile-pos-bottom-actions {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 998;
+    background: white;
+    border-top: 2px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    display: flex;
+    gap: 0.75rem;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-pos-btn {
+    flex: 1;
+    padding: 0.875rem 1rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+  }
+  
+  .mobile-pos-btn .material-symbols-rounded {
+    font-size: 1.25rem;
+  }
+  
+  .mobile-pos-btn-hold {
+    background: white;
+    color: #3b82f6;
+    border: 2px solid #3b82f6;
+  }
+  
+  .mobile-pos-btn-hold:active {
+    background: #eff6ff;
+    transform: scale(0.98);
+  }
+  
+  .mobile-pos-btn-bill {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  }
+  
+  .mobile-pos-btn-bill:active {
+    background: #2563eb;
+    transform: scale(0.98);
+  }
+  
+  /* Add padding to pos container for bottom buttons */
+  .pos-container {
+    padding-bottom: 5.5rem !important;
+  }
+  
+  /* Adjust add item button position when bottom actions are visible */
+  .mobile-add-item-btn {
+    bottom: 5.5rem;
+    z-index: 999;
+  }
+  
+  /* Ensure pos menu section has bottom padding */
+  .pos-menu-section {
+    padding-bottom: 1rem;
+  }
+}
+
 /* KOT and Orders Styles */
 .kot-filters, .orders-filters {
   display: flex;

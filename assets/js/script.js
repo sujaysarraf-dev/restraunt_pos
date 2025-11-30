@@ -522,6 +522,13 @@ document.addEventListener("DOMContentLoaded", () => {
         loadTablesForPOS();
         loadMenusForPOSFilters();
         loadCategoriesForPOSFilters();
+        
+        // Show/hide mobile add item button based on screen size
+        setTimeout(() => {
+          checkMobileView();
+          window.addEventListener('resize', checkMobileView);
+        }, 100);
+        
         // Set up POS filter listeners
         setTimeout(() => {
           const posMenuFilter = document.getElementById("posMenuFilter");
@@ -4461,9 +4468,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
   
+  // Store all POS items for mobile modal
+  let allPOSItems = [];
+  
   // Display POS menu items
   function displayPOSMenuItems(items) {
     const posMenuItemsContainer = document.getElementById("posMenuItems");
+    
+    // Store items for mobile modal
+    allPOSItems = items;
     
     if (items.length === 0) {
       posMenuItemsContainer.innerHTML = '<div class="empty-state"><span class="material-symbols-rounded">menu</span><h3>No menu items found</h3><p>Add menu items to start selling.</p></div>';
@@ -4480,7 +4493,153 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="item-price">${formatCurrency(item.base_price)}</div>
       </div>
     `).join('');
+    
+    // Update mobile modal items list
+    updateMobileItemsList(items);
   }
+  
+  // Check if mobile view and show/hide add item button and bottom actions
+  function checkMobileView() {
+    const mobileBtn = document.getElementById('mobileAddItemBtn');
+    const mobileBottomActions = document.getElementById('mobilePosBottomActions');
+    
+    if (window.innerWidth <= 768) {
+      if (mobileBtn) mobileBtn.style.display = 'flex';
+      if (mobileBottomActions) mobileBottomActions.style.display = 'flex';
+    } else {
+      if (mobileBtn) mobileBtn.style.display = 'none';
+      if (mobileBottomActions) mobileBottomActions.style.display = 'none';
+    }
+  }
+  
+  // Update mobile items list
+  function updateMobileItemsList(items) {
+    const mobileItemsList = document.getElementById('mobileItemsList');
+    if (!mobileItemsList) return;
+    
+    if (items.length === 0) {
+      mobileItemsList.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#6b7280;">No items found</div>';
+      return;
+    }
+    
+    mobileItemsList.innerHTML = items.map(item => `
+      <div class="mobile-item-card" onclick="addItemFromMobile(${item.id}, '${escapeHtml(item.item_name_en)}', ${item.base_price}, '${escapeHtml(item.item_image || '')}', event)" style="background:white;border:2px solid #e5e7eb;border-radius:8px;padding:0.75rem;cursor:pointer;transition:all 0.2s;">
+        <div style="width:100%;height:80px;border-radius:6px;overflow:hidden;margin-bottom:0.5rem;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
+          ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" style="width:100%;height:100%;object-fit:cover;">` : '<span class="material-symbols-rounded" style="font-size:2rem;color:#9ca3af;">restaurant</span>'}
+        </div>
+        <div style="font-weight:600;color:#111827;font-size:0.85rem;margin-bottom:0.25rem;line-height:1.3;">${escapeHtml(item.item_name_en)}</div>
+        <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.5rem;">${escapeHtml(item.item_category || '')}</div>
+        <div style="font-weight:700;color:#f70000;font-size:0.95rem;">${formatCurrency(item.base_price)}</div>
+      </div>
+    `).join('');
+  }
+  
+  // Filter mobile items
+  window.filterMobileItems = function() {
+    const searchInput = document.getElementById('mobileItemSearch');
+    const searchTerm = (searchInput?.value || '').toLowerCase().trim();
+    
+    if (!searchTerm) {
+      updateMobileItemsList(allPOSItems);
+      return;
+    }
+    
+    const filtered = allPOSItems.filter(item => {
+      const name = (item.item_name_en || '').toLowerCase();
+      const category = (item.item_category || '').toLowerCase();
+      const menu = (item.menu_name || '').toLowerCase();
+      const type = (item.item_type || '').toLowerCase();
+      return name.includes(searchTerm) || 
+             category.includes(searchTerm) || 
+             menu.includes(searchTerm) ||
+             type.includes(searchTerm);
+    });
+    
+    updateMobileItemsList(filtered);
+  };
+  
+  // Setup search input with Enter key support
+  function setupMobileItemSearch() {
+    const searchInput = document.getElementById('mobileItemSearch');
+    if (searchInput) {
+      // Remove existing listeners to avoid duplicates
+      const newSearchInput = searchInput.cloneNode(true);
+      searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+      
+      // Add event listeners
+      newSearchInput.addEventListener('input', filterMobileItems);
+      newSearchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          filterMobileItems();
+        }
+      });
+    }
+  }
+  
+  // Open mobile add item modal
+  window.openMobileAddItemModal = function() {
+    const modal = document.getElementById('mobileAddItemModal');
+    if (modal) {
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      // Setup search functionality
+      setupMobileItemSearch();
+      // Focus search input
+      setTimeout(() => {
+        const searchInput = document.getElementById('mobileItemSearch');
+        if (searchInput) {
+          searchInput.focus();
+          // Clear any previous search
+          searchInput.value = '';
+          updateMobileItemsList(allPOSItems);
+        }
+      }, 100);
+    }
+  };
+  
+  // Close mobile add item modal
+  window.closeMobileAddItemModal = function() {
+    const modal = document.getElementById('mobileAddItemModal');
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+      // Clear search
+      const searchInput = document.getElementById('mobileItemSearch');
+      if (searchInput) searchInput.value = '';
+      updateMobileItemsList(allPOSItems);
+    }
+  };
+  
+  // Add item from mobile modal
+  window.addItemFromMobile = function(itemId, itemName, price, image, event) {
+    addToPOSCart(itemId, itemName, price, image);
+    
+    // Show visual feedback on the item card
+    if (event) {
+      const itemCard = event.target?.closest('.mobile-item-card');
+      if (itemCard) {
+        itemCard.style.transform = 'scale(0.95)';
+        itemCard.style.backgroundColor = '#d1fae5';
+        setTimeout(() => {
+          itemCard.style.transform = '';
+          itemCard.style.backgroundColor = '';
+        }, 300);
+      }
+    }
+    
+    // Show brief success message (non-intrusive)
+    const successMsg = document.createElement('div');
+    successMsg.textContent = '✓ Added to cart';
+    successMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#10b981;color:white;padding:0.75rem 1.25rem;border-radius:8px;font-weight:600;z-index:10001;box-shadow:0 4px 12px rgba(16,185,129,0.4);animation:slideInRight 0.3s ease;';
+    document.body.appendChild(successMsg);
+    setTimeout(() => {
+      successMsg.style.animation = 'slideOutRight 0.3s ease';
+      setTimeout(() => successMsg.remove(), 300);
+    }, 2000);
+    
+    // Don't close modal - let user add more items
+  };
   
   // Load tables for POS
   async function loadTablesForPOS() {
@@ -4651,10 +4810,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   
-  // Hold order
-  const holdOrderBtn = document.getElementById("holdOrderBtn");
-  if (holdOrderBtn) {
-    holdOrderBtn.addEventListener("click", async () => {
+  // Hold order function
+  async function holdOrder() {
       if (posCart.length === 0) {
         showMessage("Cart is empty", "error");
         return;
@@ -4696,73 +4853,93 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Error:", error);
         showMessage("Network error. Please check your connection and try again.", "error");
       }
-    });
   }
   
-  // Process payment
+  // Hold order button listeners
+  const holdOrderBtn = document.getElementById("holdOrderBtn");
+  if (holdOrderBtn) {
+    holdOrderBtn.addEventListener("click", holdOrder);
+  }
+  
+  // Mobile hold order button
+  const mobileHoldOrderBtn = document.getElementById("mobileHoldOrderBtn");
+  if (mobileHoldOrderBtn) {
+    mobileHoldOrderBtn.addEventListener("click", holdOrder);
+  }
+  
+  // Process payment function
+  async function processPayment() {
+    if (posCart.length === 0) {
+      showMessage("Cart is empty", "error");
+      return;
+    }
+    
+    const subtotal = posCart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+    const tax = subtotal * 0.05; // GST total (CGST+SGST)
+    const total = subtotal + tax;
+    const selectedTable = document.getElementById("selectPosTable").value;
+    
+    // Show payment method selection
+    const paymentMethodStr = await showPaymentMethodSelector();
+    if (!paymentMethodStr) {
+      return; // User cancelled
+    }
+    
+    const formData = new URLSearchParams();
+    formData.append('action', 'create_kot');
+    formData.append('tableId', selectedTable || '');
+    const isTakeaway = !selectedTable;
+    formData.append('orderType', isTakeaway ? 'Takeaway' : 'Dine-in');
+    formData.append('customerName', isTakeaway ? 'Takeaway' : 'Table Customer');
+    formData.append('paymentMethod', paymentMethodStr);
+    formData.append('cartItems', JSON.stringify(posCart));
+    formData.append('subtotal', subtotal.toFixed(2));
+    formData.append('tax', tax.toFixed(2));
+    formData.append('total', total.toFixed(2));
+    
+    try {
+      const response = await fetch("../controllers/pos_operations.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        const msg = result.kot_number
+          ? (result.message + " - KOT #" + result.kot_number + " - Order #" + result.order_number)
+          : (result.message + " - Order #" + result.order_number);
+        showMessage(msg, "success");
+        posCart = [];
+        updatePOSCart();
+        document.getElementById("selectPosTable").value = "";
+        
+        // Reload orders if on the orders page
+        if (document.getElementById('ordersPage').classList.contains('active')) {
+          loadOrders();
+        }
+      } else {
+        showMessage(result.message || "Error creating KOT.", "error");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showMessage("Network error. Please check your connection and try again.", "error");
+    }
+  }
+  
+  // Process payment button listeners
   const processPaymentBtn = document.getElementById("processPaymentBtn");
   if (processPaymentBtn) {
-    processPaymentBtn.addEventListener("click", async () => {
-      if (posCart.length === 0) {
-        showMessage("Cart is empty", "error");
-        return;
-      }
-      
-      const subtotal = posCart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
-      const tax = subtotal * 0.05; // GST total (CGST+SGST)
-      const total = subtotal + tax;
-      const selectedTable = document.getElementById("selectPosTable").value;
-      
-      // Show payment method selection
-      const paymentMethodStr = await showPaymentMethodSelector();
-      if (!paymentMethodStr) {
-        return; // User cancelled
-      }
-      
-      const formData = new URLSearchParams();
-      formData.append('action', 'create_kot');
-      formData.append('tableId', selectedTable || '');
-      const isTakeaway = !selectedTable;
-      formData.append('orderType', isTakeaway ? 'Takeaway' : 'Dine-in');
-      formData.append('customerName', isTakeaway ? 'Takeaway' : 'Table Customer');
-      formData.append('paymentMethod', paymentMethodStr);
-      formData.append('cartItems', JSON.stringify(posCart));
-      formData.append('subtotal', subtotal.toFixed(2));
-      formData.append('tax', tax.toFixed(2));
-      formData.append('total', total.toFixed(2));
-      
-      try {
-        const response = await fetch("../controllers/pos_operations.php", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: formData
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          const msg = result.kot_number
-            ? (result.message + " - KOT #" + result.kot_number + " - Order #" + result.order_number)
-            : (result.message + " - Order #" + result.order_number);
-          showMessage(msg, "success");
-          posCart = [];
-          updatePOSCart();
-          document.getElementById("selectPosTable").value = "";
-          
-          // Reload orders if on the orders page
-          if (document.getElementById('ordersPage').classList.contains('active')) {
-            loadOrders();
-          }
-        } else {
-          showMessage(result.message || "Error creating KOT.", "error");
-        }
-      } catch (error) {
-        console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
-      }
-    });
+    processPaymentBtn.addEventListener("click", processPayment);
+  }
+  
+  // Mobile process payment button
+  const mobileProcessPaymentBtn = document.getElementById("mobileProcessPaymentBtn");
+  if (mobileProcessPaymentBtn) {
+    mobileProcessPaymentBtn.addEventListener("click", processPayment);
   }
   
   // Add CSS for notifications

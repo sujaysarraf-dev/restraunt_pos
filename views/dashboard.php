@@ -1544,6 +1544,12 @@ try {
               <div class="loading">Loading menu items...</div>
             </div>
           </div>
+          
+          <!-- Mobile Sticky Add Item Button -->
+          <button id="mobileAddItemBtn" class="mobile-add-item-btn" onclick="openMobileAddItemModal()" style="display: none;">
+            <span class="material-symbols-rounded">add</span>
+            <span>Add Item</span>
+          </button>
 
           <!-- Right Side - Cart -->
           <div class="pos-cart-section">
@@ -1605,6 +1611,18 @@ try {
             </div>
           </div>
         </div>
+      </div>
+      
+      <!-- Mobile Sticky Bottom Buttons -->
+      <div id="mobilePosBottomActions" class="mobile-pos-bottom-actions" style="display: none;">
+        <button class="mobile-pos-btn mobile-pos-btn-hold" id="mobileHoldOrderBtn">
+          <span class="material-symbols-rounded">pause</span>
+          <span>Save & Hold</span>
+        </button>
+        <button class="mobile-pos-btn mobile-pos-btn-bill" id="mobileProcessPaymentBtn">
+          <span class="material-symbols-rounded">payment</span>
+          <span>Save & Bill</span>
+        </button>
       </div>
     </div>
 
@@ -2250,6 +2268,30 @@ try {
             <span class="material-symbols-rounded">delete</span>
             Clear Cart
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Add Item Modal -->
+  <div id="mobileAddItemModal" class="modal" style="display:none;z-index:10000;" onclick="if(event.target===this) closeMobileAddItemModal();">
+    <div class="modal-content" style="max-width:100%;height:90vh;margin:5vh auto;display:flex;flex-direction:column;background:white;border-radius:16px 16px 0 0;" onclick="event.stopPropagation();">
+      <div class="modal-header" style="flex-shrink:0;border-bottom:2px solid #f3f4f6;padding:1rem;">
+        <h2 style="font-size:1.25rem;margin:0;">
+          <span class="material-symbols-rounded" style="vertical-align:middle;margin-right:0.5rem;">add_circle</span>
+          Add Item
+        </h2>
+        <span class="close" onclick="closeMobileAddItemModal()" style="font-size:1.5rem;">&times;</span>
+      </div>
+      <div class="modal-body" style="flex:1;overflow-y:auto;padding:1rem;">
+        <div style="margin-bottom:1rem;position:relative;">
+          <input type="text" id="mobileItemSearch" placeholder="🔍 Search items by name, category, menu, or type..." style="width:100%;padding:0.75rem 3rem 0.75rem 0.75rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.95rem;box-sizing:border-box;" oninput="filterMobileItems()">
+          <button type="button" onclick="filterMobileItems()" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0.5rem;display:flex;align-items:center;justify-content:center;color:#6b7280;transition:color 0.2s;" onmouseover="this.style.color='#f70000'" onmouseout="this.style.color='#6b7280'">
+            <span class="material-symbols-rounded" style="font-size:1.5rem;">search</span>
+          </button>
+        </div>
+        <div id="mobileItemsList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;">
+          <!-- Items will be loaded here -->
         </div>
       </div>
     </div>
