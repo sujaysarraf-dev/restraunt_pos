@@ -5240,11 +5240,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await response.json();
       
       if (result.success) {
-        const showMsg = typeof showMessage !== 'undefined' ? showMessage : (window.showNotification || alert);
-        const msg = result.kot_number
-          ? (result.message + " - KOT #" + result.kot_number + " - Order #" + result.order_number)
-          : (result.message + " - Order #" + result.order_number);
-        showMsg(msg, "success");
         // Clear cart - support both local and window.posCart
         if (typeof posCart !== 'undefined') {
           posCart = [];
@@ -5254,6 +5249,99 @@ document.addEventListener("DOMContentLoaded", () => {
         updateCartFn();
         if (selectPosTable) {
           selectPosTable.value = "";
+        }
+        
+        // Show success alert with print option
+        const hasKOT = result.kot_id && result.kot_number;
+        const hasOrder = result.order_id && result.order_number;
+        
+        let title = '';
+        let message = '';
+        let printButtons = '';
+        
+        if (hasKOT && hasOrder) {
+          title = 'KOT & Order Created Successfully!';
+          message = `KOT #${result.kot_number} and Order #${result.order_number} have been created.`;
+          printButtons = `
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+              <button id="printKOTBtn" style="padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                Print KOT
+              </button>
+              <button id="printOrderBtn" style="padding: 10px 20px; background: #059669; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                Print Order
+              </button>
+            </div>
+          `;
+        } else if (hasKOT) {
+          title = 'KOT Created Successfully!';
+          message = `KOT #${result.kot_number} has been created.`;
+          printButtons = `
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+              <button id="printKOTBtn" style="padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                Print KOT
+              </button>
+            </div>
+          `;
+        } else if (hasOrder) {
+          title = 'Order Created Successfully!';
+          message = `Order #${result.order_number} has been created.`;
+          printButtons = `
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+              <button id="printOrderBtn" style="padding: 10px 20px; background: #059669; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                Print Order
+              </button>
+            </div>
+          `;
+        } else {
+          title = 'Success!';
+          message = result.message || 'Payment processed successfully.';
+        }
+        
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'success',
+            title: title,
+            html: `
+              <p style="margin-bottom: 0;">${message}</p>
+              ${printButtons}
+            `,
+            showConfirmButton: true,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#dc2626',
+            allowOutsideClick: false,
+            didOpen: () => {
+              // Add click handlers for print buttons
+              if (hasKOT) {
+                const printKOTBtn = document.getElementById('printKOTBtn');
+                if (printKOTBtn && window.printKOT) {
+                  printKOTBtn.addEventListener('click', () => {
+                    Swal.close();
+                    window.printKOT(result.kot_id);
+                  });
+                }
+              }
+              
+              if (hasOrder) {
+                const printOrderBtn = document.getElementById('printOrderBtn');
+                if (printOrderBtn && window.printOrder) {
+                  printOrderBtn.addEventListener('click', () => {
+                    Swal.close();
+                    window.printOrder(result.order_id);
+                  });
+                }
+              }
+            }
+          });
+        } else {
+          const showMsg = typeof showMessage !== 'undefined' ? showMessage : (window.showNotification || alert);
+          showMsg(message, "success");
+          
+          // If no SweetAlert, try to print directly
+          if (hasKOT && window.printKOT) {
+            setTimeout(() => window.printKOT(result.kot_id), 500);
+          } else if (hasOrder && window.printOrder) {
+            setTimeout(() => window.printOrder(result.order_id), 500);
+          }
         }
         
         // Reload orders if on the orders page
@@ -6996,7 +7084,7 @@ async function loadPayments() {
             </td>
             <td style="color: #666;">${payment.transaction_id || '-'}</td>
             <td>
-              <a href="#" onclick="showPage('ordersPage'); event.preventDefault();" style="color: #667eea; text-decoration: underline;">
+              <a href="#" onclick="showFullOrderDetails(${payment.order_id}); event.preventDefault();" style="color: #667eea; text-decoration: underline; cursor: pointer;">
                 ${payment.order_number}
               </a>
             </td>

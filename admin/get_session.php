@@ -20,7 +20,11 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 try {
     // Check if user is logged in and session is valid
-    if (!isSessionValid() || !isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SESSION['restaurant_id'])) {
+    // Support both admin users (user_id) and staff members (staff_id)
+    $isAdmin = isset($_SESSION['user_id']);
+    $isStaff = isset($_SESSION['staff_id']);
+    
+    if (!isSessionValid() || (!$isAdmin && !$isStaff) || !isset($_SESSION['username']) || !isset($_SESSION['restaurant_id'])) {
         echo json_encode([
             'success' => false,
             'message' => 'Session expired. Please login again.'
@@ -41,12 +45,18 @@ try {
     } else {
         $conn = getConnection();
     }
-    // Try to get all fields, handle missing columns gracefully
-    try {
-        $stmt = $conn->prepare("SELECT id, subscription_status, trial_end_date, renewal_date, created_at, email, role, phone, address, currency_symbol, timezone, restaurant_logo, business_qr_code_path FROM users WHERE id = :id LIMIT 1");
-        $stmt->execute([':id' => $_SESSION['user_id']]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-    } catch (PDOException $e) {
+    
+    // Initialize row array
+    $row = [];
+    
+    // For admin users, get data from users table
+    if ($isAdmin) {
+        // Try to get all fields, handle missing columns gracefully
+        try {
+            $stmt = $conn->prepare("SELECT id, subscription_status, trial_end_date, renewal_date, created_at, email, role, phone, address, currency_symbol, timezone, restaurant_logo, business_qr_code_path FROM users WHERE id = :id LIMIT 1");
+            $stmt->execute([':id' => $_SESSION['user_id']]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException $e) {
         // If some columns don't exist, try without them
         if (strpos($e->getMessage(), 'currency_symbol') !== false || strpos($e->getMessage(), 'timezone') !== false || strpos($e->getMessage(), 'phone') !== false || strpos($e->getMessage(), 'address') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
             try {
@@ -77,29 +87,57 @@ try {
         } else {
             throw $e;
         }
+        }
+    } else if ($isStaff) {
+        // For staff members, get data from staff table
+        try {
+            $stmt = $conn->prepare("SELECT id, member_name, email, role, restaurant_id FROM staff WHERE id = :id LIMIT 1");
+            $stmt->execute([':id' => $_SESSION['staff_id']]);
+            $staffRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            
+            // Get restaurant info for staff
+            if (!empty($staffRow['restaurant_id'])) {
+                $restStmt = $conn->prepare("SELECT restaurant_name, currency_symbol, restaurant_logo, business_qr_code_path FROM users WHERE restaurant_id = :restaurant_id LIMIT 1");
+                $restStmt->execute([':restaurant_id' => $staffRow['restaurant_id']]);
+                $restRow = $restStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+                
+                $row = array_merge($staffRow, $restRow);
+            } else {
+                $row = $staffRow;
+            }
+        } catch (PDOException $e) {
+            // If staff table query fails, use session data only
+            error_log("PDO Error fetching staff data: " . $e->getMessage());
+            $row = [];
+        }
     }
+    
+    // Build response data
+    $responseData = [
+        'id' => $row['id'] ?? ($_SESSION['user_id'] ?? $_SESSION['staff_id'] ?? null),
+        'user_id' => $_SESSION['user_id'] ?? null,
+        'staff_id' => $_SESSION['staff_id'] ?? null,
+        'username' => $_SESSION['username'] ?? ($row['member_name'] ?? null),
+        'restaurant_id' => $_SESSION['restaurant_id'],
+        'restaurant_name' => $_SESSION['restaurant_name'] ?? ($row['restaurant_name'] ?? 'Restaurant'),
+        'email' => $row['email'] ?? $_SESSION['email'] ?? null,
+        'phone' => $row['phone'] ?? null,
+        'address' => $row['address'] ?? null,
+        'currency_symbol' => $row['currency_symbol'] ?? $_SESSION['currency_symbol'] ?? null,
+        'timezone' => $row['timezone'] ?? null,
+        'restaurant_logo' => $row['restaurant_logo'] ?? null,
+        'business_qr_code_path' => $row['business_qr_code_path'] ?? null,
+        'role' => $row['role'] ?? $_SESSION['role'] ?? 'Administrator',
+        'user_type' => $_SESSION['user_type'] ?? ($isAdmin ? 'admin' : 'staff'),
+        'subscription_status' => $row['subscription_status'] ?? null,
+        'trial_end_date' => $row['trial_end_date'] ?? null,
+        'renewal_date' => $row['renewal_date'] ?? null,
+        'created_at' => $row['created_at'] ?? null
+    ];
     
     echo json_encode([
         'success' => true,
-        'data' => [
-            'id' => $row['id'] ?? $_SESSION['user_id'],
-            'user_id' => $_SESSION['user_id'],
-            'username' => $_SESSION['username'],
-            'restaurant_id' => $_SESSION['restaurant_id'],
-            'restaurant_name' => $_SESSION['restaurant_name'],
-            'email' => $row['email'] ?? null,
-            'phone' => $row['phone'] ?? null,
-            'address' => $row['address'] ?? null,
-            'currency_symbol' => $row['currency_symbol'] ?? null,
-            'timezone' => $row['timezone'] ?? null,
-            'restaurant_logo' => $row['restaurant_logo'] ?? null,
-            'business_qr_code_path' => $row['business_qr_code_path'] ?? null,
-            'role' => $row['role'] ?? 'Administrator',
-            'subscription_status' => $row['subscription_status'] ?? null,
-            'trial_end_date' => $row['trial_end_date'] ?? null,
-            'renewal_date' => $row['renewal_date'] ?? null,
-            'created_at' => $row['created_at'] ?? null
-        ]
+        'data' => $responseData
     ]);
     
 } catch (PDOException $e) {
