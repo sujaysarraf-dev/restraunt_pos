@@ -730,11 +730,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentMenuId = null;
   let currentMenuName = null;
 
-  // Open modal for adding new menu
-  addMenuBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    openMenuModal();
-  });
+  // Open modal for adding new menu (only if button exists)
+  if (addMenuBtn) {
+    addMenuBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      openMenuModal();
+    });
+  }
 
   // Open modal for editing existing menu
   window.editMenu = function(menuId, menuName) {
@@ -825,9 +827,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.getElementById("cancelBtn").addEventListener("click", closeMenuModal);
-  document.getElementById("menuItemCancelBtn").addEventListener("click", closeMenuItemModal);
-  document.getElementById("deleteCancelBtn").addEventListener("click", closeDeleteModal);
+  const cancelBtn = document.getElementById("cancelBtn");
+  const deleteCancelBtn = document.getElementById("deleteCancelBtn");
+  
+  if (cancelBtn) cancelBtn.addEventListener("click", closeMenuModal);
+  if (deleteCancelBtn) deleteCancelBtn.addEventListener("click", closeDeleteModal);
 
   // Close modal when clicking outside
   window.addEventListener("click", (e) => {
@@ -849,7 +853,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Handle menu form submission (add/edit)
-  menuForm.addEventListener("submit", async (e) => {
+  if (menuForm) {
+    menuForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     
     const menuName = menuNameInput.value.trim();
@@ -897,10 +902,13 @@ document.addEventListener("DOMContentLoaded", () => {
       showMessage("Network error. Please check your connection and try again.", "error");
     } finally {
       // Re-enable save button
-      saveBtn.disabled = false;
-      saveBtn.textContent = isEdit ? "Update Menu" : "Save Menu";
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = isEdit ? "Update Menu" : "Save Menu";
+      }
     }
-  });
+    });
+  }
 
   // Function to show messages
   function showMessage(message, type) {
@@ -1135,12 +1143,16 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Handle delete confirmation
-  document.getElementById("deleteConfirmBtn").addEventListener("click", async () => {
-    if (!currentMenuId) return;
-    
-    const deleteBtn = document.getElementById("deleteConfirmBtn");
-    deleteBtn.disabled = true;
-    deleteBtn.textContent = "Deleting...";
+  const deleteConfirmBtn = document.getElementById("deleteConfirmBtn");
+  if (deleteConfirmBtn) {
+    deleteConfirmBtn.addEventListener("click", async () => {
+      if (!currentMenuId) return;
+      
+      const deleteBtn = document.getElementById("deleteConfirmBtn");
+      if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = "Deleting...";
+      }
 
     try {
       const formData = new URLSearchParams();
@@ -1168,10 +1180,14 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error deleting menu:", error);
       showNotification("Network error. Please try again.", "error");
     } finally {
-      deleteBtn.disabled = false;
-      deleteBtn.textContent = "Delete";
+      const deleteBtn = document.getElementById("deleteConfirmBtn");
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = "Delete";
+      }
     }
-  });
+    });
+  }
 
   // Utility functions
   function escapeHtml(text) {
@@ -1230,10 +1246,17 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentMenuItemData = null;
 
   // Open modal for adding new menu item
-  addMenuItemBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    openMenuItemModal();
-  });
+  if (addMenuItemBtn) {
+    addMenuItemBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      openMenuItemModal();
+    });
+  }
+  
+  // Add event listener for menu item cancel button
+  if (menuItemCancelBtn) {
+    menuItemCancelBtn.addEventListener("click", closeMenuItemModal);
+  }
 
   // Open modal for editing existing menu item
   window.editMenuItem = function(menuItemId, menuItemData) {
@@ -1418,7 +1441,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Image cropper instance
   let imageCropper = null;
   
-  document.getElementById('itemImage').addEventListener('change', function(e) {
+  const itemImageInput = document.getElementById('itemImage');
+  if (itemImageInput) {
+    itemImageInput.addEventListener('change', function(e) {
     const file = e.target.files[0];
     const fileNameSpan = document.querySelector('.file-name');
     const imagePreview = document.getElementById('imagePreview');
@@ -1486,7 +1511,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       document.getElementById('itemImageBase64').value = '';
     }
-  });
+    });
+  }
   
   // Update website preview with cropped image
   function updateWebsitePreview() {
@@ -1581,7 +1607,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Handle menu item form submission
-  menuItemForm.addEventListener("submit", async (e) => {
+  if (menuItemForm) {
+    menuItemForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     
     const formData = new FormData(menuItemForm);
@@ -1615,10 +1642,13 @@ document.addEventListener("DOMContentLoaded", () => {
       showMenuItemMessage("Network error. Please check your connection and try again.", "error");
     } finally {
       // Re-enable save button
-      menuItemSaveBtn.disabled = false;
-      menuItemSaveBtn.textContent = isEdit ? "Update Menu Item" : "Save Menu Item";
+      if (menuItemSaveBtn) {
+        menuItemSaveBtn.disabled = false;
+        menuItemSaveBtn.textContent = isEdit ? "Update Menu Item" : "Save Menu Item";
+      }
     }
-  });
+    });
+  }
 
   // Load menus for dropdown
   async function loadMenusForDropdown() {
@@ -1776,12 +1806,16 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Handle delete confirmation for menu items
-  document.getElementById("deleteConfirmBtn").addEventListener("click", async () => {
-    if (!currentMenuItemId) return;
-    
-    const deleteBtn = document.getElementById("deleteConfirmBtn");
-    deleteBtn.disabled = true;
-    deleteBtn.textContent = "Deleting...";
+  const deleteMenuItemConfirmBtn = document.getElementById("deleteConfirmBtn");
+  if (deleteMenuItemConfirmBtn) {
+    deleteMenuItemConfirmBtn.addEventListener("click", async () => {
+      if (!currentMenuItemId) return;
+      
+      const deleteBtn = document.getElementById("deleteConfirmBtn");
+      if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = "Deleting...";
+      }
 
     try {
       const formData = new URLSearchParams();
@@ -1809,10 +1843,14 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error deleting menu item:", error);
       showNotification("Network error. Please try again.", "error");
     } finally {
-      deleteBtn.disabled = false;
-      deleteBtn.textContent = "Delete";
+      const deleteBtn = document.getElementById("deleteConfirmBtn");
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = "Delete";
+      }
     }
-  });
+    });
+  }
 
   // Filter functionality
   const menuFilterEl = document.getElementById("menuFilter");
@@ -4598,7 +4636,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let posCart = [];
   
   // Load POS menu items
-  async function loadPOSMenuItems() {
+  // Make POS functions globally accessible
+  window.loadPOSMenuItems = async function() {
     const posMenuItemsContainer = document.getElementById("posMenuItems");
     
     // Get filter values
@@ -4806,11 +4845,30 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   
   // Load tables for POS
-  async function loadTablesForPOS() {
+  window.loadTablesForPOS = async function() {
     const selectPosTable = document.getElementById("selectPosTable");
     
+    // Get restaurant_id from window or session
+    let restaurantId = window.restaurant_id || '';
+    if (!restaurantId) {
+      try {
+        const sess = await fetch('../admin/get_session.php').then(r=>r.json()).catch(()=>null);
+        if (sess && sess.success && sess.data?.restaurant_id) {
+          restaurantId = sess.data.restaurant_id;
+          window.restaurant_id = restaurantId;
+        }
+      } catch (e) {
+        console.warn('Could not get restaurant_id from session');
+      }
+    }
+    
+    let url = "../api/get_tables.php";
+    if (restaurantId) {
+      url += '?restaurant_id=' + encodeURIComponent(restaurantId);
+    }
+    
     try {
-      const response = await fetch("../api/get_tables.php");
+      const response = await fetch(url);
       const result = await response.json();
       
       if (result.success) {
@@ -4843,11 +4901,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   // Load menus for POS filters
-  async function loadMenusForPOSFilters() {
+  window.loadMenusForPOSFilters = async function() {
     const posMenuFilter = document.getElementById("posMenuFilter");
     
+    // Get restaurant_id from window or session
+    let restaurantId = window.restaurant_id || '';
+    if (!restaurantId) {
+      try {
+        const sess = await fetch('../admin/get_session.php').then(r=>r.json()).catch(()=>null);
+        if (sess && sess.success && sess.data?.restaurant_id) {
+          restaurantId = sess.data.restaurant_id;
+          window.restaurant_id = restaurantId;
+        }
+      } catch (e) {
+        console.warn('Could not get restaurant_id from session');
+      }
+    }
+    
+    let url = "../api/get_menus.php";
+    if (restaurantId) {
+      url += '?restaurant_id=' + encodeURIComponent(restaurantId);
+    }
+    
     try {
-      const response = await fetch("../api/get_menus.php");
+      const response = await fetch(url);
       const result = await response.json();
       
       if (result.success && posMenuFilter) {
@@ -4862,11 +4939,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   // Load categories for POS filters
-  async function loadCategoriesForPOSFilters() {
+  window.loadCategoriesForPOSFilters = async function() {
     const posCategoryFilter = document.getElementById("posCategoryFilter");
     
+    // Get restaurant_id from window or session
+    let restaurantId = window.restaurant_id || '';
+    if (!restaurantId) {
+      try {
+        const sess = await fetch('../admin/get_session.php').then(r=>r.json()).catch(()=>null);
+        if (sess && sess.success && sess.data?.restaurant_id) {
+          restaurantId = sess.data.restaurant_id;
+          window.restaurant_id = restaurantId;
+        }
+      } catch (e) {
+        console.warn('Could not get restaurant_id from session');
+      }
+    }
+    
+    let url = "../api/get_menu_items.php";
+    if (restaurantId) {
+      url += '?restaurant_id=' + encodeURIComponent(restaurantId);
+    }
+    
     try {
-      const response = await fetch("../api/get_menu_items.php");
+      const response = await fetch(url);
       const result = await response.json();
       
       if (result.success && posCategoryFilter && result.categories) {
@@ -6383,6 +6479,7 @@ async function updateOrderStatus(orderId, status) {
 
 // (Optional code): Adjust sidebar height on window resize
 window.addEventListener("resize", () => {
+  if (!sidebar) return;
   if (window.innerWidth >= 1024) {
     sidebar.style.height = fullSidebarHeight;
   } else {

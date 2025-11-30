@@ -2,7 +2,16 @@
 // Include secure session configuration
 require_once __DIR__ . '/../config/session_config.php';
 startSecureSession();
-if (!isSessionValid() || !isset($_SESSION['staff_id']) || !isset($_SESSION['restaurant_id']) || $_SESSION['role'] !== 'Waiter') {
+
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
+// Require login and permission to view dashboard (Waiter role)
+requireLogin();
+requirePermission(PERMISSION_VIEW_DASHBOARD);
+
+// Verify user is a Waiter
+if (!isset($_SESSION['staff_id']) || !isset($_SESSION['restaurant_id']) || $_SESSION['role'] !== ROLE_WAITER) {
     header('Location: ../admin/login.php');
     exit();
 }
@@ -82,19 +91,6 @@ if (!$currency_symbol) {
         .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
         
-        /* POS Responsive */
-        .pos-content { display: grid; grid-template-columns: 1fr 400px; gap: 24px; margin-top: 24px; }
-        .pos-filters { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-        .pos-menu-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; max-height: 70vh; overflow-y: auto; padding: 8px; }
-        .pos-cart-section { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; position: sticky; top: 20px; height: fit-content; max-height: 85vh; overflow-y: auto; }
-        .pos-menu-item { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s; text-align: center; }
-        .pos-menu-item:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .pos-menu-item .item-image { width: 100%; height: 120px; background: #f9fafb; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; overflow: hidden; }
-        .pos-menu-item .item-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
-        .pos-menu-item .item-name { font-weight: 600; margin-bottom: 4px; color: #111827; font-size: 0.95rem; }
-        .pos-menu-item .item-category { font-size: 0.875rem; color: #6b7280; margin-bottom: 8px; }
-        .pos-menu-item .item-price { font-weight: 700; color: #3b82f6; font-size: 1.1rem; background: white; padding: 4px 8px; border-radius: 6px; display: inline-block; }
-        
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .main-container { padding: 12px; }
@@ -107,24 +103,6 @@ if (!$currency_symbol) {
             .request-card, .order-card { padding: 16px; margin-bottom: 12px; }
             .order-card > div { flex-direction: column !important; }
             .order-card .btn { width: 100%; margin-top: 12px; }
-            
-            /* POS Mobile Styles - Items first, then cart below */
-            .pos-content { grid-template-columns: 1fr; gap: 20px; margin-top: 20px; }
-            .pos-menu-section { order: -1; }
-            .pos-cart-section { order: 1; position: static; max-height: none; border-radius: 12px; padding: 16px; margin-top: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid #3b82f6; }
-            .pos-menu-items { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; max-height: none; padding: 8px; }
-            .pos-menu-item { padding: 12px; border: 1px solid #e5e7eb; }
-            .pos-menu-item:active { transform: scale(0.98); }
-            .pos-menu-item .item-image { height: 100px; margin-bottom: 8px; }
-            .pos-menu-item .item-name { font-size: 0.85rem; line-height: 1.3; }
-            .pos-menu-item .item-category { display: none; }
-            .pos-menu-item .item-price { font-size: 1rem; }
-            #posSearchBar { width: 100%; padding: 12px 16px; font-size: 1rem; margin-bottom: 16px; }
-            .pos-filters { flex-direction: column; gap: 10px; }
-            .pos-filters select { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #d1d5db; background: white; }
-            .btn { width: 100%; padding: 12px; font-size: 1rem; margin-bottom: 8px; }
-            .pos-cart-summary { margin-top: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb; }
-            .pos-cart-items { max-height: 300px; overflow-y: auto; }
             
             /* Notification mobile styles */
             .waiter-toast-notification { 
@@ -142,14 +120,6 @@ if (!$currency_symbol) {
             .waiter-header { padding: 12px; }
             .tab { padding: 8px 12px; font-size: 0.85rem; }
             .request-card, .order-card { padding: 12px; }
-            .pos-menu-items { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .pos-menu-item { padding: 10px; }
-            .pos-menu-item .item-image { height: 80px; }
-            .pos-menu-item .item-name { font-size: 0.8rem; }
-            .pos-menu-item .item-category { font-size: 0.75rem; }
-            .pos-menu-item .item-price { font-size: 0.9rem; }
-            .pos-cart-section { padding: 12px; }
-            .pos-filters select { padding: 10px; font-size: 0.9rem; }
         }
     </style>
 </head>
@@ -170,9 +140,9 @@ if (!$currency_symbol) {
 
         <div class="main-content">
             <div class="page-tabs">
-                <div class="tab active" onclick="switchTab('requests')">Waiter Requests</div>
-                <div class="tab" onclick="switchTab('orders')">Active Orders</div>
-                <div class="tab" onclick="switchTab('pos')">POS</div>
+                <div class="tab active" onclick="switchTab('requests', event)">Waiter Requests</div>
+                <div class="tab" onclick="switchTab('orders', event)">Active Orders</div>
+                <div class="tab" onclick="switchTab('pos', event)">POS</div>
             </div>
 
             <!-- Waiter Requests Tab -->
@@ -207,81 +177,164 @@ if (!$currency_symbol) {
                     <p>Process orders and manage transactions</p>
                 </div>
                 <div class="pos-content">
-                    <!-- Left Side - Menu Items -->
-                    <div class="pos-menu-section">
-                        <!-- Search Bar -->
-                        <div style="margin-bottom: 16px;">
-                            <input type="text" id="posSearchBar" placeholder="🔍 Search menu items..." style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; transition: all 0.2s;" oninput="filterPOSItems()" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)'" onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
+                    <div class="pos-container">
+                        <!-- Left Side - Menu Items -->
+                        <div class="pos-menu-section">
+                            <div class="pos-filters">
+                                <select id="posMenuFilter" class="filter-select">
+                                    <option value="">All Menus</option>
+                                </select>
+                                <select id="posCategoryFilter" class="filter-select">
+                                    <option value="">All Categories</option>
+                                </select>
+                                <select id="posTypeFilter" class="filter-select">
+                                    <option value="">All Types</option>
+                                    <option value="Veg">Veg</option>
+                                    <option value="Non Veg">Non Veg</option>
+                                    <option value="Egg">Egg</option>
+                                    <option value="Drink">Drink</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="pos-menu-items" id="posMenuItems">
+                                <!-- Menu items will be loaded here -->
+                                <div class="loading">Loading menu items...</div>
+                            </div>
                         </div>
-                        <div class="pos-filters" style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
-                            <select id="posMenuFilter" class="filter-select" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px;">
-                                <option value="">All Menus</option>
-                            </select>
-                            <select id="posCategoryFilter" class="filter-select" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px;">
-                                <option value="">All Categories</option>
-                            </select>
-                            <select id="posTypeFilter" class="filter-select" style="flex: 1; min-width: 120px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px;">
-                                <option value="">All Types</option>
-                                <option value="Veg">Veg</option>
-                                <option value="Non Veg">Non Veg</option>
-                                <option value="Egg">Egg</option>
-                                <option value="Drink">Drink</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                        <div class="pos-menu-items" id="posMenuItems" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; max-height: 70vh; overflow-y: auto; padding: 8px;">
-                            <div class="loading">Loading menu items...</div>
+                        
+                        <!-- Mobile Sticky Add Item Button -->
+                        <button id="mobileAddItemBtn" class="mobile-add-item-btn" onclick="openMobileAddItemModal()" style="display: none;">
+                            <span class="material-symbols-rounded">add</span>
+                            <span>Add Item</span>
+                        </button>
+
+                        <!-- Right Side - Cart -->
+                        <div class="pos-cart-section">
+                            <div class="pos-cart-header">
+                                <h3>Order Cart</h3>
+                                <button class="btn-clear-cart" id="clearCartBtn">
+                                    <span class="material-symbols-rounded">delete</span>
+                                    Clear Cart
+                                </button>
+                            </div>
+                            
+                            <div class="pos-table-select">
+                                <label for="selectPosTable">Select Table:</label>
+                                <select id="selectPosTable" class="filter-select">
+                                    <option value="">Walk-in</option>
+                                </select>
+                            </div>
+
+                            <div class="pos-cart-items" id="posCartItems">
+                                <div class="empty-cart">
+                                    <span class="material-symbols-rounded">shopping_cart</span>
+                                    <p>Cart is empty</p>
+                                    <p class="empty-subtext">Add items from the menu</p>
+                                </div>
+                            </div>
+
+                            <div class="pos-cart-summary">
+                                <div class="cart-summary-row">
+                                    <span>Subtotal:</span>
+                                    <span id="cartSubtotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
+                                </div>
+                                <div class="cart-summary-row">
+                                    <span>CGST (2.5%):</span>
+                                    <span id="cartCGST"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
+                                </div>
+                                <div class="cart-summary-row">
+                                    <span>SGST (2.5%):</span>
+                                    <span id="cartSGST"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
+                                </div>
+                                <div class="cart-summary-row">
+                                    <span>GST (5%):</span>
+                                    <span id="cartTax"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
+                                </div>
+                                <div class="cart-summary-row total">
+                                    <span>Total:</span>
+                                    <span id="cartTotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
+                                </div>
+                            </div>
+
+                            <div class="pos-cart-actions">
+                                <button class="btn btn-secondary" id="holdOrderBtn">
+                                    <span class="material-symbols-rounded">pause</span>
+                                    Hold Order
+                                </button>
+                                <button class="btn btn-primary" id="processPaymentBtn">
+                                    <span class="material-symbols-rounded">payment</span>
+                                    Process Payment
+                                </button>
+                            </div>
                         </div>
                     </div>
-
-                    <!-- Right Side - Cart -->
-                    <div class="pos-cart-section" style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; position: sticky; top: 20px; height: fit-content; max-height: 85vh; overflow-y: auto;">
-                        <h3 style="margin-top: 0; margin-bottom: 16px;">Order Cart</h3>
-                        
-                        <div class="pos-table-select" style="margin-bottom: 16px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Select Table:</label>
-                            <select id="selectPosTable" class="filter-select" style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px;">
-                                <option value="">Takeaway</option>
-                            </select>
+                </div>
+                
+                <!-- Mobile Bill Summary (Above Buttons) -->
+                <div id="mobilePosBillSummary" class="mobile-pos-bill-summary" style="display: none;">
+                    <div class="mobile-bill-summary-card">
+                        <div class="mobile-bill-summary-header" onclick="toggleMobileBillDetails()">
+                            <div>
+                                <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.125rem;">Bill Summary</div>
+                                <div style="font-size:1.1rem;font-weight:700;color:#111827;">
+                                    Total: <span id="mobilePosBillTotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
+                                </div>
+                            </div>
+                            <span class="material-symbols-rounded" id="mobilePosBillSummaryArrow" style="font-size:1.25rem;color:#6b7280;transition:transform 0.3s;">chevron_right</span>
                         </div>
-
-                        <div class="pos-cart-items" id="posCartItems" style="margin-bottom: 16px; padding: 16px; background: #f9fafb; border-radius: 8px; min-height: 200px;">
-                            <div class="empty-cart" style="text-align: center; color: #6b7280; padding: 40px;">
-                                <span class="material-symbols-rounded" style="font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 8px;">shopping_cart</span>
-                                <p style="margin: 0;">Cart is empty</p>
-                                <p class="empty-subtext" style="margin: 4px 0 0 0; font-size: 0.875rem;">Add items from the menu</p>
+                        <div id="mobilePosBillDetails" style="display:none;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #e5e7eb;">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;font-size:0.85rem;">
+                                <span style="color:#6b7280;">Subtotal:</span>
+                                <span style="font-weight:600;color:#111827;" id="mobilePosBillSubtotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
                             </div>
-                        </div>
-
-                        <div class="pos-cart-summary" style="margin-bottom: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb;">
-                            <div class="cart-summary-row" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span>Subtotal:</span>
-                                <span id="cartSubtotal"><?php echo htmlspecialchars($currency_symbol, ENT_QUOTES, 'UTF-8'); ?>0.00</span>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;font-size:0.85rem;">
+                                <span style="color:#6b7280;">CGST (2.5%):</span>
+                                <span style="font-weight:600;color:#111827;" id="mobilePosBillCGST"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
                             </div>
-                            <div class="cart-summary-row" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span>CGST (2.5%):</span>
-                                <span id="cartCGST"><?php echo htmlspecialchars($currency_symbol, ENT_QUOTES, 'UTF-8'); ?>0.00</span>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;font-size:0.85rem;">
+                                <span style="color:#6b7280;">SGST (2.5%):</span>
+                                <span style="font-weight:600;color:#111827;" id="mobilePosBillSGST"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
                             </div>
-                            <div class="cart-summary-row" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span>SGST (2.5%):</span>
-                                <span id="cartSGST"><?php echo htmlspecialchars($currency_symbol, ENT_QUOTES, 'UTF-8'); ?>0.00</span>
-                            </div>
-                            <div class="cart-summary-row total" style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; padding-top: 8px; border-top: 2px solid #e5e7eb;">
-                                <span>Total:</span>
-                                <span id="cartTotal"><?php echo htmlspecialchars($currency_symbol, ENT_QUOTES, 'UTF-8'); ?>0.00</span>
+                            <div style="display:flex;justify-content:space-between;font-size:0.85rem;">
+                                <span style="color:#6b7280;">Tax Total:</span>
+                                <span style="font-weight:600;color:#111827;" id="mobilePosBillTax"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
                             </div>
                         </div>
-
-                        <div style="display: flex; gap: 12px;">
-                            <button class="btn btn-secondary" id="clearCartBtn" style="flex: 1; background: #6b7280;">
-                                <span class="material-symbols-rounded" style="vertical-align: middle;">delete</span> Clear
-                            </button>
-                            <button class="btn btn-secondary" id="holdOrderBtn" style="flex: 1; background: #f59e0b;">
-                                <span class="material-symbols-rounded" style="vertical-align: middle;">pause</span> Hold
-                            </button>
-                            <button class="btn btn-primary" id="processPaymentBtn" style="flex: 1;">
-                                <span class="material-symbols-rounded" style="vertical-align: middle;">payment</span> Process
-                            </button>
+                    </div>
+                </div>
+                
+                <!-- Mobile Sticky Bottom Buttons -->
+                <div id="mobilePosBottomActions" class="mobile-pos-bottom-actions" style="display: none;">
+                    <button class="mobile-pos-btn mobile-pos-btn-hold" id="mobileHoldOrderBtn">
+                        <span class="material-symbols-rounded">pause</span>
+                        <span>Save & Hold</span>
+                    </button>
+                    <button class="mobile-pos-btn mobile-pos-btn-bill" id="mobileProcessPaymentBtn">
+                        <span class="material-symbols-rounded">payment</span>
+                        <span>Save & Bill</span>
+                    </button>
+                </div>
+                
+                <!-- Mobile Add Item Modal -->
+                <div id="mobileAddItemModal" class="modal" style="display:none;z-index:10000;" onclick="if(event.target===this) closeMobileAddItemModal();">
+                    <div class="modal-content" style="max-width:100%;height:90vh;margin:5vh auto;display:flex;flex-direction:column;background:white;border-radius:16px 16px 0 0;" onclick="event.stopPropagation();">
+                        <div class="modal-header" style="flex-shrink:0;border-bottom:2px solid #f3f4f6;padding:1rem;">
+                            <h2 style="font-size:1.25rem;margin:0;">
+                                <span class="material-symbols-rounded" style="vertical-align:middle;margin-right:0.5rem;">add_circle</span>
+                                Add Item
+                            </h2>
+                            <span class="close" onclick="closeMobileAddItemModal()" style="font-size:1.5rem;">&times;</span>
+                        </div>
+                        <div class="modal-body" style="flex:1;overflow-y:auto;padding:1rem;">
+                            <div style="margin-bottom:1rem;position:relative;">
+                                <input type="text" id="mobileItemSearch" placeholder="🔍 Search items by name, category, menu, or type..." style="width:100%;padding:0.75rem 3rem 0.75rem 0.75rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.95rem;box-sizing:border-box;" oninput="filterMobileItems()">
+                                <button type="button" onclick="filterMobileItems()" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0.5rem;display:flex;align-items:center;justify-content:center;color:#6b7280;transition:color 0.2s;" onmouseover="this.style.color='#f70000'" onmouseout="this.style.color='#6b7280'">
+                                    <span class="material-symbols-rounded" style="font-size:1.5rem;">search</span>
+                                </button>
+                            </div>
+                            <div id="mobileItemsList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;">
+                                <!-- Items will be loaded here -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -292,11 +345,27 @@ if (!$currency_symbol) {
     <script>
         const waiterRestaurantId = <?php echo json_encode($restaurant_id); ?>;
         const waiterRestaurantIdQuery = waiterRestaurantId ? encodeURIComponent(waiterRestaurantId) : '';
-        function switchTab(tab) {
+        // Set restaurant_id for POS functions in script.js
+        if (typeof window !== 'undefined') {
+            window.restaurant_id = waiterRestaurantId;
+        }
+        function switchTab(tab, event) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tab + 'Tab').classList.add('active');
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // Find the tab by text content
+                document.querySelectorAll('.tab').forEach(t => {
+                    if (t.textContent.trim().toLowerCase().includes(tab.toLowerCase())) {
+                        t.classList.add('active');
+                    }
+                });
+            }
+            const tabElement = document.getElementById(tab + 'Tab');
+            if (tabElement) {
+                tabElement.classList.add('active');
+            }
             if (tab === 'requests') loadWaiterRequests();
             else if (tab === 'orders') loadActiveOrders();
             else if (tab === 'pos') {
@@ -307,27 +376,43 @@ if (!$currency_symbol) {
                 
                 // Wait for script.js to load
                 setTimeout(() => {
-                    // Load POS data
-                    if (typeof loadPOSMenuItems === 'function') {
+                    // Load POS data - check window object since functions are global
+                    if (typeof window.loadPOSMenuItems === 'function') {
+                        window.loadPOSMenuItems();
+                    } else if (typeof loadPOSMenuItems === 'function') {
                         loadPOSMenuItems();
                     } else {
                         console.warn('loadPOSMenuItems function not found, trying alternative...');
-                        loadPOSDataForWaiter();
+                        if (typeof loadPOSDataForWaiter === 'function') {
+                            loadPOSDataForWaiter();
+                        }
                     }
-                    if (typeof loadTablesForPOS === 'function') {
+                    if (typeof window.loadTablesForPOS === 'function') {
+                        window.loadTablesForPOS();
+                    } else if (typeof loadTablesForPOS === 'function') {
                         loadTablesForPOS();
                     } else {
-                        loadTablesForWaiterPOS();
+                        if (typeof loadTablesForWaiterPOS === 'function') {
+                            loadTablesForWaiterPOS();
+                        }
                     }
-                    if (typeof loadMenusForPOSFilters === 'function') {
+                    if (typeof window.loadMenusForPOSFilters === 'function') {
+                        window.loadMenusForPOSFilters();
+                    } else if (typeof loadMenusForPOSFilters === 'function') {
                         loadMenusForPOSFilters();
                     } else {
-                        loadMenusForWaiterPOS();
+                        if (typeof loadMenusForWaiterPOS === 'function') {
+                            loadMenusForWaiterPOS();
+                        }
                     }
-                    if (typeof loadCategoriesForPOSFilters === 'function') {
+                    if (typeof window.loadCategoriesForPOSFilters === 'function') {
+                        window.loadCategoriesForPOSFilters();
+                    } else if (typeof loadCategoriesForPOSFilters === 'function') {
                         loadCategoriesForPOSFilters();
                     } else {
-                        loadCategoriesForWaiterPOS();
+                        if (typeof loadCategoriesForWaiterPOS === 'function') {
+                            loadCategoriesForWaiterPOS();
+                        }
                     }
                 }, 100);
             }
@@ -664,19 +749,29 @@ if (!$currency_symbol) {
             const okBtn = document.getElementById('confirmOkBtn');
             
             const closeModal = () => {
-                modal.style.animation = 'fadeOut 0.2s ease-out';
-                setTimeout(() => modal.remove(), 200);
+                if (modal && modal.parentNode) {
+                    modal.style.animation = 'fadeOut 0.2s ease-out';
+                    setTimeout(() => {
+                        if (modal && modal.parentNode) {
+                            modal.remove();
+                        }
+                    }, 200);
+                }
             };
             
-            cancelBtn.onclick = () => {
-                closeModal();
-                if (onCancel) onCancel();
-            };
+            if (cancelBtn) {
+                cancelBtn.onclick = () => {
+                    closeModal();
+                    if (onCancel) onCancel();
+                };
+            }
             
-            okBtn.onclick = () => {
-                closeModal();
-                if (onConfirm) onConfirm();
-            };
+            if (okBtn) {
+                okBtn.onclick = () => {
+                    closeModal();
+                    if (onConfirm) onConfirm();
+                };
+            }
             
             // Close on background click
             modal.onclick = (e) => {
@@ -830,7 +925,7 @@ if (!$currency_symbol) {
                 const result = await response.json();
                 
                 const select = document.getElementById('selectPosTable');
-                if (result.success && result.data && result.data.length > 0) {
+                if (select && result.success && result.data && result.data.length > 0) {
                     select.innerHTML = '<option value="">Takeaway</option>' + 
                         result.data.map(table => 
                             `<option value="${table.id}">${table.table_number} - ${table.area_name || ''}</option>`
@@ -847,7 +942,7 @@ if (!$currency_symbol) {
                 const result = await response.json();
                 
                 const select = document.getElementById('posMenuFilter');
-                if (result.success && result.data && result.data.length > 0) {
+                if (select && result.success && result.data && result.data.length > 0) {
                     select.innerHTML = '<option value="">All Menus</option>' + 
                         result.data.map(menu => 
                             `<option value="${menu.id}">${menu.menu_name}</option>`
@@ -864,7 +959,7 @@ if (!$currency_symbol) {
                 const result = await response.json();
                 
                 const select = document.getElementById('posCategoryFilter');
-                if (result.success && result.categories && result.categories.length > 0) {
+                if (select && result.success && result.categories && result.categories.length > 0) {
                     select.innerHTML = '<option value="">All Categories</option>' + 
                         result.categories.map(category => 
                             `<option value="${category}">${category}</option>`
@@ -881,6 +976,9 @@ if (!$currency_symbol) {
         }
         
         function addToWaiterPOSCart(itemId, itemName, price, image) {
+            if (!window.posCart) {
+                window.posCart = [];
+            }
             const existingItem = window.posCart.find(item => item.id === itemId);
             
             if (existingItem) {
@@ -900,8 +998,9 @@ if (!$currency_symbol) {
         
         function updateWaiterPOSCart() {
             const container = document.getElementById('posCartItems');
+            if (!container) return; // Exit if container doesn't exist
             
-            if (window.posCart.length === 0) {
+            if (!window.posCart || window.posCart.length === 0) {
                 container.innerHTML = `
                     <div class="empty-cart" style="text-align: center; color: #6b7280; padding: 40px;">
                         <span class="material-symbols-rounded" style="font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 8px;">shopping_cart</span>
@@ -930,6 +1029,7 @@ if (!$currency_symbol) {
         }
         
         function updateWaiterPOSCartQty(itemId, change) {
+            if (!window.posCart) return;
             const item = window.posCart.find(item => item.id === itemId);
             
             if (item) {
@@ -943,17 +1043,28 @@ if (!$currency_symbol) {
             }
         }
         
+        // Make functions globally available
+        window.addToWaiterPOSCart = addToWaiterPOSCart;
+        window.updateWaiterPOSCart = updateWaiterPOSCart;
+        window.updateWaiterPOSCartQty = updateWaiterPOSCartQty;
+        
         function updateWaiterPOSCartSummary() {
+            if (!window.posCart) return;
             const subtotal = window.posCart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
             const cgst = subtotal * 0.025; // 2.5%
             const sgst = subtotal * 0.025; // 2.5%
             const tax = cgst + sgst; // GST total 5%
             const total = subtotal + tax;
             
-            document.getElementById('cartSubtotal').textContent = `${waiterCurrencySymbol}${subtotal.toFixed(2)}`;
-            document.getElementById('cartCGST').textContent = `${waiterCurrencySymbol}${cgst.toFixed(2)}`;
-            document.getElementById('cartSGST').textContent = `${waiterCurrencySymbol}${sgst.toFixed(2)}`;
-            document.getElementById('cartTotal').textContent = `${waiterCurrencySymbol}${total.toFixed(2)}`;
+            const subtotalEl = document.getElementById('cartSubtotal');
+            const cgstEl = document.getElementById('cartCGST');
+            const sgstEl = document.getElementById('cartSGST');
+            const totalEl = document.getElementById('cartTotal');
+            
+            if (subtotalEl) subtotalEl.textContent = `${waiterCurrencySymbol}${subtotal.toFixed(2)}`;
+            if (cgstEl) cgstEl.textContent = `${waiterCurrencySymbol}${cgst.toFixed(2)}`;
+            if (sgstEl) sgstEl.textContent = `${waiterCurrencySymbol}${sgst.toFixed(2)}`;
+            if (totalEl) totalEl.textContent = `${waiterCurrencySymbol}${total.toFixed(2)}`;
         }
         
         // Make functions globally available

@@ -3,8 +3,15 @@
 require_once __DIR__ . '/../config/session_config.php';
 startSecureSession();
 
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
+// Require login and permission to view dashboard
+requireLogin();
+requirePermission(PERMISSION_VIEW_DASHBOARD);
+
 // Check if user is logged in (admin has user_id, staff has staff_id) and session is valid
-if (!isSessionValid() || (!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id'])) || !isset($_SESSION['username']) || !isset($_SESSION['restaurant_id'])) {
+if ((!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id'])) || !isset($_SESSION['username']) || !isset($_SESSION['restaurant_id'])) {
     header('Location: ../admin/login.php');
     exit();
 }

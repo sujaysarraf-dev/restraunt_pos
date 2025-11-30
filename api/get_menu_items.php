@@ -35,11 +35,44 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
-// Menu items can be public (for website), but if logged in, require permission
-// Allow public access if restaurant_id is provided in query, otherwise require login
+// Menu items can be public (for website), but if logged in, check permissions
+// Allow access if:
+// 1. Logged in as admin/manager (has PERMISSION_MANAGE_MENU)
+// 2. Logged in as staff (waiter/chef) with same restaurant_id
+// 3. Not logged in but restaurant_id is provided in query
+$hasPermission = false;
+$requested_restaurant_id = $_GET['restaurant_id'] ?? null;
+
 if (isLoggedIn()) {
-    requirePermission(PERMISSION_MANAGE_MENU);
-} elseif (!isset($_GET['restaurant_id'])) {
+    // Check if user has permission
+    try {
+        if (hasPermission(PERMISSION_MANAGE_MENU)) {
+            $hasPermission = true;
+        }
+    } catch (Exception $e) {
+        // Permission check failed, continue to staff check
+    }
+    
+    // If no permission, check if staff with matching restaurant_id
+    if (!$hasPermission && isset($_SESSION['staff_id']) && isset($_SESSION['restaurant_id'])) {
+        $check_restaurant_id = $requested_restaurant_id ?? $_SESSION['restaurant_id'] ?? null;
+        if ($check_restaurant_id && $check_restaurant_id === $_SESSION['restaurant_id']) {
+            $hasPermission = true;
+        }
+    }
+    
+    // If still no permission and no restaurant_id in query, return error
+    if (!$hasPermission && !$requested_restaurant_id) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Access denied. Restaurant ID required.',
+            'data' => [],
+            'categories' => []
+        ]);
+        exit();
+    }
+} elseif (!$requested_restaurant_id) {
     // If not logged in and no restaurant_id provided, return error
     echo json_encode([
         'success' => false,
@@ -50,7 +83,7 @@ if (isLoggedIn()) {
     exit();
 }
 
-$restaurant_id = $_GET['restaurant_id'] ?? $_SESSION['restaurant_id'] ?? null;
+$restaurant_id = $requested_restaurant_id ?? $_SESSION['restaurant_id'] ?? null;
 
 if (!$restaurant_id) {
     echo json_encode([

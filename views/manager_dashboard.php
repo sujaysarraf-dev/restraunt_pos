@@ -2,7 +2,16 @@
 // Include secure session configuration
 require_once __DIR__ . '/../config/session_config.php';
 startSecureSession();
-if (!isSessionValid() || !isset($_SESSION['staff_id']) || !isset($_SESSION['restaurant_id']) || $_SESSION['role'] !== 'Manager') {
+
+// Include authorization configuration
+require_once __DIR__ . '/../config/authorization_config.php';
+
+// Require login and permission to view dashboard (Manager role)
+requireLogin();
+requirePermission(PERMISSION_VIEW_DASHBOARD);
+
+// Verify user is a Manager
+if (!isset($_SESSION['staff_id']) || !isset($_SESSION['restaurant_id']) || $_SESSION['role'] !== ROLE_MANAGER) {
     header('Location: ../admin/login.php');
     exit();
 }
