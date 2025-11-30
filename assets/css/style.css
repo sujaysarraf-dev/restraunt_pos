@@ -2599,14 +2599,18 @@ select:focus {
     right: 0;
     z-index: 997;
     padding: 0 1rem 0.5rem 1rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
   }
   
   .mobile-bill-summary-card {
     background: white;
-    border-radius: 12px;
-    padding: 1rem;
+    border-radius: 8px;
+    padding: 0.75rem;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
     border: 1px solid #e5e7eb;
+    flex: 1;
   }
   
   .mobile-bill-summary-header {
@@ -2614,6 +2618,28 @@ select:focus {
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
+  }
+  
+  .mobile-bill-summary-header > div:first-child > div:first-child {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.125rem !important;
+  }
+  
+  .mobile-bill-summary-header > div:first-child > div:last-child {
+    font-size: 1.1rem !important;
+  }
+  
+  .mobile-bill-summary-header .material-symbols-rounded {
+    font-size: 1.25rem !important;
+  }
+  
+  #mobilePosBillDetails {
+    font-size: 0.85rem !important;
+  }
+  
+  #mobilePosBillDetails > div {
+    margin-bottom: 0.5rem !important;
+    font-size: 0.85rem !important;
   }
   
   /* Mobile Sticky Bottom Actions */
@@ -2677,10 +2703,16 @@ select:focus {
     padding-bottom: 12rem !important;
   }
   
-  /* Adjust add item button position when bottom actions are visible */
+  /* Adjust add item button position - right side, slightly above Bill Summary */
   .mobile-add-item-btn {
-    bottom: 10rem;
+    position: fixed;
+    bottom: 6rem;
+    right: 20px;
     z-index: 999;
+    width: auto;
+    height: auto;
+    border-radius: 50px;
+    padding: 0.75rem 1.25rem;
   }
   
   /* Ensure pos menu section has bottom padding */

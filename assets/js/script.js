@@ -4824,10 +4824,23 @@ document.addEventListener("DOMContentLoaded", () => {
   window.toggleMobileBillDetails = function() {
     const details = document.getElementById('mobilePosBillDetails');
     const arrow = document.getElementById('mobilePosBillSummaryArrow');
+    const addItemBtn = document.getElementById('mobileAddItemBtn');
+    
     if (details && arrow) {
       const isVisible = details.style.display !== 'none';
       details.style.display = isVisible ? 'none' : 'block';
       arrow.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(90deg)';
+      
+      // Hide/show Add Item button based on bill summary state
+      if (addItemBtn) {
+        if (isVisible) {
+          // Bill summary is closing, show the button
+          addItemBtn.style.display = 'flex';
+        } else {
+          // Bill summary is opening, hide the button
+          addItemBtn.style.display = 'none';
+        }
+      }
     }
   };
   

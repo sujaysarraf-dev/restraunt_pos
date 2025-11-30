@@ -1618,27 +1618,27 @@ try {
         <div class="mobile-bill-summary-card">
           <div class="mobile-bill-summary-header" onclick="toggleMobileBillDetails()">
             <div>
-              <div style="font-size:0.875rem;color:#6b7280;margin-bottom:0.25rem;">Bill Summary</div>
-              <div style="font-size:1.5rem;font-weight:700;color:#111827;">
-                Total Amount: <span id="mobilePosBillTotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
+              <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.125rem;">Bill Summary</div>
+              <div style="font-size:1.1rem;font-weight:700;color:#111827;">
+                Total: <span id="mobilePosBillTotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
               </div>
             </div>
-            <span class="material-symbols-rounded" id="mobilePosBillSummaryArrow" style="font-size:1.5rem;color:#6b7280;transition:transform 0.3s;">chevron_right</span>
+            <span class="material-symbols-rounded" id="mobilePosBillSummaryArrow" style="font-size:1.25rem;color:#6b7280;transition:transform 0.3s;">chevron_right</span>
           </div>
-          <div id="mobilePosBillDetails" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid #e5e7eb;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;font-size:0.95rem;">
+          <div id="mobilePosBillDetails" style="display:none;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #e5e7eb;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;font-size:0.85rem;">
               <span style="color:#6b7280;">Subtotal:</span>
               <span style="font-weight:600;color:#111827;" id="mobilePosBillSubtotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
             </div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;font-size:0.95rem;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;font-size:0.85rem;">
               <span style="color:#6b7280;">CGST (2.5%):</span>
               <span style="font-weight:600;color:#111827;" id="mobilePosBillCGST"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
             </div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;font-size:0.95rem;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;font-size:0.85rem;">
               <span style="color:#6b7280;">SGST (2.5%):</span>
               <span style="font-weight:600;color:#111827;" id="mobilePosBillSGST"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
             </div>
-            <div style="display:flex;justify-content:space-between;font-size:0.95rem;">
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;">
               <span style="color:#6b7280;">Tax Total:</span>
               <span style="font-weight:600;color:#111827;" id="mobilePosBillTax"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
             </div>
