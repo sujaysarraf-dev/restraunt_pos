@@ -72,6 +72,14 @@ try {
             handleUploadRestaurantLogo();
             break;
             
+        case 'uploadBusinessQR':
+            handleUploadBusinessQR();
+            break;
+            
+        case 'removeBusinessQR':
+            handleRemoveBusinessQR();
+            break;
+            
         case 'forgotPassword':
             handleForgotPassword();
             break;
@@ -719,6 +727,100 @@ function handleUploadRestaurantLogo() {
         ]);
     } else {
         throw new Exception('Failed to update restaurant logo');
+    }
+}
+
+function handleUploadBusinessQR() {
+    global $pdo;
+    
+    if (!isset($_FILES['business_qr']) || $_FILES['business_qr']['error'] !== UPLOAD_ERR_OK) {
+        throw new Exception('No QR code file uploaded');
+    }
+    
+    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    $file = $_FILES['business_qr'];
+    
+    // Verify MIME type
+    if (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $actualMimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+    } else {
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $extensionMap = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp'];
+        $actualMimeType = $extensionMap[$extension] ?? 'application/octet-stream';
+    }
+    
+    if (!in_array($actualMimeType, $allowedTypes)) {
+        throw new Exception('Invalid QR code file type. Allowed: JPEG, PNG, GIF, WebP');
+    }
+    
+    if ($file['size'] > 5 * 1024 * 1024) {
+        throw new Exception('QR code file too large (max 5MB)');
+    }
+    
+    // Read image data for database storage
+    $qrData = file_get_contents($file['tmp_name']);
+    if ($qrData === false) {
+        throw new Exception('Failed to read QR code file');
+    }
+    
+    $qrPath = 'db:' . uniqid();
+    $userId = $_SESSION['user_id'];
+    
+    // Ensure business_qr_code columns exist
+    try {
+        $checkCol = $pdo->query("SHOW COLUMNS FROM users LIKE 'business_qr_code_path'");
+        if ($checkCol->rowCount() == 0) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN business_qr_code_path VARCHAR(500) DEFAULT NULL AFTER timezone");
+            $pdo->exec("ALTER TABLE users ADD COLUMN business_qr_code_data LONGBLOB NULL AFTER business_qr_code_path");
+            $pdo->exec("ALTER TABLE users ADD COLUMN business_qr_code_mime_type VARCHAR(50) NULL AFTER business_qr_code_data");
+        }
+    } catch (PDOException $e) {
+        // Columns might already exist, continue
+    }
+    
+    // Update business QR code
+    try {
+        $updateStmt = $pdo->prepare("UPDATE users SET business_qr_code_path = ?, business_qr_code_data = ?, business_qr_code_mime_type = ?, updated_at = NOW() WHERE id = ?");
+        $result = $updateStmt->execute([$qrPath, $qrData, $actualMimeType, $userId]);
+    } catch (PDOException $e) {
+        throw new Exception('Failed to update business QR code: ' . $e->getMessage());
+    }
+    
+    if ($result) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Business QR code uploaded successfully',
+            'data' => [
+                'business_qr_code_path' => $qrPath,
+                'qr_code_url' => 'api/image.php?type=business_qr&id=' . $userId
+            ]
+        ]);
+    } else {
+        throw new Exception('Failed to update business QR code');
+    }
+}
+
+function handleRemoveBusinessQR() {
+    global $pdo;
+    
+    $userId = $_SESSION['user_id'];
+    
+    try {
+        $updateStmt = $pdo->prepare("UPDATE users SET business_qr_code_path = NULL, business_qr_code_data = NULL, business_qr_code_mime_type = NULL, updated_at = NOW() WHERE id = ?");
+        $result = $updateStmt->execute([$userId]);
+        
+        if ($result) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Business QR code removed successfully'
+            ]);
+        } else {
+            throw new Exception('Failed to remove business QR code');
+        }
+    } catch (PDOException $e) {
+        throw new Exception('Failed to remove business QR code: ' . $e->getMessage());
     }
 }
 

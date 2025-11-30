@@ -69,75 +69,58 @@ async function showSweetPrompt(message, title = 'Input', defaultValue = '') {
   return window.prompt(message, defaultValue);
 }
 
-// Payment method selector with clickable buttons - loads from database
-async function showPaymentMethodSelector() {
+// Handle session expiration - show message and redirect to login
+function handleSessionExpired() {
   if (window.Swal) {
-    try {
-      // Load payment methods from database
-      const response = await fetch('../api/get_payment_methods.php');
-      const data = await response.json();
-      
-      if (data.success && data.data && data.data.length > 0) {
-        // Filter only active methods
-        const activeMethods = data.data.filter(m => m.is_active == 1);
-        
-        if (activeMethods.length > 0) {
-          return new Promise((resolve) => {
-            let resolved = false;
-            const buttonsHtml = activeMethods.map(method => `
-              <button class="payment-method-btn" data-method="${method.method_name}" style="padding: 20px; border: 2px solid #e5e7eb; border-radius: 12px; background: white; cursor: pointer; transition: all 0.2s; font-size: 16px; font-weight: 600; color: #111827;">
-                <div style="font-size: 32px; margin-bottom: 8px;">${method.emoji || '💳'}</div>
-                <div>${method.method_name}</div>
-              </button>
-            `).join('');
-            
-            Swal.fire({
-              title: 'Select Payment Method',
-              html: `
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0;">
-                  ${buttonsHtml}
-                </div>
-                <style>
-                  .payment-method-btn:hover {
-                    border-color: #10b981 !important;
-                    background: #f0fdf4 !important;
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-                  }
-                  .payment-method-btn:active {
-                    transform: translateY(0);
-                  }
-                </style>
-              `,
-              showConfirmButton: false,
-              showCancelButton: true,
-              cancelButtonText: 'Cancel',
-              cancelButtonColor: '#6b7280',
-              didOpen: () => {
-                const buttons = Swal.getHtmlContainer().querySelectorAll('.payment-method-btn');
-                buttons.forEach(btn => {
-                  btn.addEventListener('click', () => {
-                    const method = btn.getAttribute('data-method');
-                    resolved = true;
-                    Swal.close();
-                    resolve(method);
-                  });
-                });
-              },
-              didClose: () => {
-                if (!resolved) {
-                  resolve(null);
-                }
-              }
-            });
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error loading payment methods:', error);
+    Swal.fire({
+      icon: 'warning',
+      title: 'Session Expired',
+      text: 'Your session has expired. Please login again.',
+      confirmButtonText: 'Go to Login',
+      confirmButtonColor: '#dc2626',
+      allowOutsideClick: false,
+      allowEscapeKey: false
+    }).then(() => {
+      // Redirect to login page
+      window.location.href = '../admin/login.php';
+    });
+  } else {
+    alert('Session expired. Please login again.');
+    window.location.href = '../admin/login.php';
+  }
+}
+
+// Check API response for session expiration
+function checkSessionExpired(response, data) {
+  if (!response) return false;
+  
+  // Check HTTP status codes first
+  if (response.status === 401) {
+    handleSessionExpired();
+    return true;
+  }
+  
+  // Check response data if available
+  if (data) {
+    // Check if response indicates session expired
+    if (data.success === false && 
+        data.message && (
+          data.message.toLowerCase().includes('session expired') ||
+          data.message.toLowerCase().includes('please login again') ||
+          data.message.toLowerCase().includes('login again')
+        )) {
+      handleSessionExpired();
+      return true;
     }
-    
-    // Fallback to default methods if database fails
+  }
+  
+  return false;
+}
+
+// Payment method selector with clickable buttons - uses default methods
+// Make showPaymentMethodSelector globally available
+window.showPaymentMethodSelector = async function showPaymentMethodSelector() {
+  if (window.Swal) {
     return new Promise((resolve) => {
       let resolved = false;
       Swal.fire({
@@ -4715,6 +4698,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
   
+  // Make checkMobileView globally available
+  window.checkMobileView = checkMobileView;
+  
+  // Call on window resize
+  window.addEventListener('resize', checkMobileView);
+  
   // Update mobile items list
   function updateMobileItemsList(items) {
     const mobileItemsList = document.getElementById('mobileItemsList');
@@ -4852,7 +4841,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let restaurantId = window.restaurant_id || '';
     if (!restaurantId) {
       try {
-        const sess = await fetch('../admin/get_session.php').then(r=>r.json()).catch(()=>null);
+        const sessRes = await fetch('../admin/get_session.php');
+        const sess = await sessRes.json().catch(()=>null);
+        if (checkSessionExpired(sessRes, sess)) return;
         if (sess && sess.success && sess.data?.restaurant_id) {
           restaurantId = sess.data.restaurant_id;
           window.restaurant_id = restaurantId;
@@ -4908,7 +4899,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let restaurantId = window.restaurant_id || '';
     if (!restaurantId) {
       try {
-        const sess = await fetch('../admin/get_session.php').then(r=>r.json()).catch(()=>null);
+        const sessRes = await fetch('../admin/get_session.php');
+        const sess = await sessRes.json().catch(()=>null);
+        if (checkSessionExpired(sessRes, sess)) return;
         if (sess && sess.success && sess.data?.restaurant_id) {
           restaurantId = sess.data.restaurant_id;
           window.restaurant_id = restaurantId;
@@ -4946,7 +4939,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let restaurantId = window.restaurant_id || '';
     if (!restaurantId) {
       try {
-        const sess = await fetch('../admin/get_session.php').then(r=>r.json()).catch(()=>null);
+        const sessRes = await fetch('../admin/get_session.php');
+        const sess = await sessRes.json().catch(()=>null);
+        if (checkSessionExpired(sessRes, sess)) return;
         if (sess && sess.success && sess.data?.restaurant_id) {
           restaurantId = sess.data.restaurant_id;
           window.restaurant_id = restaurantId;
@@ -5105,29 +5100,44 @@ document.addEventListener("DOMContentLoaded", () => {
   const clearCartBtn = document.getElementById("clearCartBtn");
   if (clearCartBtn) {
     clearCartBtn.addEventListener("click", async () => {
-      if (posCart.length > 0 && await showSweetConfirm("Are you sure you want to clear the cart?", 'Clear Cart')) {
-        posCart = [];
-        updatePOSCart();
+      // Support both posCart (admin) and window.posCart (waiter/chef/manager)
+      const cart = typeof posCart !== 'undefined' ? posCart : (window.posCart || []);
+      const updateCartFn = typeof updatePOSCart !== 'undefined' ? updatePOSCart : (window.updateWaiterPOSCart || window.updatePOSCart || (() => {}));
+      
+      if (cart.length > 0 && await showSweetConfirm("Are you sure you want to clear the cart?", 'Clear Cart')) {
+        // Clear cart - support both local and window.posCart
+        if (typeof posCart !== 'undefined') {
+          posCart = [];
+        } else if (window.posCart) {
+          window.posCart = [];
+        }
+        updateCartFn();
       }
     });
   }
   
   // Hold order function
   async function holdOrder() {
-      if (posCart.length === 0) {
-        showMessage("Cart is empty", "error");
-        return;
-      }
-      
-      const subtotal = posCart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+    // Support both posCart (admin) and window.posCart (waiter/chef/manager)
+    const cart = typeof posCart !== 'undefined' ? posCart : (window.posCart || []);
+    const updateCartFn = typeof updatePOSCart !== 'undefined' ? updatePOSCart : (window.updateWaiterPOSCart || window.updatePOSCart || (() => {}));
+    
+    if (cart.length === 0) {
+      const showMsg = typeof showMessage !== 'undefined' ? showMessage : (window.showNotification || alert);
+      showMsg("Cart is empty", "error");
+      return;
+    }
+    
+      const subtotal = cart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
       const tax = subtotal * 0.05; // GST total (CGST+SGST)
       const total = subtotal + tax;
-      const selectedTable = document.getElementById("selectPosTable").value;
+      const selectPosTable = document.getElementById("selectPosTable");
+      const selectedTable = selectPosTable ? selectPosTable.value : '';
       
       const formData = new URLSearchParams();
       formData.append('action', 'hold_order');
       formData.append('tableId', selectedTable || '');
-      formData.append('cartItems', JSON.stringify(posCart));
+      formData.append('cartItems', JSON.stringify(cart));
       formData.append('subtotal', subtotal.toFixed(2));
       formData.append('tax', tax.toFixed(2));
       formData.append('total', total.toFixed(2));
@@ -5144,18 +5154,31 @@ document.addEventListener("DOMContentLoaded", () => {
         const result = await response.json();
         
         if (result.success) {
-          showMessage(result.message + " - Order #" + result.order_number, "success");
-          posCart = [];
-          updatePOSCart();
-          document.getElementById("selectPosTable").value = "";
+          const showMsg = typeof showMessage !== 'undefined' ? showMessage : (window.showNotification || alert);
+          showMsg(result.message + " - Order #" + result.order_number, "success");
+          // Clear cart - support both local and window.posCart
+          if (typeof posCart !== 'undefined') {
+            posCart = [];
+          } else if (window.posCart) {
+            window.posCart = [];
+          }
+          updateCartFn();
+          if (selectPosTable) {
+            selectPosTable.value = "";
+          }
         } else {
-          showMessage(result.message || "Error holding order.", "error");
+          const showMsg = typeof showMessage !== 'undefined' ? showMessage : (window.showNotification || alert);
+          showMsg(result.message || "Error holding order.", "error");
         }
       } catch (error) {
         console.error("Error:", error);
-        showMessage("Network error. Please check your connection and try again.", "error");
+        const showMsg = typeof showMessage !== 'undefined' ? showMessage : (window.showNotification || alert);
+        showMsg("Network error. Please check your connection and try again.", "error");
       }
   }
+  
+  // Make holdOrder globally available
+  window.holdOrder = holdOrder;
   
   // Hold order button listeners
   const holdOrderBtn = document.getElementById("holdOrderBtn");
@@ -5171,15 +5194,21 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Process payment function
   async function processPayment() {
-    if (posCart.length === 0) {
-      showMessage("Cart is empty", "error");
+    // Support both posCart (admin) and window.posCart (waiter/chef/manager)
+    const cart = typeof posCart !== 'undefined' ? posCart : (window.posCart || []);
+    const updateCartFn = typeof updatePOSCart !== 'undefined' ? updatePOSCart : (window.updateWaiterPOSCart || window.updatePOSCart || (() => {}));
+    
+    if (cart.length === 0) {
+      const showMsg = typeof showMessage !== 'undefined' ? showMessage : (window.showNotification || alert);
+      showMsg("Cart is empty", "error");
       return;
     }
     
-    const subtotal = posCart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+    const subtotal = cart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
     const tax = subtotal * 0.05; // GST total (CGST+SGST)
     const total = subtotal + tax;
-    const selectedTable = document.getElementById("selectPosTable").value;
+    const selectPosTable = document.getElementById("selectPosTable");
+    const selectedTable = selectPosTable ? selectPosTable.value : '';
     
     // Show payment method selection
     const paymentMethodStr = await showPaymentMethodSelector();
@@ -5194,7 +5223,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append('orderType', isTakeaway ? 'Takeaway' : 'Dine-in');
     formData.append('customerName', isTakeaway ? 'Takeaway' : 'Table Customer');
     formData.append('paymentMethod', paymentMethodStr);
-    formData.append('cartItems', JSON.stringify(posCart));
+    formData.append('cartItems', JSON.stringify(cart));
     formData.append('subtotal', subtotal.toFixed(2));
     formData.append('tax', tax.toFixed(2));
     formData.append('total', total.toFixed(2));
@@ -5211,26 +5240,40 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await response.json();
       
       if (result.success) {
+        const showMsg = typeof showMessage !== 'undefined' ? showMessage : (window.showNotification || alert);
         const msg = result.kot_number
           ? (result.message + " - KOT #" + result.kot_number + " - Order #" + result.order_number)
           : (result.message + " - Order #" + result.order_number);
-        showMessage(msg, "success");
-        posCart = [];
-        updatePOSCart();
-        document.getElementById("selectPosTable").value = "";
+        showMsg(msg, "success");
+        // Clear cart - support both local and window.posCart
+        if (typeof posCart !== 'undefined') {
+          posCart = [];
+        } else if (window.posCart) {
+          window.posCart = [];
+        }
+        updateCartFn();
+        if (selectPosTable) {
+          selectPosTable.value = "";
+        }
         
         // Reload orders if on the orders page
-        if (document.getElementById('ordersPage').classList.contains('active')) {
+        const ordersPage = document.getElementById('ordersPage');
+        if (ordersPage && ordersPage.classList.contains('active') && typeof loadOrders !== 'undefined') {
           loadOrders();
         }
       } else {
-        showMessage(result.message || "Error creating KOT.", "error");
+        const showMsg = typeof showMessage !== 'undefined' ? showMessage : (window.showNotification || alert);
+        showMsg(result.message || "Error creating KOT.", "error");
       }
     } catch (error) {
       console.error("Error:", error);
-      showMessage("Network error. Please check your connection and try again.", "error");
+      const showMsg = typeof showMessage !== 'undefined' ? showMessage : (window.showNotification || alert);
+      showMsg("Network error. Please check your connection and try again.", "error");
     }
   }
+  
+  // Make processPayment globally available
+  window.processPayment = processPayment;
   
   // Process payment button listeners
   const processPaymentBtn = document.getElementById("processPaymentBtn");
@@ -5305,6 +5348,8 @@ async function loadRestaurantInfo() {
   try {
     const response = await fetch("../admin/get_session.php");
     const result = await response.json();
+    
+    if (checkSessionExpired(response, result)) return;
     
     if (result.success) {
       const restaurantNameEl = document.getElementById("restaurantName");
@@ -6150,12 +6195,16 @@ window.printOrder = async function(orderId) {
       logo: '',
       address: '',
       phone: '',
-      email: ''
+      email: '',
+      business_qr_code_path: ''
     };
     
     try {
       const infoRes = await fetch('../admin/get_session.php');
       const infoData = await infoRes.json();
+      
+      if (checkSessionExpired(infoRes, infoData)) return;
+      
       if (infoData.success && infoData.data) {
         restaurantInfo.name = infoData.data.restaurant_name || restaurantInfo.name;
         restaurantInfo.logo = infoData.data.restaurant_logo || '';
@@ -6163,6 +6212,7 @@ window.printOrder = async function(orderId) {
         restaurantInfo.address = infoData.data.address || '';
         restaurantInfo.phone = infoData.data.phone || '';
         restaurantInfo.email = infoData.data.email || '';
+        restaurantInfo.business_qr_code_path = infoData.data.business_qr_code_path || '';
       }
     } catch (e) {
       console.warn('Could not load restaurant info:', e);
@@ -6214,6 +6264,19 @@ window.printOrder = async function(orderId) {
         logoPath = '../uploads/' + restaurantInfo.logo;
       }
       logoHtml = `<img src="${logoPath}" alt="Logo" style="max-width: 80px; max-height: 80px; object-fit: contain; margin-bottom: 10px;" onerror="this.style.display='none';">`;
+    }
+    
+    // Business QR Code HTML - only show if QR code exists
+    let businessQRHtml = '';
+    if (restaurantInfo.business_qr_code_path) {
+      const userId = restaurantInfo.user_id || restaurantInfo.id || '';
+      const qrCodeUrl = `../api/image.php?type=business_qr&id=${userId}`;
+      businessQRHtml = `
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e5e7eb; text-align: center;">
+          <div style="font-size: 10px; color: #6b7280; margin-bottom: 8px; font-weight: 600; text-transform: uppercase;">Scan to Pay</div>
+          <img src="${qrCodeUrl}" alt="Payment QR Code" style="max-width: 120px; max-height: 120px; object-fit: contain; border: 1px solid #e5e7eb; padding: 5px; background: white; display: block; margin: 0 auto;" onerror="this.style.display='none';">
+        </div>
+      `;
     }
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Order ${order.order_number}</title>
@@ -6433,6 +6496,7 @@ window.printOrder = async function(orderId) {
       <div class="footer">
         <div class="footer-text">Thank you for your order!</div>
         <div class="footer-text">Order Receipt</div>
+        ${businessQRHtml}
       </div>
     </body></html>`;
 
@@ -6626,6 +6690,8 @@ async function loadProfileData() {
     const response = await fetch('../admin/get_session.php');
     const result = await response.json();
     
+    if (checkSessionExpired(response, result)) return;
+    
     if (result.success) {
       const user = result.data;
       const username = user.username || 'User';
@@ -6799,214 +6865,70 @@ function renderPaymentMethods() {
   if (!listEl) return;
 
   if (!paymentMethodsCache.length) {
-    listEl.innerHTML = '';
+    listEl.innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;"><span class="material-symbols-rounded" style="font-size: 3rem; display: block; margin-bottom: 1rem; opacity: 0.5;">payment</span><p>No payment methods found. Click "Add Method" to create one.</p></div>';
     return;
   }
 
-  listEl.innerHTML = paymentMethodsCache.map(method => `
+  listEl.innerHTML = paymentMethodsCache.map(method => {
+    const methodName = (method.method_name || 'Unnamed Method').trim();
+    const emoji = (method.emoji || '💳').trim();
+    const displayOrder = method.display_order ?? 0;
+    const isActive = method.is_active == 1 || method.is_active === true;
+    const qrUrl = method.qr_code_url || '';
+    
+    return `
     <div class="payment-method-card" style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; background: white; display: flex; flex-direction: column; gap: 0.75rem; position: relative; box-shadow: 0 5px 15px rgba(15,23,42,0.08);">
       <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <div style="font-size: 2rem;">${method.emoji || '💳'}</div>
-        <div>
-          <div style="font-weight: 700; font-size: 1rem;">${method.method_name}</div>
-          <div style="font-size: 0.85rem; color: #6b7280;">Display order: ${method.display_order ?? 0}</div>
+        <div style="font-size: 2rem;">${emoji}</div>
+        <div style="flex: 1;">
+          <div style="font-weight: 700; font-size: 1rem;">${escapeHtml(methodName)}</div>
+          <div style="font-size: 0.85rem; color: #6b7280;">Display order: ${displayOrder}</div>
         </div>
       </div>
+      ${qrUrl ? `
+        <div style="margin: 0.5rem 0; padding: 0.5rem; background: #f3f4f6; border-radius: 8px; text-align: center;">
+          <img src="${qrUrl}" alt="QR Code" style="max-width: 150px; max-height: 150px; border-radius: 4px;" onerror="this.style.display='none';" />
+          <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">Payment QR Code</div>
+        </div>
+      ` : ''}
       <div style="display: flex; align-items: center; justify-content: space-between;">
-        <span style="padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: ${method.is_active == 1 ? '#d1fae5' : '#fee2e2'}; color: ${method.is_active == 1 ? '#065f46' : '#b91c1c'};">
-          ${method.is_active == 1 ? 'Active' : 'Inactive'}
+        <span style="padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: ${isActive ? '#d1fae5' : '#fee2e2'}; color: ${isActive ? '#065f46' : '#b91c1c'};">
+          ${isActive ? 'Active' : 'Inactive'}
         </span>
-        <div style="display: flex; gap: 0.5rem;">
-          <button onclick="editPaymentMethodEntry(${method.id})" style="padding: 0.4rem 0.75rem; border-radius: 8px; border: none; background: #e5e7eb; cursor: pointer; font-weight: 600; color: #111827;">Edit</button>
-          <button onclick="togglePaymentMethodStatus(${method.id})" style="padding: 0.4rem 0.75rem; border-radius: 8px; border: none; background: ${method.is_active == 1 ? '#fef3c7' : '#dcfce7'}; cursor: pointer; font-weight: 600; color: #92400e;">
-            ${method.is_active == 1 ? 'Disable' : 'Enable'}
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button onclick="editPaymentMethodEntry(${method.id})" style="padding: 0.4rem 0.75rem; border-radius: 8px; border: none; background: #e5e7eb; cursor: pointer; font-weight: 600; color: #111827; font-size: 0.85rem;">Edit</button>
+          <button onclick="uploadPaymentMethodQR(${method.id})" style="padding: 0.4rem 0.75rem; border-radius: 8px; border: none; background: #dbeafe; cursor: pointer; font-weight: 600; color: #1e40af; font-size: 0.85rem;">${qrUrl ? 'Update QR' : 'Upload QR'}</button>
+          <button onclick="togglePaymentMethodStatus(${method.id})" style="padding: 0.4rem 0.75rem; border-radius: 8px; border: none; background: ${isActive ? '#fef3c7' : '#dcfce7'}; cursor: pointer; font-weight: 600; color: #92400e; font-size: 0.85rem;">
+            ${isActive ? 'Disable' : 'Enable'}
           </button>
-          <button onclick="deletePaymentMethodEntry(${method.id})" style="padding: 0.4rem 0.75rem; border-radius: 8px; border: none; background: #fee2e2; cursor: pointer; font-weight: 600; color: #b91c1c;">Delete</button>
+          <button onclick="deletePaymentMethodEntry(${method.id})" style="padding: 0.4rem 0.75rem; border-radius: 8px; border: none; background: #fee2e2; cursor: pointer; font-weight: 600; color: #b91c1c; font-size: 0.85rem;">Delete</button>
         </div>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
+// Payment method filter options - using default methods
 function updatePaymentMethodFilterOptions(filterEl = document.getElementById('paymentMethodFilter')) {
   if (!filterEl) return;
 
   const previousValue = filterEl.value;
   filterEl.innerHTML = '<option value="">All Methods</option>';
-
-  paymentMethodsCache
-    .filter(method => method.is_active == 1)
-    .forEach(method => {
-      const option = document.createElement('option');
-      option.value = method.method_name;
-      option.textContent = method.method_name;
-      filterEl.appendChild(option);
-    });
+  
+  // Default payment methods
+  const defaultMethods = ['Cash', 'Card', 'UPI', 'Online', 'Wallet'];
+  defaultMethods.forEach(method => {
+    const option = document.createElement('option');
+    option.value = method;
+    option.textContent = method;
+    filterEl.appendChild(option);
+  });
 
   if (previousValue && Array.from(filterEl.options).some(opt => opt.value === previousValue)) {
     filterEl.value = previousValue;
   }
 }
-
-async function openPaymentMethodModal(existingMethod = null) {
-  if (window.Swal) {
-    const result = await Swal.fire({
-      title: existingMethod ? 'Edit Payment Method' : 'Add Payment Method',
-      html: `
-        <div style="text-align: left;">
-          <label style="display:block;font-weight:600;margin-bottom:0.25rem;">Method Name</label>
-          <input id="paymentMethodNameInput" type="text" style="width:100%;padding:0.5rem;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:0.75rem;" placeholder="e.g. Cash, UPI" value="${existingMethod ? existingMethod.method_name.replace(/"/g, '&quot;') : ''}">
-          <label style="display:block;font-weight:600;margin-bottom:0.25rem;">Emoji/Icon</label>
-          <input id="paymentMethodEmojiInput" type="text" style="width:100%;padding:0.5rem;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:0.75rem;" placeholder="e.g. 💳" value="${existingMethod ? (existingMethod.emoji || '') : ''}">
-          <label style="display:block;font-weight:600;margin-bottom:0.25rem;">Display Order</label>
-          <input id="paymentMethodOrderInput" type="number" min="0" style="width:100%;padding:0.5rem;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:0.75rem;" value="${existingMethod ? (existingMethod.display_order ?? 0) : paymentMethodsCache.length}">
-          ${existingMethod ? `
-            <label style="display:block;font-weight:600;margin-bottom:0.25rem;">Status</label>
-            <select id="paymentMethodStatusInput" style="width:100%;padding:0.5rem;border:1px solid #e5e7eb;border-radius:8px;">
-              <option value="1" ${existingMethod.is_active == 1 ? 'selected' : ''}>Active</option>
-              <option value="0" ${existingMethod.is_active != 1 ? 'selected' : ''}>Inactive</option>
-            </select>
-          ` : ''}
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: existingMethod ? 'Save Changes' : 'Add Method',
-      confirmButtonColor: '#dc2626',
-      focusConfirm: false,
-      preConfirm: () => {
-        const nameInput = document.getElementById('paymentMethodNameInput');
-        const emojiInput = document.getElementById('paymentMethodEmojiInput');
-        const orderInput = document.getElementById('paymentMethodOrderInput');
-        const statusInput = document.getElementById('paymentMethodStatusInput');
-
-        if (!nameInput.value.trim()) {
-          Swal.showValidationMessage('Method name is required');
-          return false;
-        }
-
-        return {
-          method_name: nameInput.value.trim(),
-          emoji: emojiInput.value.trim(),
-          display_order: orderInput.value ? Number(orderInput.value) : 0,
-          is_active: statusInput ? Number(statusInput.value) : 1
-        };
-      }
-    });
-
-    if (result.isConfirmed) {
-      if (existingMethod) {
-        await submitPaymentMethod('update', { id: existingMethod.id, ...result.value });
-      } else {
-        await submitPaymentMethod('add', result.value);
-      }
-    }
-  } else {
-    const methodName = window.prompt('Enter payment method name:', existingMethod ? existingMethod.method_name : '');
-    if (!methodName) return;
-    const emoji = window.prompt('Emoji/Icon (optional):', existingMethod ? (existingMethod.emoji || '') : '');
-    const displayOrderRaw = window.prompt('Display order (0 for default):', existingMethod ? (existingMethod.display_order ?? 0) : paymentMethodsCache.length);
-    const payload = {
-      method_name: methodName.trim(),
-      emoji: emoji ? emoji.trim() : '',
-      display_order: displayOrderRaw ? Number(displayOrderRaw) : 0
-    };
-    if (existingMethod) {
-      payload.id = existingMethod.id;
-      payload.is_active = existingMethod.is_active;
-      await submitPaymentMethod('update', payload);
-    } else {
-      await submitPaymentMethod('add', payload);
-    }
-  }
-}
-
-async function submitPaymentMethod(action, payload) {
-  try {
-    const formData = new FormData();
-    formData.append('action', action);
-    Object.entries(payload).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        formData.append(key, value);
-      }
-    });
-
-    const response = await fetch('../api/manage_payment_methods.php', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await response.json();
-
-    if (!data.success) {
-      throw new Error(data.message || 'Unable to save payment method');
-    }
-
-    showNotification(data.message || 'Payment method saved successfully', 'success');
-    await loadPaymentMethods(true);
-  } catch (error) {
-    console.error('Error saving payment method:', error);
-    showNotification(error.message || 'Error saving payment method', 'error');
-  }
-}
-
-async function openAddPaymentMethodModal() {
-  await openPaymentMethodModal(null);
-}
-
-async function editPaymentMethodEntry(id) {
-  let method = getCachedPaymentMethod(id);
-  if (!method) {
-    await loadPaymentMethods(true);
-    method = getCachedPaymentMethod(id);
-  }
-  if (!method) {
-    showNotification('Unable to find that payment method', 'error');
-    return;
-  }
-  await openPaymentMethodModal(method);
-}
-
-async function togglePaymentMethodStatus(id) {
-  const method = getCachedPaymentMethod(id);
-  if (!method) {
-    showNotification('Payment method not found', 'error');
-    return;
-  }
-  await submitPaymentMethod('update', {
-    id,
-    method_name: method.method_name,
-    emoji: method.emoji || '',
-    display_order: method.display_order ?? 0,
-    is_active: method.is_active == 1 ? 0 : 1
-  });
-}
-
-async function deletePaymentMethodEntry(id) {
-  if (await showSweetConfirm('Are you sure you want to delete this payment method?', 'Delete Payment Method')) {
-    try {
-      const formData = new FormData();
-      formData.append('action', 'delete');
-      formData.append('id', id);
-      const response = await fetch('../api/manage_payment_methods.php', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.message || 'Unable to delete payment method');
-      }
-      showNotification(data.message || 'Payment method deleted', 'success');
-      await loadPaymentMethods(true);
-    } catch (error) {
-      console.error('Error deleting payment method:', error);
-      showNotification(error.message || 'Error deleting payment method', 'error');
-    }
-  }
-}
-
-window.openAddPaymentMethodModal = openAddPaymentMethodModal;
-window.editPaymentMethodEntry = editPaymentMethodEntry;
-window.togglePaymentMethodStatus = togglePaymentMethodStatus;
-window.deletePaymentMethodEntry = deletePaymentMethodEntry;
 
 // Load Payments
 async function loadPayments() {
@@ -7015,9 +6937,6 @@ async function loadPayments() {
   if (!tbody) return;
   
   tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;"><div class="loading">Loading payments...</div></td></tr>';
-  
-  // Also load payment methods when loading payments
-  loadPaymentMethods();
   
   try {
     const search = document.getElementById('paymentSearch')?.value || '';
@@ -7040,17 +6959,39 @@ async function loadPayments() {
     
     if (data.success) {
       if (data.payments && data.payments.length > 0) {
-        tbody.innerHTML = data.payments.map(payment => `
+        tbody.innerHTML = data.payments.map(payment => {
+          const paymentMethod = (payment.payment_method || 'Unknown').trim();
+          
+          // Get color based on payment method name (case-insensitive)
+          const methodLower = paymentMethod.toLowerCase();
+          let bgColor = '#764ba2'; // Default purple
+          
+          if (methodLower === 'cash') {
+            bgColor = '#48bb78'; // Green
+          } else if (methodLower === 'upi') {
+            bgColor = '#667eea'; // Purple/Blue
+          } else if (methodLower === 'card') {
+            bgColor = '#f6ad55'; // Orange
+          } else if (methodLower === 'online') {
+            bgColor = '#764ba2'; // Purple
+          } else if (methodLower === 'wallet') {
+            bgColor = '#f59e0b'; // Amber
+          } else if (methodLower === 'bank transfer' || methodLower === 'bank') {
+            bgColor = '#3b82f6'; // Blue
+          } else {
+            // For custom payment methods, use a color based on hash of the name
+            const colors = ['#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1'];
+            const hash = paymentMethod.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            bgColor = colors[hash % colors.length];
+          }
+          
+          return `
           <tr>
             <td>${payment.id}</td>
             <td><strong style="color: #48bb78;">${formatCurrency(payment.amount)}</strong></td>
             <td>
-              <span style="background: ${
-                payment.payment_method === 'Cash' ? '#48bb78' :
-                payment.payment_method === 'UPI' ? '#667eea' :
-                payment.payment_method === 'Card' ? '#f6ad55' : '#764ba2'
-              }; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem;">
-                ${payment.payment_method}
+              <span style="background: ${bgColor}; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; display: inline-block; min-width: 60px; text-align: center;">
+                ${escapeHtml(paymentMethod)}
               </span>
             </td>
             <td style="color: #666;">${payment.transaction_id || '-'}</td>
@@ -7070,7 +7011,8 @@ async function loadPayments() {
             </td>
             <td style="color: #666;">${new Date(payment.created_at).toLocaleString('en-IN')}</td>
           </tr>
-        `).join('');
+        `;
+        }).join('');
       } else {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #666;">No payments found</td></tr>';
         window.currentPaymentsData = [];
@@ -7097,6 +7039,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   if (paymentMethodFilter) {
+    updatePaymentMethodFilterOptions(paymentMethodFilter);
     paymentMethodFilter.addEventListener('change', () => {
       loadPayments();
     });
@@ -7122,6 +7065,8 @@ async function loadSettingsData() {
   try {
     const response = await fetch('../admin/get_session.php');
     const result = await response.json();
+    
+    if (checkSessionExpired(response, result)) return;
     
     if (result.success) {
       const user = result.data;
@@ -7189,6 +7134,16 @@ async function loadSettingsData() {
       }
       if (notifications) {
         notifications.checked = localStorage.getItem('system_notifications') === 'true';
+      }
+      
+      // Load business QR code if exists
+      if (user.business_qr_code_path) {
+        const qrPreview = document.getElementById('businessQRPreview');
+        const qrPreviewImg = document.getElementById('businessQRPreviewImg');
+        if (qrPreview && qrPreviewImg) {
+          qrPreviewImg.src = '../api/image.php?type=business_qr&id=' + user.id;
+          qrPreview.style.display = 'block';
+        }
       }
     }
     
@@ -7339,6 +7294,113 @@ function setupSettingsForms() {
       }
     });
   }
+  
+  // Business QR Code Upload Handler
+  const uploadBusinessQRBtn = document.getElementById('uploadBusinessQRBtn');
+  const businessQRUpload = document.getElementById('businessQRUpload');
+  
+  if (uploadBusinessQRBtn && businessQRUpload) {
+    uploadBusinessQRBtn.addEventListener('click', async () => {
+      if (!businessQRUpload.files || businessQRUpload.files.length === 0) {
+        showNotification('Please select a QR code image file', 'error');
+        return;
+      }
+      
+      const file = businessQRUpload.files[0];
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        showNotification('Invalid file type. Please upload JPEG, PNG, GIF, or WebP image', 'error');
+        return;
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        showNotification('File too large. Maximum size is 5MB', 'error');
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('action', 'uploadBusinessQR');
+      formData.append('business_qr', file);
+      
+      uploadBusinessQRBtn.disabled = true;
+      uploadBusinessQRBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Uploading...';
+      
+      try {
+        const response = await fetch('../admin/auth.php', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification(result.message || 'Business QR code uploaded successfully', 'success');
+          
+          // Update preview
+          const qrPreview = document.getElementById('businessQRPreview');
+          const qrPreviewImg = document.getElementById('businessQRPreviewImg');
+          if (qrPreview && qrPreviewImg && result.data && result.data.qr_code_url) {
+            qrPreviewImg.src = '../' + result.data.qr_code_url;
+            qrPreview.style.display = 'block';
+          }
+          
+          // Clear file input
+          businessQRUpload.value = '';
+        } else {
+          showNotification(result.message || 'Error uploading QR code', 'error');
+        }
+      } catch (error) {
+        console.error('Error uploading business QR code:', error);
+        showNotification('Error uploading QR code', 'error');
+      } finally {
+        uploadBusinessQRBtn.disabled = false;
+        uploadBusinessQRBtn.innerHTML = '<span class="material-symbols-rounded">upload</span> Upload QR Code';
+      }
+    });
+  }
+  
+  // Remove Business QR Code Handler
+  window.removeBusinessQR = async function() {
+    if (!await showSweetConfirm('Are you sure you want to remove the business QR code?', 'Remove QR Code')) {
+      return;
+    }
+    
+    try {
+      const formData = new FormData();
+      formData.append('action', 'removeBusinessQR');
+      
+      const response = await fetch('../admin/auth.php', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        showNotification(result.message || 'Business QR code removed successfully', 'success');
+        
+        // Hide preview
+        const qrPreview = document.getElementById('businessQRPreview');
+        if (qrPreview) {
+          qrPreview.style.display = 'none';
+        }
+        
+        // Clear file input
+        const businessQRUpload = document.getElementById('businessQRUpload');
+        if (businessQRUpload) {
+          businessQRUpload.value = '';
+        }
+      } else {
+        showNotification(result.message || 'Error removing QR code', 'error');
+      }
+    } catch (error) {
+      console.error('Error removing business QR code:', error);
+      showNotification('Error removing QR code', 'error');
+    }
+  };
   
   // System Settings Form
   const systemSettingsForm = document.getElementById('systemSettingsForm');
@@ -7876,7 +7938,9 @@ async function initWebsiteThemeEditor() {
   }
   
   try {
-    const sess = await fetch('../admin/get_session.php').then(r=>r.json()).catch(()=>null);
+    const sessRes = await fetch('../admin/get_session.php');
+    const sess = await sessRes.json().catch(()=>null);
+    if (checkSessionExpired(sessRes, sess)) return;
     const rid = (sess && sess.success && sess.data?.restaurant_id) ? sess.data.restaurant_id : '';
     const pr = document.getElementById('primaryRed');
     const dr = document.getElementById('darkRed');

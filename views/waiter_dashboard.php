@@ -60,7 +60,7 @@ if (!$currency_symbol) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Waiter Dashboard - <?php echo htmlspecialchars($_SESSION['restaurant_name'] ?? 'Restaurant'); ?></title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
@@ -72,6 +72,18 @@ if (!$currency_symbol) {
     </script>
     <script src="../assets/js/script.js"></script>
     <style>
+        /* Prevent zoom on mobile devices */
+        html, body {
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        /* Allow text selection in input fields */
+        input, textarea, select {
+            -webkit-user-select: text;
+            user-select: text;
+        }
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #f3f4f6; }
         .main-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
@@ -203,7 +215,7 @@ if (!$currency_symbol) {
                         </div>
                         
                         <!-- Mobile Sticky Add Item Button -->
-                        <button id="mobileAddItemBtn" class="mobile-add-item-btn" onclick="openMobileAddItemModal()" style="display: none;">
+                        <button id="mobileAddItemBtn" class="mobile-add-item-btn" onclick="if(typeof openMobileAddItemModal === 'function') openMobileAddItemModal();" style="display: none;">
                             <span class="material-symbols-rounded">add</span>
                             <span>Add Item</span>
                         </button>
@@ -374,6 +386,11 @@ if (!$currency_symbol) {
                     window.posCart = [];
                 }
                 
+                // Check mobile view to show/hide mobile buttons
+                if (typeof window.checkMobileView === 'function') {
+                    window.checkMobileView();
+                }
+                
                 // Wait for script.js to load
                 setTimeout(() => {
                     // Load POS data - check window object since functions are global
@@ -414,9 +431,48 @@ if (!$currency_symbol) {
                             loadCategoriesForWaiterPOS();
                         }
                     }
+                    
+                    // Check mobile view after loading POS data
+                    setTimeout(() => {
+                        if (typeof window.checkMobileView === 'function') {
+                            window.checkMobileView();
+                        } else {
+                            // Fallback: manually show/hide mobile elements
+                            const isMobile = window.innerWidth <= 768;
+                            const mobileBtn = document.getElementById('mobileAddItemBtn');
+                            const mobileBillSummary = document.getElementById('mobilePosBillSummary');
+                            const mobileBottomActions = document.getElementById('mobilePosBottomActions');
+                            
+                            if (mobileBtn) mobileBtn.style.display = isMobile ? 'flex' : 'none';
+                            if (mobileBillSummary) mobileBillSummary.style.display = isMobile ? 'block' : 'none';
+                            if (mobileBottomActions) mobileBottomActions.style.display = isMobile ? 'flex' : 'none';
+                        }
+                    }, 300);
                 }, 100);
             }
         }
+        
+        // Check mobile view on window resize
+        window.addEventListener('resize', () => {
+            const posTab = document.getElementById('posTab');
+            if (posTab && posTab.classList.contains('active')) {
+                if (typeof window.checkMobileView === 'function') {
+                    window.checkMobileView();
+                }
+            }
+        });
+        
+        // Also check on initial page load if POS tab is active
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const posTab = document.getElementById('posTab');
+                if (posTab && posTab.classList.contains('active')) {
+                    if (typeof window.checkMobileView === 'function') {
+                        window.checkMobileView();
+                    }
+                }
+            }, 500);
+        });
 
         async function loadWaiterRequests() {
             try {
@@ -1072,174 +1128,20 @@ if (!$currency_symbol) {
         window.updateWaiterPOSCartQty = updateWaiterPOSCartQty;
         
         // Clear cart button
-        const clearCartBtn = document.getElementById('clearCartBtn');
-        if (clearCartBtn) {
-            clearCartBtn.addEventListener('click', () => {
-                if (window.posCart.length > 0) {
-                    showConfirmModal('Are you sure you want to clear the cart?', () => {
-                        window.posCart = [];
-                        updateWaiterPOSCart();
-                        showNotification('Cart cleared', 'info');
-                    });
-                }
-            });
+        // POS buttons will use the global functions from script.js
+        // The functions in script.js now support both posCart and window.posCart
+        
+        // Check mobile view when POS tab is opened
+        if (typeof window.checkMobileView === 'function') {
+            window.checkMobileView();
         }
         
-        // Hold order button
-        const holdOrderBtn = document.getElementById('holdOrderBtn');
-        if (holdOrderBtn) {
-            holdOrderBtn.addEventListener('click', async () => {
-                if (window.posCart.length === 0) {
-                    showNotification('Cart is empty', 'warning');
-                    return;
-                }
-                
-                const subtotal = window.posCart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
-                const tax = subtotal * 0.05;
-                const total = subtotal + tax;
-                const selectedTable = document.getElementById('selectPosTable').value;
-                
-                const formData = new URLSearchParams();
-                formData.append('action', 'hold_order');
-                formData.append('tableId', selectedTable || '');
-                formData.append('cartItems', JSON.stringify(window.posCart));
-                formData.append('subtotal', subtotal.toFixed(2));
-                formData.append('tax', tax.toFixed(2));
-                formData.append('total', total.toFixed(2));
-                
-                try {
-                    const response = await fetch('../controllers/pos_operations.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: formData.toString()
-                    });
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        showNotification(`${result.message} - Order #${result.order_number}`, 'success');
-                        window.posCart = [];
-                        updateWaiterPOSCart();
-                        document.getElementById('selectPosTable').value = '';
-                    } else {
-                        showNotification(result.message || 'Failed to hold order', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showNotification('Network error. Please try again.', 'error');
-                }
-            });
-        }
-        
-        // Process payment button
-        const processPaymentBtn = document.getElementById('processPaymentBtn');
-        if (processPaymentBtn) {
-            processPaymentBtn.addEventListener('click', async () => {
-                if (window.posCart.length === 0) {
-                    showNotification('Cart is empty', 'warning');
-                    return;
-                }
-                
-                // Show payment method selection modal
-                const paymentMethods = [
-                    { id: 'Cash', label: 'Cash', icon: '💵' },
-                    { id: 'Card', label: 'Card', icon: '💳' },
-                    { id: 'UPI', label: 'UPI', icon: '📱' },
-                    { id: 'Online', label: 'Online', icon: '🌐' }
-                ];
-                
-                const modal = document.createElement('div');
-                modal.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0, 0, 0, 0.5);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 10001;
-                    animation: fadeIn 0.2s ease-out;
-                `;
-                
-                modal.innerHTML = `
-                    <div style="background: white; border-radius: 16px; padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out;">
-                        <h3 style="margin: 0 0 20px 0; color: #111827; font-size: 1.25rem; text-align: center;">Select Payment Method</h3>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-                            ${paymentMethods.map(method => `
-                                <button class="payment-method-btn" data-method="${method.id}" style="padding: 16px; border: 2px solid #e5e7eb; background: white; border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: center;" onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='translateY(0)'">
-                                    <div style="font-size: 2rem; margin-bottom: 8px;">${method.icon}</div>
-                                    <div style="font-weight: 600; color: #111827;">${method.label}</div>
-                                </button>
-                            `).join('')}
-                        </div>
-                        <button id="cancelPaymentBtn" style="width: 100%; margin-top: 16px; padding: 12px; border: 2px solid #e5e7eb; background: white; border-radius: 8px; font-weight: 600; color: #6b7280; cursor: pointer;">Cancel</button>
-                    </div>
-                `;
-                
-                document.body.appendChild(modal);
-                
-                const closeModal = () => {
-                    modal.style.animation = 'fadeOut 0.2s ease-out';
-                    setTimeout(() => modal.remove(), 200);
-                };
-                
-                document.getElementById('cancelPaymentBtn').onclick = closeModal;
-                modal.onclick = (e) => {
-                    if (e.target === modal) closeModal();
-                };
-                
-                // Handle payment method selection
-                modal.querySelectorAll('.payment-method-btn').forEach(btn => {
-                    btn.onclick = async () => {
-                        closeModal();
-                        const paymentMethodStr = btn.dataset.method;
-                        
-                        const subtotal = window.posCart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
-                        const tax = subtotal * 0.05;
-                        const total = subtotal + tax;
-                        const selectedTable = document.getElementById('selectPosTable').value;
-                        const orderType = selectedTable ? 'Dine-in' : 'Takeaway';
-                        
-                        const formData = new URLSearchParams();
-                        formData.append('action', 'create_kot');
-                        formData.append('tableId', selectedTable || '');
-                        formData.append('orderType', orderType);
-                        formData.append('customerName', '');
-                        formData.append('paymentMethod', paymentMethodStr);
-                        formData.append('cartItems', JSON.stringify(window.posCart));
-                        formData.append('subtotal', subtotal.toFixed(2));
-                        formData.append('tax', tax.toFixed(2));
-                        formData.append('total', total.toFixed(2));
-                        formData.append('notes', '');
-                        
-                        try {
-                            const response = await fetch('../controllers/pos_operations.php', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                body: formData.toString()
-                            });
-                            const result = await response.json();
-                            
-                            if (result.success) {
-                                const msg = result.kot_number
-                                    ? `KOT #${result.kot_number} created! Order #${result.order_number}`
-                                    : `Order #${result.order_number} created successfully!`;
-                                showNotification(msg, 'success', 5000);
-                                window.posCart = [];
-                                updateWaiterPOSCart();
-                                document.getElementById('selectPosTable').value = '';
-                            } else {
-                                showNotification(result.message || 'Failed to process payment', 'error');
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            showNotification('Network error. Please try again.', 'error');
-                        }
-                    };
-                });
-            });
-        }
+        // Also check on window resize
+        window.addEventListener('resize', () => {
+            if (typeof window.checkMobileView === 'function') {
+                window.checkMobileView();
+            }
+        });
         
         // Load on page load
         loadWaiterRequests();

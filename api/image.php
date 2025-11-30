@@ -19,7 +19,7 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
 }
 
 $imagePath = $_GET['path'] ?? '';
-$imageType = $_GET['type'] ?? ''; // 'logo', 'item', or 'banner'
+$imageType = $_GET['type'] ?? ''; // 'logo', 'item', 'banner', or 'business_qr'
 $imageId = $_GET['id'] ?? '';
 
 // Check if this is a database-stored image (starts with 'db:')
@@ -97,6 +97,34 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
                         header('Content-Type: text/plain');
                         exit('Banner not found');
                     }
+                } else {
+                    throw $e;
+                }
+            }
+        } elseif ($imageType === 'business_qr' && !empty($imageId)) {
+            // Get business QR code from users table
+            try {
+                $stmt = $pdo->prepare("SELECT business_qr_code_data, business_qr_code_mime_type FROM users WHERE id = ? LIMIT 1");
+                $stmt->execute([$imageId]);
+                $qr = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($qr && !empty($qr['business_qr_code_data'])) {
+                    header('Content-Type: ' . ($qr['business_qr_code_mime_type'] ?? 'image/jpeg'));
+                    header('Content-Length: ' . strlen($qr['business_qr_code_data']));
+                    header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
+                    echo $qr['business_qr_code_data'];
+                    exit();
+                } else {
+                    http_response_code(404);
+                    header('Content-Type: text/plain');
+                    exit('Business QR code not found');
+                }
+            } catch (PDOException $e) {
+                // If business_qr_code_data column doesn't exist
+                if (strpos($e->getMessage(), 'business_qr_code_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
+                    http_response_code(404);
+                    header('Content-Type: text/plain');
+                    exit('Business QR code not available');
                 } else {
                     throw $e;
                 }

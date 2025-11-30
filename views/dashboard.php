@@ -774,28 +774,16 @@ try {
         <p>View and manage all payment transactions</p>
       </div>
       <div class="page-content">
-        <!-- Payment Methods Management Section -->
-        <div class="card" style="margin-bottom: 2rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #e5e7eb;">
-            <div>
-              <h2 style="margin: 0; font-size: 1.3rem; color: var(--primary-red);">Payment Methods</h2>
-              <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.9rem;">Manage your payment methods and add custom ones</p>
-            </div>
-            <button onclick="openAddPaymentMethodModal()" style="padding: 0.75rem 1.5rem; background: var(--primary-red); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-              <span class="material-symbols-rounded" style="font-size: 1rem;">add</span>
-              Add Method
-            </button>
-          </div>
-          <div id="paymentMethodsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
-            <div style="text-align: center; padding: 2rem; color: #6b7280;">Loading payment methods...</div>
-          </div>
-        </div>
-
         <!-- Filters -->
         <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
           <input type="text" id="paymentSearch" placeholder="Search by order, amount..." style="flex: 1; min-width: 250px; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px;" />
           <select id="paymentMethodFilter" style="padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px;">
             <option value="">All Methods</option>
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+            <option value="UPI">UPI</option>
+            <option value="Online">Online</option>
+            <option value="Wallet">Wallet</option>
           </select>
           <select id="paymentStatusFilter" style="padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px;">
             <option value="">All Status</option>
@@ -1138,6 +1126,26 @@ try {
                     ?>
                   </select>
                   <input type="text" id="currencySymbol" value="<?php echo $isCustom ? htmlspecialchars($currency_symbol) : ''; ?>" maxlength="10" placeholder="Enter custom currency symbol" class="currency-custom-input" style="<?php echo $isCustom ? '' : 'display: none;'; ?>">
+                </div>
+                
+                <div class="form-group">
+                  <label for="businessQRUpload">
+                    <span class="material-symbols-rounded">qr_code</span>
+                    Business Payment QR Code
+                  </label>
+                  <p style="color:#666;font-size:0.85rem;margin-bottom:0.75rem;">Upload your business payment QR code (UPI, Paytm, etc.) to display on the website. Max size: 5MB</p>
+                  <div id="businessQRPreview" style="margin-bottom:0.75rem;display:none;">
+                    <img id="businessQRPreviewImg" src="" alt="QR Code Preview" style="max-width:200px;max-height:200px;border-radius:8px;border:2px solid #e5e7eb;padding:0.5rem;background:#f9fafb;">
+                    <button type="button" onclick="removeBusinessQR()" style="margin-top:0.5rem;padding:0.5rem 1rem;background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:0.85rem;">
+                      <span class="material-symbols-rounded" style="font-size:1rem;vertical-align:middle;">delete</span>
+                      Remove QR Code
+                    </button>
+                  </div>
+                  <input type="file" id="businessQRUpload" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style="margin-bottom:0.5rem;">
+                  <button type="button" class="btn btn-primary" id="uploadBusinessQRBtn" style="margin-top:0.5rem;">
+                    <span class="material-symbols-rounded">upload</span>
+                    Upload QR Code
+                  </button>
                 </div>
                 
                 <div class="form-group">

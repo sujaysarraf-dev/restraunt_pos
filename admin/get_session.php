@@ -43,7 +43,7 @@ try {
     }
     // Try to get all fields, handle missing columns gracefully
     try {
-        $stmt = $conn->prepare("SELECT id, subscription_status, trial_end_date, renewal_date, created_at, email, role, phone, address, currency_symbol, timezone, restaurant_logo FROM users WHERE id = :id LIMIT 1");
+        $stmt = $conn->prepare("SELECT id, subscription_status, trial_end_date, renewal_date, created_at, email, role, phone, address, currency_symbol, timezone, restaurant_logo, business_qr_code_path FROM users WHERE id = :id LIMIT 1");
         $stmt->execute([':id' => $_SESSION['user_id']]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     } catch (PDOException $e) {
@@ -93,6 +93,7 @@ try {
             'currency_symbol' => $row['currency_symbol'] ?? null,
             'timezone' => $row['timezone'] ?? null,
             'restaurant_logo' => $row['restaurant_logo'] ?? null,
+            'business_qr_code_path' => $row['business_qr_code_path'] ?? null,
             'role' => $row['role'] ?? 'Administrator',
             'subscription_status' => $row['subscription_status'] ?? null,
             'trial_end_date' => $row['trial_end_date'] ?? null,
