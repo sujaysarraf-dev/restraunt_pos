@@ -541,8 +541,9 @@ try {
                             <!-- Table capacity info will be shown here -->
                         </div>
                         <div class="form-group" style="margin-bottom: 1.5rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Date:</label>
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Date: <span style="color: red;">*</span></label>
                             <input type="date" id="reservationDate" name="reservationDate" required style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                            <span id="reservationDateError" style="display: none; color: #dc3545; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 500;"></span>
                         </div>
                         <div class="form-group" style="margin-bottom: 1.5rem;">
                             <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Time Slot:</label>
@@ -562,42 +563,56 @@ try {
                                 <option value="20:00">08:00 PM</option>
                                 <option value="21:00">09:00 PM</option>
                                 <option value="22:00">10:00 PM</option>
+                                <option value="custom">Custom Time</option>
                             </select>
+                            <div id="customTimeSlotContainer" style="display: none; margin-top: 1rem;">
+                                <label for="customTimeSlot" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Enter Custom Time:</label>
+                                <input type="time" id="customTimeSlot" required style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                                <span style="display: block; margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">Enter time in 24-hour format (HH:MM)</span>
+                                <span id="customTimeSlotError" style="display: none; color: #dc3545; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 500;"></span>
+                            </div>
                             <div id="availabilityWarning" style="display: none; margin-top: 0.5rem; padding: 0.75rem; background: #f8d7da; border: 1px solid #dc3545; border-radius: 6px; color: #721c24; font-size: 0.9rem;">
                                 <!-- Availability warning will be shown here -->
                             </div>
+                            <span id="timeSlotError" style="display: none; color: #dc3545; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 500;"></span>
                         </div>
                         <div class="form-group" style="margin-bottom: 1.5rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Number of Guests:</label>
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Number of Guests: <span style="color: red;">*</span></label>
                             <input type="number" id="reservationGuests" name="noOfGuests" min="1" value="1" required style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                            <span id="reservationGuestsError" style="display: none; color: #dc3545; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 500;"></span>
                             <div id="capacityWarning" style="display: none; margin-top: 0.5rem; padding: 0.75rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; color: #856404; font-size: 0.9rem;">
                                 <!-- Capacity warning will be shown here -->
                             </div>
                         </div>
                         <div class="form-group" style="margin-bottom: 1.5rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Meal Type:</label>
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Meal Type: <span style="color: red;">*</span></label>
                             <select id="reservationMealType" name="mealType" required style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
                                 <option value="Breakfast">Breakfast</option>
                                 <option value="Lunch" selected>Lunch</option>
                                 <option value="Dinner">Dinner</option>
                                 <option value="Snacks">Snacks</option>
                             </select>
+                            <span id="reservationMealTypeError" style="display: none; color: #dc3545; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 500;"></span>
                         </div>
                         <div class="form-group" style="margin-bottom: 1.5rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Your Name:</label>
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Your Name: <span style="color: red;">*</span></label>
                             <input type="text" id="reservationName" name="customerName" required placeholder="Enter your name" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                            <span id="reservationNameError" style="display: none; color: #dc3545; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 500;"></span>
                         </div>
                         <div class="form-group" style="margin-bottom: 1.5rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Phone Number:</label>
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Phone Number: <span style="color: red;">*</span></label>
                             <input type="tel" id="reservationPhone" name="phone" required placeholder="Enter your phone number" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                            <span id="reservationPhoneError" style="display: none; color: #dc3545; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 500;"></span>
                         </div>
                         <div class="form-group" style="margin-bottom: 1.5rem;">
                             <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Email Address:</label>
                             <input type="email" id="reservationEmail" name="email" placeholder="Enter your email (optional)" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                            <span id="reservationEmailError" style="display: none; color: #dc3545; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 500;"></span>
                         </div>
                         <div class="form-group" style="margin-bottom: 1.5rem;">
                             <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">Special Requests:</label>
                             <textarea id="reservationSpecialRequest" name="specialRequest" rows="3" placeholder="Any special requests or notes..." style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem; resize: vertical; box-sizing: border-box;"></textarea>
+                            <span id="reservationSpecialRequestError" style="display: none; color: #dc3545; font-size: 0.875rem; margin-top: 0.5rem; font-weight: 500;"></span>
                         </div>
                         <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                             <button type="button" class="btn-no" onclick="backToTableSelection()" style="flex: 1; min-width: 120px; padding: 1rem; font-size: 1rem;">Back</button>

@@ -2559,8 +2559,18 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Clear time slot error when a slot is selected
   document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('time-slot-btn')) {
+    if (e.target.classList.contains('time-slot-btn') || e.target.closest('.time-slot-btn')) {
       clearFieldError('timeSlot');
+    }
+  });
+  
+  // Clear custom time when a predefined slot is selected
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('time-slot-btn') && !e.target.classList.contains('custom-time-btn')) {
+      const customContainer = document.getElementById('customTimeSlotContainer');
+      const customInput = document.getElementById('customTimeSlot');
+      if (customContainer) customContainer.style.display = 'none';
+      if (customInput) customInput.value = '';
     }
   });
   
@@ -2628,16 +2638,104 @@ document.addEventListener("DOMContentLoaded", () => {
     
     timeSlotsDiv.innerHTML = slots.map(slot => `
       <button type="button" class="time-slot-btn" data-slot="${slot}">${slot}</button>
-    `).join('');
+    `).join('') + `
+      <button type="button" class="time-slot-btn custom-time-btn" data-slot="custom" style="background: #f3f4f6; border: 2px dashed #9ca3af;">
+        <span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">schedule</span>
+        Custom Time
+      </button>
+    `;
     
-    // Add click handlers
-    document.querySelectorAll('.time-slot-btn').forEach(btn => {
+    // Add click handlers for predefined slots
+    document.querySelectorAll('.time-slot-btn:not(.custom-time-btn)').forEach(btn => {
       btn.addEventListener('click', function() {
         document.querySelectorAll('.time-slot-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         selectedTimeSlot = this.dataset.slot;
+        
+        // Hide custom time input
+        const customContainer = document.getElementById('customTimeSlotContainer');
+        const customInput = document.getElementById('customTimeSlot');
+        if (customContainer) customContainer.style.display = 'none';
+        if (customInput) customInput.value = '';
+        clearFieldError('timeSlot');
       });
     });
+    
+    // Add click handler for custom time button
+    const customBtn = document.querySelector('.custom-time-btn');
+    if (customBtn) {
+      customBtn.addEventListener('click', function() {
+        document.querySelectorAll('.time-slot-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Show custom time input
+        const customContainer = document.getElementById('customTimeSlotContainer');
+        const customInput = document.getElementById('customTimeSlot');
+        if (customContainer) {
+          customContainer.style.display = 'block';
+          setTimeout(() => {
+            if (customInput) customInput.focus();
+          }, 100);
+        }
+        
+        // Clear selected time slot - will be set from custom input
+        selectedTimeSlot = null;
+        clearFieldError('timeSlot');
+      });
+    }
+    
+    // Handle custom time input
+    const customTimeInput = document.getElementById('customTimeSlot');
+    if (customTimeInput) {
+      customTimeInput.addEventListener('change', function() {
+        const timeValue = this.value; // Format: HH:MM (24-hour)
+        if (timeValue) {
+          // Validate time format
+          if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeValue)) {
+            showFieldError('timeSlot', 'Invalid time format. Please enter a valid time (HH:MM).');
+            return;
+          }
+          
+          // Convert 24-hour format to 12-hour format for display
+          const [hours, minutes] = timeValue.split(':');
+          const hour = parseInt(hours);
+          const minute = minutes || '00';
+          
+          let time12Hour = '';
+          if (hour === 0) {
+            time12Hour = `12:${minute} AM`;
+          } else if (hour === 12) {
+            time12Hour = `12:${minute} PM`;
+          } else if (hour < 12) {
+            time12Hour = `${hour}:${minute} AM`;
+          } else {
+            time12Hour = `${hour - 12}:${minute} PM`;
+          }
+          
+          selectedTimeSlot = time12Hour;
+          clearFieldError('timeSlot');
+        } else {
+          showFieldError('timeSlot', 'Please enter a custom time.');
+        }
+      });
+      
+      customTimeInput.addEventListener('blur', function() {
+        if (this.value) {
+          const timeValue = this.value;
+          if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeValue)) {
+            showFieldError('timeSlot', 'Invalid time format. Please enter a valid time (HH:MM).');
+          } else {
+            clearFieldError('timeSlot');
+          }
+        }
+      });
+      
+      customTimeInput.addEventListener('input', function() {
+        if (this.value) {
+          clearFieldError('timeSlot');
+        }
+      });
+    }
     
     // Set previously selected slot if editing (convert from 24-hour to 12-hour if needed)
     if (selectedTimeSlot) {
@@ -2647,10 +2745,20 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.classList.add('active');
         selectedTimeSlot = slot12Hour; // Update to 12-hour format
       } else {
-        // Try to find by exact match
-        const btnExact = document.querySelector(`.time-slot-btn[data-slot="${selectedTimeSlot}"]`);
-        if (btnExact) {
-          btnExact.classList.add('active');
+        // If not found in predefined slots, it's a custom time
+        const customBtn = document.querySelector('.custom-time-btn');
+        const customContainer = document.getElementById('customTimeSlotContainer');
+        const customInput = document.getElementById('customTimeSlot');
+        
+        if (customBtn && customContainer && customInput) {
+          customBtn.classList.add('active');
+          customContainer.style.display = 'block';
+          
+          // Convert 12-hour to 24-hour for the time input
+          const time24 = convertTo24Hour(selectedTimeSlot);
+          if (time24) {
+            customInput.value = time24;
+          }
         }
       }
     }
@@ -2731,10 +2839,24 @@ document.addEventListener("DOMContentLoaded", () => {
         clearFieldError('mealType');
       }
       
-      if (!selectedTimeSlot) {
-        errors.push("Please select a time slot");
-        showFieldError('timeSlot', 'Time slot is required');
+      // Check if custom time is selected
+      const customTimeInput = document.getElementById('customTimeSlot');
+      const customContainer = document.getElementById('customTimeSlotContainer');
+      const isCustomTimeSelected = customContainer && customContainer.style.display === 'block' && customTimeInput && customTimeInput.value;
+      
+      if (!selectedTimeSlot && !isCustomTimeSelected) {
+        errors.push("Please select a time slot or enter a custom time");
+        showFieldError('timeSlot', 'Time slot is required. Please select a time slot or enter a custom time.');
       } else {
+        // If custom time is selected, use it
+        if (isCustomTimeSelected && customTimeInput.value) {
+          const timeValue = customTimeInput.value; // Already in 24-hour format (HH:MM)
+          timeSlot = timeValue;
+          selectedTimeSlot = convertTo12Hour(timeValue); // For display purposes
+        } else if (selectedTimeSlot) {
+          // Convert selected time slot to 24-hour format
+          timeSlot = convertTo24Hour(selectedTimeSlot);
+        }
         clearFieldError('timeSlot');
       }
       
@@ -2816,16 +2938,13 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       
-      // Convert time slot to 24-hour format for database (if in 12-hour format)
-      timeSlot = convertTo24Hour(selectedTimeSlot);
-      
       // Validate time slot after conversion
       if (!timeSlot || !/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeSlot)) {
         console.error("Invalid time slot after conversion:", timeSlot);
-        errors.push("Invalid time slot format. Please select a time slot again.");
-        showFieldError('timeSlot', 'Invalid time slot format');
+        errors.push("Invalid time slot format. Please select a time slot or enter a valid custom time.");
+        showFieldError('timeSlot', 'Invalid time slot format. Please select a time slot or enter a valid custom time.');
         showReservationFormErrors(errors);
-        showMessage("Invalid time slot format. Please select a time slot again.", "error");
+        showMessage("Invalid time slot format. Please select a time slot or enter a valid custom time.", "error");
         return;
       }
 

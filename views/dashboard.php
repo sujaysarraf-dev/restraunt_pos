@@ -2080,6 +2080,11 @@ try {
             <div id="timeSlots" class="time-slots">
               <!-- Time slots will be added dynamically -->
             </div>
+            <div id="customTimeSlotContainer" style="display: none; margin-top: 1rem;">
+              <label for="customTimeSlot" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Enter Custom Time:</label>
+              <input type="time" id="customTimeSlot" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; transition: all 0.2s;" onfocus="this.style.borderColor='#f70000'; this.style.boxShadow='0 0 0 3px rgba(247,0,0,0.1)'" onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none';">
+              <span style="display: block; margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">Or enter time in 12-hour format (e.g., 2:30 PM)</span>
+            </div>
             <span class="field-error" id="timeSlotError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
           </div>
           <div class="form-group">

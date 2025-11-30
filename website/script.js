@@ -421,7 +421,18 @@ function closeReservationModalOnOverlay(event) {
 async function checkReservationAvailability() {
     const tableId = document.getElementById('selectedTableId').value;
     const date = document.getElementById('reservationDate').value;
-    const timeSlot = document.getElementById('reservationTimeSlot').value;
+    const timeSlotSelect = document.getElementById('reservationTimeSlot');
+    const customTimeInput = document.getElementById('customTimeSlot');
+    const customContainer = document.getElementById('customTimeSlotContainer');
+    
+    // Get time slot - either from select or custom input
+    let timeSlot = '';
+    if (timeSlotSelect && timeSlotSelect.value === 'custom' && customTimeInput && customTimeInput.value) {
+        timeSlot = customTimeInput.value; // Custom time in 24-hour format
+    } else if (timeSlotSelect && timeSlotSelect.value && timeSlotSelect.value !== 'custom') {
+        timeSlot = timeSlotSelect.value;
+    }
+    
     const availabilityWarning = document.getElementById('availabilityWarning');
     
     if (!tableId || !date || !timeSlot) {
@@ -439,7 +450,11 @@ async function checkReservationAvailability() {
         if (data.success && !data.available) {
             // Table is already reserved
             if (availabilityWarning) {
-                availabilityWarning.innerHTML = `<span style="font-weight: 600;">⚠️ Already Reserved</span> - This table is already reserved for ${date} at ${timeSlot}. Please choose a different time or table.`;
+                // Format time for display
+                const [hours, minutes] = timeSlot.split(':');
+                const hour = parseInt(hours);
+                const displayTime = hour < 12 ? `${hour}:${minutes} AM` : hour === 12 ? `12:${minutes} PM` : `${hour - 12}:${minutes} PM`;
+                availabilityWarning.innerHTML = `<span style="font-weight: 600;">⚠️ Already Reserved</span> - This table is already reserved for ${date} at ${displayTime}. Please choose a different time or table.`;
                 availabilityWarning.style.display = 'block';
             }
         } else {
@@ -457,6 +472,8 @@ async function checkReservationAvailability() {
 function setupAvailabilityCheck() {
     const dateInput = document.getElementById('reservationDate');
     const timeSlotInput = document.getElementById('reservationTimeSlot');
+    const customTimeInput = document.getElementById('customTimeSlot');
+    const customContainer = document.getElementById('customTimeSlotContainer');
     
     if (dateInput && timeSlotInput) {
         // Remove existing listeners to avoid duplicates
@@ -465,9 +482,279 @@ function setupAvailabilityCheck() {
         dateInput.parentNode.replaceChild(newDateInput, dateInput);
         timeSlotInput.parentNode.replaceChild(newTimeSlotInput, timeSlotInput);
         
-        // Add new listeners
+        // Handle time slot selection change
+        newTimeSlotInput.addEventListener('change', function() {
+            // Clear errors
+            const timeSlotError = document.getElementById('timeSlotError');
+            const customTimeError = document.getElementById('customTimeSlotError');
+            if (timeSlotError) {
+                timeSlotError.style.display = 'none';
+                timeSlotError.textContent = '';
+            }
+            
+            if (this.value === 'custom') {
+                // Show custom time input
+                if (customContainer) {
+                    customContainer.style.display = 'block';
+                    setTimeout(() => {
+                        if (customTimeInput) customTimeInput.focus();
+                    }, 100);
+                }
+            } else {
+                // Hide custom time input
+                if (customContainer) customContainer.style.display = 'none';
+                if (customTimeInput) {
+                    customTimeInput.value = '';
+                    customTimeInput.style.borderColor = '';
+                }
+                if (customTimeError) {
+                    customTimeError.style.display = 'none';
+                    customTimeError.textContent = '';
+                }
+                // Check availability for selected time
+                checkReservationAvailability();
+            }
+        });
+        
+        // Add listeners
         newDateInput.addEventListener('change', checkReservationAvailability);
-        newTimeSlotInput.addEventListener('change', checkReservationAvailability);
+        
+        // Listen to custom time input changes with validation
+        if (customTimeInput) {
+            const customTimeError = document.getElementById('customTimeSlotError');
+            
+            customTimeInput.addEventListener('change', function() {
+                const timeValue = this.value;
+                
+                // Clear previous error styling
+                this.style.borderColor = '';
+                
+                if (!timeValue) {
+                    if (customTimeError) {
+                        customTimeError.textContent = 'Please enter a custom time';
+                        customTimeError.style.display = 'block';
+                    }
+                    this.style.borderColor = '#dc3545';
+                    return;
+                }
+                
+                // Validate time format (HH:MM)
+                if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeValue)) {
+                    if (customTimeError) {
+                        customTimeError.textContent = 'Invalid time format. Please enter a valid time (HH:MM)';
+                        customTimeError.style.display = 'block';
+                    }
+                    this.style.borderColor = '#dc3545';
+                    return;
+                }
+                
+                // Clear error if valid
+                if (customTimeError) {
+                    customTimeError.style.display = 'none';
+                    customTimeError.textContent = '';
+                }
+                this.style.borderColor = '';
+                
+                // Check availability
+                checkReservationAvailability();
+            });
+            
+            customTimeInput.addEventListener('blur', function() {
+                const timeValue = this.value;
+                
+                if (!timeValue && newTimeSlotInput.value === 'custom') {
+                    if (customTimeError) {
+                        customTimeError.textContent = 'Please enter a custom time';
+                        customTimeError.style.display = 'block';
+                    }
+                    this.style.borderColor = '#dc3545';
+                } else if (timeValue && !/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeValue)) {
+                    if (customTimeError) {
+                        customTimeError.textContent = 'Invalid time format. Please enter a valid time (HH:MM)';
+                        customTimeError.style.display = 'block';
+                    }
+                    this.style.borderColor = '#dc3545';
+                }
+            });
+            
+            customTimeInput.addEventListener('input', function() {
+                // Clear error as user types
+                if (this.value) {
+                    if (customTimeError) {
+                        customTimeError.style.display = 'none';
+                        customTimeError.textContent = '';
+                    }
+                    this.style.borderColor = '';
+                }
+            });
+        }
+    }
+}
+
+// Helper functions for field validation
+function showFieldErrorWebsite(fieldId, message) {
+    const errorEl = document.getElementById(fieldId + 'Error');
+    const inputEl = document.getElementById(fieldId);
+    
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+    }
+    
+    if (inputEl) {
+        inputEl.style.borderColor = '#dc3545';
+        inputEl.style.borderWidth = '2px';
+    }
+}
+
+function clearFieldErrorWebsite(fieldId) {
+    const errorEl = document.getElementById(fieldId + 'Error');
+    const inputEl = document.getElementById(fieldId);
+    
+    if (errorEl) {
+        errorEl.style.display = 'none';
+        errorEl.textContent = '';
+    }
+    
+    if (inputEl) {
+        inputEl.style.borderColor = '';
+        inputEl.style.borderWidth = '';
+    }
+}
+
+// Setup real-time validation for reservation form fields
+function setupReservationFormValidation() {
+    // Phone number validation - must be 10 digits
+    const phoneInput = document.getElementById('reservationPhone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            const phone = e.target.value.trim();
+            if (phone === '') {
+                clearFieldErrorWebsite('reservationPhone');
+            } else {
+                const phoneDigits = phone.replace(/\D/g, '');
+                if (phoneDigits.length !== 10) {
+                    showFieldErrorWebsite('reservationPhone', 'Phone number must be exactly 10 digits. Please enter a valid 10-digit phone number.');
+                } else {
+                    clearFieldErrorWebsite('reservationPhone');
+                }
+            }
+        });
+        
+        phoneInput.addEventListener('blur', function(e) {
+            const phone = e.target.value.trim();
+            if (phone === '') {
+                showFieldErrorWebsite('reservationPhone', 'Phone number is required');
+            } else {
+                const phoneDigits = phone.replace(/\D/g, '');
+                if (phoneDigits.length !== 10) {
+                    showFieldErrorWebsite('reservationPhone', 'Phone number must be exactly 10 digits. Please enter a valid 10-digit phone number.');
+                } else {
+                    clearFieldErrorWebsite('reservationPhone');
+                }
+            }
+        });
+    }
+    
+    // Customer name validation
+    const nameInput = document.getElementById('reservationName');
+    if (nameInput) {
+        nameInput.addEventListener('blur', function(e) {
+            const name = e.target.value.trim();
+            if (name === '') {
+                showFieldErrorWebsite('reservationName', 'Your name is required');
+            } else if (name.length < 2) {
+                showFieldErrorWebsite('reservationName', 'Name must be at least 2 characters long.');
+            } else if (name.length > 100) {
+                showFieldErrorWebsite('reservationName', 'Name must be less than 100 characters.');
+            } else {
+                clearFieldErrorWebsite('reservationName');
+            }
+        });
+        
+        nameInput.addEventListener('input', function(e) {
+            const name = e.target.value.trim();
+            if (name.length > 100) {
+                showFieldErrorWebsite('reservationName', 'Name must be less than 100 characters.');
+            } else if (name.length >= 2 || name === '') {
+                clearFieldErrorWebsite('reservationName');
+            }
+        });
+    }
+    
+    // Email validation
+    const emailInput = document.getElementById('reservationEmail');
+    if (emailInput) {
+        emailInput.addEventListener('blur', function(e) {
+            const email = e.target.value.trim();
+            if (email !== '') {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    showFieldErrorWebsite('reservationEmail', 'Invalid email format. Please enter a valid email address.');
+                } else {
+                    clearFieldErrorWebsite('reservationEmail');
+                }
+            } else {
+                clearFieldErrorWebsite('reservationEmail');
+            }
+        });
+    }
+    
+    // Number of guests validation
+    const guestsInput = document.getElementById('reservationGuests');
+    if (guestsInput) {
+        guestsInput.addEventListener('blur', function(e) {
+            const guests = parseInt(e.target.value) || 0;
+            if (guests < 1) {
+                showFieldErrorWebsite('reservationGuests', 'Number of guests must be at least 1.');
+            } else if (guests > 50) {
+                showFieldErrorWebsite('reservationGuests', 'Number of guests cannot exceed 50.');
+            } else {
+                clearFieldErrorWebsite('reservationGuests');
+            }
+        });
+        
+        guestsInput.addEventListener('input', function(e) {
+            const guests = parseInt(e.target.value) || 0;
+            if (guests > 50) {
+                showFieldErrorWebsite('reservationGuests', 'Number of guests cannot exceed 50.');
+            } else if (guests >= 1 || e.target.value === '') {
+                clearFieldErrorWebsite('reservationGuests');
+            }
+        });
+    }
+    
+    // Special request validation
+    const specialRequestInput = document.getElementById('reservationSpecialRequest');
+    if (specialRequestInput) {
+        specialRequestInput.addEventListener('input', function(e) {
+            const text = e.target.value.trim();
+            if (text.length > 500) {
+                showFieldErrorWebsite('reservationSpecialRequest', 'Special request must be less than 500 characters.');
+            } else {
+                clearFieldErrorWebsite('reservationSpecialRequest');
+            }
+        });
+    }
+    
+    // Date validation
+    const dateInput = document.getElementById('reservationDate');
+    if (dateInput) {
+        dateInput.addEventListener('change', function(e) {
+            const date = e.target.value;
+            if (!date) {
+                showFieldErrorWebsite('reservationDate', 'Reservation date is required');
+            } else {
+                const selectedDate = new Date(date);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (selectedDate < today) {
+                    showFieldErrorWebsite('reservationDate', 'Reservation date cannot be in the past.');
+                } else {
+                    clearFieldErrorWebsite('reservationDate');
+                }
+            }
+        });
     }
 }
 
@@ -479,6 +766,9 @@ function setupReservationForm() {
         return;
     }
     
+    // Setup real-time validation
+    setupReservationFormValidation();
+    
     reservationForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -489,28 +779,175 @@ function setupReservationForm() {
         }
         
         const date = document.getElementById('reservationDate').value;
-        const timeSlot = document.getElementById('reservationTimeSlot').value;
+        const timeSlotSelect = document.getElementById('reservationTimeSlot');
+        const customTimeInput = document.getElementById('customTimeSlot');
+        
+        // Get time slot - either from select or custom input
+        let timeSlot = '';
+        const timeSlotError = document.getElementById('timeSlotError');
+        const customTimeError = document.getElementById('customTimeSlotError');
+        
+        // Clear previous errors
+        if (timeSlotError) {
+            timeSlotError.style.display = 'none';
+            timeSlotError.textContent = '';
+        }
+        if (customTimeError) {
+            customTimeError.style.display = 'none';
+            customTimeError.textContent = '';
+        }
+        
+        if (timeSlotSelect && timeSlotSelect.value === 'custom') {
+            if (customTimeInput && customTimeInput.value) {
+                const timeValue = customTimeInput.value;
+                // Validate custom time format
+                if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeValue)) {
+                    if (customTimeError) {
+                        customTimeError.textContent = 'Invalid time format. Please enter a valid time (HH:MM)';
+                        customTimeError.style.display = 'block';
+                    }
+                    if (customTimeInput) {
+                        customTimeInput.style.borderColor = '#dc3545';
+                        customTimeInput.focus();
+                    }
+                    showNotification('Please enter a valid custom time (HH:MM format)', 'error');
+                    return;
+                }
+                timeSlot = timeValue; // Custom time in 24-hour format
+            } else {
+                if (customTimeError) {
+                    customTimeError.textContent = 'Please enter a custom time';
+                    customTimeError.style.display = 'block';
+                }
+                if (customTimeInput) {
+                    customTimeInput.style.borderColor = '#dc3545';
+                    customTimeInput.focus();
+                }
+                showNotification('Please enter a custom time', 'error');
+                return;
+            }
+        } else if (timeSlotSelect && timeSlotSelect.value) {
+            timeSlot = timeSlotSelect.value;
+        } else {
+            if (timeSlotError) {
+                timeSlotError.textContent = 'Please select a time slot or enter a custom time';
+                timeSlotError.style.display = 'block';
+            }
+            showNotification('Please select a time slot or enter a custom time', 'error');
+            return;
+        }
+        
         const guests = parseInt(document.getElementById('reservationGuests').value) || 0;
+        const customerName = document.getElementById('reservationName').value.trim();
+        const phone = document.getElementById('reservationPhone').value.trim();
+        const email = document.getElementById('reservationEmail').value.trim();
+        const specialRequest = document.getElementById('reservationSpecialRequest').value.trim();
+        
+        // Clear all previous errors
+        clearFieldErrorWebsite('reservationDate');
+        clearFieldErrorWebsite('reservationGuests');
+        clearFieldErrorWebsite('reservationName');
+        clearFieldErrorWebsite('reservationPhone');
+        clearFieldErrorWebsite('reservationEmail');
+        clearFieldErrorWebsite('reservationSpecialRequest');
+        clearFieldErrorWebsite('reservationMealType');
+        
+        // Validate all fields
+        let hasErrors = false;
+        
+        // Validate date
+        if (!date) {
+            showFieldErrorWebsite('reservationDate', 'Reservation date is required');
+            hasErrors = true;
+        } else {
+            const selectedDate = new Date(date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (selectedDate < today) {
+                showFieldErrorWebsite('reservationDate', 'Reservation date cannot be in the past.');
+                hasErrors = true;
+            }
+        }
+        
+        // Validate time slot
+        if (!timeSlot) {
+            showFieldErrorWebsite('reservationTimeSlot', 'Please select a time slot or enter a custom time');
+            hasErrors = true;
+        }
+        
+        // Validate number of guests
+        if (guests < 1) {
+            showFieldErrorWebsite('reservationGuests', 'Number of guests must be at least 1.');
+            hasErrors = true;
+        } else if (guests > 50) {
+            showFieldErrorWebsite('reservationGuests', 'Number of guests cannot exceed 50.');
+            hasErrors = true;
+        }
         
         // Validate capacity
         if (selectedTableCapacity && guests > selectedTableCapacity) {
+            showFieldErrorWebsite('reservationGuests', `This table can only accommodate ${selectedTableCapacity} guests. Please select a different table or reduce the number of guests.`);
             showNotification(`This table can only accommodate ${selectedTableCapacity} guests. Please select a different table or reduce the number of guests.`, 'error');
             return;
         }
         
-        if (guests <= 0) {
-            showNotification('Please enter a valid number of guests', 'error');
+        // Validate customer name
+        if (!customerName || customerName.trim() === '') {
+            showFieldErrorWebsite('reservationName', 'Your name is required');
+            hasErrors = true;
+        } else if (customerName.trim().length < 2) {
+            showFieldErrorWebsite('reservationName', 'Name must be at least 2 characters long.');
+            hasErrors = true;
+        } else if (customerName.trim().length > 100) {
+            showFieldErrorWebsite('reservationName', 'Name must be less than 100 characters.');
+            hasErrors = true;
+        }
+        
+        // Validate phone number
+        if (!phone || phone.trim() === '') {
+            showFieldErrorWebsite('reservationPhone', 'Phone number is required');
+            hasErrors = true;
+        } else {
+            const phoneDigits = phone.replace(/\D/g, '');
+            if (phoneDigits.length !== 10) {
+                showFieldErrorWebsite('reservationPhone', 'Phone number must be exactly 10 digits. Please enter a valid 10-digit phone number.');
+                hasErrors = true;
+            }
+        }
+        
+        // Validate email format if provided
+        if (email && email.trim() !== '') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showFieldErrorWebsite('reservationEmail', 'Invalid email format. Please enter a valid email address.');
+                hasErrors = true;
+            }
+        }
+        
+        // Validate special request length
+        if (specialRequest && specialRequest.trim().length > 500) {
+            showFieldErrorWebsite('reservationSpecialRequest', 'Special request must be less than 500 characters.');
+            hasErrors = true;
+        }
+        
+        // If there are validation errors, stop submission
+        if (hasErrors) {
+            showNotification('Please fix the errors in the form', 'error');
             return;
         }
         
         // Check availability before submitting
         try {
             const restaurantId = getRestaurantId();
-            const availabilityResponse = await fetch(`../check_reservation_availability.php?restaurant_id=${restaurantId}&table_id=${tableId}&reservation_date=${date}&time_slot=${timeSlot}`);
+            const availabilityResponse = await fetch(`../api/check_reservation_availability.php?restaurant_id=${restaurantId}&table_id=${tableId}&reservation_date=${date}&time_slot=${timeSlot}`);
             const availabilityData = await availabilityResponse.json();
             
             if (availabilityData.success && !availabilityData.available) {
-                showNotification(`This table is already reserved for ${date} at ${timeSlot}. Please choose a different time or table.`, 'error');
+                // Format time for display
+                const [hours, minutes] = timeSlot.split(':');
+                const hour = parseInt(hours);
+                const displayTime = hour < 12 ? `${hour}:${minutes} AM` : hour === 12 ? `12:${minutes} PM` : `${hour - 12}:${minutes} PM`;
+                showNotification(`This table is already reserved for ${date} at ${displayTime}. Please choose a different time or table.`, 'error');
                 return;
             }
         } catch (error) {
@@ -536,7 +973,7 @@ function setupReservationForm() {
         }
         
         if (!formData.time_slot) {
-            showNotification('Please select a time slot', 'error');
+            showNotification('Please select a time slot or enter a custom time', 'error');
             return;
         }
         
