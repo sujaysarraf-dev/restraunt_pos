@@ -4241,57 +4241,57 @@ document.addEventListener("DOMContentLoaded", () => {
         const modalHTML = `
           <div class="modal-overlay" id="orderDetailsModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">
             <div class="modal-content" style="background: white; border-radius: 12px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
-              <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
-                <h2 style="margin: 0; font-size: 1.5rem; color: #111827;">Order Details</h2>
-                <button onclick="this.closest('.modal-overlay').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='#f3f4f6'; this.style.color='#111827'" onmouseout="this.style.background='none'; this.style.color='#6b7280'">&times;</button>
+              <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e5e7eb; background: #1f2937;">
+                <h2 style="margin: 0; font-size: 1.5rem; color: #ffffff; font-weight: 600;">Order Details</h2>
+                <button onclick="this.closest('.modal-overlay').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #ffffff; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'; this.style.color='#ffffff'" onmouseout="this.style.background='none'; this.style.color='#ffffff'">&times;</button>
               </div>
-              <div class="modal-body" style="padding: 1.5rem;">
+              <div class="modal-body" style="padding: 1.5rem; background: white;">
                 <div style="margin-bottom: 1.5rem;">
-                  <p style="margin: 0.5rem 0;"><strong>Order #:</strong> ${order.order_number}</p>
-                  <p style="margin: 0.5rem 0;"><strong>Table:</strong> ${order.table_name || order.table_number || 'Walk-in'}</p>
-                  <p style="margin: 0.5rem 0;"><strong>Customer:</strong> ${order.customer_name || 'N/A'}</p>
-                  <p style="margin: 0.5rem 0;"><strong>Status:</strong> <span class="status-badge ${order.order_status.toLowerCase()}">${order.order_status}</span></p>
-                  <p style="margin: 0.5rem 0;"><strong>Payment:</strong> <span class="status-badge ${order.payment_status.toLowerCase().replace(' ', '-')}">${order.payment_status}</span></p>
-                  <p style="margin: 0.5rem 0;"><strong>Time:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+                  <p style="margin: 0.5rem 0; color: #1f2937; font-size: 0.95rem;"><strong style="color: #374151;">Order #:</strong> <span style="color: #111827; font-weight: 600;">${order.order_number}</span></p>
+                  <p style="margin: 0.5rem 0; color: #1f2937; font-size: 0.95rem;"><strong style="color: #374151;">Table:</strong> <span style="color: #111827;">${order.table_name || order.table_number || 'Walk-in'}</span></p>
+                  <p style="margin: 0.5rem 0; color: #1f2937; font-size: 0.95rem;"><strong style="color: #374151;">Customer:</strong> <span style="color: #111827;">${order.customer_name || 'N/A'}</span></p>
+                  <p style="margin: 0.5rem 0; color: #1f2937; font-size: 0.95rem;"><strong style="color: #374151;">Status:</strong> <span class="status-badge ${order.order_status.toLowerCase()}">${order.order_status}</span></p>
+                  <p style="margin: 0.5rem 0; color: #1f2937; font-size: 0.95rem;"><strong style="color: #374151;">Payment:</strong> <span class="status-badge ${order.payment_status.toLowerCase().replace(' ', '-')}">${order.payment_status}</span></p>
+                  <p style="margin: 0.5rem 0; color: #1f2937; font-size: 0.95rem;"><strong style="color: #374151;">Time:</strong> <span style="color: #111827;">${new Date(order.created_at).toLocaleString()}</span></p>
                 </div>
                 
                 <div style="margin-bottom: 1.5rem;">
-                  <h3 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 1.1rem;">Items (${items.length})</h3>
+                  <h3 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 1.1rem; font-weight: 600;">Items (${items.length})</h3>
                   <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: #f5f5f5;">
+                    <thead style="background: #f3f4f6;">
                       <tr>
-                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151;">Item</th>
-                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; color: #374151;">Qty</th>
-                        <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: #374151;">Price</th>
+                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #1f2937; font-size: 0.9rem;">Item</th>
+                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; color: #1f2937; font-size: 0.9rem;">Qty</th>
+                        <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: #1f2937; font-size: 0.9rem;">Price</th>
                       </tr>
                     </thead>
                     <tbody>
                       ${items.length ? items.map(item => `
-                        <tr style="border-bottom: 1px solid #eee;">
+                        <tr style="border-bottom: 1px solid #e5e7eb;">
                           <td style="padding: 0.75rem;">
-                            <div style="font-weight: 500; color: #111827;">${item.item_name}</div>
-                            ${item.notes ? `<div style="font-size: 0.875rem; color: #f59e0b; margin-top: 4px;">Note: ${item.notes}</div>` : ''}
+                            <div style="font-weight: 500; color: #111827; font-size: 0.95rem;">${item.item_name}</div>
+                            ${item.notes ? `<div style="font-size: 0.875rem; color: #d97706; margin-top: 4px; font-weight: 500;">Note: ${item.notes}</div>` : ''}
                           </td>
-                          <td style="padding: 0.75rem; text-align: center; color: #6b7280;">${item.quantity || 1}</td>
-                          <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: #111827;">${formatCurrency(item.total_price || 0)}</td>
+                          <td style="padding: 0.75rem; text-align: center; color: #374151; font-weight: 500; font-size: 0.95rem;">${item.quantity || 1}</td>
+                          <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: #111827; font-size: 0.95rem;">${formatCurrency(item.total_price || 0)}</td>
                         </tr>
                       `).join('') : '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: #6b7280;">No items found</td></tr>'}
                     </tbody>
                   </table>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem; padding-top: 1rem; border-top: 2px solid #e5e7eb;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem; padding-top: 1rem; border-top: 2px solid #d1d5db;">
                   <div>
-                    <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Subtotal</div>
-                    <div style="font-weight: 600; color: #111827;">${formatCurrency(order.subtotal || 0)}</div>
+                    <div style="font-size: 0.875rem; color: #4b5563; margin-bottom: 0.25rem; font-weight: 500;">Subtotal</div>
+                    <div style="font-weight: 600; color: #111827; font-size: 1rem;">${formatCurrency(order.subtotal || 0)}</div>
                   </div>
                   <div>
-                    <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Tax</div>
-                    <div style="font-weight: 600; color: #111827;">${formatCurrency(order.tax || 0)}</div>
+                    <div style="font-size: 0.875rem; color: #4b5563; margin-bottom: 0.25rem; font-weight: 500;">Tax</div>
+                    <div style="font-weight: 600; color: #111827; font-size: 1rem;">${formatCurrency(order.tax || 0)}</div>
                   </div>
                   <div>
-                    <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Total</div>
-                    <div style="font-weight: 700; font-size: 1.1rem; color: #111827;">${formatCurrency(order.total || 0)}</div>
+                    <div style="font-size: 0.875rem; color: #4b5563; margin-bottom: 0.25rem; font-weight: 500;">Total</div>
+                    <div style="font-weight: 700; font-size: 1.2rem; color: #1f2937;">${formatCurrency(order.total || 0)}</div>
                   </div>
                 </div>
                 
