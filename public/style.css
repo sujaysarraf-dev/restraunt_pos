@@ -3807,19 +3807,193 @@ select:focus {
     text-align: center;
   }
   
+  .profile-container {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+  
   .profile-header-card {
     flex-direction: column;
+    align-items: center;
     text-align: center;
-    padding: 1.5rem;
+    padding: 1.5rem 1rem;
+    gap: 1.25rem;
+    border-radius: 16px;
+    position: relative;
+    margin-bottom: 1rem;
+    box-shadow: 0 8px 24px rgba(247, 0, 0, 0.15);
+  }
+  
+  .profile-avatar-section {
+    margin: 0 auto;
+    flex-shrink: 0;
+  }
+  
+  .profile-avatar-large {
+    width: 80px;
+    height: 80px;
+    font-size: 2rem;
+    border-width: 3px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .btn-edit-avatar {
+    width: 32px;
+    height: 32px;
+    border-width: 3px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .btn-edit-avatar .material-symbols-rounded {
+    font-size: 0.95rem;
+  }
+  
+  .profile-info-section {
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .profile-info-section h2 {
+    font-size: 1.35rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+    font-weight: 700;
+  }
+  
+  .profile-title-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .profile-status-pill {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.75rem;
+    font-weight: 600;
+  }
+  
+  .profile-role-badge {
+    font-size: 0.8rem;
+    margin: 0.25rem 0 0.5rem 0;
+    padding: 0.25rem 0.75rem;
+    font-weight: 600;
+  }
+  
+  .profile-email, .profile-restaurant {
+    font-size: 0.85rem;
+    margin: 0.5rem 0;
+    line-height: 1.4;
+    opacity: 0.95;
+  }
+  
+  .profile-details-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    text-align: left;
+  }
+  
+  .profile-detail-item {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    align-items: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .profile-detail-item .material-symbols-rounded {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    opacity: 0.9;
+  }
+  
+  .profile-detail-item span:not(.material-symbols-rounded) {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+    line-height: 1.4;
+    font-weight: 500;
   }
   
   .profile-actions-section {
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .profile-actions-section .btn {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
     justify-content: center;
+    border-radius: 10px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+  }
+  
+  .profile-actions-section .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .profile-actions-section .btn .material-symbols-rounded {
+    font-size: 1.1rem;
+  }
+  
+  .profile-highlight-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .profile-highlight-card {
+    padding: 1.25rem;
+    gap: 1rem;
+    border-radius: 12px;
+    flex-direction: row;
+    text-align: left;
+  }
+  
+  .highlight-icon {
+    width: 45px;
+    height: 45px;
+    font-size: 1.3rem;
+    border-radius: 12px;
+    margin: 0;
+  }
+  
+  .highlight-label {
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .highlight-subtext {
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    line-height: 1.3;
+  }
+  
+  .profile-highlight-card h3 {
+    font-size: 1.1rem;
+    margin: 0.25rem 0;
+    font-weight: 600;
   }
   
   .profile-content-grid {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
   
   .stat-grid {
@@ -3828,5 +4002,106 @@ select:focus {
   
   .stat-grid-modern {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Extra small devices (phones in portrait, less than 480px) */
+@media (max-width: 480px) {
+  .profile-container {
+    padding: 0.75rem;
+  }
+  
+  .profile-header-card {
+    padding: 1.25rem 0.875rem;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .profile-avatar-large {
+    width: 70px;
+    height: 70px;
+    font-size: 1.75rem;
+  }
+  
+  .btn-edit-avatar {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .btn-edit-avatar .material-symbols-rounded {
+    font-size: 0.9rem;
+  }
+  
+  .profile-info-section h2 {
+    font-size: 1.2rem;
+  }
+  
+  .profile-status-pill {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.65rem;
+  }
+  
+  .profile-role-badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.65rem;
+  }
+  
+  .profile-email, .profile-restaurant {
+    font-size: 0.8rem;
+  }
+  
+  .profile-details-list {
+    gap: 0.45rem;
+    margin-top: 0.875rem;
+  }
+  
+  .profile-detail-item {
+    font-size: 0.75rem;
+    padding: 0.55rem 0.65rem;
+  }
+  
+  .profile-detail-item .material-symbols-rounded {
+    font-size: 1rem;
+  }
+  
+  .profile-actions-section {
+    gap: 0.65rem;
+    margin-top: 0.875rem;
+    padding-top: 0.875rem;
+  }
+  
+  .profile-actions-section .btn {
+    padding: 0.8rem 0.875rem;
+    font-size: 0.85rem;
+  }
+  
+  .profile-actions-section .btn .material-symbols-rounded {
+    font-size: 1rem;
+  }
+  
+  .profile-highlight-grid {
+    gap: 0.875rem;
+  }
+  
+  .profile-highlight-card {
+    padding: 1rem;
+  }
+  
+  .highlight-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+  
+  .highlight-label {
+    font-size: 0.7rem;
+  }
+  
+  .highlight-subtext {
+    font-size: 0.8rem;
+  }
+  
+  .profile-highlight-card h3 {
+    font-size: 1rem;
   }
 }
