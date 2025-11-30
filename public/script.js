@@ -249,8 +249,112 @@ function formatCurrencyLocale(amount) {
   return symbol + parseFloat(amount).toLocaleString('en-IN', {maximumFractionDigits: 2});
 }
 
+// Handle session expiration - show message and redirect to login
+function handleSessionExpired() {
+  // Prevent multiple popups
+  if (window.sessionExpiredShown) {
+    return;
+  }
+  window.sessionExpiredShown = true;
+  
+  if (window.Swal) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Session Expired',
+      html: '<p style="font-size: 1rem; color: #374151; margin-bottom: 1rem;">Your session has expired. Please login again.</p>',
+      confirmButtonText: 'Go to Login',
+      confirmButtonColor: '#dc2626',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      showCancelButton: false,
+      focusConfirm: true
+    }).then(() => {
+      // Redirect to login page
+      window.location.href = 'admin/login.php';
+    });
+  } else {
+    alert('Session expired. Please login again.');
+    window.location.href = 'admin/login.php';
+  }
+}
+
+// Check API response for session expiration
+function checkSessionExpired(response, data) {
+  if (!response) return false;
+  
+  // Check HTTP status codes first
+  if (response.status === 401) {
+    handleSessionExpired();
+    return true;
+  }
+  
+  // Check response data if available
+  if (data) {
+    // Check if response indicates session expired
+    if (data.success === false && 
+        data.message && (
+          data.message.toLowerCase().includes('session expired') ||
+          data.message.toLowerCase().includes('please login again') ||
+          data.message.toLowerCase().includes('login again')
+        )) {
+      handleSessionExpired();
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// Periodic session check - runs every 2 seconds
+let sessionCheckInterval = null;
+
+function startSessionCheck() {
+  // Clear any existing interval
+  if (sessionCheckInterval) {
+    clearInterval(sessionCheckInterval);
+  }
+  
+  // Check session every 2 seconds
+  sessionCheckInterval = setInterval(async () => {
+    try {
+      const response = await fetch('admin/get_session.php', {
+        method: 'GET',
+        credentials: 'same-origin',
+        cache: 'no-cache'
+      });
+      
+      const data = await response.json();
+      
+      // Check if session is expired
+      if (!data.success || response.status === 401 || 
+          (data.message && (
+            data.message.toLowerCase().includes('session expired') ||
+            data.message.toLowerCase().includes('please login again') ||
+            data.message.toLowerCase().includes('login again')
+          ))) {
+        clearInterval(sessionCheckInterval);
+        handleSessionExpired();
+      }
+    } catch (error) {
+      // If fetch fails, it might be a network issue, don't show session expired
+      console.error('Session check error:', error);
+    }
+  }, 2000); // Check every 2 seconds
+}
+
+// Stop session check (call this on logout)
+function stopSessionCheck() {
+  if (sessionCheckInterval) {
+    clearInterval(sessionCheckInterval);
+    sessionCheckInterval = null;
+  }
+}
+
 // Submenu toggle functionality
 document.addEventListener("DOMContentLoaded", () => {
+  // Start periodic session check
+  startSessionCheck();
+  
   // Currency symbol is already set by PHP server-side (like restaurant logo/name)
   // Only load if not already set by inline script
   if (!window.globalCurrencySymbol) {
