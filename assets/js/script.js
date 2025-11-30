@@ -7952,18 +7952,37 @@ async function initWebsiteThemeEditor() {
           newUploadBtn.disabled = true;
           newUploadBtn.innerHTML = '<span class="material-symbols-rounded">upload</span>Uploading...';
           const res = await fetch(`../website/theme_api.php${sq}`, { method:'POST', body: formData });
+          
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          
           const data = await res.json();
           
           if (data.success) {
             const count = data.banners ? data.banners.length : 1;
-            showNotification(`${count} banner(s) uploaded successfully`, 'success');
+            let message = `${count} banner(s) uploaded successfully`;
+            
+            // Show warnings if any files failed
+            if (data.warnings && data.warnings.length > 0) {
+              message += `. Some files failed: ${data.warnings.join(', ')}`;
+              showNotification(message, 'warning');
+            } else {
+              showNotification(message, 'success');
+            }
+            
             bannerUpload.value = '';
             loadBanners();
           } else {
             showNotification(data.message || 'Upload failed', 'error');
           }
         } catch (e) {
-          showNotification('Network error. Please try again.', 'error');
+          console.error('Banner upload error:', e);
+          if (e.message && e.message.includes('HTTP error')) {
+            showNotification('Server error. Please check file size and try again.', 'error');
+          } else {
+            showNotification('Network error. Please try again.', 'error');
+          }
         } finally {
           newUploadBtn.disabled = false;
           newUploadBtn.innerHTML = '<span class="material-symbols-rounded">upload</span>Upload Banners';

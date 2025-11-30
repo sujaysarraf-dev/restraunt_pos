@@ -105,6 +105,33 @@ try {
               'size' => $_FILES['banners']['size'][$i] ?? 0,
               'error' => $_FILES['banners']['error'][$i]
             ];
+          } elseif (isset($_FILES['banners']['error'][$i]) && $_FILES['banners']['error'][$i] !== UPLOAD_ERR_OK) {
+            // Log upload errors for debugging
+            $errorMsg = 'Upload error for file ' . ($i + 1) . ': ';
+            switch ($_FILES['banners']['error'][$i]) {
+              case UPLOAD_ERR_INI_SIZE:
+              case UPLOAD_ERR_FORM_SIZE:
+                $errorMsg .= 'File too large';
+                break;
+              case UPLOAD_ERR_PARTIAL:
+                $errorMsg .= 'File partially uploaded';
+                break;
+              case UPLOAD_ERR_NO_FILE:
+                $errorMsg .= 'No file uploaded';
+                break;
+              case UPLOAD_ERR_NO_TMP_DIR:
+                $errorMsg .= 'Missing temporary folder';
+                break;
+              case UPLOAD_ERR_CANT_WRITE:
+                $errorMsg .= 'Failed to write file to disk';
+                break;
+              case UPLOAD_ERR_EXTENSION:
+                $errorMsg .= 'File upload stopped by extension';
+                break;
+              default:
+                $errorMsg .= 'Unknown error (' . $_FILES['banners']['error'][$i] . ')';
+            }
+            error_log($errorMsg);
           }
         }
       } elseif (isset($_FILES['banners']['error']) && $_FILES['banners']['error'] === UPLOAD_ERR_OK) {
@@ -116,16 +143,57 @@ try {
           'size' => $_FILES['banners']['size'] ?? 0,
           'error' => $_FILES['banners']['error']
         ];
+      } elseif (isset($_FILES['banners']['error']) && $_FILES['banners']['error'] !== UPLOAD_ERR_OK) {
+        // Single file upload error
+        $errorMsg = 'Upload error: ';
+        switch ($_FILES['banners']['error']) {
+          case UPLOAD_ERR_INI_SIZE:
+          case UPLOAD_ERR_FORM_SIZE:
+            $errorMsg .= 'File too large (max 5MB)';
+            break;
+          case UPLOAD_ERR_PARTIAL:
+            $errorMsg .= 'File partially uploaded';
+            break;
+          case UPLOAD_ERR_NO_FILE:
+            $errorMsg .= 'No file selected';
+            break;
+          case UPLOAD_ERR_NO_TMP_DIR:
+            $errorMsg .= 'Server configuration error';
+            break;
+          case UPLOAD_ERR_CANT_WRITE:
+            $errorMsg .= 'Failed to save file';
+            break;
+          case UPLOAD_ERR_EXTENSION:
+            $errorMsg .= 'File type not allowed';
+            break;
+          default:
+            $errorMsg .= 'Unknown error (' . $_FILES['banners']['error'] . ')';
+        }
+        throw new Exception($errorMsg);
       }
     }
     
     // Check for banner (single file - backward compatibility)
     if (empty($files) && isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
       $files[] = $_FILES['banner'];
+    } elseif (empty($files) && isset($_FILES['banner']) && $_FILES['banner']['error'] !== UPLOAD_ERR_OK) {
+      $errorMsg = 'Upload error: ';
+      switch ($_FILES['banner']['error']) {
+        case UPLOAD_ERR_INI_SIZE:
+        case UPLOAD_ERR_FORM_SIZE:
+          $errorMsg .= 'File too large (max 5MB)';
+          break;
+        case UPLOAD_ERR_NO_FILE:
+          $errorMsg .= 'No file selected';
+          break;
+        default:
+          $errorMsg .= 'Upload failed';
+      }
+      throw new Exception($errorMsg);
     }
     
     if (empty($files)) {
-      throw new Exception('No files uploaded or upload error');
+      throw new Exception('No files uploaded. Please select image files (JPEG, PNG, GIF, or WebP) and try again.');
     }
     
     // Get current max display_order
@@ -145,23 +213,40 @@ try {
       // Columns might already exist, continue
     }
     
-    foreach ($files as $file) {
+    $errorMessages = [];
+    foreach ($files as $index => $file) {
+      // Check if temp file exists
+      if (!isset($file['tmp_name']) || !file_exists($file['tmp_name'])) {
+        $errorMessages[] = 'File ' . ($index + 1) . ' (' . ($file['name'] ?? 'unknown') . '): Temporary file not found';
+        continue;
+      }
+      
       // Verify MIME type from file content
-      $finfo = finfo_open(FILEINFO_MIME_TYPE);
-      $actualMimeType = finfo_file($finfo, $file['tmp_name']);
-      finfo_close($finfo);
+      if (!function_exists('finfo_open')) {
+        // Fallback to file extension if finfo is not available
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $extensionMap = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp'];
+        $actualMimeType = $extensionMap[$extension] ?? 'application/octet-stream';
+      } else {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $actualMimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+      }
       
       if (!in_array($actualMimeType, $allowedTypes)) {
+        $errorMessages[] = 'File ' . ($index + 1) . ' (' . $file['name'] . '): Invalid file type. Allowed: JPEG, PNG, GIF, WebP';
         continue; // Skip invalid files
       }
       
       if ($file['size'] > 5 * 1024 * 1024) {
+        $errorMessages[] = 'File ' . ($index + 1) . ' (' . $file['name'] . '): File too large (max 5MB)';
         continue; // Skip files larger than 5MB
       }
       
       // Read image data for database storage
       $bannerData = file_get_contents($file['tmp_name']);
       if ($bannerData === false) {
+        $errorMessages[] = 'File ' . ($index + 1) . ' (' . $file['name'] . '): Failed to read file';
         continue; // Skip if failed to read
       }
       
@@ -200,18 +285,31 @@ try {
               'id' => $pdo->lastInsertId(),
               'banner_path' => $bannerPath
             ];
+          } else {
+            $errorMessages[] = 'File ' . ($index + 1) . ' (' . $file['name'] . '): Failed to save file';
           }
         } else {
-          throw $e;
+          error_log('Banner upload database error: ' . $e->getMessage());
+          $errorMessages[] = 'File ' . ($index + 1) . ' (' . $file['name'] . '): Database error';
         }
       }
     }
     
     if (empty($uploadedBanners)) {
-      throw new Exception('No valid files were uploaded. Please check file types and sizes.');
+      $errorMsg = 'No valid files were uploaded.';
+      if (!empty($errorMessages)) {
+        $errorMsg .= ' Errors: ' . implode('; ', $errorMessages);
+      } else {
+        $errorMsg .= ' Please check file types (JPEG, PNG, GIF, WebP) and sizes (max 5MB).';
+      }
+      throw new Exception($errorMsg);
     }
     
-    echo json_encode(['success' => true, 'banners' => $uploadedBanners]);
+    $response = ['success' => true, 'banners' => $uploadedBanners];
+    if (!empty($errorMessages)) {
+      $response['warnings'] = $errorMessages;
+    }
+    echo json_encode($response);
     exit;
   }
 

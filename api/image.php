@@ -19,7 +19,7 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
 }
 
 $imagePath = $_GET['path'] ?? '';
-$imageType = $_GET['type'] ?? ''; // 'logo' or 'item'
+$imageType = $_GET['type'] ?? ''; // 'logo', 'item', or 'banner'
 $imageId = $_GET['id'] ?? '';
 
 // Check if this is a database-stored image (starts with 'db:')
@@ -44,6 +44,59 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
                 // If logo_data column doesn't exist, fall through to file-based handling
                 if (strpos($e->getMessage(), 'logo_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
                     error_log("Logo data column not found, falling back to file-based: " . $e->getMessage());
+                } else {
+                    throw $e;
+                }
+            }
+        } elseif ($imageType === 'banner' && !empty($imageId)) {
+            // Get website banner
+            try {
+                $stmt = $pdo->prepare("SELECT banner_data, banner_mime_type FROM website_banners WHERE id = ? LIMIT 1");
+                $stmt->execute([$imageId]);
+                $banner = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($banner && !empty($banner['banner_data'])) {
+                    header('Content-Type: ' . ($banner['banner_mime_type'] ?? 'image/jpeg'));
+                    header('Content-Length: ' . strlen($banner['banner_data']));
+                    header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
+                    echo $banner['banner_data'];
+                    exit();
+                } else {
+                    // Banner not found in database, try file-based fallback
+                    $stmt = $pdo->prepare("SELECT banner_path FROM website_banners WHERE id = ? LIMIT 1");
+                    $stmt->execute([$imageId]);
+                    $bannerPath = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($bannerPath && !empty($bannerPath['banner_path']) && strpos($bannerPath['banner_path'], 'db:') !== 0) {
+                        // Use file-based path
+                        $imagePath = $bannerPath['banner_path'];
+                        // Fall through to file-based handling below
+                    } else {
+                        http_response_code(404);
+                        header('Content-Type: text/plain');
+                        exit('Banner not found');
+                    }
+                }
+            } catch (PDOException $e) {
+                // If banner_data column doesn't exist, try file-based fallback
+                if (strpos($e->getMessage(), 'banner_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
+                    error_log("Banner data column not found, trying file-based: " . $e->getMessage());
+                    try {
+                        $stmt = $pdo->prepare("SELECT banner_path FROM website_banners WHERE id = ? LIMIT 1");
+                        $stmt->execute([$imageId]);
+                        $bannerPath = $stmt->fetch(PDO::FETCH_ASSOC);
+                        if ($bannerPath && !empty($bannerPath['banner_path']) && strpos($bannerPath['banner_path'], 'db:') !== 0) {
+                            $imagePath = $bannerPath['banner_path'];
+                            // Fall through to file-based handling below
+                        } else {
+                            http_response_code(404);
+                            header('Content-Type: text/plain');
+                            exit('Banner not found');
+                        }
+                    } catch (PDOException $e2) {
+                        http_response_code(404);
+                        header('Content-Type: text/plain');
+                        exit('Banner not found');
+                    }
                 } else {
                     throw $e;
                 }
