@@ -4790,14 +4790,43 @@ document.addEventListener("DOMContentLoaded", () => {
     const tax = cgst + sgst; // GST total 5%
     const total = subtotal + tax;
     
-    document.getElementById("cartSubtotal").textContent = formatCurrency(subtotal);
-    const cgstEl = document.getElementById("cartCGST");
-    const sgstEl = document.getElementById("cartSGST");
-    if (cgstEl) cgstEl.textContent = formatCurrency(cgst);
-    if (sgstEl) sgstEl.textContent = formatCurrency(sgst);
-    document.getElementById("cartTax").textContent = formatCurrency(tax);
-    document.getElementById("cartTotal").textContent = formatCurrency(total);
+    // Update desktop cart summary
+    const cartSubtotalEl = document.getElementById("cartSubtotal");
+    const cartCGSTEl = document.getElementById("cartCGST");
+    const cartSGSTEl = document.getElementById("cartSGST");
+    const cartTaxEl = document.getElementById("cartTax");
+    const cartTotalEl = document.getElementById("cartTotal");
+    
+    if (cartSubtotalEl) cartSubtotalEl.textContent = formatCurrency(subtotal);
+    if (cartCGSTEl) cartCGSTEl.textContent = formatCurrency(cgst);
+    if (cartSGSTEl) cartSGSTEl.textContent = formatCurrency(sgst);
+    if (cartTaxEl) cartTaxEl.textContent = formatCurrency(tax);
+    if (cartTotalEl) cartTotalEl.textContent = formatCurrency(total);
+    
+    // Update mobile bill summary
+    const mobileBillSubtotalEl = document.getElementById("mobileBillSubtotal");
+    const mobileBillCGSTEl = document.getElementById("mobileBillCGST");
+    const mobileBillSGSTEl = document.getElementById("mobileBillSGST");
+    const mobileBillTaxEl = document.getElementById("mobileBillTax");
+    const mobileBillTotalEl = document.getElementById("mobileBillTotal");
+    
+    if (mobileBillSubtotalEl) mobileBillSubtotalEl.textContent = formatCurrency(subtotal);
+    if (mobileBillCGSTEl) mobileBillCGSTEl.textContent = formatCurrency(cgst);
+    if (mobileBillSGSTEl) mobileBillSGSTEl.textContent = formatCurrency(sgst);
+    if (mobileBillTaxEl) mobileBillTaxEl.textContent = formatCurrency(tax);
+    if (mobileBillTotalEl) mobileBillTotalEl.textContent = formatCurrency(total);
   }
+  
+  // Toggle mobile bill details
+  window.toggleMobileBillDetails = function() {
+    const details = document.getElementById('mobileBillDetails');
+    const arrow = document.getElementById('mobileBillSummaryArrow');
+    if (details && arrow) {
+      const isVisible = details.style.display !== 'none';
+      details.style.display = isVisible ? 'none' : 'block';
+      arrow.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(90deg)';
+    }
+  };
   
   // Clear cart
   const clearCartBtn = document.getElementById("clearCartBtn");
