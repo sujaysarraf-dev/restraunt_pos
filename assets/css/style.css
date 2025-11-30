@@ -2591,6 +2591,31 @@ select:focus {
     transform: scale(0.98);
   }
   
+  /* Mobile Bill Summary (Above Buttons) */
+  .mobile-pos-bill-summary {
+    position: fixed;
+    bottom: 4.5rem;
+    left: 0;
+    right: 0;
+    z-index: 997;
+    padding: 0 1rem 0.5rem 1rem;
+  }
+  
+  .mobile-bill-summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+  }
+  
+  .mobile-bill-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+  
   /* Mobile Sticky Bottom Actions */
   .mobile-pos-bottom-actions {
     position: fixed;
@@ -2647,14 +2672,14 @@ select:focus {
     transform: scale(0.98);
   }
   
-  /* Add padding to pos container for bottom buttons */
+  /* Add padding to pos container for bottom buttons and bill summary */
   .pos-container {
-    padding-bottom: 5.5rem !important;
+    padding-bottom: 12rem !important;
   }
   
   /* Adjust add item button position when bottom actions are visible */
   .mobile-add-item-btn {
-    bottom: 5.5rem;
+    bottom: 10rem;
     z-index: 999;
   }
   

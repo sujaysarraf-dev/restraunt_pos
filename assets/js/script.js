@@ -4498,16 +4498,19 @@ document.addEventListener("DOMContentLoaded", () => {
     updateMobileItemsList(items);
   }
   
-  // Check if mobile view and show/hide add item button and bottom actions
+  // Check if mobile view and show/hide add item button, bill summary, and bottom actions
   function checkMobileView() {
     const mobileBtn = document.getElementById('mobileAddItemBtn');
+    const mobileBillSummary = document.getElementById('mobilePosBillSummary');
     const mobileBottomActions = document.getElementById('mobilePosBottomActions');
     
     if (window.innerWidth <= 768) {
       if (mobileBtn) mobileBtn.style.display = 'flex';
+      if (mobileBillSummary) mobileBillSummary.style.display = 'block';
       if (mobileBottomActions) mobileBottomActions.style.display = 'flex';
     } else {
       if (mobileBtn) mobileBtn.style.display = 'none';
+      if (mobileBillSummary) mobileBillSummary.style.display = 'none';
       if (mobileBottomActions) mobileBottomActions.style.display = 'none';
     }
   }
@@ -4803,24 +4806,24 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cartTaxEl) cartTaxEl.textContent = formatCurrency(tax);
     if (cartTotalEl) cartTotalEl.textContent = formatCurrency(total);
     
-    // Update mobile bill summary
-    const mobileBillSubtotalEl = document.getElementById("mobileBillSubtotal");
-    const mobileBillCGSTEl = document.getElementById("mobileBillCGST");
-    const mobileBillSGSTEl = document.getElementById("mobileBillSGST");
-    const mobileBillTaxEl = document.getElementById("mobileBillTax");
-    const mobileBillTotalEl = document.getElementById("mobileBillTotal");
+    // Update mobile bill summary (POS page)
+    const mobilePosBillSubtotalEl = document.getElementById("mobilePosBillSubtotal");
+    const mobilePosBillCGSTEl = document.getElementById("mobilePosBillCGST");
+    const mobilePosBillSGSTEl = document.getElementById("mobilePosBillSGST");
+    const mobilePosBillTaxEl = document.getElementById("mobilePosBillTax");
+    const mobilePosBillTotalEl = document.getElementById("mobilePosBillTotal");
     
-    if (mobileBillSubtotalEl) mobileBillSubtotalEl.textContent = formatCurrency(subtotal);
-    if (mobileBillCGSTEl) mobileBillCGSTEl.textContent = formatCurrency(cgst);
-    if (mobileBillSGSTEl) mobileBillSGSTEl.textContent = formatCurrency(sgst);
-    if (mobileBillTaxEl) mobileBillTaxEl.textContent = formatCurrency(tax);
-    if (mobileBillTotalEl) mobileBillTotalEl.textContent = formatCurrency(total);
+    if (mobilePosBillSubtotalEl) mobilePosBillSubtotalEl.textContent = formatCurrency(subtotal);
+    if (mobilePosBillCGSTEl) mobilePosBillCGSTEl.textContent = formatCurrency(cgst);
+    if (mobilePosBillSGSTEl) mobilePosBillSGSTEl.textContent = formatCurrency(sgst);
+    if (mobilePosBillTaxEl) mobilePosBillTaxEl.textContent = formatCurrency(tax);
+    if (mobilePosBillTotalEl) mobilePosBillTotalEl.textContent = formatCurrency(total);
   }
   
-  // Toggle mobile bill details
+  // Toggle mobile bill details (POS page)
   window.toggleMobileBillDetails = function() {
-    const details = document.getElementById('mobileBillDetails');
-    const arrow = document.getElementById('mobileBillSummaryArrow');
+    const details = document.getElementById('mobilePosBillDetails');
+    const arrow = document.getElementById('mobilePosBillSummaryArrow');
     if (details && arrow) {
       const isVisible = details.style.display !== 'none';
       details.style.display = isVisible ? 'none' : 'block';

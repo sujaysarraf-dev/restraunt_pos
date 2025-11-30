@@ -1613,6 +1613,39 @@ try {
         </div>
       </div>
       
+      <!-- Mobile Bill Summary (Above Buttons) -->
+      <div id="mobilePosBillSummary" class="mobile-pos-bill-summary" style="display: none;">
+        <div class="mobile-bill-summary-card">
+          <div class="mobile-bill-summary-header" onclick="toggleMobileBillDetails()">
+            <div>
+              <div style="font-size:0.875rem;color:#6b7280;margin-bottom:0.25rem;">Bill Summary</div>
+              <div style="font-size:1.5rem;font-weight:700;color:#111827;">
+                Total Amount: <span id="mobilePosBillTotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
+              </div>
+            </div>
+            <span class="material-symbols-rounded" id="mobilePosBillSummaryArrow" style="font-size:1.5rem;color:#6b7280;transition:transform 0.3s;">chevron_right</span>
+          </div>
+          <div id="mobilePosBillDetails" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid #e5e7eb;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;font-size:0.95rem;">
+              <span style="color:#6b7280;">Subtotal:</span>
+              <span style="font-weight:600;color:#111827;" id="mobilePosBillSubtotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;font-size:0.95rem;">
+              <span style="color:#6b7280;">CGST (2.5%):</span>
+              <span style="font-weight:600;color:#111827;" id="mobilePosBillCGST"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;font-size:0.95rem;">
+              <span style="color:#6b7280;">SGST (2.5%):</span>
+              <span style="font-weight:600;color:#111827;" id="mobilePosBillSGST"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.95rem;">
+              <span style="color:#6b7280;">Tax Total:</span>
+              <span style="font-weight:600;color:#111827;" id="mobilePosBillTax"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- Mobile Sticky Bottom Buttons -->
       <div id="mobilePosBottomActions" class="mobile-pos-bottom-actions" style="display: none;">
         <button class="mobile-pos-btn mobile-pos-btn-hold" id="mobileHoldOrderBtn">
@@ -2283,7 +2316,7 @@ try {
         </h2>
         <span class="close" onclick="closeMobileAddItemModal()" style="font-size:1.5rem;">&times;</span>
       </div>
-      <div class="modal-body" style="flex:1;overflow-y:auto;padding:1rem;padding-bottom:5rem;">
+      <div class="modal-body" style="flex:1;overflow-y:auto;padding:1rem;">
         <div style="margin-bottom:1rem;position:relative;">
           <input type="text" id="mobileItemSearch" placeholder="🔍 Search items by name, category, menu, or type..." style="width:100%;padding:0.75rem 3rem 0.75rem 0.75rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.95rem;box-sizing:border-box;" oninput="filterMobileItems()">
           <button type="button" onclick="filterMobileItems()" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0.5rem;display:flex;align-items:center;justify-content:center;color:#6b7280;transition:color 0.2s;" onmouseover="this.style.color='#f70000'" onmouseout="this.style.color='#6b7280'">
@@ -2292,37 +2325,6 @@ try {
         </div>
         <div id="mobileItemsList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;">
           <!-- Items will be loaded here -->
-        </div>
-      </div>
-      
-      <!-- Bill Summary Section (Sticky at bottom of modal) -->
-      <div id="mobileBillSummary" class="mobile-bill-summary" style="position:sticky;bottom:0;left:0;right:0;background:white;border-top:2px solid #e5e7eb;padding:1rem;margin-top:auto;z-index:10;">
-        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleMobileBillDetails()">
-          <div>
-            <div style="font-size:0.875rem;color:#6b7280;margin-bottom:0.25rem;">Bill Summary</div>
-            <div style="font-size:1.5rem;font-weight:700;color:#111827;">
-              Total Amount: <span id="mobileBillTotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
-            </div>
-          </div>
-          <span class="material-symbols-rounded" id="mobileBillSummaryArrow" style="font-size:1.5rem;color:#6b7280;transition:transform 0.3s;">chevron_right</span>
-        </div>
-        <div id="mobileBillDetails" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid #e5e7eb;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;font-size:0.95rem;">
-            <span style="color:#6b7280;">Subtotal:</span>
-            <span style="font-weight:600;color:#111827;" id="mobileBillSubtotal"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;font-size:0.95rem;">
-            <span style="color:#6b7280;">CGST (2.5%):</span>
-            <span style="font-weight:600;color:#111827;" id="mobileBillCGST"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;font-size:0.95rem;">
-            <span style="color:#6b7280;">SGST (2.5%):</span>
-            <span style="font-weight:600;color:#111827;" id="mobileBillSGST"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:0.95rem;">
-            <span style="color:#6b7280;">Tax Total:</span>
-            <span style="font-weight:600;color:#111827;" id="mobileBillTax"><?php echo htmlspecialchars($currency_symbol); ?>0.00</span>
-          </div>
         </div>
       </div>
     </div>
