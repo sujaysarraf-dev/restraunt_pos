@@ -172,6 +172,9 @@ try {
   <!-- Linking Google fonts for icons -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
   <script src="../assets/js/sweetalert2.all.min.js"></script>
+  <!-- Cropper.js for image cropping -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
   <script>
     // Currency symbol loaded from server-side PHP (exactly like restaurant logo/name)
     // NO JavaScript updates needed - value is already correct in HTML from PHP
@@ -1982,6 +1985,53 @@ try {
               </label>
               <span class="file-name">No file chosen</span>
             </div>
+            
+            <!-- Image Cropper Section -->
+            <div id="imageCropperSection" style="display: none; margin-top: 1rem;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem;">
+                <!-- Cropper Container -->
+                <div>
+                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Crop Image:</label>
+                  <div style="max-width: 100%; height: 300px; background: #f3f4f6; border-radius: 8px; overflow: hidden;">
+                    <img id="imageToCrop" src="" alt="Image to crop" style="max-width: 100%; max-height: 100%; display: block;">
+                  </div>
+                  <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button type="button" id="cropImageBtn" class="btn btn-primary" style="flex: 1;">
+                      <span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">crop</span>
+                      Apply Crop
+                    </button>
+                    <button type="button" id="resetCropBtn" class="btn btn-secondary" style="flex: 1;">
+                      <span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">refresh</span>
+                      Reset
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Website Preview -->
+                <div>
+                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Preview on Website:</label>
+                  <div style="border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div id="websitePreviewImage" style="width: 100%; height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                      <img id="croppedPreviewImg" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                      <span style="color: white; font-size: 3rem; opacity: 0.5;">🍽️</span>
+                    </div>
+                    <div style="padding: 1rem; background: #f9fafb;">
+                      <div style="font-weight: 600; color: #111827; margin-bottom: 0.25rem;" id="previewItemName">Item Name</div>
+                      <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">Item Description</div>
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 700; color: #f70000; font-size: 1.125rem;">₹0.00</span>
+                        <button style="background: #f70000; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                          <span class="material-symbols-rounded" style="font-size: 1rem; vertical-align: middle;">add_shopping_cart</span>
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Old Preview (hidden, kept for backward compatibility) -->
             <div id="imagePreview" class="image-preview" style="display: none;">
               <img id="previewImg" src="" alt="Preview">
             </div>

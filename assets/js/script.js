@@ -1280,6 +1280,16 @@ document.addEventListener("DOMContentLoaded", () => {
           imagePreview.style.display = 'none';
         }
         
+        // Clean up cropper
+        const cropperSection = document.getElementById('imageCropperSection');
+        if (cropperSection) {
+          cropperSection.style.display = 'none';
+        }
+        if (imageCropper) {
+          imageCropper.destroy();
+          imageCropper = null;
+        }
+        
         // Reset file input
         const fileInput = document.getElementById('itemImage');
         if (fileInput) {
@@ -1375,6 +1385,18 @@ document.addEventListener("DOMContentLoaded", () => {
     currentMenuItemId = null;
     currentMenuItemData = null;
     
+    // Clean up cropper
+    if (imageCropper) {
+      imageCropper.destroy();
+      imageCropper = null;
+    }
+    
+    // Hide cropper section
+    const cropperSection = document.getElementById('imageCropperSection');
+    if (cropperSection) {
+      cropperSection.style.display = 'none';
+    }
+    
     // Clear any existing messages
     const existingMessage = document.querySelector(".message");
     if (existingMessage) {
@@ -1393,31 +1415,170 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // File upload preview with base64 conversion
+  // Image cropper instance
+  let imageCropper = null;
+  
   document.getElementById('itemImage').addEventListener('change', function(e) {
     const file = e.target.files[0];
     const fileNameSpan = document.querySelector('.file-name');
     const imagePreview = document.getElementById('imagePreview');
     const previewImg = document.getElementById('previewImg');
+    const cropperSection = document.getElementById('imageCropperSection');
+    const imageToCrop = document.getElementById('imageToCrop');
+    const croppedPreviewImg = document.getElementById('croppedPreviewImg');
+    const websitePreviewImage = document.getElementById('websitePreviewImage');
     
     if (file) {
       fileNameSpan.textContent = file.name;
       
-      // Show preview and convert to base64
+      // Destroy existing cropper if any
+      if (imageCropper) {
+        imageCropper.destroy();
+        imageCropper = null;
+      }
+      
+      // Show preview and initialize cropper
       const reader = new FileReader();
       reader.onload = function(e) {
-        previewImg.src = e.target.result;
-        imagePreview.style.display = 'block';
+        const imageUrl = e.target.result;
         
-        // Store base64 data for form submission
-        document.getElementById('itemImageBase64').value = e.target.result;
+        // Set image source for cropper
+        imageToCrop.src = imageUrl;
+        cropperSection.style.display = 'block';
+        
+        // Initialize Cropper.js
+        // Match the website preview aspect ratio (width:height = ~1.5:1 for menu cards)
+        imageCropper = new Cropper(imageToCrop, {
+          aspectRatio: 1.5, // Match website card image ratio (wider than tall)
+          viewMode: 1,
+          dragMode: 'move',
+          autoCropArea: 0.8,
+          restore: false,
+          guides: true,
+          center: true,
+          highlight: false,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          toggleDragModeOnDblclick: false,
+          ready: function() {
+            // Update preview when cropper is ready
+            updateWebsitePreview();
+            // Initialize crop buttons
+            initializeCropButtons();
+          },
+          crop: function() {
+            // Update preview on crop
+            updateWebsitePreview();
+          }
+        });
+        
+        // Hide old preview
+        imagePreview.style.display = 'none';
       };
       reader.readAsDataURL(file);
     } else {
       fileNameSpan.textContent = 'No file chosen';
       imagePreview.style.display = 'none';
+      cropperSection.style.display = 'none';
+      if (imageCropper) {
+        imageCropper.destroy();
+        imageCropper = null;
+      }
       document.getElementById('itemImageBase64').value = '';
     }
   });
+  
+  // Update website preview with cropped image
+  function updateWebsitePreview() {
+    if (!imageCropper) return;
+    
+    const croppedCanvas = imageCropper.getCroppedCanvas({
+      width: 600,
+      height: 400,
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high'
+    });
+    
+    if (croppedCanvas) {
+      const croppedDataUrl = croppedCanvas.toDataURL('image/jpeg', 0.9);
+      const croppedPreviewImg = document.getElementById('croppedPreviewImg');
+      const websitePreviewImage = document.getElementById('websitePreviewImage');
+      
+      croppedPreviewImg.src = croppedDataUrl;
+      croppedPreviewImg.style.display = 'block';
+      
+      // Hide placeholder emoji
+      const placeholder = websitePreviewImage.querySelector('span');
+      if (placeholder) placeholder.style.display = 'none';
+      
+      // Update preview item name if available
+      const itemNameInput = document.getElementById('itemNameEn');
+      if (itemNameInput && itemNameInput.value) {
+        document.getElementById('previewItemName').textContent = itemNameInput.value;
+      }
+    }
+  }
+  
+  // Apply crop button (initialize when DOM is ready)
+  function initializeCropButtons() {
+    const cropBtn = document.getElementById('cropImageBtn');
+    const resetBtn = document.getElementById('resetCropBtn');
+    
+    if (cropBtn) {
+      // Remove existing listener if any
+      const newCropBtn = cropBtn.cloneNode(true);
+      cropBtn.parentNode.replaceChild(newCropBtn, cropBtn);
+      
+      newCropBtn.addEventListener('click', function() {
+    if (!imageCropper) return;
+    
+    const croppedCanvas = imageCropper.getCroppedCanvas({
+      width: 1200,
+      height: 800,
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high'
+    });
+    
+    if (croppedCanvas) {
+      const croppedDataUrl = croppedCanvas.toDataURL('image/jpeg', 0.9);
+      
+      // Store cropped image as base64
+      document.getElementById('itemImageBase64').value = croppedDataUrl;
+      
+      // Update preview
+      updateWebsitePreview();
+      
+      // Show success message
+        showMessage('Image cropped successfully!', 'success');
+      }
+    });
+    }
+    
+    if (resetBtn) {
+      // Remove existing listener if any
+      const newResetBtn = resetBtn.cloneNode(true);
+      resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
+      
+      newResetBtn.addEventListener('click', function() {
+        if (imageCropper) {
+          imageCropper.reset();
+          updateWebsitePreview();
+        }
+      });
+    }
+  }
+  
+  
+  // Update preview when item name changes
+  const itemNameInput = document.getElementById('itemNameEn');
+  if (itemNameInput) {
+    itemNameInput.addEventListener('input', function() {
+      const previewItemName = document.getElementById('previewItemName');
+      if (previewItemName) {
+        previewItemName.textContent = this.value || 'Item Name';
+      }
+    });
+  }
 
   // Handle menu item form submission
   menuItemForm.addEventListener("submit", async (e) => {
