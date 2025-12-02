@@ -6,12 +6,20 @@ startSecureSession();
 // Include authorization configuration
 require_once __DIR__ . '/../config/authorization_config.php';
 
-// Require login and permission to view dashboard
-requireLogin();
-requirePermission(PERMISSION_VIEW_DASHBOARD);
-
 // Check if user is logged in (admin has user_id, staff has staff_id) and session is valid
-if ((!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id'])) || !isset($_SESSION['username']) || !isset($_SESSION['restaurant_id'])) {
+// Redirect to login page if not logged in (for HTML pages, we redirect instead of returning JSON)
+if (!isSessionValid() || (!isset($_SESSION['user_id']) && !isset($_SESSION['staff_id'])) || !isset($_SESSION['username']) || !isset($_SESSION['restaurant_id'])) {
+    header('Location: ../admin/login.php');
+    exit();
+}
+
+// Verify user has permission to view dashboard
+// If not, redirect to login (they shouldn't be here)
+try {
+    requireLogin(false);
+    requirePermission(PERMISSION_VIEW_DASHBOARD, false);
+} catch (Exception $e) {
+    // If permission denied, redirect to login
     header('Location: ../admin/login.php');
     exit();
 }
