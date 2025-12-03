@@ -63,35 +63,7 @@ function handleCreateKOT() {
     if (isset($pdo) && $pdo instanceof PDO) {
         $conn = $pdo;
     } elseif (function_exists('getConnection')) {
-        global $pdo;
-    if (isset($pdo) && $pdo instanceof PDO) {
-        $conn = $pdo;
-    } elseif (function_exists('getConnection')) {
-        global $pdo;
-        if (isset($pdo) && $pdo instanceof PDO) {
-            $conn = $pdo;
-        } elseif (function_exists('getConnection')) {
-            $conn = getConnection();
-        } else {
-            // Fallback connection
-            $host = 'localhost';
-            $dbname = 'restro2';
-            $username = 'root';
-            $password = '';
-            $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        }
-    } else {
-        // Fallback connection
-        $host = 'localhost';
-        $dbname = 'restro2';
-        $username = 'root';
-        $password = '';
-        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    }
+        $conn = getConnection();
     } else {
         // Fallback connection
         $host = 'localhost';
@@ -117,7 +89,7 @@ function handleCreateKOT() {
         return;
     }
     
-    $kot_number = generateKOTNumber();
+    $kot_number = generateKOTNumber($conn, $restaurant_id);
     
     try {
         $conn->beginTransaction();
@@ -155,35 +127,7 @@ function handleUpdateKOTStatus() {
     if (isset($pdo) && $pdo instanceof PDO) {
         $conn = $pdo;
     } elseif (function_exists('getConnection')) {
-        global $pdo;
-    if (isset($pdo) && $pdo instanceof PDO) {
-        $conn = $pdo;
-    } elseif (function_exists('getConnection')) {
-        global $pdo;
-        if (isset($pdo) && $pdo instanceof PDO) {
-            $conn = $pdo;
-        } elseif (function_exists('getConnection')) {
-            $conn = getConnection();
-        } else {
-            // Fallback connection
-            $host = 'localhost';
-            $dbname = 'restro2';
-            $username = 'root';
-            $password = '';
-            $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        }
-    } else {
-        // Fallback connection
-        $host = 'localhost';
-        $dbname = 'restro2';
-        $username = 'root';
-        $password = '';
-        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    }
+        $conn = getConnection();
     } else {
         // Fallback connection
         $host = 'localhost';
@@ -226,6 +170,51 @@ function handleUpdateKOTStatus() {
     try {
         $conn->beginTransaction();
         
+        // Lock the KOT row to prevent concurrent updates (SELECT FOR UPDATE)
+        // This ensures only one transaction can process this KOT at a time
+        $lock_sql = "SELECT * FROM kot WHERE id = ? AND restaurant_id = ? FOR UPDATE";
+        $lock_stmt = $conn->prepare($lock_sql);
+        $lock_stmt->execute([$kot_id, $restaurant_id]);
+        $kot = $lock_stmt->fetch();
+        
+        if (!$kot) {
+            $conn->rollBack();
+            echo json_encode(['success' => false, 'message' => 'KOT not found']);
+            return;
+        }
+        
+        // Check if KOT status is already being processed (prevent duplicate processing)
+        // If status is already "Ready" or "Completed", don't process again
+        if ($kot['kot_status'] === 'Ready' || $kot['kot_status'] === 'Completed') {
+            // Check if order already exists for this KOT
+            // Use KOT number in notes to reliably track the relationship
+            $check_order_sql = "SELECT o.id FROM orders o 
+                                WHERE o.restaurant_id = ? 
+                                AND (o.notes LIKE ? OR (o.table_id = ? AND ABS(o.total - ?) < 0.01 AND o.created_at >= DATE_SUB(?, INTERVAL 30 MINUTE)))
+                                LIMIT 1";
+            $kot_number_pattern = '%' . $kot['kot_number'] . '%';
+            $check_stmt = $conn->prepare($check_order_sql);
+            $check_stmt->execute([
+                $restaurant_id,
+                $kot_number_pattern,
+                $kot['table_id'],
+                $kot['total'],
+                $kot['created_at']
+            ]);
+            $existing_order = $check_stmt->fetch();
+            
+            if ($existing_order) {
+                // Order already exists, just update status if needed
+                $conn->commit();
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'KOT status updated. Order already exists.',
+                    'order_id' => $existing_order['id']
+                ]);
+                return;
+            }
+        }
+        
         // Update KOT status
         $sql = "UPDATE kot SET kot_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND restaurant_id = ?";
         $stmt = $conn->prepare($sql);
@@ -233,48 +222,37 @@ function handleUpdateKOTStatus() {
         
         // If status is "Ready", create order from KOT
         if ($status === 'Ready') {
-            // Get KOT details first to check if order already exists
-            $kot_sql = "SELECT * FROM kot WHERE id = ? AND restaurant_id = ?";
-            $kot_stmt = $conn->prepare($kot_sql);
-            $kot_stmt->execute([$kot_id, $restaurant_id]);
-            $kot = $kot_stmt->fetch();
-            
-            if (!$kot) {
-                $conn->rollBack();
-                echo json_encode(['success' => false, 'message' => 'KOT not found']);
-                return;
-            }
-            
-            // Check if order already exists for this KOT
-            // We check by matching table_id, total amount, subtotal, tax, and recent creation
-            // Also check if KOT number is mentioned in order notes (as a backup check)
+            // Check if order already exists for this KOT (double-check after lock)
+            // Use KOT number in notes to reliably track the relationship
             $check_order_sql = "SELECT o.id FROM orders o 
                                 WHERE o.restaurant_id = ? 
-                                AND o.table_id = ? 
-                                AND ABS(o.total - ?) < 0.01
-                                AND ABS(o.subtotal - ?) < 0.01
-                                AND ABS(o.tax - ?) < 0.01
-                                AND o.created_at >= DATE_SUB(?, INTERVAL 15 MINUTE)
-                                AND o.order_status IN ('Ready', 'Preparing', 'Served', 'Completed')
+                                AND (o.notes LIKE ? OR (o.table_id = ? AND ABS(o.total - ?) < 0.01 AND o.created_at >= DATE_SUB(?, INTERVAL 30 MINUTE)))
                                 LIMIT 1";
+            $kot_number_pattern = '%' . $kot['kot_number'] . '%';
             $check_stmt = $conn->prepare($check_order_sql);
             $check_stmt->execute([
-                $restaurant_id, 
-                $kot['table_id'], 
-                $kot['total'], 
-                $kot['subtotal'], 
-                $kot['tax'],
+                $restaurant_id,
+                $kot_number_pattern,
+                $kot['table_id'],
+                $kot['total'],
                 $kot['created_at']
             ]);
             $existing_order = $check_stmt->fetch();
             
             if (!$existing_order) {
-                $order_number = generateOrderNumber();
+                $order_number = generateOrderNumber($conn, $restaurant_id);
                 
-                // Create order from KOT
+                // Create order from KOT - include KOT number in notes for tracking
+                $order_notes = trim($kot['notes'] ?? '');
+                if (!empty($order_notes)) {
+                    $order_notes .= "\n[KOT: " . $kot['kot_number'] . "]";
+                } else {
+                    $order_notes = "[KOT: " . $kot['kot_number'] . "]";
+                }
+                
                 $order_sql = "INSERT INTO orders (restaurant_id, table_id, order_number, customer_name, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, 'Cash', 'Paid', 'Ready', ?, ?, ?, ?)";
                 $order_stmt = $conn->prepare($order_sql);
-                $order_stmt->execute([$restaurant_id, $kot['table_id'], $order_number, $kot['customer_name'], $kot['order_type'], $kot['subtotal'], $kot['tax'], $kot['total'], $kot['notes']]);
+                $order_stmt->execute([$restaurant_id, $kot['table_id'], $order_number, $kot['customer_name'], $kot['order_type'], $kot['subtotal'], $kot['tax'], $kot['total'], $order_notes]);
                 $order_id = $conn->lastInsertId();
                 
                 // Get KOT items and create order items
@@ -320,21 +298,7 @@ function handleCompleteKOT() {
     if (isset($pdo) && $pdo instanceof PDO) {
         $conn = $pdo;
     } elseif (function_exists('getConnection')) {
-        global $pdo;
-        if (isset($pdo) && $pdo instanceof PDO) {
-            $conn = $pdo;
-        } elseif (function_exists('getConnection')) {
-            $conn = getConnection();
-        } else {
-            // Fallback connection
-            $host = 'localhost';
-            $dbname = 'restro2';
-            $username = 'root';
-            $password = '';
-            $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        }
+        $conn = getConnection();
     } else {
         // Fallback connection
         $host = 'localhost';
@@ -429,30 +393,56 @@ function handleCompleteKOT() {
         // If order doesn't exist yet, create it with status "Ready" (fallback case)
         // This should rarely happen as order should be created when status is set to "Ready"
         if ($kot['kot_status'] === 'Ready') {
-            $order_number = generateOrderNumber();
+            // Check if order already exists (with lock held)
+            $check_order_sql = "SELECT o.id FROM orders o 
+                                WHERE o.restaurant_id = ? 
+                                AND (o.notes LIKE ? OR (o.table_id = ? AND ABS(o.total - ?) < 0.01 AND o.created_at >= DATE_SUB(?, INTERVAL 30 MINUTE)))
+                                LIMIT 1";
+            $kot_number_pattern = '%' . $kot['kot_number'] . '%';
+            $check_stmt = $conn->prepare($check_order_sql);
+            $check_stmt->execute([
+                $restaurant_id,
+                $kot_number_pattern,
+                $kot['table_id'],
+                $kot['total'],
+                $kot['created_at']
+            ]);
+            $existing_order = $check_stmt->fetch();
             
-            // Create order from KOT with status "Ready" so waiters can deliver it
-            $order_sql = "INSERT INTO orders (restaurant_id, table_id, order_number, customer_name, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, 'Cash', 'Paid', 'Ready', ?, ?, ?, ?)";
-            $order_stmt = $conn->prepare($order_sql);
-            $order_stmt->execute([$restaurant_id, $kot['table_id'], $order_number, $kot['customer_name'], $kot['order_type'], $kot['subtotal'], $kot['tax'], $kot['total'], $kot['notes']]);
-            $order_id = $conn->lastInsertId();
-            
-            // Get KOT items and create order items
-            $items_sql = "SELECT * FROM kot_items WHERE kot_id = ?";
-            $items_stmt = $conn->prepare($items_sql);
-            $items_stmt->execute([$kot_id]);
-            $items = $items_stmt->fetchAll();
-            
-            foreach ($items as $item) {
-                $order_item_sql = "INSERT INTO order_items (order_id, menu_item_id, item_name, quantity, unit_price, total_price) VALUES (?, ?, ?, ?, ?, ?)";
-                $order_item_stmt = $conn->prepare($order_item_sql);
-                $order_item_stmt->execute([$order_id, $item['menu_item_id'], $item['item_name'], $item['quantity'], $item['unit_price'], $item['total_price']]);
+            if (!$existing_order) {
+                $order_number = generateOrderNumber($conn, $restaurant_id);
+                
+                // Create order from KOT - include KOT number in notes for tracking
+                $order_notes = trim($kot['notes'] ?? '');
+                if (!empty($order_notes)) {
+                    $order_notes .= "\n[KOT: " . $kot['kot_number'] . "]";
+                } else {
+                    $order_notes = "[KOT: " . $kot['kot_number'] . "]";
+                }
+                
+                // Create order from KOT with status "Ready" so waiters can deliver it
+                $order_sql = "INSERT INTO orders (restaurant_id, table_id, order_number, customer_name, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, 'Cash', 'Paid', 'Ready', ?, ?, ?, ?)";
+                $order_stmt = $conn->prepare($order_sql);
+                $order_stmt->execute([$restaurant_id, $kot['table_id'], $order_number, $kot['customer_name'], $kot['order_type'], $kot['subtotal'], $kot['tax'], $kot['total'], $order_notes]);
+                $order_id = $conn->lastInsertId();
+                
+                // Get KOT items and create order items
+                $items_sql = "SELECT * FROM kot_items WHERE kot_id = ?";
+                $items_stmt = $conn->prepare($items_sql);
+                $items_stmt->execute([$kot_id]);
+                $items = $items_stmt->fetchAll();
+                
+                foreach ($items as $item) {
+                    $order_item_sql = "INSERT INTO order_items (order_id, menu_item_id, item_name, quantity, unit_price, total_price) VALUES (?, ?, ?, ?, ?, ?)";
+                    $order_item_stmt = $conn->prepare($order_item_sql);
+                    $order_item_stmt->execute([$order_id, $item['menu_item_id'], $item['item_name'], $item['quantity'], $item['unit_price'], $item['total_price']]);
+                }
+                
+                // Record payment
+                $payment_sql = "INSERT INTO payments (restaurant_id, order_id, amount, payment_method, payment_status) VALUES (?, ?, ?, 'Cash', 'Success')";
+                $payment_stmt = $conn->prepare($payment_sql);
+                $payment_stmt->execute([$restaurant_id, $order_id, $kot['total']]);
             }
-            
-            // Record payment
-            $payment_sql = "INSERT INTO payments (restaurant_id, order_id, amount, payment_method, payment_status) VALUES (?, ?, ?, 'Cash', 'Success')";
-            $payment_stmt = $conn->prepare($payment_sql);
-            $payment_stmt->execute([$restaurant_id, $order_id, $kot['total']]);
         }
         
         // Update KOT status to completed
@@ -473,11 +463,101 @@ function handleCompleteKOT() {
     }
 }
 
-function generateKOTNumber() {
-    return 'KOT-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+/**
+ * Generate unique KOT number with collision check
+ * 
+ * @param PDO $conn Database connection
+ * @param string $restaurant_id Restaurant ID
+ * @return string Unique KOT number
+ */
+function generateKOTNumber($conn = null, $restaurant_id = null) {
+    global $pdo;
+    
+    // Use provided connection or global
+    $db = $conn ?? $pdo;
+    
+    // If no connection or restaurant_id, generate without check (fallback)
+    if (!$db || !$restaurant_id) {
+        return 'KOT-' . date('Ymd') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+    }
+    
+    // Generate unique number with collision check
+    $maxAttempts = 100;
+    $attempt = 0;
+    
+    do {
+        $kotNumber = 'KOT-' . date('Ymd') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+        
+        // Check if number already exists
+        try {
+            $checkStmt = $db->prepare("SELECT COUNT(*) FROM kot WHERE kot_number = ? AND restaurant_id = ?");
+            $checkStmt->execute([$kotNumber, $restaurant_id]);
+            $exists = $checkStmt->fetchColumn() > 0;
+        } catch (PDOException $e) {
+            // If query fails, return generated number (fallback)
+            error_log("Error checking KOT number uniqueness: " . $e->getMessage());
+            return $kotNumber;
+        }
+        
+        $attempt++;
+        
+        // Safety check to prevent infinite loop
+        if ($attempt >= $maxAttempts) {
+            // Add timestamp to make it unique if we can't find a unique number
+            $kotNumber = 'KOT-' . date('YmdHis') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+            break;
+        }
+    } while ($exists);
+    
+    return $kotNumber;
 }
 
-function generateOrderNumber() {
-    return 'ORD-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+/**
+ * Generate unique Order number with collision check
+ * 
+ * @param PDO $conn Database connection
+ * @param string $restaurant_id Restaurant ID
+ * @return string Unique Order number
+ */
+function generateOrderNumber($conn = null, $restaurant_id = null) {
+    global $pdo;
+    
+    // Use provided connection or global
+    $db = $conn ?? $pdo;
+    
+    // If no connection or restaurant_id, generate without check (fallback)
+    if (!$db || !$restaurant_id) {
+        return 'ORD-' . date('Ymd') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+    }
+    
+    // Generate unique number with collision check
+    $maxAttempts = 100;
+    $attempt = 0;
+    
+    do {
+        $orderNumber = 'ORD-' . date('Ymd') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+        
+        // Check if number already exists
+        try {
+            $checkStmt = $db->prepare("SELECT COUNT(*) FROM orders WHERE order_number = ? AND restaurant_id = ?");
+            $checkStmt->execute([$orderNumber, $restaurant_id]);
+            $exists = $checkStmt->fetchColumn() > 0;
+        } catch (PDOException $e) {
+            // If query fails, return generated number (fallback)
+            error_log("Error checking Order number uniqueness: " . $e->getMessage());
+            return $orderNumber;
+        }
+        
+        $attempt++;
+        
+        // Safety check to prevent infinite loop
+        if ($attempt >= $maxAttempts) {
+            // Add timestamp to make it unique if we can't find a unique number
+            $orderNumber = 'ORD-' . date('YmdHis') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+            break;
+        }
+    } while ($exists);
+    
+    return $orderNumber;
 }
 ?>
