@@ -45,8 +45,11 @@ try {
     // Resolve restaurant ID: session > query param > default
     $restaurant_id = $_SESSION['restaurant_id'] ?? ($_GET['restaurant_id'] ?? 'RES001');
     
-    // Generate order number
-    $order_number = 'ORD-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+    // Include helper functions for generating unique numbers
+    require_once __DIR__ . '/../controllers/kot_operations.php';
+    
+    // Generate unique order number with collision check
+    $order_number = generateOrderNumber($conn, $restaurant_id);
     
     // Check if customer exists, if not create
     $customerStmt = $conn->prepare("SELECT id FROM customers WHERE restaurant_id = ? AND phone = ?");

@@ -34,20 +34,7 @@ $restaurant_id = $_SESSION['restaurant_id'];
 $action = $_POST['action'] ?? '';
 
 try {
-    if (isset($pdo) && $pdo instanceof PDO) {
-        $conn = $pdo;
-    } elseif (function_exists('getConnection')) {
-        $conn = getConnection();
-    } else {
-        // Fallback connection
-        $host = 'localhost';
-        $dbname = 'restro2';
-        $username = 'root';
-        $password = '';
-        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    }
+    $conn = $pdo;
     
     switch ($action) {
         case 'create_kot':
@@ -91,10 +78,13 @@ function handleCreateKOT($conn, $restaurant_id) {
         return;
     }
     
-    // Generate KOT number
-    $kotNumber = 'KOT-' . date('Ymd') . '-' . rand(1000, 9999);
-    // Generate Order number
-    $orderNumber = 'ORD-' . date('Ymd') . '-' . rand(1000, 9999);
+    // Include helper functions for generating unique numbers
+    require_once __DIR__ . '/kot_operations.php';
+    
+    // Generate unique KOT number with collision check
+    $kotNumber = generateKOTNumber($conn, $restaurant_id);
+    // Generate unique Order number with collision check
+    $orderNumber = generateOrderNumber($conn, $restaurant_id);
     
     // Begin transaction
     $conn->beginTransaction();
@@ -212,8 +202,24 @@ function handleHoldOrder($conn, $restaurant_id) {
         return;
     }
     
-    // Generate order number
-    $orderNumber = 'HOLD-' . date('Ymd') . '-' . rand(1000, 9999);
+    // Include helper functions for generating unique numbers
+    require_once __DIR__ . '/kot_operations.php';
+    
+    // Generate unique order number for held order (using same function but with HOLD prefix)
+    // For held orders, we'll use a similar pattern but check against orders table
+    $maxAttempts = 100;
+    $attempt = 0;
+    do {
+        $orderNumber = 'HOLD-' . date('Ymd') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+        $checkStmt = $conn->prepare("SELECT COUNT(*) FROM orders WHERE order_number = ? AND restaurant_id = ?");
+        $checkStmt->execute([$orderNumber, $restaurant_id]);
+        $exists = $checkStmt->fetchColumn() > 0;
+        $attempt++;
+        if ($attempt >= $maxAttempts) {
+            $orderNumber = 'HOLD-' . date('YmdHis') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+            break;
+        }
+    } while ($exists);
     
     // Begin transaction
     $conn->beginTransaction();

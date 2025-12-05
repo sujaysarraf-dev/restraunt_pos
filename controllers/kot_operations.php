@@ -60,20 +60,7 @@ try {
 
 function handleCreateKOT() {
     global $pdo;
-    if (isset($pdo) && $pdo instanceof PDO) {
-        $conn = $pdo;
-    } elseif (function_exists('getConnection')) {
-        $conn = getConnection();
-    } else {
-        // Fallback connection
-        $host = 'localhost';
-        $dbname = 'restro2';
-        $username = 'root';
-        $password = '';
-        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    }
+    $conn = $pdo;
     $restaurant_id = $_SESSION['restaurant_id'];
     $table_id = $_POST['tableId'] ?? null;
     $order_type = $_POST['orderType'] ?? 'Dine-in';
@@ -124,20 +111,7 @@ function handleCreateKOT() {
 
 function handleUpdateKOTStatus() {
     global $pdo;
-    if (isset($pdo) && $pdo instanceof PDO) {
-        $conn = $pdo;
-    } elseif (function_exists('getConnection')) {
-        $conn = getConnection();
-    } else {
-        // Fallback connection
-        $host = 'localhost';
-        $dbname = 'restro2';
-        $username = 'root';
-        $password = '';
-        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    }
+    $conn = $pdo;
     $kot_id = intval($_POST['kotId']);
     $status = $_POST['status'];
     $restaurant_id = $_SESSION['restaurant_id'] ?? $_GET['restaurant_id'] ?? null;
@@ -295,20 +269,7 @@ function handleUpdateKOTStatus() {
 
 function handleCompleteKOT() {
     global $pdo;
-    if (isset($pdo) && $pdo instanceof PDO) {
-        $conn = $pdo;
-    } elseif (function_exists('getConnection')) {
-        $conn = getConnection();
-    } else {
-        // Fallback connection
-        $host = 'localhost';
-        $dbname = 'restro2';
-        $username = 'root';
-        $password = '';
-        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    }
+    $conn = $pdo;
     $kot_id = intval($_POST['kotId']);
     $restaurant_id = $_SESSION['restaurant_id'] ?? $_GET['restaurant_id'] ?? null;
     

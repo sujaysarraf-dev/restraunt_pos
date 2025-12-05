@@ -33,20 +33,7 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
 $restaurant_id = $_SESSION['restaurant_id'];
 
 try {
-    if (isset($pdo) && $pdo instanceof PDO) {
-        $conn = $pdo;
-    } elseif (function_exists('getConnection')) {
-        $conn = getConnection();
-    } else {
-        // Fallback connection
-        $host = 'localhost';
-        $dbname = 'restro2';
-        $username = 'root';
-        $password = '';
-        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    }
+    $conn = $pdo;
     
     $stmt = $conn->prepare("SELECT * FROM customers WHERE restaurant_id = ? ORDER BY customer_name ASC");
     $stmt->execute([$restaurant_id]);

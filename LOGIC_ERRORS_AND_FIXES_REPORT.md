@@ -6,7 +6,7 @@
 
 ## 🔴 CRITICAL LOGIC ERRORS
 
-### 1. **Order/KOT Number Generation - Potential Duplicates**
+### 1. **Order/KOT Number Generation - Potential Duplicates** ✅ FIXED
 **Severity:** HIGH  
 **Location:** `controllers/pos_operations.php` (lines 95-97)
 
@@ -21,6 +21,18 @@ $orderNumber = 'ORD-' . date('Ymd') . '-' . rand(1000, 9999);
 - If multiple orders are created in the same second, there's a high chance of collision
 - No database uniqueness check before insertion
 - Could cause data integrity issues
+
+**Status:** ✅ **FIXED**
+- Updated `generateKOTNumber()` and `generateOrderNumber()` functions in `controllers/kot_operations.php` to check for duplicates in the database
+- Functions now accept `$conn` and `$restaurant_id` parameters
+- Implemented collision detection with retry logic (up to 100 attempts)
+- Uses `random_int()` instead of `rand()` for better randomness
+- Added fallback to timestamp-based generation if all attempts fail
+- Updated all call sites:
+  - `controllers/pos_operations.php` - KOT and Order number generation
+  - `controllers/kot_operations.php` - All KOT and Order number generation
+  - `api/process_website_order.php` - Website order number generation
+  - `handleHoldOrder()` - Held order number generation with collision check
 
 **Fix:**
 ```php
@@ -46,7 +58,7 @@ do {
 
 ---
 
-### 2. **Race Condition in KOT Status Update**
+### 2. **Race Condition in KOT Status Update** ✅ FIXED
 **Severity:** MEDIUM  
 **Location:** `controllers/kot_operations.php` (lines 227-262)
 
@@ -65,25 +77,32 @@ $check_order_sql = "SELECT o.id FROM orders o
                     ...";
 ```
 
-**Fix:**
-1. Add a unique constraint or index on `kot_id` in orders table (if linking exists)
-2. Use database-level locking:
-```php
-$conn->beginTransaction();
-// Lock the KOT row
-$lockStmt = $conn->prepare("SELECT * FROM kot WHERE id = ? AND restaurant_id = ? FOR UPDATE");
-$lockStmt->execute([$kot_id, $restaurant_id]);
-$kot = $lockStmt->fetch();
+**Status:** ✅ **FIXED**
+- Implemented database-level locking using `SELECT ... FOR UPDATE` to lock the KOT row
+- This ensures only one transaction can process a KOT at a time, preventing race conditions
+- Improved duplicate detection by:
+  - Storing KOT number in order notes as `[KOT: KOT-YYYYMMDD-XXXX]` for reliable tracking
+  - Using KOT number pattern matching in addition to fuzzy matching
+  - Checking for existing orders both before and after status update
+  - Extended time window check from 15 to 30 minutes for better reliability
+- Fixed duplicate code issue in `handleUpdateKOTStatus()` function
+- Added early return if KOT is already "Ready" or "Completed" and order exists
+- All checks are performed within the transaction with the lock held, ensuring atomicity
 
-// Check if order already exists (with lock held)
-$checkStmt = $conn->prepare("SELECT id FROM orders WHERE kot_id = ? LIMIT 1");
-$checkStmt->execute([$kot_id]);
-if ($checkStmt->fetch()) {
-    $conn->rollBack();
-    echo json_encode(['success' => false, 'message' => 'Order already exists for this KOT']);
-    return;
-}
-// Proceed with order creation...
+**Implementation:**
+```php
+// Lock the KOT row to prevent concurrent updates
+$lock_sql = "SELECT * FROM kot WHERE id = ? AND restaurant_id = ? FOR UPDATE";
+$lock_stmt = $conn->prepare($lock_sql);
+$lock_stmt->execute([$kot_id, $restaurant_id]);
+$kot = $lock_stmt->fetch();
+
+// Check if order exists using KOT number in notes
+$check_order_sql = "SELECT o.id FROM orders o 
+                    WHERE o.restaurant_id = ? 
+                    AND (o.notes LIKE ? OR ...)
+                    LIMIT 1";
+// Store KOT number in order notes: [KOT: KOT-YYYYMMDD-XXXX]
 ```
 
 ---

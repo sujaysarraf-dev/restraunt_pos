@@ -17,10 +17,10 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-$host = 'localhost';
-$dbname = 'restro2';
-$username = 'root';
-$password = '';
+$host = 'auth-db1336.hstgr.io';
+$dbname = 'u509616587_restrogrow';
+$username = 'u509616587_restrogrow';
+$password = 'SujaySarraf@5569';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);

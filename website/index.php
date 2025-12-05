@@ -66,19 +66,8 @@ try {
     // Include database connection
     require_once __DIR__ . '/db_config.php';
     
-    // Get connection
-    if (isset($pdo) && $pdo instanceof PDO) {
-        $conn = $pdo;
-    } else {
-        // Fallback connection if needed
-        $host = 'localhost';
-        $dbname = 'restro2';
-        $username = 'root';
-        $password = '';
-        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    }
+    // Get connection from db_config.php
+    $conn = $pdo;
     
     // Track if restaurant was explicitly requested (not default)
     $restaurant_explicitly_requested = false;

@@ -65,21 +65,8 @@ try {
         }
     }
     
-    // Get connection
-    if (isset($pdo) && $pdo instanceof PDO) {
-        $conn = $pdo;
-    } elseif (function_exists('getConnection')) {
-        $conn = getConnection();
-    } else {
-        // If getConnection doesn't exist, create connection directly
-        $host = 'localhost';
-        $dbname = 'restro2';
-        $username = 'root';
-        $password = '';
-        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    }
+    // Get connection from db_connection.php
+    $conn = $pdo;
     
     // Try to get all user settings from database to prevent FOUC
     // Load exactly like restaurant logo - server-side before HTML renders
