@@ -212,6 +212,64 @@ function updateCurrencySymbol(newSymbol) {
   localStorage.setItem('system_currency', newSymbol);
 }
 
+// Enhanced fetch wrapper with timeout, retry, and better error handling
+async function fetchWithRetry(url, options = {}, retries = 2, timeout = 30000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  const fetchOptions = {
+    ...options,
+    signal: controller.signal,
+  };
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, fetchOptions);
+      clearTimeout(timeoutId);
+      
+      // Check if response is ok
+      if (!response.ok) {
+        // If it's a server error (5xx), retry
+        if (response.status >= 500 && attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+          continue;
+        }
+      }
+      
+      return response;
+      
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      // Handle different error types
+      if (error.name === 'AbortError') {
+        if (attempt < retries) {
+          // Timeout - retry with longer timeout
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+          continue;
+        }
+        throw new Error('Request timeout. The server is taking too long to respond. Please try again.');
+      }
+      
+      // Network errors - retry
+      if (error.message.includes('Failed to fetch') || 
+          error.message.includes('NetworkError') ||
+          error.message.includes('Network request failed')) {
+        if (attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+          continue;
+        }
+        throw new Error('Network error. Please check your internet connection and try again.');
+      }
+      
+      // Other errors - don't retry
+      throw error;
+    }
+  }
+  
+  throw new Error('Request failed after multiple attempts. Please try again.');
+}
+
 // Toggle sidebar's collapsed state (only if elements exist)
 if (sidebarToggler && sidebar) {
   sidebarToggler.addEventListener("click", () => {
