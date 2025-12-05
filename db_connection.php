@@ -100,7 +100,7 @@ try {
             $pdo->exec("SET SESSION wait_timeout = 30");  // Close idle connections after 30s
             $pdo->exec("SET SESSION interactive_timeout = 30");
             $pdo->exec("SET SESSION query_cache_type = OFF");  // Disable query cache (let MySQL handle it)
-            $pdo->exec("SET SESSION max_execution_time = 30");  // Max query execution time
+            // Note: max_execution_time is not available in all MySQL versions, removed
             $pdo->exec("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'");
             
             // Success - break out of retry loop
