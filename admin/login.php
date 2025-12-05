@@ -336,13 +336,24 @@
             loginBtn.textContent = 'Signing In...';
             
             try {
+                // Create AbortController for timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+                
                 const response = await fetch('auth.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: `action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+                    body: `action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
                 
                 const result = await response.json();
                 
@@ -361,8 +372,23 @@
                     showMessage(result.message || 'Login failed. Please try again.', 'error');
                 }
             } catch (error) {
-                console.error('Error:', error);
-                showMessage('Network error. Please try again.', 'error');
+                console.error('Login Error:', error);
+                let errorMessage = 'Network error. Please try again.';
+                
+                // Provide more specific error messages
+                if (error.name === 'AbortError') {
+                    errorMessage = 'Request timeout. The server is taking too long to respond. Please try again.';
+                } else if (error.message) {
+                    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                        errorMessage = 'Network error. Please check your internet connection and try again.';
+                    } else if (error.message.includes('JSON') || error.message.includes('parse')) {
+                        errorMessage = 'Server returned invalid response. Please try again.';
+                    } else if (error.message.includes('Server error')) {
+                        errorMessage = error.message;
+                    }
+                }
+                
+                showMessage(errorMessage, 'error');
             } finally {
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Sign In';
