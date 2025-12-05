@@ -344,10 +344,20 @@ $refresh_interval = 5;
             <div class="log-entry">
                 <strong>Database Host:</strong> <?php echo htmlspecialchars($host ?? 'localhost'); ?><br>
                 <strong>Database Name:</strong> <?php echo htmlspecialchars($dbname ?? 'N/A'); ?><br>
-                <strong>Connection Type:</strong> <?php echo isset($options[PDO::ATTR_PERSISTENT]) && $options[PDO::ATTR_PERSISTENT] ? 'Persistent' : 'Non-Persistent'; ?><br>
+                <strong>Connection Type:</strong> <?php echo isset($options[PDO::ATTR_PERSISTENT]) && $options[PDO::ATTR_PERSISTENT] ? 'Persistent' : 'Non-Persistent (Optimized)'; ?><br>
                 <strong>PHP Version:</strong> <?php echo PHP_VERSION; ?><br>
                 <strong>PDO Driver:</strong> <?php echo $conn->getAttribute(PDO::ATTR_DRIVER_NAME); ?><br>
-                <strong>Server Info:</strong> <?php echo $conn->getAttribute(PDO::ATTR_SERVER_INFO); ?>
+                <strong>Server Info:</strong> <?php echo $conn->getAttribute(PDO::ATTR_SERVER_INFO); ?><br>
+                <?php if (function_exists('getConnectionStats')): 
+                    $stats = getConnectionStats();
+                ?>
+                <strong>Connection Stats:</strong><br>
+                &nbsp;&nbsp;Total Attempts: <?php echo $stats['attempts']; ?><br>
+                &nbsp;&nbsp;Successful: <?php echo $stats['success']; ?><br>
+                &nbsp;&nbsp;Failed: <?php echo $stats['failures']; ?><br>
+                &nbsp;&nbsp;Retries: <?php echo $stats['retries']; ?><br>
+                &nbsp;&nbsp;Success Rate: <?php echo $stats['attempts'] > 0 ? number_format(($stats['success'] / $stats['attempts']) * 100, 2) : 0; ?>%
+                <?php endif; ?>
             </div>
         </div>
 
