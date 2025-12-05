@@ -150,24 +150,28 @@ function handleLogin() {
         $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND is_active = 1 LIMIT 1");
         $stmt->execute([$username]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = null; // Free statement
         
         // If not found by email, try username as fallback
         if (!$user) {
             $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND is_active = 1 LIMIT 1");
             $stmt->execute([$username]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt = null; // Free statement
         }
     } else {
         // If not email, try username first
         $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND is_active = 1 LIMIT 1");
         $stmt->execute([$username]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = null; // Free statement
         
         // If not found by username and input contains @, try email as fallback
         if (!$user && strpos($username, '@') !== false) {
             $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND is_active = 1 LIMIT 1");
             $stmt->execute([$username]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt = null; // Free statement
         }
     }
     
@@ -206,6 +210,7 @@ function handleLogin() {
     $staffStmt = $pdo->prepare("SELECT s.*, u.restaurant_name FROM staff s LEFT JOIN users u ON s.restaurant_id = u.restaurant_id WHERE (s.email = ? OR s.phone = ?) AND s.is_active = 1 LIMIT 1");
     $staffStmt->execute([$username, $username]);
     $staff = $staffStmt->fetch(PDO::FETCH_ASSOC);
+    $staffStmt = null; // Free statement
     
     if ($staff && password_verify($password, $staff['password'])) {
         // Staff login
@@ -238,6 +243,9 @@ function handleLogin() {
                 break;
         }
         
+        // Clear any output before JSON
+        ob_clean();
+        
         echo json_encode([
             'success' => true,
             'message' => 'Login successful',
@@ -249,8 +257,8 @@ function handleLogin() {
                 'user_type' => 'staff',
                 'role' => $staff['role']
             ]
-        ]);
-        return;
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
     }
     
     // If neither found, throw error
