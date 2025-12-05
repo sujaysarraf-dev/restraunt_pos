@@ -418,7 +418,7 @@ try {
       <div class="page-header">
         <div class="dashboard-header-row">
           <div>
-            <h1>Dashboard Overview</h1>
+            <h1>Main Dashboard Overview</h1>
             <p id="dashboardTime">Welcome back! Here's what's happening today.</p>
             <div id="trialInfo" style="margin-top:.25rem;color:#92400e;font-weight:700;display:none;"></div>
           </div>
