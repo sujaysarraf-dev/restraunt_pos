@@ -170,30 +170,65 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
 
 // Fallback: File-based image (backward compatibility)
 // Security check - only allow images from uploads directory
-if (empty($imagePath) || (strpos($imagePath, 'uploads/') !== 0 && strpos($imagePath, '../uploads/') !== 0)) {
+if (empty($imagePath) || (strpos($imagePath, 'uploads/') !== 0 && strpos($imagePath, '../uploads/') !== 0 && strpos($imagePath, '/uploads/') !== 0)) {
     http_response_code(404);
     header('Content-Type: text/plain');
     error_log("Image path rejected (security): " . $imagePath);
     exit('Image not found');
 }
 
-// Normalize path - remove ../uploads/ prefix if present, keep uploads/
-$normalizedPath = str_replace('../uploads/', 'uploads/', $imagePath);
+// Normalize path - handle various path formats
+$normalizedPath = $imagePath;
+// Remove leading slashes and ../ prefixes
+$normalizedPath = ltrim($normalizedPath, '/');
+$normalizedPath = str_replace('../uploads/', 'uploads/', $normalizedPath);
+$normalizedPath = str_replace('/uploads/', 'uploads/', $normalizedPath);
 
-// Build full path from root - try multiple possible locations
+// Build full path from root - try multiple possible locations (Hostinger-friendly)
 $rootDir = dirname(__DIR__);
-$possiblePaths = [
-    $rootDir . '/' . $normalizedPath,  // Standard path
-    __DIR__ . '/../' . $normalizedPath, // Relative from api/
-    $_SERVER['DOCUMENT_ROOT'] . '/' . $normalizedPath, // From document root
-    $normalizedPath, // Absolute path (if already full)
-];
+$docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+$scriptDir = __DIR__;
+
+// Detect if running on Hostinger (check for common Hostinger paths)
+$isHostinger = (
+    strpos($docRoot, 'public_html') !== false ||
+    strpos($docRoot, 'domains') !== false ||
+    strpos($_SERVER['SERVER_NAME'] ?? '', 'hstgr.io') !== false ||
+    strpos($_SERVER['HTTP_HOST'] ?? '', 'restrogrow.com') !== false
+);
+
+$possiblePaths = [];
+if ($isHostinger) {
+    // Hostinger-specific paths (usually public_html is document root)
+    $possiblePaths = [
+        $docRoot . '/' . $normalizedPath,  // From document root (most common on Hostinger)
+        $rootDir . '/' . $normalizedPath,  // From project root
+        $scriptDir . '/../' . $normalizedPath, // Relative from api/
+        dirname($docRoot) . '/' . $normalizedPath, // One level up from doc root
+    ];
+} else {
+    // Local development paths
+    $possiblePaths = [
+        $rootDir . '/' . $normalizedPath,  // Standard path
+        $scriptDir . '/../' . $normalizedPath, // Relative from api/
+        $docRoot . '/' . $normalizedPath, // From document root
+        $normalizedPath, // Absolute path (if already full)
+    ];
+}
 
 $fullPath = null;
 foreach ($possiblePaths as $path) {
-    if (file_exists($path) && is_readable($path)) {
-        $fullPath = $path;
-        break;
+    // Normalize path separators
+    $path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+    $path = realpath($path); // Resolve any .. or . in path
+    
+    if ($path && file_exists($path) && is_readable($path)) {
+        // Security: Ensure path is within allowed directory
+        $allowedDir = realpath($rootDir . '/uploads') ?: realpath($docRoot . '/uploads');
+        if ($allowedDir && strpos($path, $allowedDir) === 0) {
+            $fullPath = $path;
+            break;
+        }
     }
 }
 
@@ -201,9 +236,12 @@ foreach ($possiblePaths as $path) {
 if (!$fullPath || !file_exists($fullPath)) {
     http_response_code(404);
     header('Content-Type: text/plain');
-    error_log("Image not found. Tried paths: " . implode(', ', $possiblePaths));
+    error_log("Image not found on " . ($isHostinger ? "Hostinger" : "local") . ". Tried paths: " . implode(', ', $possiblePaths));
     error_log("Requested path: " . $imagePath);
+    error_log("Normalized path: " . $normalizedPath);
     error_log("Root dir: " . $rootDir);
+    error_log("Document root: " . $docRoot);
+    error_log("Script dir: " . $scriptDir);
     exit('Image not found');
 }
 
@@ -212,11 +250,25 @@ $finfo = finfo_open(FILEINFO_MIME_TYPE);
 $mimeType = finfo_file($finfo, $fullPath);
 finfo_close($finfo);
 
+// Validate MIME type is an image
+if (strpos($mimeType, 'image/') !== 0) {
+    http_response_code(404);
+    header('Content-Type: text/plain');
+    error_log("File is not an image. MIME type: " . $mimeType . ", Path: " . $fullPath);
+    exit('Invalid image file');
+}
+
 // Set appropriate headers
 header('Content-Type: ' . $mimeType);
 header('Content-Length: ' . filesize($fullPath));
 header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
+header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31536000) . ' GMT');
+
+// Clear any output buffer before sending image
+ob_clean();
 
 // Output the image
 readfile($fullPath);
+ob_end_flush();
+exit();
 ?>
