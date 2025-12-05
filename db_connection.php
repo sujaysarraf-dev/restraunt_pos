@@ -22,9 +22,9 @@ if (function_exists('getConnection')) {
     return;
 }
 
-// Enable error display for debugging (disable in production)
+// Error handling - log errors but don't display (prevents HTML in JSON responses)
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);  // Don't display errors (prevents HTML output)
 ini_set('log_errors', 1);
 
 // Auto-detect if running on Hostinger server
@@ -147,13 +147,6 @@ try {
     if (!function_exists('checkConnectionHealth')) {
         function checkConnectionHealth($conn) {
             try {
-                // Clear any existing result sets first
-                try {
-                    while ($conn->nextRowset()) {}
-                } catch (Exception $e) {
-                    // No result sets to clear
-                }
-                
                 // Use buffered query for health check
                 $stmt = $conn->query("SELECT 1");
                 $result = $stmt->fetchAll();
@@ -169,15 +162,6 @@ try {
     register_shutdown_function(function() use (&$pdo) {
         if (isset($pdo) && $pdo instanceof PDO) {
             try {
-                // Clear any unbuffered queries/results first
-                try {
-                    while ($pdo->nextRowset()) {
-                        // Clear all pending result sets
-                    }
-                } catch (Exception $e) {
-                    // Ignore - may not have result sets
-                }
-                
                 // Close any open transactions
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
@@ -197,15 +181,8 @@ try {
                 throw new Exception('Database connection not initialized');
             }
             
-            // Clear any unbuffered queries/results before returning connection
-            try {
-                // Close any open result sets
-                while ($pdo->nextRowset()) {
-                    // Clear all pending result sets
-                }
-            } catch (Exception $e) {
-                // Ignore - no result sets to clear
-            }
+            // Note: nextRowset() is a PDOStatement method, not PDO method
+            // We can't clear result sets here, but buffered queries handle this automatically
             
             // Quick health check (only if connection seems stale)
             static $last_check = 0;
@@ -216,10 +193,7 @@ try {
                         throw new Exception('Database connection is not healthy');
                     }
                 } catch (Exception $e) {
-                    // If health check fails, try to clear and retry
-                    try {
-                        while ($pdo->nextRowset()) {}
-                    } catch (Exception $e2) {}
+                    // Health check failed - connection is not usable
                     throw $e;
                 }
                 $last_check = $now;
