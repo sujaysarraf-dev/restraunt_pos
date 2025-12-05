@@ -51,21 +51,23 @@ $username = 'u509616587_restrogrow';
 $password = 'Sujaysarraf@5569';
 
 // Highly optimized connection configuration
+// Add connection timeout in DSN for remote connections
+$timeout = $is_hostinger_server ? 2 : 10; // Longer timeout for remote connections
 $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
 $options = [
     PDO::ATTR_PERSISTENT => false,  // Non-persistent to prevent connection leaks
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES => false,  // Use native prepared statements (faster, more secure)
-    PDO::ATTR_TIMEOUT => 2,  // Reduced timeout for faster failure detection
+    PDO::ATTR_TIMEOUT => $timeout,  // Longer timeout for remote connections
     PDO::ATTR_STRINGIFY_FETCHES => false,  // Keep numeric types as numbers (faster)
     PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,  // Use buffered queries (REQUIRED to prevent unbuffered query errors)
     PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
 ];
 
 // Connection retry configuration
-$max_retries = 3;
-$retry_delays = [0.5, 1, 2]; // Progressive delays in seconds
+$max_retries = $is_hostinger_server ? 3 : 2; // Fewer retries for remote (already slower)
+$retry_delays = $is_hostinger_server ? [0.5, 1, 2] : [2, 5]; // Longer delays for remote connections
 
 // Connection statistics (for monitoring)
 if (!isset($GLOBALS['db_connection_stats'])) {
@@ -114,22 +116,28 @@ try {
             $last_error = $e;
             $GLOBALS['db_connection_stats']['failures']++;
             
+            $error_msg = $e->getMessage();
+            $error_code = $e->getCode();
+            
             // If it's a connection limit error, wait before retry
-            if (strpos($e->getMessage(), 'max_connections') !== false || 
-                strpos($e->getMessage(), 'Too many connections') !== false ||
-                $e->getCode() == 1226) {
+            if (strpos($error_msg, 'max_connections') !== false || 
+                strpos($error_msg, 'Too many connections') !== false ||
+                $error_code == 1226) {
                 
                 if ($attempt < $max_retries) {
                     $delay = $retry_delays[$attempt - 1] ?? 1;
                     error_log("Connection limit reached, waiting {$delay}s before retry (attempt $attempt/$max_retries)");
-                    usleep($delay * 1000000);  // Microseconds for more precise timing
+                    sleep($delay);
                 }
-            } elseif (strpos($e->getMessage(), 'Connection refused') !== false ||
-                      strpos($e->getMessage(), 'Connection timed out') !== false) {
-                // Network errors - wait a bit
+            } elseif (strpos($error_msg, 'Connection refused') !== false ||
+                      strpos($error_msg, 'Connection timed out') !== false ||
+                      strpos($error_msg, 'did not properly respond') !== false ||
+                      $error_code == 2002 || $error_code == 2006) {
+                // Network/timeout errors - wait longer and retry
                 if ($attempt < $max_retries) {
-                    $delay = $retry_delays[$attempt - 1] ?? 0.5;
-                    usleep($delay * 1000000);
+                    $delay = $retry_delays[$attempt - 1] ?? 2;
+                    error_log("Connection timeout/network error, waiting {$delay}s before retry (attempt $attempt/$max_retries): $error_msg");
+                    sleep($delay);
                 }
             } else {
                 // Other errors - don't retry
@@ -228,9 +236,15 @@ try {
         $error_msg = "Database temporarily unavailable due to high traffic. Please try again in a moment.";
         $http_code = 503;  // Service Unavailable
     } elseif (strpos($error_message, 'Connection refused') !== false ||
-              strpos($error_message, 'Connection timed out') !== false) {
-        error_log("Database connection network error: " . $error_message);
-        $error_msg = "Database connection error. Please try again.";
+              strpos($error_message, 'Connection timed out') !== false ||
+              strpos($error_message, 'did not properly respond') !== false ||
+              $error_code == 2002 || $error_code == 2006) {
+        error_log("Database connection network/timeout error: " . $error_message);
+        if (!$is_hostinger_server) {
+            $error_msg = "Cannot connect to remote database. Remote access may be disabled or network is slow. Please check your connection or use the production server.";
+        } else {
+            $error_msg = "Database connection timeout. Please try again.";
+        }
         $http_code = 503;
     } else {
         $error_msg = "Database Error: " . $error_message;
