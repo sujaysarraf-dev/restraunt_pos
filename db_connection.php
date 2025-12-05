@@ -59,11 +59,8 @@ $options = [
     PDO::ATTR_EMULATE_PREPARES => false,  // Use native prepared statements (faster, more secure)
     PDO::ATTR_TIMEOUT => 2,  // Reduced timeout for faster failure detection
     PDO::ATTR_STRINGIFY_FETCHES => false,  // Keep numeric types as numbers (faster)
-    PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,  // Use buffered queries (better for small results)
-    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci, 
-                                     SESSION wait_timeout = 30,
-                                     SESSION interactive_timeout = 30,
-                                     SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'",
+    PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,  // Use buffered queries (REQUIRED to prevent unbuffered query errors)
+    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
 ];
 
 // Connection retry configuration
@@ -94,14 +91,17 @@ try {
             // Create connection
             $pdo = new PDO($dsn, $username, $password, $options);
             
-            // Verify connection is alive
-            $pdo->exec("SELECT 1");
+            // Verify connection is alive (use buffered query)
+            $stmt = $pdo->query("SELECT 1");
+            $stmt->fetchAll();  // Fetch all results to clear
+            $stmt = null;  // Free statement
             
-            // Set optimized session variables for better performance
+            // Set optimized session variables for better performance (one at a time, fetch results)
             $pdo->exec("SET SESSION wait_timeout = 30");  // Close idle connections after 30s
             $pdo->exec("SET SESSION interactive_timeout = 30");
             $pdo->exec("SET SESSION query_cache_type = OFF");  // Disable query cache (let MySQL handle it)
             $pdo->exec("SET SESSION max_execution_time = 30");  // Max query execution time
+            $pdo->exec("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'");
             
             // Success - break out of retry loop
             $GLOBALS['db_connection_stats']['success']++;
@@ -143,12 +143,22 @@ try {
         throw $last_error ?? new Exception('Failed to establish database connection after ' . $max_retries . ' attempts');
     }
     
-    // Connection health check function
+    // Connection health check function (ensures buffered query)
     if (!function_exists('checkConnectionHealth')) {
         function checkConnectionHealth($conn) {
             try {
-                $conn->exec("SELECT 1");
-                return true;
+                // Clear any existing result sets first
+                try {
+                    while ($conn->nextRowset()) {}
+                } catch (Exception $e) {
+                    // No result sets to clear
+                }
+                
+                // Use buffered query for health check
+                $stmt = $conn->query("SELECT 1");
+                $result = $stmt->fetchAll();
+                $stmt = null;  // Free statement
+                return !empty($result);
             } catch (Exception $e) {
                 return false;
             }
@@ -159,13 +169,18 @@ try {
     register_shutdown_function(function() use (&$pdo) {
         if (isset($pdo) && $pdo instanceof PDO) {
             try {
+                // Clear any unbuffered queries/results first
+                try {
+                    while ($pdo->nextRowset()) {
+                        // Clear all pending result sets
+                    }
+                } catch (Exception $e) {
+                    // Ignore - may not have result sets
+                }
+                
                 // Close any open transactions
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
-                }
-                // Clear any pending results
-                while ($pdo->nextRowset()) {
-                    // Clear all result sets
                 }
             } catch (Exception $e) {
                 // Ignore errors during cleanup
@@ -174,7 +189,7 @@ try {
         }
     });
     
-    // Optimized getConnection function with health check
+    // Optimized getConnection function with health check and result set cleanup
     if (!function_exists('getConnection')) {
         function getConnection() {
             global $pdo;
@@ -182,12 +197,30 @@ try {
                 throw new Exception('Database connection not initialized');
             }
             
+            // Clear any unbuffered queries/results before returning connection
+            try {
+                // Close any open result sets
+                while ($pdo->nextRowset()) {
+                    // Clear all pending result sets
+                }
+            } catch (Exception $e) {
+                // Ignore - no result sets to clear
+            }
+            
             // Quick health check (only if connection seems stale)
             static $last_check = 0;
             $now = time();
             if ($now - $last_check > 5) {  // Check every 5 seconds max
-                if (!checkConnectionHealth($pdo)) {
-                    throw new Exception('Database connection is not healthy');
+                try {
+                    if (!checkConnectionHealth($pdo)) {
+                        throw new Exception('Database connection is not healthy');
+                    }
+                } catch (Exception $e) {
+                    // If health check fails, try to clear and retry
+                    try {
+                        while ($pdo->nextRowset()) {}
+                    } catch (Exception $e2) {}
+                    throw $e;
                 }
                 $last_check = $now;
             }
