@@ -4,16 +4,18 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
+// Start output buffering to catch any unexpected output
+ob_start();
+
 // Include secure session configuration
 require_once __DIR__ . '/../config/session_config.php';
 startSecureSession();
 
-// Ensure no output before headers
-if (ob_get_level()) {
-    ob_clean();
-}
+// Clear any output that might have been generated
+ob_clean();
 
-header('Content-Type: application/json');
+// Set JSON headers
+header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
@@ -94,19 +96,38 @@ try {
     
 } catch (PDOException $e) {
     // Database error
-    error_log("Database error: " . $e->getMessage());
+    error_log("Database error in auth.php: " . $e->getMessage());
+    
+    // Clear any output
+    ob_clean();
+    
+    // Return JSON error
+    http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Database error occurred. Please try again later.'
-    ]);
+        'message' => 'Database error occurred. Please try again later.',
+        'error_code' => 'DB_ERROR'
+    ], JSON_UNESCAPED_UNICODE);
+    exit();
     
 } catch (Exception $e) {
     // General error
+    error_log("Error in auth.php: " . $e->getMessage());
+    
+    // Clear any output
+    ob_clean();
+    
+    // Return JSON error
+    http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
-    ]);
+        'message' => $e->getMessage(),
+        'error_code' => 'GENERAL_ERROR'
+    ], JSON_UNESCAPED_UNICODE);
+    exit();
 }
+
+// Don't flush output buffer here - let each function handle it
 
 function handleLogin() {
     global $pdo;
@@ -162,6 +183,9 @@ function handleLogin() {
         // Regenerate session ID after successful login for security
         regenerateSessionAfterLogin();
         
+        // Clear any output before JSON
+        ob_clean();
+        
         echo json_encode([
             'success' => true,
             'message' => 'Login successful',
@@ -173,8 +197,8 @@ function handleLogin() {
                 'user_type' => 'admin',
                 'role' => 'Admin'
             ]
-        ]);
-        return;
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
     }
     
     // If not found in users table, check staff table

@@ -352,10 +352,38 @@
                 clearTimeout(timeoutId);
                 
                 if (!response.ok) {
-                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                    // Try to get error message from response
+                    let errorText = '';
+                    try {
+                        errorText = await response.text();
+                        const errorJson = JSON.parse(errorText);
+                        throw new Error(errorJson.message || `Server error: ${response.status} ${response.statusText}`);
+                    } catch (parseError) {
+                        throw new Error(`Server error: ${response.status} ${response.statusText}. ${errorText.substring(0, 200)}`);
+                    }
                 }
                 
-                const result = await response.json();
+                // Get response text first to check if it's valid JSON
+                const responseText = await response.text();
+                
+                if (!responseText || responseText.trim() === '') {
+                    throw new Error('Server returned empty response. Please check server logs.');
+                }
+                
+                // Check if response is HTML (likely a PHP error page)
+                if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+                    console.error('Server returned HTML instead of JSON:', responseText.substring(0, 500));
+                    throw new Error('Server error: PHP error page returned. Please check server configuration.');
+                }
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('JSON Parse Error:', parseError);
+                    console.error('Response Text:', responseText.substring(0, 500));
+                    throw new Error('Server returned invalid JSON. Check console for details.');
+                }
                 
                 if (result.success) {
                     showMessage('Login successful! Redirecting...', 'success');
