@@ -173,19 +173,37 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
 if (empty($imagePath) || (strpos($imagePath, 'uploads/') !== 0 && strpos($imagePath, '../uploads/') !== 0)) {
     http_response_code(404);
     header('Content-Type: text/plain');
+    error_log("Image path rejected (security): " . $imagePath);
     exit('Image not found');
 }
 
 // Normalize path - remove ../uploads/ prefix if present, keep uploads/
 $normalizedPath = str_replace('../uploads/', 'uploads/', $imagePath);
 
-// Build full path from root
+// Build full path from root - try multiple possible locations
 $rootDir = dirname(__DIR__);
-$fullPath = $rootDir . '/' . $normalizedPath;
+$possiblePaths = [
+    $rootDir . '/' . $normalizedPath,  // Standard path
+    __DIR__ . '/../' . $normalizedPath, // Relative from api/
+    $_SERVER['DOCUMENT_ROOT'] . '/' . $normalizedPath, // From document root
+    $normalizedPath, // Absolute path (if already full)
+];
+
+$fullPath = null;
+foreach ($possiblePaths as $path) {
+    if (file_exists($path) && is_readable($path)) {
+        $fullPath = $path;
+        break;
+    }
+}
 
 // Check if file exists
-if (!file_exists($fullPath)) {
+if (!$fullPath || !file_exists($fullPath)) {
     http_response_code(404);
+    header('Content-Type: text/plain');
+    error_log("Image not found. Tried paths: " . implode(', ', $possiblePaths));
+    error_log("Requested path: " . $imagePath);
+    error_log("Root dir: " . $rootDir);
     exit('Image not found');
 }
 
