@@ -195,9 +195,9 @@ try {
   <!-- Linking Google fonts for icons -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
   <script src="../assets/js/sweetalert2.all.min.js"></script>
-  <!-- Cropper.js for image cropping -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  <!-- Cropper.js for image cropping (local files to avoid tracking prevention blocking) -->
+  <link rel="stylesheet" href="../assets/libs/cropperjs/cropper.min.css">
+  <script src="../assets/libs/cropperjs/cropper.min.js"></script>
   <script>
     // Currency symbol loaded from server-side PHP (exactly like restaurant logo/name)
     // NO JavaScript updates needed - value is already correct in HTML from PHP
