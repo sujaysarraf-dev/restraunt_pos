@@ -100,6 +100,27 @@ try {
             if (array_key_exists('currency_symbol', $userRow) && $userRow['currency_symbol'] !== null && $userRow['currency_symbol'] !== '') {
                 $db_currency = trim($userRow['currency_symbol']);
                 if ($db_currency !== '') {
+                    // Fix corrupted currency symbols
+                    $currency_fixes = [
+                        'Γé╣' => '₹',
+                        'â‚¹' => '₹',
+                        'â€¹' => '₹',
+                        'Ã¢â€šÂ¹' => '₹',
+                    ];
+                    
+                    foreach ($currency_fixes as $corrupted => $correct) {
+                        if (strpos($db_currency, $corrupted) !== false) {
+                            $db_currency = $correct;
+                            break;
+                        }
+                    }
+                    
+                    // Ensure single character and valid UTF-8
+                    $db_currency = mb_convert_encoding($db_currency, 'UTF-8', 'UTF-8');
+                    if (mb_strlen($db_currency, 'UTF-8') > 1) {
+                        $db_currency = '₹'; // Default if still corrupted
+                    }
+                    
                     $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
                     // Save to session for faster loading next time
                     $_SESSION['currency_symbol'] = $currency_symbol;
@@ -180,7 +201,7 @@ try {
   <script>
     // Currency symbol loaded from server-side PHP (exactly like restaurant logo/name)
     // NO JavaScript updates needed - value is already correct in HTML from PHP
-    window.globalCurrencySymbol = <?php echo json_encode($currency_symbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    window.globalCurrencySymbol = <?php echo json_encode($currency_symbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>;
     localStorage.setItem('system_currency', window.globalCurrencySymbol);
   </script>
 </head>

@@ -45,6 +45,10 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     
+    // Force UTF-8 encoding for all queries
+    $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+    $pdo->exec("SET CHARACTER SET utf8mb4");
+    
     if (!function_exists('getConnection')) {
         function getConnection() {
             global $pdo;

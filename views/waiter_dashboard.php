@@ -32,7 +32,30 @@ if (!$currency_symbol) {
             $currencyRow = $currencyStmt->fetch(PDO::FETCH_ASSOC);
             
             if ($currencyRow && !empty($currencyRow['currency_symbol'])) {
-                $currency_symbol = $currencyRow['currency_symbol'];
+                $db_currency = trim($currencyRow['currency_symbol']);
+                
+                // Fix corrupted currency symbols
+                $currency_fixes = [
+                    'Γé╣' => '₹',
+                    'â‚¹' => '₹',
+                    'â€¹' => '₹',
+                    'Ã¢â€šÂ¹' => '₹',
+                ];
+                
+                foreach ($currency_fixes as $corrupted => $correct) {
+                    if (strpos($db_currency, $corrupted) !== false) {
+                        $db_currency = $correct;
+                        break;
+                    }
+                }
+                
+                // Ensure single character and valid UTF-8
+                $db_currency = mb_convert_encoding($db_currency, 'UTF-8', 'UTF-8');
+                if (mb_strlen($db_currency, 'UTF-8') > 1) {
+                    $db_currency = '₹'; // Default if still corrupted
+                }
+                
+                $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
                 $_SESSION['currency_symbol'] = $currency_symbol;
             }
         }
@@ -56,7 +79,7 @@ if (!$currency_symbol) {
     <link rel="stylesheet" href="../assets/css/style.css">
     <script src="../assets/js/sweetalert2.all.min.js"></script>
     <script>
-        window.globalCurrencySymbol = <?php echo json_encode($currency_symbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        window.globalCurrencySymbol = <?php echo json_encode($currency_symbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>;
         const waiterCurrencySymbol = window.globalCurrencySymbol || '₹';
     </script>
     <script src="../assets/js/script.js"></script>

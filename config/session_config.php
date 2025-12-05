@@ -15,6 +15,13 @@ if (defined('SESSION_CONFIG_LOADED')) {
 }
 define('SESSION_CONFIG_LOADED', true);
 
+// Set UTF-8 encoding for all output
+if (!headers_sent()) {
+    header('Content-Type: text/html; charset=UTF-8');
+}
+ini_set('default_charset', 'UTF-8');
+mb_internal_encoding('UTF-8');
+
 // Session timeout in seconds (30 minutes default)
 define('SESSION_TIMEOUT', 30 * 60);
 
