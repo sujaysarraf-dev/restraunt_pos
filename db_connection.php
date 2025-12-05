@@ -1,8 +1,14 @@
 <?php
 /**
- * Database Connection File
+ * Database Connection File - Optimized for High Concurrency
  * Creates PDO connection and getConnection() function
  * Auto-detects environment (local vs Hostinger server)
+ * 
+ * Features:
+ * - Connection pooling and reuse
+ * - Automatic connection cleanup
+ * - Error handling and retry logic
+ * - Optimized for 100+ concurrent users
  */
 
 // Prevent multiple includes
@@ -42,27 +48,75 @@ $dbname = 'u509616587_restrogrow';
 $username = 'u509616587_restrogrow';
 $password = 'Sujaysarraf@5569';
 
-// Use non-persistent connections to prevent connection accumulation
-// Persistent connections on Hostinger seem to cause connection leaks
+// Connection configuration optimized for high concurrency
 $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
 $options = [
     PDO::ATTR_PERSISTENT => false,  // Non-persistent to prevent connection leaks
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES => false,  // Use native prepared statements
-    PDO::ATTR_TIMEOUT => 5,  // Connection timeout
+    PDO::ATTR_EMULATE_PREPARES => false,  // Use native prepared statements (faster)
+    PDO::ATTR_TIMEOUT => 3,  // Reduced timeout for faster failure detection
+    PDO::ATTR_STRINGIFY_FETCHES => false,  // Keep numeric types as numbers
+    PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,  // Use buffered queries
+    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",  // Set charset immediately
 ];
 
+// Connection retry configuration
+$max_retries = 2;
+$retry_delay = 1; // seconds
+
 try {
-    $pdo = new PDO($dsn, $username, $password, $options);
+    $pdo = null;
+    $last_error = null;
     
-    // Force UTF-8 encoding for all queries
-    $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
-    $pdo->exec("SET CHARACTER SET utf8mb4");
+    // Retry logic for connection failures
+    for ($attempt = 1; $attempt <= $max_retries; $attempt++) {
+        try {
+            $pdo = new PDO($dsn, $username, $password, $options);
+            
+            // Force UTF-8 encoding for all queries
+            $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $pdo->exec("SET CHARACTER SET utf8mb4");
+            
+            // Set connection timeout for queries (prevent hanging)
+            $pdo->exec("SET SESSION wait_timeout = 60");  // Close idle connections after 60s
+            $pdo->exec("SET SESSION interactive_timeout = 60");
+            
+            // Success - break out of retry loop
+            break;
+            
+        } catch (PDOException $e) {
+            $last_error = $e;
+            
+            // If it's a connection limit error, wait longer before retry
+            if (strpos($e->getMessage(), 'max_connections') !== false || $e->getCode() == 1226) {
+                if ($attempt < $max_retries) {
+                    error_log("Connection limit reached, waiting before retry (attempt $attempt/$max_retries)");
+                    sleep($retry_delay * $attempt);  // Exponential backoff
+                }
+            } else {
+                // Other errors - don't retry
+                throw $e;
+            }
+        }
+    }
+    
+    // If still no connection after retries, throw error
+    if (!$pdo || !($pdo instanceof PDO)) {
+        throw $last_error ?? new Exception('Failed to establish database connection');
+    }
     
     // Set connection to close automatically when script ends
     register_shutdown_function(function() use (&$pdo) {
         if (isset($pdo) && $pdo instanceof PDO) {
+            try {
+                // Close any open transactions
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+            } catch (Exception $e) {
+                // Ignore errors during cleanup
+            }
             $pdo = null;  // Close connection
         }
     });
@@ -76,6 +130,7 @@ try {
             return $pdo;
         }
     }
+    
 } catch (PDOException $e) {
     // Handle max_connections error specifically
     $error_code = $e->getCode();
@@ -83,32 +138,8 @@ try {
     
     // Check if it's a connection limit error
     if (strpos($error_message, 'max_connections') !== false || $error_code == 1226) {
-        error_log("Database connection limit exceeded. Waiting and retrying...");
-        
-        // Wait a bit and try once more with non-persistent connection
-        sleep(2);
-        try {
-            // Ensure non-persistent
-            $options[PDO::ATTR_PERSISTENT] = false;
-            $pdo = new PDO($dsn, $username, $password, $options);
-            $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
-            $pdo->exec("SET CHARACTER SET utf8mb4");
-            
-            if (!function_exists('getConnection')) {
-                function getConnection() {
-                    global $pdo;
-                    if (!isset($pdo) || !($pdo instanceof PDO)) {
-                        throw new Exception('Database connection not initialized');
-                    }
-                    return $pdo;
-                }
-            }
-            return;  // Success, exit early
-        } catch (PDOException $e2) {
-            // Still failed, show error
-            $error_msg = "Database Error: Too many connections. Please try again in a moment.";
-            error_log("Database connection failed after retry: " . $e2->getMessage());
-        }
+        error_log("Database connection limit exceeded after all retries");
+        $error_msg = "Database temporarily unavailable due to high traffic. Please try again in a moment.";
     } else {
         $error_msg = "Database Error: " . $error_message;
     }
@@ -117,6 +148,7 @@ try {
     
     if (!headers_sent()) {
         header('Content-Type: application/json');
+        http_response_code(503);  // Service Unavailable
         echo json_encode([
             'success' => false,
             'message' => $error_msg,
