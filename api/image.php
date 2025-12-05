@@ -5,9 +5,10 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
 // Ensure no output before headers
-if (ob_get_level()) {
-    ob_clean();
+while (ob_get_level()) {
+    ob_end_clean();
 }
+ob_start(); // Start fresh buffer
 
 // Include database connection
 if (file_exists(__DIR__ . '/../db_connection.php')) {
