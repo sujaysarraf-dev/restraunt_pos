@@ -40,10 +40,11 @@ $dbname = 'u509616587_restrogrow';
 $username = 'u509616587_restrogrow';
 $password = 'Sujaysarraf@5569';
 
-// Use persistent connection to reuse connections and avoid max_connections limit
+// Use non-persistent connections to prevent connection accumulation
+// Persistent connections on Hostinger seem to cause connection leaks
 $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
 $options = [
-    PDO::ATTR_PERSISTENT => true,  // Reuse connections
+    PDO::ATTR_PERSISTENT => false,  // Non-persistent to prevent connection leaks
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES => false,  // Use native prepared statements
@@ -56,6 +57,13 @@ try {
     // Force UTF-8 encoding for all queries
     $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
     $pdo->exec("SET CHARACTER SET utf8mb4");
+    
+    // Set connection to close automatically when script ends
+    register_shutdown_function(function() use (&$pdo) {
+        if (isset($pdo) && $pdo instanceof PDO) {
+            $pdo = null;  // Close connection
+        }
+    });
     
     if (!function_exists('getConnection')) {
         function getConnection() {
@@ -76,9 +84,10 @@ try {
         error_log("Database connection limit exceeded. Waiting and retrying...");
         
         // Wait a bit and try once more with non-persistent connection
-        sleep(1);
+        sleep(2);
         try {
-            $options[PDO::ATTR_PERSISTENT] = false;  // Try non-persistent as fallback
+            // Ensure non-persistent
+            $options[PDO::ATTR_PERSISTENT] = false;
             $pdo = new PDO($dsn, $username, $password, $options);
             $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
             $pdo->exec("SET CHARACTER SET utf8mb4");
