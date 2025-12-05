@@ -25,7 +25,9 @@ $is_hostinger_server = (
     isset($_SERVER['SERVER_NAME']) && 
     (strpos($_SERVER['SERVER_NAME'], 'hstgr.io') !== false || 
      strpos($_SERVER['SERVER_NAME'], 'hostinger') !== false ||
-     strpos($_SERVER['HTTP_HOST'] ?? '', 'hstgr.io') !== false)
+     strpos($_SERVER['SERVER_NAME'], 'restrogrow.com') !== false ||
+     strpos($_SERVER['HTTP_HOST'] ?? '', 'hstgr.io') !== false ||
+     strpos($_SERVER['HTTP_HOST'] ?? '', 'restrogrow.com') !== false)
 );
 
 if ($is_hostinger_server) {
