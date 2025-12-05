@@ -13,14 +13,16 @@ if (function_exists('getConnection')) {
     return;
 }
 
+// Enable error display for debugging
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 
+// Hostinger Database
 $host = 'auth-db1336.hstgr.io';
 $dbname = 'u509616587_restrogrow';
 $username = 'u509616587_restrogrow';
-$password = 'SujaySarraf@5569';
+$password = 'Sujaysarraf@5569';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
@@ -37,16 +39,21 @@ try {
         }
     }
 } catch (PDOException $e) {
-    error_log("Database connection error: " . $e->getMessage());
+    // Show actual error for debugging
+    $error_msg = "Database Error: " . $e->getMessage();
+    error_log($error_msg);
+    
     if (!headers_sent()) {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => false,
-            'message' => 'Database connection failed. Please check your database settings.'
+            'message' => $error_msg,
+            'host' => $host,
+            'database' => $dbname
         ]);
         exit();
     } else {
-        die("Database connection failed. Please check your database settings.");
+        die($error_msg);
     }
 }
 ?>
