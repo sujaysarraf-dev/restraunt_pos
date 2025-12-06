@@ -58,8 +58,11 @@ $password = 'Sujaysarraf@5569';
 // Add connection timeout in DSN for remote connections
 $timeout = $is_hostinger_server ? 2 : 10; // Longer timeout for remote connections
 $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
+// Enable persistent connections for connection pooling/reuse
+// This allows multiple tabs/requests to share the same database connection
+// PHP-FPM will manage connection reuse automatically
 $options = [
-    PDO::ATTR_PERSISTENT => false,  // Non-persistent to prevent connection leaks
+    PDO::ATTR_PERSISTENT => true,  // Persistent connections for connection pooling (reduces connection count)
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES => false,  // Use native prepared statements (faster, more secure)
@@ -103,11 +106,17 @@ try {
             $stmt = null;  // Free statement
             
             // Set optimized session variables for better performance (one at a time, fetch results)
-            $pdo->exec("SET SESSION wait_timeout = 30");  // Close idle connections after 30s
-            $pdo->exec("SET SESSION interactive_timeout = 30");
+            // For persistent connections, use longer timeouts to allow connection reuse
+            $pdo->exec("SET SESSION wait_timeout = 300");  // 5 minutes for persistent connections (allows reuse)
+            $pdo->exec("SET SESSION interactive_timeout = 300");
             $pdo->exec("SET SESSION query_cache_type = OFF");  // Disable query cache (let MySQL handle it)
             // Note: max_execution_time is not available in all MySQL versions, removed
             $pdo->exec("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'");
+            
+            // Clear any previous transaction state (important for persistent connections)
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             
             // Success - break out of retry loop
             $GLOBALS['db_connection_stats']['success']++;
@@ -170,18 +179,23 @@ try {
         }
     }
     
-    // Set connection to close automatically when script ends
+    // For persistent connections, we don't close them - they're reused
+    // But we do cleanup any open transactions
     register_shutdown_function(function() use (&$pdo) {
         if (isset($pdo) && $pdo instanceof PDO) {
             try {
-                // Close any open transactions
+                // Close any open transactions (important for persistent connections)
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
+                }
+                // Clear any pending results
+                while ($pdo->nextRowset()) {
+                    // Clear all result sets
                 }
             } catch (Exception $e) {
                 // Ignore errors during cleanup
             }
-            $pdo = null;  // Close connection
+            // Don't set $pdo = null for persistent connections - let PHP-FPM reuse it
         }
     });
     
