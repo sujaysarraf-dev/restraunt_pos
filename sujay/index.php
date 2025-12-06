@@ -44,328 +44,544 @@ $connectionStats = getConnectionStats();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sujay Testing Dashboard</title>
+    <title>Testing Dashboard - RestroGrow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #1e40af;
+            --primary-dark: #1e3a8a;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-900);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        .container {
-            max-width: 1200px;
+
+        .navbar {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .nav-container {
+            max-width: 1400px;
             margin: 0 auto;
-        }
-        .header {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        .header h1 {
-            color: #333;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-        .header p {
-            color: #666;
-            font-size: 1.1em;
-        }
-        .status-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        .status-card h2 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.5em;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
-        }
-        .status-item {
+            padding: 0 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
         }
-        .status-item:last-child {
-            border-bottom: none;
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
         }
-        .status-label {
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--gray-600);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--gray-600);
+            font-size: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: var(--gray-300);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
             font-weight: 600;
-            color: #555;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
-        .status-value {
-            padding: 5px 15px;
-            border-radius: 20px;
+
+        .stat-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
             font-weight: 600;
         }
-        .status-success {
-            background: #10b981;
-            color: white;
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
         }
-        .status-error {
-            background: #ef4444;
-            color: white;
+
+        .badge-error {
+            background: #fee2e2;
+            color: #991b1b;
         }
-        .status-info {
-            background: #3b82f6;
-            color: white;
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
         }
-        .links-grid {
+
+        .stat-value {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-details {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .section-divider {
+            flex: 1;
+            height: 1px;
+            background: var(--gray-200);
+            margin-left: 1rem;
+        }
+
+        .cards-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
+            gap: 1.5rem;
         }
-        .link-card {
+
+        .card {
             background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 1.5rem;
             text-decoration: none;
             color: inherit;
             display: block;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
         }
-        .link-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+            transform: scaleX(0);
+            transition: transform 0.2s;
         }
-        .link-card h3 {
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 1.3em;
+
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+            transform: translateY(-2px);
         }
-        .link-card p {
-            color: #666;
-            font-size: 0.95em;
+
+        .card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            transition: background 0.2s;
+        }
+
+        .card:hover .card-icon {
+            background: var(--primary);
+            color: white;
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .card-description {
+            font-size: 0.875rem;
+            color: var(--gray-600);
             line-height: 1.5;
         }
-        .link-card .icon {
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-        .category {
-            margin-top: 40px;
-        }
-        .category-title {
-            color: white;
-            font-size: 1.8em;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        .credentials-box {
-            background: #f8f9fa;
-            padding: 15px;
+
+        .info-box {
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-left: 4px solid var(--primary);
             border-radius: 8px;
-            margin-top: 15px;
-            border-left: 4px solid #667eea;
+            padding: 1.25rem;
+            margin-top: 1rem;
         }
-        .credentials-box strong {
-            color: #333;
+
+        .info-box-title {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
-        .credentials-box code {
-            background: #e9ecef;
-            padding: 2px 6px;
+
+        .info-box-content {
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+
+        .info-box code {
+            background: white;
+            border: 1px solid var(--gray-200);
+            padding: 0.25rem 0.5rem;
             border-radius: 4px;
-            font-family: 'Courier New', monospace;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.8125rem;
+            color: var(--primary);
+        }
+
+        .info-box a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .info-box a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-container {
+                padding: 0 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+                font-size: 0.875rem;
+            }
         }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">RestroGrow</a>
+            <div class="nav-links">
+                <a href="https://restrogrow.com/superadmin/dashboard.php">Dashboard</a>
+                <a href="https://restrogrow.com/superadmin/login.php">Login</a>
+            </div>
+        </div>
+    </nav>
+
     <div class="container">
-        <div class="header">
-            <h1>🚀 Sujay Testing Dashboard</h1>
-            <p>Quick access to all testing tools and connections</p>
+        <div class="page-header">
+            <h1>Testing Dashboard</h1>
+            <p>Quick access to testing tools, APIs, and system configurations</p>
         </div>
 
-        <!-- Database Connection Status -->
-        <div class="status-card">
-            <h2>📊 Database Connection Status</h2>
-            <div class="status-item">
-                <span class="status-label">Connection Status:</span>
-                <span class="status-value <?php echo $dbStatus === 'success' ? 'status-success' : 'status-error'; ?>">
-                    <?php echo $dbStatus === 'success' ? '✓ Connected' : '✗ Error'; ?>
-                </span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Message:</span>
-                <span class="status-value status-info"><?php echo htmlspecialchars($dbMessage); ?></span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Connection Attempts:</span>
-                <span class="status-value status-info"><?php echo $connectionStats['attempts']; ?></span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Successful Connections:</span>
-                <span class="status-value status-success"><?php echo $connectionStats['success']; ?></span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Failed Connections:</span>
-                <span class="status-value status-error"><?php echo $connectionStats['failures']; ?></span>
-            </div>
-        </div>
-
-        <!-- Superadmin User Status -->
-        <div class="status-card">
-            <h2>👤 Superadmin User Status</h2>
-            <?php if (isset($userCreated) && $userCreated): ?>
-                <div class="status-item">
-                    <span class="status-label">User Created:</span>
-                    <span class="status-value status-success">✓ Created Successfully</span>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Database Status</div>
+                    <span class="stat-badge <?php echo $dbStatus === 'success' ? 'badge-success' : 'badge-error'; ?>">
+                        <?php echo $dbStatus === 'success' ? 'Online' : 'Offline'; ?>
+                    </span>
                 </div>
-            <?php elseif (isset($userCreated) && !$userCreated): ?>
-                <div class="status-item">
-                    <span class="status-label">User Status:</span>
-                    <span class="status-value status-info">✓ Already Exists</span>
+                <div class="stat-value"><?php echo $connectionStats['success']; ?></div>
+                <div class="stat-details">Successful connections</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Connection Attempts</div>
+                    <span class="stat-badge badge-info">Total</span>
                 </div>
-            <?php endif; ?>
-            <?php if (isset($userError)): ?>
-                <div class="status-item">
-                    <span class="status-label">Error:</span>
-                    <span class="status-value status-error"><?php echo htmlspecialchars($userError); ?></span>
+                <div class="stat-value"><?php echo $connectionStats['attempts']; ?></div>
+                <div class="stat-details">Total connection attempts</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Failed Connections</div>
+                    <span class="stat-badge <?php echo $connectionStats['failures'] > 0 ? 'badge-error' : 'badge-success'; ?>">
+                        <?php echo $connectionStats['failures'] > 0 ? 'Issues' : 'None'; ?>
+                    </span>
                 </div>
-            <?php endif; ?>
-            <div class="credentials-box">
-                <strong>Login Credentials:</strong><br>
-                Username: <code>sujay</code><br>
-                Password: <code>sujay123</code><br>
-                <a href="https://restrogrow.com/superadmin/login.php" style="color: #667eea; text-decoration: none; font-weight: 600;">→ Go to Superadmin Login</a>
+                <div class="stat-value"><?php echo $connectionStats['failures']; ?></div>
+                <div class="stat-details">Connection failures</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Superadmin User</div>
+                    <span class="stat-badge <?php echo isset($userCreated) && !$userCreated ? 'badge-success' : (isset($userCreated) ? 'badge-info' : 'badge-error'); ?>">
+                        <?php echo isset($userCreated) && !$userCreated ? 'Active' : (isset($userCreated) ? 'Created' : 'Error'); ?>
+                    </span>
+                </div>
+                <div class="stat-value">sujay</div>
+                <div class="stat-details">Superadmin account</div>
             </div>
         </div>
 
-        <!-- Testing Tools -->
-        <div class="category">
-            <h2 class="category-title">🧪 Testing Tools</h2>
-            <div class="links-grid">
-                <a href="https://restrogrow.com/test_image_loading.php" class="link-card">
-                    <div class="icon">🖼️</div>
-                    <h3>Image Loading Test</h3>
-                    <p>Test image loading from database and file system. Check uploads directory and image paths.</p>
-                </a>
-
-                <a href="https://restrogrow.com/db_connection.php" class="link-card" target="_blank">
-                    <div class="icon">🔌</div>
-                    <h3>Database Connection</h3>
-                    <p>View database connection configuration and test connection status.</p>
-                </a>
-
-                <a href="https://restrogrow.com/admin/test_email.php" class="link-card">
-                    <div class="icon">📧</div>
-                    <h3>Email Test</h3>
-                    <p>Test email sending functionality and SMTP configuration.</p>
-                </a>
-
-                <a href="https://restrogrow.com/admin/connection_monitor.php" class="link-card">
-                    <div class="icon">📡</div>
-                    <h3>Connection Monitor</h3>
-                    <p>Monitor database connections and view connection statistics.</p>
+        <div class="stat-card" style="margin-bottom: 2rem;">
+            <div class="stat-title" style="margin-bottom: 1rem;">Superadmin Credentials</div>
+            <div class="info-box" style="margin-top: 0;">
+                <div class="info-box-content">
+                    <strong>Username:</strong> <code>sujay</code><br>
+                    <strong>Password:</strong> <code>sujay123</code>
+                </div>
+                <a href="https://restrogrow.com/superadmin/login.php">
+                    Access Superadmin Dashboard →
                 </a>
             </div>
         </div>
 
-        <!-- Important Files -->
-        <div class="category">
-            <h2 class="category-title">📁 Important Files</h2>
-            <div class="links-grid">
-                <a href="https://restrogrow.com/config/session_config.php" class="link-card" target="_blank">
-                    <div class="icon">🔐</div>
-                    <h3>Session Config</h3>
-                    <p>Session configuration and security settings.</p>
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Testing Tools</h2>
+                <div class="section-divider"></div>
+            </div>
+            <div class="cards-grid">
+                <a href="https://restrogrow.com/test_image_loading.php" class="card">
+                    <div class="card-icon">🖼️</div>
+                    <div class="card-title">Image Loading Test</div>
+                    <div class="card-description">Test image loading from database and file system. Check uploads directory and image paths.</div>
                 </a>
 
-                <a href="https://restrogrow.com/config/email_config.php" class="link-card" target="_blank">
-                    <div class="icon">⚙️</div>
-                    <h3>Email Config</h3>
-                    <p>Email server configuration and SMTP settings.</p>
+                <a href="https://restrogrow.com/db_connection.php" class="card" target="_blank">
+                    <div class="card-icon">🔌</div>
+                    <div class="card-title">Database Connection</div>
+                    <div class="card-description">View database connection configuration and test connection status.</div>
                 </a>
 
-                <a href="https://restrogrow.com/config/db_migration.php" class="link-card" target="_blank">
-                    <div class="icon">🔄</div>
-                    <h3>Database Migration</h3>
-                    <p>Database migration scripts and schema updates.</p>
+                <a href="https://restrogrow.com/admin/test_email.php" class="card">
+                    <div class="card-icon">📧</div>
+                    <div class="card-title">Email Test</div>
+                    <div class="card-description">Test email sending functionality and SMTP configuration.</div>
                 </a>
 
-                <a href="https://restrogrow.com/superadmin/dashboard.php" class="link-card">
-                    <div class="icon">📊</div>
-                    <h3>Superadmin Dashboard</h3>
-                    <p>Access the superadmin dashboard for managing restaurants.</p>
+                <a href="https://restrogrow.com/admin/connection_monitor.php" class="card">
+                    <div class="card-icon">📡</div>
+                    <div class="card-title">Connection Monitor</div>
+                    <div class="card-description">Monitor database connections and view connection statistics.</div>
                 </a>
             </div>
         </div>
 
-        <!-- API Endpoints -->
-        <div class="category">
-            <h2 class="category-title">🔗 API Endpoints</h2>
-            <div class="links-grid">
-                <a href="https://restrogrow.com/api/image.php" class="link-card" target="_blank">
-                    <div class="icon">🖼️</div>
-                    <h3>Image API</h3>
-                    <p>Image serving endpoint for database and file-based images.</p>
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Configuration Files</h2>
+                <div class="section-divider"></div>
+            </div>
+            <div class="cards-grid">
+                <a href="https://restrogrow.com/config/session_config.php" class="card" target="_blank">
+                    <div class="card-icon">🔐</div>
+                    <div class="card-title">Session Configuration</div>
+                    <div class="card-description">Session configuration and security settings.</div>
                 </a>
 
-                <a href="https://restrogrow.com/api/get_menu_items.php" class="link-card" target="_blank">
-                    <div class="icon">🍽️</div>
-                    <h3>Menu Items API</h3>
-                    <p>Get menu items for restaurants.</p>
+                <a href="https://restrogrow.com/config/email_config.php" class="card" target="_blank">
+                    <div class="card-icon">⚙️</div>
+                    <div class="card-title">Email Configuration</div>
+                    <div class="card-description">Email server configuration and SMTP settings.</div>
                 </a>
 
-                <a href="https://restrogrow.com/api/get_dashboard_stats.php" class="link-card" target="_blank">
-                    <div class="icon">📈</div>
-                    <h3>Dashboard Stats API</h3>
-                    <p>Get dashboard statistics and analytics.</p>
+                <a href="https://restrogrow.com/config/db_migration.php" class="card" target="_blank">
+                    <div class="card-icon">🔄</div>
+                    <div class="card-title">Database Migration</div>
+                    <div class="card-description">Database migration scripts and schema updates.</div>
                 </a>
 
-                <a href="https://restrogrow.com/superadmin/api.php" class="link-card" target="_blank">
-                    <div class="icon">⚡</div>
-                    <h3>Superadmin API</h3>
-                    <p>Superadmin API endpoints for restaurant management.</p>
+                <a href="https://restrogrow.com/superadmin/dashboard.php" class="card">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">Superadmin Dashboard</div>
+                    <div class="card-description">Access the superadmin dashboard for managing restaurants.</div>
                 </a>
             </div>
         </div>
 
-        <!-- Documentation -->
-        <div class="category">
-            <h2 class="category-title">📚 Documentation</h2>
-            <div class="links-grid">
-                <a href="https://restrogrow.com/docs/DATABASE_CONNECTION_OPTIMIZATION.md" class="link-card" target="_blank">
-                    <div class="icon">📖</div>
-                    <h3>Database Connection Docs</h3>
-                    <p>Documentation on database connection optimization.</p>
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">API Endpoints</h2>
+                <div class="section-divider"></div>
+            </div>
+            <div class="cards-grid">
+                <a href="https://restrogrow.com/api/image.php" class="card" target="_blank">
+                    <div class="card-icon">🖼️</div>
+                    <div class="card-title">Image API</div>
+                    <div class="card-description">Image serving endpoint for database and file-based images.</div>
                 </a>
 
-                <a href="https://restrogrow.com/docs/IMAGE_STORAGE_OPTIONS.md" class="link-card" target="_blank">
-                    <div class="icon">📸</div>
-                    <h3>Image Storage Docs</h3>
-                    <p>Documentation on image storage options and implementation.</p>
+                <a href="https://restrogrow.com/api/get_menu_items.php" class="card" target="_blank">
+                    <div class="card-icon">🍽️</div>
+                    <div class="card-title">Menu Items API</div>
+                    <div class="card-description">Get menu items for restaurants.</div>
                 </a>
 
-                <a href="https://restrogrow.com/DEPLOYMENT.md" class="link-card" target="_blank">
-                    <div class="icon">🚀</div>
-                    <h3>Deployment Guide</h3>
-                    <p>Deployment instructions and server configuration.</p>
+                <a href="https://restrogrow.com/api/get_dashboard_stats.php" class="card" target="_blank">
+                    <div class="card-icon">📈</div>
+                    <div class="card-title">Dashboard Stats API</div>
+                    <div class="card-description">Get dashboard statistics and analytics.</div>
                 </a>
 
-                <a href="https://restrogrow.com/database/database_schema.sql" class="link-card" target="_blank">
-                    <div class="icon">🗄️</div>
-                    <h3>Database Schema</h3>
-                    <p>Complete database schema and table structures.</p>
+                <a href="https://restrogrow.com/superadmin/api.php" class="card" target="_blank">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">Superadmin API</div>
+                    <div class="card-description">Superadmin API endpoints for restaurant management.</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Documentation</h2>
+                <div class="section-divider"></div>
+            </div>
+            <div class="cards-grid">
+                <a href="https://restrogrow.com/docs/DATABASE_CONNECTION_OPTIMIZATION.md" class="card" target="_blank">
+                    <div class="card-icon">📖</div>
+                    <div class="card-title">Database Connection Docs</div>
+                    <div class="card-description">Documentation on database connection optimization.</div>
+                </a>
+
+                <a href="https://restrogrow.com/docs/IMAGE_STORAGE_OPTIONS.md" class="card" target="_blank">
+                    <div class="card-icon">📸</div>
+                    <div class="card-title">Image Storage Docs</div>
+                    <div class="card-description">Documentation on image storage options and implementation.</div>
+                </a>
+
+                <a href="https://restrogrow.com/DEPLOYMENT.md" class="card" target="_blank">
+                    <div class="card-icon">🚀</div>
+                    <div class="card-title">Deployment Guide</div>
+                    <div class="card-description">Deployment instructions and server configuration.</div>
+                </a>
+
+                <a href="https://restrogrow.com/database/database_schema.sql" class="card" target="_blank">
+                    <div class="card-icon">🗄️</div>
+                    <div class="card-title">Database Schema</div>
+                    <div class="card-description">Complete database schema and table structures.</div>
                 </a>
             </div>
         </div>
     </div>
 </body>
 </html>
-
