@@ -123,7 +123,10 @@ try {
         'email' => $row['email'] ?? $_SESSION['email'] ?? null,
         'phone' => $row['phone'] ?? null,
         'address' => $row['address'] ?? null,
-        'currency_symbol' => $row['currency_symbol'] ?? $_SESSION['currency_symbol'] ?? null,
+        'currency_symbol' => isset($row['currency_symbol']) ? (function() use ($row) {
+            require_once __DIR__ . '/../config/unicode_utils.php';
+            return fixCurrencySymbol($row['currency_symbol']);
+        })() : ($_SESSION['currency_symbol'] ?? null),
         'timezone' => $row['timezone'] ?? null,
         'restaurant_logo' => $row['restaurant_logo'] ?? null,
         'business_qr_code_path' => $row['business_qr_code_path'] ?? null,

@@ -27,9 +27,11 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);  // Don't display errors (prevents HTML output)
 ini_set('log_errors', 1);
 
-// Set UTF-8 encoding for all database operations
+// Set UTF-8 encoding for all database operations and PHP output
 ini_set('default_charset', 'UTF-8');
 mb_internal_encoding('UTF-8');
+mb_http_output('UTF-8');
+mb_regex_encoding('UTF-8');
 
 // Auto-detect if running on Hostinger server
 // On Hostinger, use localhost; from local machine, use remote host

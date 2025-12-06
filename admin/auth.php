@@ -585,10 +585,14 @@ function handleUpdateSystemSettings() {
         throw new Exception('You must be logged in to update system settings');
     }
     
-    $currencySymbol = isset($_POST['currency_symbol']) ? trim($_POST['currency_symbol']) : '₹';
+    $currencySymbolRaw = isset($_POST['currency_symbol']) ? trim($_POST['currency_symbol']) : '₹';
     $timezone = isset($_POST['timezone']) ? trim($_POST['timezone']) : 'Asia/Kolkata';
     $autoSync = isset($_POST['auto_sync']) ? (int)$_POST['auto_sync'] : 0;
     $notifications = isset($_POST['notifications']) ? (int)$_POST['notifications'] : 0;
+    
+    // Use centralized Unicode fix function
+    require_once __DIR__ . '/../config/unicode_utils.php';
+    $currencySymbol = fixCurrencySymbol($currencySymbolRaw);
     
     // Validate input
     if (empty($currencySymbol)) {

@@ -98,33 +98,12 @@ try {
             // This MUST be loaded before HTML renders to prevent any flash
             // IMPORTANT: Use array_key_exists to check if column exists, then check value
             if (array_key_exists('currency_symbol', $userRow) && $userRow['currency_symbol'] !== null && $userRow['currency_symbol'] !== '') {
-                $db_currency = trim($userRow['currency_symbol']);
-                if ($db_currency !== '') {
-                    // Fix corrupted currency symbols
-                    $currency_fixes = [
-                        'Γé╣' => '₹',
-                        'â‚¹' => '₹',
-                        'â€¹' => '₹',
-                        'Ã¢â€šÂ¹' => '₹',
-                    ];
-                    
-                    foreach ($currency_fixes as $corrupted => $correct) {
-                        if (strpos($db_currency, $corrupted) !== false) {
-                            $db_currency = $correct;
-                            break;
-                        }
-                    }
-                    
-                    // Ensure single character and valid UTF-8
-                    $db_currency = mb_convert_encoding($db_currency, 'UTF-8', 'UTF-8');
-                    if (mb_strlen($db_currency, 'UTF-8') > 1) {
-                        $db_currency = '₹'; // Default if still corrupted
-                    }
-                    
-                    $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
-                    // Save to session for faster loading next time
-                    $_SESSION['currency_symbol'] = $currency_symbol;
-                }
+                // Use centralized Unicode fix function
+                require_once __DIR__ . '/../config/unicode_utils.php';
+                $db_currency = fixCurrencySymbol($userRow['currency_symbol']);
+                $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
+                // Save to session for faster loading next time
+                $_SESSION['currency_symbol'] = $currency_symbol;
             }
             // Timezone
             if (!empty($userRow['timezone'])) {
@@ -163,12 +142,12 @@ try {
                 }
                 // Also try to get currency symbol
                 if (array_key_exists('currency_symbol', $logoRow) && $logoRow['currency_symbol'] !== null && $logoRow['currency_symbol'] !== '') {
-                    $db_currency = trim($logoRow['currency_symbol']);
-                    if ($db_currency !== '') {
-                        $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
-                        // Save to session for faster loading next time
-                        $_SESSION['currency_symbol'] = $currency_symbol;
-                    }
+                    // Use centralized Unicode fix function
+                    require_once __DIR__ . '/../config/unicode_utils.php';
+                    $db_currency = fixCurrencySymbol($logoRow['currency_symbol']);
+                    $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
+                    // Save to session for faster loading next time
+                    $_SESSION['currency_symbol'] = $currency_symbol;
                 }
             }
         } catch (PDOException $e2) {

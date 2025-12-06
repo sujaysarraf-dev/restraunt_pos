@@ -32,29 +32,9 @@ if (!$currency_symbol) {
             $currencyRow = $currencyStmt->fetch(PDO::FETCH_ASSOC);
             
             if ($currencyRow && !empty($currencyRow['currency_symbol'])) {
-                $db_currency = trim($currencyRow['currency_symbol']);
-                
-                // Fix corrupted currency symbols
-                $currency_fixes = [
-                    'Γé╣' => '₹',
-                    'â‚¹' => '₹',
-                    'â€¹' => '₹',
-                    'Ã¢â€šÂ¹' => '₹',
-                ];
-                
-                foreach ($currency_fixes as $corrupted => $correct) {
-                    if (strpos($db_currency, $corrupted) !== false) {
-                        $db_currency = $correct;
-                        break;
-                    }
-                }
-                
-                // Ensure single character and valid UTF-8
-                $db_currency = mb_convert_encoding($db_currency, 'UTF-8', 'UTF-8');
-                if (mb_strlen($db_currency, 'UTF-8') > 1) {
-                    $db_currency = '₹'; // Default if still corrupted
-                }
-                
+                // Use centralized Unicode fix function
+                require_once __DIR__ . '/../config/unicode_utils.php';
+                $db_currency = fixCurrencySymbol($currencyRow['currency_symbol']);
                 $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
                 $_SESSION['currency_symbol'] = $currency_symbol;
             }

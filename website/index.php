@@ -160,15 +160,13 @@ try {
             // IMPORTANT: Use array_key_exists to check if column exists, then check value
             // This matches exactly how dashboard.php loads currency
             if (array_key_exists('currency_symbol', $userRow) && $userRow['currency_symbol'] !== null && $userRow['currency_symbol'] !== '') {
-                $db_currency = trim($userRow['currency_symbol']);
-                if ($db_currency !== '') {
-                    $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
-                    // Save to session for faster loading next time (like dashboard)
-                    $_SESSION['currency_symbol'] = $currency_symbol;
-                    error_log("DEBUG: Currency loaded from DB for restaurant_id '$restaurant_id' (user_id: " . ($user_id ?? 'N/A') . "): '$currency_symbol'");
-                } else {
-                    error_log("Currency symbol in database is empty for restaurant_id: " . $restaurant_id);
-                }
+                // Use centralized Unicode fix function
+                require_once __DIR__ . '/../config/unicode_utils.php';
+                $db_currency = fixCurrencySymbol($userRow['currency_symbol']);
+                $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
+                // Save to session for faster loading next time (like dashboard)
+                $_SESSION['currency_symbol'] = $currency_symbol;
+                error_log("DEBUG: Currency loaded from DB for restaurant_id '$restaurant_id' (user_id: " . ($user_id ?? 'N/A') . "): '$currency_symbol'");
             } else {
                 // Currency is NULL or doesn't exist - use default
                 error_log("Currency symbol is NULL or not found in database for restaurant_id: " . $restaurant_id . " (user_id: " . ($user_id ?? 'N/A') . ")");
