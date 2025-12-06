@@ -31,8 +31,8 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         exit();
     }
 } else {
-    // User is not logged in, redirect to login page
-    header('Location: admin/login.php');
+    // User is not logged in, redirect to frontend landing page
+    header('Location: frontend/index.html');
     exit();
 }
 ?>
