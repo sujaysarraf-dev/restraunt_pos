@@ -140,11 +140,32 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
             $item = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($item && !empty($item['image_data'])) {
+                ob_end_clean();
                 header('Content-Type: ' . ($item['image_mime_type'] ?? 'image/jpeg'));
                 header('Content-Length: ' . strlen($item['image_data']));
                 header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
                 echo $item['image_data'];
                 exit();
+            }
+        } elseif (!empty($imagePath) && strpos($imagePath, 'db:') !== 0) {
+            // Old file-based image path - check if it exists in database as image_data first
+            // This handles cases where old images might have been migrated to database
+            try {
+                $stmt = $pdo->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
+                $stmt->execute([$imagePath]);
+                $item = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($item && !empty($item['image_data'])) {
+                    ob_end_clean();
+                    header('Content-Type: ' . ($item['image_mime_type'] ?? 'image/jpeg'));
+                    header('Content-Length: ' . strlen($item['image_data']));
+                    header('Cache-Control: public, max-age=31536000');
+                    echo $item['image_data'];
+                    exit();
+                }
+            } catch (PDOException $e) {
+                // If query fails, fall through to file-based handling
+                error_log("Database check for old image failed: " . $e->getMessage());
             }
         }
         
@@ -169,21 +190,45 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
     }
 }
 
-// Fallback: File-based image (backward compatibility)
+// Fallback: File-based image (backward compatibility for old images)
 // Security check - only allow images from uploads directory
-if (empty($imagePath) || (strpos($imagePath, 'uploads/') !== 0 && strpos($imagePath, '../uploads/') !== 0 && strpos($imagePath, '/uploads/') !== 0)) {
+if (empty($imagePath)) {
     http_response_code(404);
     header('Content-Type: text/plain');
-    error_log("Image path rejected (security): " . $imagePath);
+    error_log("Image path is empty");
+    exit('Image not found');
+}
+
+// Skip file-based handling if it's a database reference or external URL
+if (strpos($imagePath, 'db:') === 0 || strpos($imagePath, 'http') === 0) {
+    http_response_code(404);
+    header('Content-Type: text/plain');
     exit('Image not found');
 }
 
 // Normalize path - handle various path formats
 $normalizedPath = $imagePath;
-// Remove leading slashes and ../ prefixes
+
+// Check if path already contains uploads
+$hasUploadsPath = (
+    stripos($imagePath, 'uploads/') !== false || 
+    stripos($imagePath, 'uploads\\') !== false
+);
+
+// If path doesn't contain uploads, prepend it
+if (!$hasUploadsPath) {
+    $normalizedPath = 'uploads/' . ltrim($imagePath, '/\\');
+}
+
+// Normalize path separators and remove unsafe patterns
+$normalizedPath = str_replace('\\', '/', $normalizedPath);
+$normalizedPath = preg_replace('#\.\./#', '', $normalizedPath); // Remove ../
 $normalizedPath = ltrim($normalizedPath, '/');
-$normalizedPath = str_replace('../uploads/', 'uploads/', $normalizedPath);
-$normalizedPath = str_replace('/uploads/', 'uploads/', $normalizedPath);
+
+// Ensure it starts with uploads/
+if (strpos($normalizedPath, 'uploads/') !== 0) {
+    $normalizedPath = 'uploads/' . $normalizedPath;
+}
 
 // Build full path from root - try multiple possible locations (Hostinger-friendly)
 $rootDir = dirname(__DIR__);
