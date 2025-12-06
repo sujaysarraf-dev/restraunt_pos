@@ -145,34 +145,47 @@ try {
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
     foreach ($items as $item) {
         echo "Item #{$item['id']} ({$item['item_name_en']}):\n";
-        echo "  Image path: {$item['item_image']}\n";
+        echo "  item_image column: {$item['item_image']}\n";
+        
+        // Always check for BLOB data first (regardless of item_image value)
+        $hasBlob = false;
+        $blobSize = 0;
+        $blobMimeType = null;
+        try {
+            $blobStmt = $conn->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE id = ? AND image_data IS NOT NULL LIMIT 1");
+            $blobStmt->execute([$item['id']]);
+            $blobData = $blobStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($blobData && !empty($blobData['image_data'])) {
+                $hasBlob = true;
+                $blobSize = strlen($blobData['image_data']);
+                $blobMimeType = $blobData['image_mime_type'] ?? 'unknown';
+                echo "  image_data column: ✓ BLOB EXISTS (" . number_format($blobSize) . " bytes, MIME: $blobMimeType)\n";
+            } else {
+                echo "  image_data column: ✗ No BLOB data\n";
+            }
+        } catch (PDOException $e) {
+            echo "  image_data column: ⚠ Could not check - " . $e->getMessage() . "\n";
+        }
         
         if (strpos($item['item_image'], 'db:') === 0) {
-            echo "  Type: Database-stored\n";
+            echo "  Type: Database-stored (db: prefix)\n";
             echo "  API URL: /api/image.php?path=" . urlencode($item['item_image']) . "\n";
+            if ($hasBlob) {
+                echo "  ✓ Will serve from: image_data BLOB (priority)\n";
+            } else {
+                echo "  ⚠ Will try to serve from: item_image reference\n";
+            }
         } else {
-            echo "  Type: File-based\n";
+            echo "  Type: File-based path\n";
             echo "  API URL: /api/image.php?path=" . urlencode($item['item_image']) . "\n";
             
-            // Check if image data exists as BLOB in database
-            try {
-                $blobStmt = $conn->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE id = ? AND image_data IS NOT NULL LIMIT 1");
-                $blobStmt->execute([$item['id']]);
-                $blobData = $blobStmt->fetch(PDO::FETCH_ASSOC);
-                
-                if ($blobData && !empty($blobData['image_data'])) {
-                    $blobSize = strlen($blobData['image_data']);
-                    echo "  ✓ BLOB data found in database (" . number_format($blobSize) . " bytes)\n";
-                    echo "  MIME type: " . ($blobData['image_mime_type'] ?? 'unknown') . "\n";
-                    echo "  Note: Image will be served from database BLOB, not file\n";
-                    echo "\n";
-                    continue; // Skip file checking since BLOB exists
-                } else {
-                    echo "  ⚠ No BLOB data in database, checking for file...\n";
-                }
-            } catch (PDOException $e) {
-                echo "  ⚠ Could not check BLOB data: " . $e->getMessage() . "\n";
-                echo "  Checking for file...\n";
+            if ($hasBlob) {
+                echo "  ✓ Will serve from: image_data BLOB (priority - BLOB takes precedence over file)\n";
+                echo "\n";
+                continue; // Skip file checking since BLOB exists
+            } else {
+                echo "  ⚠ No BLOB data, will try to serve from file system...\n";
             }
             
             // Use the found uploads directory if available, otherwise try common locations

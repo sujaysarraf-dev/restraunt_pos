@@ -23,10 +23,12 @@ $imagePath = $_GET['path'] ?? '';
 $imageType = $_GET['type'] ?? ''; // 'logo', 'item', 'banner', or 'business_qr'
 $imageId = $_GET['id'] ?? '';
 
-// FIRST: Check if image data exists in database as BLOB (for menu items with file paths)
-// This handles cases where item_image has a file path but image_data BLOB exists
-if (!empty($imagePath) && strpos($imagePath, 'db:') !== 0 && strpos($imagePath, 'http') !== 0 && empty($imageType)) {
+// FIRST: Check if image data exists in database as BLOB (for menu items)
+// This handles cases where item_image has any value (file path or db: prefix) but image_data BLOB exists
+// BLOB data always takes priority over file-based or db: reference
+if (!empty($imagePath) && strpos($imagePath, 'http') !== 0 && empty($imageType)) {
     try {
+        // Check for BLOB data by matching the item_image value
         $stmt = $pdo->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
         $stmt->execute([$imagePath]);
         $item = $stmt->fetch(PDO::FETCH_ASSOC);
