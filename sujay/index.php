@@ -484,6 +484,12 @@ $connectionStats = getConnectionStats();
                     <div class="card-title">Connection Monitor</div>
                     <div class="card-description">Monitor database connections and view connection statistics.</div>
                 </a>
+
+                <a href="https://restrogrow.com/admin/db_test.php" class="card">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">Database Performance Test</div>
+                    <div class="card-description">Test database speed, query performance, indexes, buffer pool, and connection status.</div>
+                </a>
             </div>
         </div>
 
