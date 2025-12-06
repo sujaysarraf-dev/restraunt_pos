@@ -262,7 +262,7 @@ try {
       // Set currency symbol from server-side database ONLY
       // This is the ONLY source of truth - loaded from database in PHP above
       // NO localStorage fallback - currency MUST come from backend
-      window.globalCurrencySymbol = <?php echo json_encode($currency_symbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+      window.globalCurrencySymbol = <?php echo json_encode($currency_symbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>;
       // Debug: Log currency from database
       console.log('=== CURRENCY DEBUG ===');
       console.log('Currency loaded from database (PHP):', window.globalCurrencySymbol);
