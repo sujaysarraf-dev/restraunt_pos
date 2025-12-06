@@ -188,14 +188,11 @@ try {
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
                 }
-                // Clear any pending results
-                while ($pdo->nextRowset()) {
-                    // Clear all result sets
-                }
             } catch (Exception $e) {
                 // Ignore errors during cleanup
             }
             // Don't set $pdo = null for persistent connections - let PHP-FPM reuse it
+            // PHP-FPM will manage the connection pool automatically
         }
     });
     
