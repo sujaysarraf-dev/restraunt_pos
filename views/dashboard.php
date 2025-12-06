@@ -1756,6 +1756,7 @@ try {
             <option value="Takeaway">Takeaway</option>
             <option value="Delivery">Delivery</option>
           </select>
+          <input type="date" id="ordersDateFilter" class="filter-select" style="padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
           <button onclick="exportOrdersToCSV()" style="padding: 0.75rem 1.5rem; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
             <span class="material-symbols-rounded" style="font-size: 1rem;">download</span>
             Export CSV

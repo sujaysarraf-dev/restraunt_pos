@@ -43,10 +43,23 @@ try {
     $paymentFilter = $_GET['payment_status'] ?? '';
     $typeFilter = $_GET['order_type'] ?? '';
     $searchTerm = $_GET['search'] ?? '';
+    $dateFilter = $_GET['date'] ?? '';
     
     // Build WHERE clause with filters
     $whereConditions = ['o.restaurant_id = ?'];
     $params = [$restaurant_id];
+    
+    // Date filter - default to today if not specified
+    if ($dateFilter) {
+        // Filter by specific date
+        $whereConditions[] = 'DATE(o.created_at) = ?';
+        $params[] = $dateFilter;
+    } else {
+        // Default to today's orders
+        $today = date('Y-m-d');
+        $whereConditions[] = 'DATE(o.created_at) = ?';
+        $params[] = $today;
+    }
     
     if ($statusFilter) {
         $whereConditions[] = 'o.order_status = ?';
@@ -132,7 +145,8 @@ try {
         'filters_applied' => [
             'status' => $statusFilter,
             'payment_status' => $paymentFilter,
-            'order_type' => $typeFilter
+            'order_type' => $typeFilter,
+            'date' => $dateFilter ?: date('Y-m-d')
         ]
     ], JSON_UNESCAPED_UNICODE);
     

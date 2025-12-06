@@ -604,8 +604,22 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Load Orders if it's the Orders page
       if (pageId === "ordersPage") {
+        // Set default date to today
+        const dateFilter = document.getElementById('ordersDateFilter');
+        if (dateFilter && !dateFilter.value) {
+          const today = new Date().toISOString().split('T')[0];
+          dateFilter.value = today;
+        }
         loadOrders();
         loadTablesForOrders();
+        // Set up orders filter listeners
+        setTimeout(() => {
+          const ordersDateFilter = document.getElementById('ordersDateFilter');
+          if (ordersDateFilter && !ordersDateFilter.dataset.listenerAttached) {
+            ordersDateFilter.addEventListener('change', () => loadOrders());
+            ordersDateFilter.dataset.listenerAttached = 'true';
+          }
+        }, 100);
       }
       
       // Load waiter requests if it's the waiter requests page
@@ -4397,12 +4411,14 @@ async function loadOrders() {
     const statusFilter = document.getElementById('ordersStatusFilter')?.value || '';
     const paymentFilter = document.getElementById('ordersPaymentFilter')?.value || '';
     const typeFilter = document.getElementById('ordersTypeFilter')?.value || '';
+    const dateFilter = document.getElementById('ordersDateFilter')?.value || '';
     
     // Build query string
     const params = new URLSearchParams();
     if (statusFilter) params.append('status', statusFilter);
     if (paymentFilter) params.append('payment_status', paymentFilter);
     if (typeFilter) params.append('order_type', typeFilter);
+    if (dateFilter) params.append('date', dateFilter);
     
     const response = await fetch(`get_orders.php?${params.toString()}`);
     const data = await response.json();

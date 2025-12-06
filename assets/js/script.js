@@ -767,6 +767,12 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Load Orders if it's the Orders page
       if (pageId === "ordersPage") {
+        // Set default date to today
+        const dateFilter = document.getElementById('ordersDateFilter');
+        if (dateFilter && !dateFilter.value) {
+          const today = new Date().toISOString().split('T')[0];
+          dateFilter.value = today;
+        }
         loadOrders();
         loadTablesForOrders();
         // Set up orders filter listeners
@@ -774,6 +780,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const ordersStatusFilter = document.getElementById('ordersStatusFilter');
           const ordersPaymentFilter = document.getElementById('ordersPaymentFilter');
           const ordersTypeFilter = document.getElementById('ordersTypeFilter');
+          const ordersDateFilter = document.getElementById('ordersDateFilter');
           if (ordersStatusFilter && !ordersStatusFilter.dataset.listenerAttached) {
             ordersStatusFilter.addEventListener('change', () => loadOrders());
             ordersStatusFilter.dataset.listenerAttached = 'true';
@@ -785,6 +792,10 @@ document.addEventListener("DOMContentLoaded", () => {
           if (ordersTypeFilter && !ordersTypeFilter.dataset.listenerAttached) {
             ordersTypeFilter.addEventListener('change', () => loadOrders());
             ordersTypeFilter.dataset.listenerAttached = 'true';
+          }
+          if (ordersDateFilter && !ordersDateFilter.dataset.listenerAttached) {
+            ordersDateFilter.addEventListener('change', () => loadOrders());
+            ordersDateFilter.dataset.listenerAttached = 'true';
           }
         }, 100);
       }
@@ -5893,12 +5904,14 @@ async function loadOrders() {
     const statusFilter = document.getElementById('ordersStatusFilter')?.value || '';
     const paymentFilter = document.getElementById('ordersPaymentFilter')?.value || '';
     const typeFilter = document.getElementById('ordersTypeFilter')?.value || '';
+    const dateFilter = document.getElementById('ordersDateFilter')?.value || '';
     
     // Build query string
     const params = new URLSearchParams();
     if (statusFilter) params.append('status', statusFilter);
     if (paymentFilter) params.append('payment_status', paymentFilter);
     if (typeFilter) params.append('order_type', typeFilter);
+    if (dateFilter) params.append('date', dateFilter);
     
     const response = await fetch(`../api/get_orders.php?${params.toString()}`, { cache: 'no-store' });
     const data = await response.json();
