@@ -20,7 +20,9 @@ CREATE TABLE IF NOT EXISTS menu (
     INDEX idx_menu_name (menu_name),
     INDEX idx_is_active (is_active),
     INDEX idx_sort_order (sort_order),
-    UNIQUE KEY unique_menu_per_restaurant (restaurant_id, menu_name)
+    UNIQUE KEY unique_menu_per_restaurant (restaurant_id, menu_name),
+    -- Critical performance indexes
+    INDEX idx_restaurant_active (restaurant_id, is_active)
 );
 
 -- Create menu_items table
@@ -49,7 +51,11 @@ CREATE TABLE IF NOT EXISTS menu_items (
     INDEX idx_item_category (item_category),
     INDEX idx_item_type (item_type),
     INDEX idx_is_available (is_available),
-    INDEX idx_sort_order (sort_order)
+    INDEX idx_sort_order (sort_order),
+    -- Critical performance indexes
+    INDEX idx_restaurant_menu (restaurant_id, menu_id),
+    INDEX idx_available_category (is_available, item_category),
+    INDEX idx_restaurant_available (restaurant_id, is_available)
 );
 
 -- Create users table
@@ -233,7 +239,10 @@ CREATE TABLE IF NOT EXISTS orders (
     INDEX idx_order_number (order_number),
     INDEX idx_order_status (order_status),
     INDEX idx_payment_status (payment_status),
-    INDEX idx_created_at (created_at)
+    INDEX idx_created_at (created_at),
+    -- Critical performance indexes
+    INDEX idx_restaurant_date (restaurant_id, created_at),
+    INDEX idx_status_date (order_status, created_at)
 );
 
 -- Create kot table for kitchen orders
@@ -315,7 +324,9 @@ CREATE TABLE IF NOT EXISTS payments (
     INDEX idx_transaction_id (transaction_id),
     INDEX idx_payment_method (payment_method),
     INDEX idx_payment_status (payment_status),
-    INDEX idx_created_at (created_at)
+    INDEX idx_created_at (created_at),
+    -- Critical performance indexes
+    INDEX idx_restaurant_date (restaurant_id, created_at)
 );
 
 -- Create super_admins table
