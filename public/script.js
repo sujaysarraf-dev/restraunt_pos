@@ -614,7 +614,21 @@ document.addEventListener("DOMContentLoaded", () => {
         loadTablesForOrders();
         // Set up orders filter listeners
         setTimeout(() => {
+          const ordersSearch = document.getElementById('ordersSearch');
           const ordersDateFilter = document.getElementById('ordersDateFilter');
+          
+          // Search with debounce (wait 500ms after user stops typing)
+          if (ordersSearch && !ordersSearch.dataset.listenerAttached) {
+            let searchTimeout;
+            ordersSearch.addEventListener('input', () => {
+              clearTimeout(searchTimeout);
+              searchTimeout = setTimeout(() => {
+                loadOrders();
+              }, 500); // Wait 500ms after user stops typing
+            });
+            ordersSearch.dataset.listenerAttached = 'true';
+          }
+          
           if (ordersDateFilter && !ordersDateFilter.dataset.listenerAttached) {
             ordersDateFilter.addEventListener('change', () => loadOrders());
             ordersDateFilter.dataset.listenerAttached = 'true';
@@ -4408,6 +4422,7 @@ function displayKOTOrders(kots) {
 async function loadOrders() {
   try {
     // Get filter values
+    const searchTerm = document.getElementById('ordersSearch')?.value.trim() || '';
     const statusFilter = document.getElementById('ordersStatusFilter')?.value || '';
     const paymentFilter = document.getElementById('ordersPaymentFilter')?.value || '';
     const typeFilter = document.getElementById('ordersTypeFilter')?.value || '';
@@ -4415,6 +4430,7 @@ async function loadOrders() {
     
     // Build query string
     const params = new URLSearchParams();
+    if (searchTerm) params.append('search', searchTerm);
     if (statusFilter) params.append('status', statusFilter);
     if (paymentFilter) params.append('payment_status', paymentFilter);
     if (typeFilter) params.append('order_type', typeFilter);

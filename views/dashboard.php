@@ -1734,6 +1734,10 @@ try {
       </div>
       <div class="page-content">
         <div class="orders-filters" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+          <div style="position: relative; flex: 1; min-width: 250px;">
+            <span class="material-symbols-rounded" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #666; font-size: 1.2rem; pointer-events: none;">search</span>
+            <input type="text" id="ordersSearch" placeholder="Search by order number, customer name, or table..." style="width: 100%; padding: 0.75rem 0.75rem 0.75rem 2.5rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
+          </div>
           <select id="ordersStatusFilter" class="filter-select">
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
