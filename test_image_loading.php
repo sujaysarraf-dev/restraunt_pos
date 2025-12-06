@@ -20,19 +20,55 @@ try {
     // Test 1: Check uploads directory
     echo "=== Test 1: Uploads Directory ===\n";
     $rootDir = dirname(__DIR__);
-    $uploadsDir = $rootDir . '/uploads';
+    $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+    
+    // Check multiple possible locations (especially for Hostinger)
+    $possibleUploadDirs = [
+        $rootDir . '/uploads',
+        $docRoot . '/uploads',
+        dirname($docRoot) . '/uploads',
+        $rootDir . '/public_html/uploads',
+    ];
+    
     echo "Root dir: $rootDir\n";
-    echo "Uploads dir: $uploadsDir\n";
-    echo "Exists: " . (file_exists($uploadsDir) ? 'YES' : 'NO') . "\n";
-    echo "Readable: " . (is_readable($uploadsDir) ? 'YES' : 'NO') . "\n";
-    if (file_exists($uploadsDir)) {
-        echo "Files in uploads:\n";
-        $files = scandir($uploadsDir);
-        foreach ($files as $file) {
-            if ($file !== '.' && $file !== '..') {
-                echo "  - $file\n";
+    echo "Document root: $docRoot\n";
+    echo "\nChecking possible uploads locations:\n";
+    
+    $foundUploadsDir = null;
+    foreach ($possibleUploadDirs as $uploadsDir) {
+        $normalized = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $uploadsDir);
+        $exists = file_exists($normalized);
+        $readable = is_readable($normalized);
+        echo "  - $normalized\n";
+        echo "    Exists: " . ($exists ? 'YES' : 'NO') . "\n";
+        echo "    Readable: " . ($readable ? 'YES' : 'NO') . "\n";
+        
+        if ($exists && $readable && $foundUploadsDir === null) {
+            $foundUploadsDir = $normalized;
+            echo "    ✓ Using this directory\n";
+            
+            // List files
+            $files = scandir($normalized);
+            $fileCount = 0;
+            foreach ($files as $file) {
+                if ($file !== '.' && $file !== '..') {
+                    $fileCount++;
+                    if ($fileCount <= 10) { // Show first 10 files
+                        echo "      - $file\n";
+                    }
+                }
+            }
+            if ($fileCount > 10) {
+                echo "      ... and " . ($fileCount - 10) . " more files\n";
             }
         }
+        echo "\n";
+    }
+    
+    if ($foundUploadsDir === null) {
+        echo "⚠️  WARNING: No uploads directory found!\n";
+        echo "   You may need to create: " . $docRoot . "/uploads\n";
+        echo "   Make sure it has proper permissions (755 or 775)\n";
     }
     echo "\n";
     
