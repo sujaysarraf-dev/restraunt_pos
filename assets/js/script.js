@@ -5019,8 +5019,18 @@ document.addEventListener("DOMContentLoaded", () => {
         (item.variations.length > 0 ? `${formatCurrency(item.variations[0].price)} - ${formatCurrency(item.variations[item.variations.length - 1].price)}` : formatCurrency(item.base_price)) :
         formatCurrency(item.base_price);
       
+      // Escape variations JSON for data attribute
+      const variationsJson = hasVariations ? encodeURIComponent(JSON.stringify(item.variations || [])) : '';
+      
       return `
-      <div class="pos-menu-item" onclick="handlePOSItemClick(${item.id}, '${escapeHtml(item.item_name_en)}', ${item.base_price}, '${escapeHtml(item.item_image || '')}', ${hasVariations}, ${JSON.stringify(item.variations || []).replace(/'/g, "&#39;")})">
+      <div class="pos-menu-item" 
+           data-item-id="${item.id}"
+           data-item-name="${escapeHtml(item.item_name_en)}"
+           data-item-price="${item.base_price}"
+           data-item-image="${escapeHtml(item.item_image || '')}"
+           data-has-variations="${hasVariations ? '1' : '0'}"
+           data-variations="${variationsJson}"
+           style="cursor:pointer;">
         <div class="item-image">
           ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}">` : '<span class="material-symbols-rounded">restaurant</span>'}
         </div>
@@ -5030,6 +5040,29 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
     }).join('');
+    
+    // Add click event listeners to POS menu items
+    posMenuItemsContainer.querySelectorAll('.pos-menu-item').forEach(itemEl => {
+      itemEl.addEventListener('click', function() {
+        const itemId = parseInt(this.dataset.itemId);
+        const itemName = this.dataset.itemName;
+        const basePrice = parseFloat(this.dataset.itemPrice);
+        const image = this.dataset.itemImage;
+        const hasVariations = this.dataset.hasVariations === '1';
+        let variations = [];
+        
+        if (hasVariations && this.dataset.variations) {
+          try {
+            variations = JSON.parse(decodeURIComponent(this.dataset.variations));
+          } catch (e) {
+            console.error('Error parsing variations:', e);
+            variations = [];
+          }
+        }
+        
+        handlePOSItemClick(itemId, itemName, basePrice, image, hasVariations, variations);
+      });
+    });
     
     // Update mobile modal items list
     updateMobileItemsList(items);
