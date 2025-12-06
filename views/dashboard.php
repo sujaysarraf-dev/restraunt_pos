@@ -1733,13 +1733,11 @@ try {
         <p>View and manage all orders</p>
       </div>
       <div class="page-content">
-        <!-- Search and Filters Section -->
-        <div class="orders-controls-section">
-          <div class="search-wrapper" style="flex: 1; min-width: 280px;">
-            <span class="material-symbols-rounded">search</span>
-            <input type="text" id="ordersSearch" placeholder="Search by order number, customer name, or table...">
+        <div class="orders-filters" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+          <div style="position: relative; flex: 1; min-width: 250px;">
+            <span class="material-symbols-rounded" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #666; font-size: 1.2rem; pointer-events: none;">search</span>
+            <input type="text" id="ordersSearch" placeholder="Search by order number, customer name, or table..." style="width: 100%; padding: 0.75rem 0.75rem 0.75rem 2.5rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
           </div>
-          
           <select id="ordersStatusFilter" class="filter-select">
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
@@ -1749,32 +1747,27 @@ try {
             <option value="Completed">Completed</option>
             <option value="Cancelled">Cancelled</option>
           </select>
-          
           <select id="ordersPaymentFilter" class="filter-select">
-            <option value="">All Payment</option>
+            <option value="">All Payment Status</option>
             <option value="Pending">Pending</option>
             <option value="Paid">Paid</option>
             <option value="Partially Paid">Partially Paid</option>
             <option value="Refunded">Refunded</option>
           </select>
-          
           <select id="ordersTypeFilter" class="filter-select">
-            <option value="">All Types</option>
+            <option value="">All Order Types</option>
             <option value="Dine-in">Dine-in</option>
             <option value="Takeaway">Takeaway</option>
             <option value="Delivery">Delivery</option>
           </select>
-          
-          <input type="date" id="ordersDateFilter" class="filter-select date-input">
-          
-          <button onclick="exportOrdersToCSV()" class="btn-export">
-            <span class="material-symbols-rounded">download</span>
-            <span>Export CSV</span>
+          <input type="date" id="ordersDateFilter" class="filter-select" style="padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
+          <button onclick="exportOrdersToCSV()" style="padding: 0.75rem 1.5rem; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+            <span class="material-symbols-rounded" style="font-size: 1rem;">download</span>
+            Export CSV
           </button>
         </div>
-
-        <!-- Orders List -->
         <div class="orders-list" id="ordersList">
+          <!-- Orders will be loaded here -->
           <div class="loading">Loading orders...</div>
         </div>
       </div>

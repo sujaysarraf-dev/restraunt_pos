@@ -158,7 +158,7 @@ error_log("Test error log entry - " . date('Y-m-d H:i:s'));
 2. Check "Database Status" shows "Online"
 3. Verify connection stats are working
 
-**Time:** 2 minutes  
+**Time:** 2 minutes   
 **Impact:** Site won't work if DB connection fails
 
 ---
