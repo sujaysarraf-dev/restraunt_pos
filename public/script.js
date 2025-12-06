@@ -314,7 +314,8 @@ function startSessionCheck() {
     clearInterval(sessionCheckInterval);
   }
   
-  // Check session every 2 seconds
+  // Optimized session check: every 30 seconds (reduces DB load significantly)
+  // Session expiration is also checked on each API call, so frequent polling isn't needed
   sessionCheckInterval = setInterval(async () => {
     try {
       const response = await fetch('admin/get_session.php', {
@@ -339,7 +340,7 @@ function startSessionCheck() {
       // If fetch fails, it might be a network issue, don't show session expired
       console.error('Session check error:', error);
     }
-  }, 2000); // Check every 2 seconds
+  }, 30000); // Check every 30 seconds (reduced from 2 seconds to save DB connections)
 }
 
 // Stop session check (call this on logout)
@@ -508,15 +509,49 @@ document.addEventListener("DOMContentLoaded", () => {
       if (pageId === "kotPage") {
         loadKOTOrders();
         loadTablesForKOT();
-        // Start auto-refresh when KOT page is active (5 seconds)
+        // Start auto-refresh when KOT page is active (optimized: 10 seconds to reduce DB load)
+        // Uses intelligent polling: faster when active, slower when idle
         if (window.kotAutoRefresh) {
           clearInterval(window.kotAutoRefresh);
         }
-        window.kotAutoRefresh = setInterval(() => {
+        let kotRefreshInterval = 10000; // Start with 10 seconds
+        let kotLastUpdate = Date.now();
+        let kotNoChangeCount = 0;
+        
+        const kotRefreshFunction = () => {
           if (document.getElementById('kotPage')?.classList.contains('active')) {
-            loadKOTOrders();
+            const beforeTime = Date.now();
+            loadKOTOrders().then(() => {
+              // Intelligent polling: if no changes detected, slow down
+              const timeSinceLastUpdate = Date.now() - kotLastUpdate;
+              if (timeSinceLastUpdate > 30000) { // No updates in 30 seconds
+                kotNoChangeCount++;
+                if (kotNoChangeCount > 3) {
+                  kotRefreshInterval = Math.min(30000, kotRefreshInterval * 1.5); // Max 30 seconds
+                }
+              } else {
+                kotNoChangeCount = 0;
+                kotRefreshInterval = 10000; // Reset to 10 seconds when active
+              }
+              kotLastUpdate = Date.now();
+              
+              // Restart with new interval
+              if (window.kotAutoRefresh) {
+                clearInterval(window.kotAutoRefresh);
+              }
+              window.kotAutoRefresh = setInterval(kotRefreshFunction, kotRefreshInterval);
+            }).catch(() => {
+              // On error, slow down polling
+              kotRefreshInterval = Math.min(30000, kotRefreshInterval * 1.2);
+              if (window.kotAutoRefresh) {
+                clearInterval(window.kotAutoRefresh);
+              }
+              window.kotAutoRefresh = setInterval(kotRefreshFunction, kotRefreshInterval);
+            });
           }
-        }, 5000);
+        };
+        
+        window.kotAutoRefresh = setInterval(kotRefreshFunction, kotRefreshInterval);
         
         // Pause auto-refresh when page is hidden, resume when visible
         if (!window.kotVisibilityHandler) {
@@ -528,11 +563,9 @@ document.addEventListener("DOMContentLoaded", () => {
               }
             } else if (document.getElementById('kotPage')?.classList.contains('active')) {
               if (!window.kotAutoRefresh) {
-                window.kotAutoRefresh = setInterval(() => {
-                  if (document.getElementById('kotPage')?.classList.contains('active')) {
-                    loadKOTOrders();
-                  }
-                }, 5000);
+                // Resume with optimized interval
+                kotRefreshInterval = 10000;
+                window.kotAutoRefresh = setInterval(kotRefreshFunction, kotRefreshInterval);
               }
             }
           };

@@ -695,8 +695,33 @@ if (!$currency_symbol) {
                 }
             };
             
-            // Refresh every 3 seconds (more frequent for real-time feel)
-            refreshInterval = setInterval(checkInterval, 3000);
+            // Optimized refresh: 10 seconds base, faster when orders exist (reduces DB load)
+            // With 10 users, this reduces requests from 3.3/sec to 1/sec per user
+            let baseInterval = 10000; // 10 seconds base
+            let currentInterval = baseInterval;
+            let noChangeCount = 0;
+            
+            const smartRefresh = () => {
+                checkInterval();
+                
+                // Intelligent polling: slow down if no changes
+                const currentOrders = document.querySelectorAll('.order-card').length;
+                if (currentOrders === lastOrdersCount && lastOrdersCount === 0) {
+                    noChangeCount++;
+                    if (noChangeCount > 2) {
+                        currentInterval = Math.min(20000, currentInterval * 1.5); // Max 20 seconds when idle
+                    }
+                } else {
+                    noChangeCount = 0;
+                    currentInterval = baseInterval; // Reset to 10 seconds when active
+                }
+                
+                // Restart with new interval
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(smartRefresh, currentInterval);
+            };
+            
+            refreshInterval = setInterval(smartRefresh, currentInterval);
             // Also check immediately
             checkInterval();
         }

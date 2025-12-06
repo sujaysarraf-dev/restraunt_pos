@@ -577,15 +577,56 @@ $restaurant_id = $_SESSION['restaurant_id'];
         
         window.filterKOTs = filterKOTs;
         
-        // Auto-refresh every 5 seconds for real-time updates
-        let refreshInterval = setInterval(loadKOTOrders, 5000);
+        // Optimized auto-refresh: 10 seconds base (reduces DB load with multiple users)
+        // Intelligent polling: faster when active, slower when idle
+        let refreshInterval = null;
+        let refreshIntervalTime = 10000; // Start with 10 seconds
+        let lastKOTCount = 0;
+        let noChangeCount = 0;
+        
+        const smartRefresh = () => {
+            const beforeCount = document.querySelectorAll('.kot-card').length;
+            loadKOTOrders().then(() => {
+                setTimeout(() => {
+                    const afterCount = document.querySelectorAll('.kot-card').length;
+                    
+                    // If no changes and no KOTs, slow down
+                    if (afterCount === beforeCount && afterCount === 0) {
+                        noChangeCount++;
+                        if (noChangeCount > 2) {
+                            refreshIntervalTime = Math.min(20000, refreshIntervalTime * 1.5); // Max 20 seconds
+                        }
+                    } else {
+                        noChangeCount = 0;
+                        refreshIntervalTime = 10000; // Reset to 10 seconds when active
+                    }
+                    
+                    // Restart with new interval
+                    if (refreshInterval) clearInterval(refreshInterval);
+                    refreshInterval = setInterval(smartRefresh, refreshIntervalTime);
+                }, 500);
+            }).catch(() => {
+                // On error, slow down
+                refreshIntervalTime = Math.min(20000, refreshIntervalTime * 1.2);
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(smartRefresh, refreshIntervalTime);
+            });
+        };
+        
+        refreshInterval = setInterval(smartRefresh, refreshIntervalTime);
         
         // Pause auto-refresh when page is hidden, resume when visible
         document.addEventListener('visibilitychange', function() {
             if (document.hidden) {
-                clearInterval(refreshInterval);
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                    refreshInterval = null;
+                }
             } else {
-                refreshInterval = setInterval(loadKOTOrders, 5000);
+                if (!refreshInterval) {
+                    refreshIntervalTime = 10000; // Reset to base interval
+                    refreshInterval = setInterval(smartRefresh, refreshIntervalTime);
+                }
             }
         });
         
