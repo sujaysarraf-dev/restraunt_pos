@@ -295,11 +295,41 @@ $restaurant_id = $_SESSION['restaurant_id'];
             }
         }
 
-        // Auto-refresh stats every 30 seconds
-        setInterval(loadStats, 30000);
+        // Optimized auto-refresh: only when page is visible and active
+        let statsRefreshInterval = null;
+        
+        function startStatsRefresh() {
+            // Clear existing interval
+            if (statsRefreshInterval) {
+                clearInterval(statsRefreshInterval);
+            }
+            
+            // Only refresh if page is visible
+            if (!document.hidden) {
+                statsRefreshInterval = setInterval(() => {
+                    // Double-check page is still visible before refreshing
+                    if (!document.hidden) {
+                        loadStats();
+                    }
+                }, 30000); // 30 seconds
+            }
+        }
+        
+        // Pause when page is hidden, resume when visible
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                if (statsRefreshInterval) {
+                    clearInterval(statsRefreshInterval);
+                    statsRefreshInterval = null;
+                }
+            } else {
+                startStatsRefresh();
+            }
+        });
         
         // Load on page load
         loadStats();
+        startStatsRefresh();
         loadOrders();
     </script>
 </body>

@@ -702,6 +702,11 @@ if (!$currency_symbol) {
             let noChangeCount = 0;
             
             const smartRefresh = () => {
+                // Only refresh if page is visible
+                if (document.hidden) {
+                    return;
+                }
+                
                 checkInterval();
                 
                 // Intelligent polling: slow down if no changes

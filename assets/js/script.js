@@ -348,9 +348,14 @@ function startSessionCheck() {
     clearInterval(sessionCheckInterval);
   }
   
-  // Optimized session check: every 30 seconds (reduces DB load significantly)
+  // Optimized session check: every 30 seconds, only when page is visible
   // Session expiration is also checked on each API call, so frequent polling isn't needed
-  sessionCheckInterval = setInterval(async () => {
+  const performSessionCheck = async () => {
+    // Only check if page is visible
+    if (document.hidden) {
+      return;
+    }
+    
     try {
       const response = await fetch('../admin/get_session.php', {
         method: 'GET',
@@ -374,7 +379,23 @@ function startSessionCheck() {
       // If fetch fails, it might be a network issue, don't show session expired
       console.error('Session check error:', error);
     }
-  }, 30000); // Check every 30 seconds (reduced from 2 seconds to save DB connections)
+  };
+  
+  sessionCheckInterval = setInterval(performSessionCheck, 30000); // Check every 30 seconds
+  
+  // Pause session check when page is hidden, resume when visible
+  if (!window.sessionVisibilityHandler) {
+    window.sessionVisibilityHandler = function() {
+      if (document.hidden) {
+        // Page hidden - session check will skip automatically, but we can pause it
+        // Actually, we'll let it run but it will skip the check, so connections aren't wasted
+      } else {
+        // Page visible - perform immediate check
+        performSessionCheck();
+      }
+    };
+    document.addEventListener('visibilitychange', window.sessionVisibilityHandler);
+  }
 }
 
 // Stop session check (call this on logout)
@@ -682,7 +703,9 @@ document.addEventListener("DOMContentLoaded", () => {
         let kotNoChangeCount = 0;
         
         const kotRefreshFunction = () => {
-          if (document.getElementById('kotPage')?.classList.contains('active')) {
+          // Only refresh if page is active AND visible
+          const kotPage = document.getElementById('kotPage');
+          if (kotPage?.classList.contains('active') && !document.hidden) {
             const beforeTime = Date.now();
             loadKOTOrders().then(() => {
               // Intelligent polling: if no changes detected, slow down

@@ -585,6 +585,11 @@ $restaurant_id = $_SESSION['restaurant_id'];
         let noChangeCount = 0;
         
         const smartRefresh = () => {
+            // Only refresh if page is visible
+            if (document.hidden) {
+                return;
+            }
+            
             const beforeCount = document.querySelectorAll('.kot-card').length;
             loadKOTOrders().then(() => {
                 setTimeout(() => {
