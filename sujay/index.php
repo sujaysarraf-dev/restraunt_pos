@@ -242,7 +242,7 @@ $connectionStats = getConnectionStats();
                 <strong>Login Credentials:</strong><br>
                 Username: <code>sujay</code><br>
                 Password: <code>sujay123</code><br>
-                <a href="../superadmin/login.php" style="color: #667eea; text-decoration: none; font-weight: 600;">→ Go to Superadmin Login</a>
+                <a href="https://restrogrow.com/superadmin/login.php" style="color: #667eea; text-decoration: none; font-weight: 600;">→ Go to Superadmin Login</a>
             </div>
         </div>
 
@@ -250,25 +250,25 @@ $connectionStats = getConnectionStats();
         <div class="category">
             <h2 class="category-title">🧪 Testing Tools</h2>
             <div class="links-grid">
-                <a href="../test_image_loading.php" class="link-card">
+                <a href="https://restrogrow.com/test_image_loading.php" class="link-card">
                     <div class="icon">🖼️</div>
                     <h3>Image Loading Test</h3>
                     <p>Test image loading from database and file system. Check uploads directory and image paths.</p>
                 </a>
 
-                <a href="../db_connection.php" class="link-card" target="_blank">
+                <a href="https://restrogrow.com/db_connection.php" class="link-card" target="_blank">
                     <div class="icon">🔌</div>
                     <h3>Database Connection</h3>
                     <p>View database connection configuration and test connection status.</p>
                 </a>
 
-                <a href="../admin/test_email.php" class="link-card">
+                <a href="https://restrogrow.com/admin/test_email.php" class="link-card">
                     <div class="icon">📧</div>
                     <h3>Email Test</h3>
                     <p>Test email sending functionality and SMTP configuration.</p>
                 </a>
 
-                <a href="../admin/connection_monitor.php" class="link-card">
+                <a href="https://restrogrow.com/admin/connection_monitor.php" class="link-card">
                     <div class="icon">📡</div>
                     <h3>Connection Monitor</h3>
                     <p>Monitor database connections and view connection statistics.</p>
@@ -280,25 +280,25 @@ $connectionStats = getConnectionStats();
         <div class="category">
             <h2 class="category-title">📁 Important Files</h2>
             <div class="links-grid">
-                <a href="../config/session_config.php" class="link-card" target="_blank">
+                <a href="https://restrogrow.com/config/session_config.php" class="link-card" target="_blank">
                     <div class="icon">🔐</div>
                     <h3>Session Config</h3>
                     <p>Session configuration and security settings.</p>
                 </a>
 
-                <a href="../config/email_config.php" class="link-card" target="_blank">
+                <a href="https://restrogrow.com/config/email_config.php" class="link-card" target="_blank">
                     <div class="icon">⚙️</div>
                     <h3>Email Config</h3>
                     <p>Email server configuration and SMTP settings.</p>
                 </a>
 
-                <a href="../config/db_migration.php" class="link-card" target="_blank">
+                <a href="https://restrogrow.com/config/db_migration.php" class="link-card" target="_blank">
                     <div class="icon">🔄</div>
                     <h3>Database Migration</h3>
                     <p>Database migration scripts and schema updates.</p>
                 </a>
 
-                <a href="../superadmin/dashboard.php" class="link-card">
+                <a href="https://restrogrow.com/superadmin/dashboard.php" class="link-card">
                     <div class="icon">📊</div>
                     <h3>Superadmin Dashboard</h3>
                     <p>Access the superadmin dashboard for managing restaurants.</p>
@@ -310,25 +310,25 @@ $connectionStats = getConnectionStats();
         <div class="category">
             <h2 class="category-title">🔗 API Endpoints</h2>
             <div class="links-grid">
-                <a href="../api/image.php" class="link-card" target="_blank">
+                <a href="https://restrogrow.com/api/image.php" class="link-card" target="_blank">
                     <div class="icon">🖼️</div>
                     <h3>Image API</h3>
                     <p>Image serving endpoint for database and file-based images.</p>
                 </a>
 
-                <a href="../api/get_menu_items.php" class="link-card" target="_blank">
+                <a href="https://restrogrow.com/api/get_menu_items.php" class="link-card" target="_blank">
                     <div class="icon">🍽️</div>
                     <h3>Menu Items API</h3>
                     <p>Get menu items for restaurants.</p>
                 </a>
 
-                <a href="../api/get_dashboard_stats.php" class="link-card" target="_blank">
+                <a href="https://restrogrow.com/api/get_dashboard_stats.php" class="link-card" target="_blank">
                     <div class="icon">📈</div>
                     <h3>Dashboard Stats API</h3>
                     <p>Get dashboard statistics and analytics.</p>
                 </a>
 
-                <a href="../superadmin/api.php" class="link-card" target="_blank">
+                <a href="https://restrogrow.com/superadmin/api.php" class="link-card" target="_blank">
                     <div class="icon">⚡</div>
                     <h3>Superadmin API</h3>
                     <p>Superadmin API endpoints for restaurant management.</p>
@@ -340,25 +340,25 @@ $connectionStats = getConnectionStats();
         <div class="category">
             <h2 class="category-title">📚 Documentation</h2>
             <div class="links-grid">
-                <a href="../docs/DATABASE_CONNECTION_OPTIMIZATION.md" class="link-card" target="_blank">
+                <a href="https://restrogrow.com/docs/DATABASE_CONNECTION_OPTIMIZATION.md" class="link-card" target="_blank">
                     <div class="icon">📖</div>
                     <h3>Database Connection Docs</h3>
                     <p>Documentation on database connection optimization.</p>
                 </a>
 
-                <a href="../docs/IMAGE_STORAGE_OPTIONS.md" class="link-card" target="_blank">
+                <a href="https://restrogrow.com/docs/IMAGE_STORAGE_OPTIONS.md" class="link-card" target="_blank">
                     <div class="icon">📸</div>
                     <h3>Image Storage Docs</h3>
                     <p>Documentation on image storage options and implementation.</p>
                 </a>
 
-                <a href="../DEPLOYMENT.md" class="link-card" target="_blank">
+                <a href="https://restrogrow.com/DEPLOYMENT.md" class="link-card" target="_blank">
                     <div class="icon">🚀</div>
                     <h3>Deployment Guide</h3>
                     <p>Deployment instructions and server configuration.</p>
                 </a>
 
-                <a href="../database/database_schema.sql" class="link-card" target="_blank">
+                <a href="https://restrogrow.com/database/database_schema.sql" class="link-card" target="_blank">
                     <div class="icon">🗄️</div>
                     <h3>Database Schema</h3>
                     <p>Complete database schema and table structures.</p>
