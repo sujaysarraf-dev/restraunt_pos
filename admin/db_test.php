@@ -153,6 +153,44 @@ function testConnectionStatus($pdo) {
         if ($results['max_connections'] > 0) {
             $results['connection_usage_percent'] = round(($results['current_connections'] / $results['max_connections']) * 100, 2);
         }
+        
+        // Get detailed connection list (what's actually using connections)
+        try {
+            $stmt = $pdo->query("
+                SELECT 
+                    ID,
+                    USER,
+                    HOST,
+                    DB,
+                    COMMAND,
+                    TIME,
+                    STATE,
+                    LEFT(INFO, 100) as QUERY
+                FROM information_schema.PROCESSLIST
+                WHERE DB = DATABASE()
+                ORDER BY TIME DESC
+            ");
+            $results['active_connections'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Group by user
+            $userCounts = [];
+            foreach ($results['active_connections'] as $conn) {
+                $user = $conn['USER'] ?? 'unknown';
+                $userCounts[$user] = ($userCounts[$user] ?? 0) + 1;
+            }
+            $results['connections_by_user'] = $userCounts;
+            
+            // Group by state
+            $stateCounts = [];
+            foreach ($results['active_connections'] as $conn) {
+                $state = $conn['STATE'] ?? $conn['COMMAND'] ?? 'unknown';
+                $stateCounts[$state] = ($stateCounts[$state] ?? 0) + 1;
+            }
+            $results['connections_by_state'] = $stateCounts;
+            
+        } catch (Exception $e) {
+            $results['connection_details_error'] = $e->getMessage();
+        }
     } catch (Exception $e) {
         $results['error'] = $e->getMessage();
     }
@@ -575,6 +613,86 @@ $testResults['buffer_pool'] = testBufferPool($pdo);
                     </div>
                 <?php endif; ?>
             </div>
+
+            <!-- Connection Breakdown -->
+            <?php if (isset($testResults['connection_status']['connections_by_user'])): ?>
+                <div style="margin-top: 1.5rem; padding: 1rem; background: var(--gray-50); border-radius: 8px;">
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--gray-800);">Connections by User:</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        <?php foreach ($testResults['connection_status']['connections_by_user'] as $user => $count): ?>
+                            <span class="badge badge-info">
+                                <?php echo htmlspecialchars($user); ?>: <?php echo $count; ?> connections
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($testResults['connection_status']['connections_by_state'])): ?>
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--gray-50); border-radius: 8px;">
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--gray-800);">Connections by State:</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        <?php foreach ($testResults['connection_status']['connections_by_state'] as $state => $count): ?>
+                            <span class="badge badge-info">
+                                <?php echo htmlspecialchars($state); ?>: <?php echo $count; ?>
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Detailed Connection List -->
+            <?php if (isset($testResults['connection_status']['active_connections']) && !empty($testResults['connection_status']['active_connections'])): ?>
+                <div style="margin-top: 1.5rem;">
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--gray-800);">Active Connections Details:</h3>
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 8px;">
+                        <table style="font-size: 0.875rem;">
+                            <thead style="position: sticky; top: 0; background: var(--gray-50);">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User</th>
+                                    <th>Host</th>
+                                    <th>Command</th>
+                                    <th>Time (s)</th>
+                                    <th>State</th>
+                                    <th>Query</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($testResults['connection_status']['active_connections'] as $conn): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($conn['ID'] ?? 'N/A'); ?></td>
+                                        <td><code><?php echo htmlspecialchars($conn['USER'] ?? 'N/A'); ?></code></td>
+                                        <td style="font-size: 0.75rem;"><?php echo htmlspecialchars($conn['HOST'] ?? 'N/A'); ?></td>
+                                        <td>
+                                            <span class="badge <?php 
+                                                $cmd = $conn['COMMAND'] ?? '';
+                                                echo $cmd === 'Sleep' ? 'badge-warning' : 'badge-info';
+                                            ?>">
+                                                <?php echo htmlspecialchars($cmd); ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($conn['TIME'] ?? '0'); ?></td>
+                                        <td style="font-size: 0.75rem;"><?php echo htmlspecialchars($conn['STATE'] ?? 'N/A'); ?></td>
+                                        <td style="font-size: 0.75rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            <code><?php echo htmlspecialchars($conn['QUERY'] ?? 'N/A'); ?></code>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p style="margin-top: 1rem; padding: 0.75rem; background: #fff3cd; border-radius: 6px; color: #856404; font-size: 0.875rem;">
+                        <strong>Why so many connections?</strong><br>
+                        • Each browser tab/window = 1+ connections<br>
+                        • AJAX requests = temporary connections<br>
+                        • Background processes = persistent connections<br>
+                        • Other users accessing the site = more connections<br>
+                        • "Sleep" connections = idle (waiting for next query)<br>
+                        • This is normal! Connections are reused and managed automatically.
+                    </p>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- Buffer Pool Status -->
