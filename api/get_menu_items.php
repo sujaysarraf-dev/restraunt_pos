@@ -111,6 +111,15 @@ try {
             FROM menu_items mi 
             JOIN menu m ON mi.menu_id = m.id 
             WHERE mi.restaurant_id = ? AND mi.is_available = TRUE";
+    
+    // Check if variations table exists
+    $hasVariationsTable = false;
+    try {
+        $checkTable = $conn->query("SHOW TABLES LIKE 'menu_item_variations'");
+        $hasVariationsTable = $checkTable->rowCount() > 0;
+    } catch (PDOException $e) {
+        // Table doesn't exist yet
+    }
     $params = [$restaurant_id];
     
     // Add filters
@@ -164,6 +173,31 @@ try {
         } else {
             throw $e;
         }
+    }
+    
+    // Load variations for each menu item if table exists
+    if ($hasVariationsTable) {
+        foreach ($menuItems as &$item) {
+            try {
+                $variationsStmt = $conn->prepare("
+                    SELECT id, variation_name, price, sort_order, is_available 
+                    FROM menu_item_variations 
+                    WHERE menu_item_id = ? AND is_available = TRUE 
+                    ORDER BY sort_order ASC
+                ");
+                $variationsStmt->execute([$item['id']]);
+                $item['variations'] = $variationsStmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                $item['variations'] = [];
+            }
+        }
+        unset($item); // Break reference
+    } else {
+        // Add empty variations array if table doesn't exist
+        foreach ($menuItems as &$item) {
+            $item['variations'] = [];
+        }
+        unset($item);
     }
     
     // Get unique categories for this restaurant

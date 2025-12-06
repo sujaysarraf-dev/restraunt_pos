@@ -1492,7 +1492,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const hasVariationsCheckbox = document.getElementById("hasVariations");
         if (hasVariationsCheckbox) {
           hasVariationsCheckbox.checked = false;
+          toggleVariationsSection(); // Hide variations section
         }
+        
+        // Clear variations
+        clearVariations();
         
         // Hide image preview
         const imagePreview = document.getElementById('imagePreview');
@@ -1567,6 +1571,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const hasVariationsCheckbox = document.getElementById("hasVariations");
     if (hasVariationsCheckbox) {
       hasVariationsCheckbox.checked = data.has_variations == 1 || data.has_variations === true;
+      toggleVariationsSection(); // Show/hide variations section
+    }
+    
+    // Load variations if they exist
+    if (data.variations && Array.isArray(data.variations) && data.variations.length > 0) {
+      loadVariations(data.variations);
+    } else {
+      clearVariations();
     }
     
     // Set item type
@@ -1813,6 +1825,13 @@ document.addEventListener("DOMContentLoaded", () => {
     
     formData.append('action', isEdit ? 'update' : 'add');
     
+    // Add variations data if has variations is checked
+    const hasVariations = document.getElementById("hasVariations").checked;
+    if (hasVariations) {
+      const variations = getVariationsData();
+      formData.append('variations', JSON.stringify(variations));
+    }
+    
     // Disable save button and show loading
     menuItemSaveBtn.disabled = true;
     menuItemSaveBtn.textContent = isEdit ? "Updating..." : "Saving...";
@@ -1846,6 +1865,120 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     });
   }
+
+  // Variations Management Functions
+  function toggleVariationsSection() {
+    const hasVariations = document.getElementById("hasVariations").checked;
+    const variationsSection = document.getElementById("variationsSection");
+    if (variationsSection) {
+      variationsSection.style.display = hasVariations ? 'block' : 'none';
+      if (!hasVariations) {
+        clearVariations();
+      } else if (document.getElementById("variationsList").children.length === 0) {
+        // Add a default variation row if none exist
+        addVariationRow();
+      }
+    }
+  }
+
+  function addVariationRow(variationData = null) {
+    const variationsList = document.getElementById("variationsList");
+    const noVariationsMessage = document.getElementById("noVariationsMessage");
+    
+    if (!variationsList) return;
+    
+    // Hide "no variations" message
+    if (noVariationsMessage) {
+      noVariationsMessage.style.display = 'none';
+    }
+    
+    const rowId = 'variation_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const row = document.createElement('div');
+    row.id = rowId;
+    row.className = 'variation-row';
+    row.style.cssText = 'display: flex; gap: 0.75rem; align-items: center; padding: 0.75rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px;';
+    
+    const currencySymbol = window.globalCurrencySymbol || '₹';
+    
+    row.innerHTML = `
+      <input type="text" class="variation-name" placeholder="e.g., Small, Medium, Large" 
+             value="${variationData ? (variationData.variation_name || '') : ''}" 
+             style="flex: 1; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem;" required>
+      <div style="position: relative; flex: 1;">
+        <span style="position: absolute; left: 0.625rem; top: 50%; transform: translateY(-50%); color: #6b7280; font-weight: 600;">${currencySymbol}</span>
+        <input type="number" class="variation-price" placeholder="0.00" min="0" step="0.01" 
+               value="${variationData ? (variationData.price || '0.00') : ''}" 
+               style="width: 100%; padding: 0.625rem 0.625rem 0.625rem 2rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem;" required>
+      </div>
+      <button type="button" onclick="removeVariationRow('${rowId}')" 
+              style="padding: 0.625rem; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 36px; height: 36px;" 
+              title="Remove variation">
+        <span class="material-symbols-rounded" style="font-size: 1.2rem;">delete</span>
+      </button>
+    `;
+    
+    variationsList.appendChild(row);
+  }
+
+  window.removeVariationRow = function(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) {
+      row.remove();
+    }
+    
+    // Show "no variations" message if list is empty
+    const variationsList = document.getElementById("variationsList");
+    const noVariationsMessage = document.getElementById("noVariationsMessage");
+    if (variationsList && variationsList.children.length === 0 && noVariationsMessage) {
+      noVariationsMessage.style.display = 'block';
+    }
+  }
+
+  function getVariationsData() {
+    const variations = [];
+    const rows = document.querySelectorAll('.variation-row');
+    
+    rows.forEach(row => {
+      const nameInput = row.querySelector('.variation-name');
+      const priceInput = row.querySelector('.variation-price');
+      
+      if (nameInput && priceInput && nameInput.value.trim() && priceInput.value) {
+        variations.push({
+          variation_name: nameInput.value.trim(),
+          price: parseFloat(priceInput.value) || 0.00
+        });
+      }
+    });
+    
+    return variations;
+  }
+
+  function loadVariations(variations) {
+    clearVariations();
+    
+    if (variations && variations.length > 0) {
+      variations.forEach(variation => {
+        addVariationRow(variation);
+      });
+    }
+  }
+
+  function clearVariations() {
+    const variationsList = document.getElementById("variationsList");
+    const noVariationsMessage = document.getElementById("noVariationsMessage");
+    
+    if (variationsList) {
+      variationsList.innerHTML = '';
+    }
+    
+    if (noVariationsMessage) {
+      noVariationsMessage.style.display = 'block';
+    }
+  }
+
+  // Make functions globally available
+  window.toggleVariationsSection = toggleVariationsSection;
+  window.addVariationRow = addVariationRow;
 
   // Load menus for dropdown
   async function loadMenusForDropdown() {
@@ -4880,16 +5013,23 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
-    posMenuItemsContainer.innerHTML = items.map(item => `
-      <div class="pos-menu-item" onclick="addToPOSCart(${item.id}, '${escapeHtml(item.item_name_en)}', ${item.base_price}, '${escapeHtml(item.item_image || '')}')">
+    posMenuItemsContainer.innerHTML = items.map(item => {
+      const hasVariations = item.has_variations && item.variations && item.variations.length > 0;
+      const priceDisplay = hasVariations ? 
+        (item.variations.length > 0 ? `${formatCurrency(item.variations[0].price)} - ${formatCurrency(item.variations[item.variations.length - 1].price)}` : formatCurrency(item.base_price)) :
+        formatCurrency(item.base_price);
+      
+      return `
+      <div class="pos-menu-item" onclick="handlePOSItemClick(${item.id}, '${escapeHtml(item.item_name_en)}', ${item.base_price}, '${escapeHtml(item.item_image || '')}', ${hasVariations}, ${JSON.stringify(item.variations || []).replace(/'/g, "&#39;")})">
         <div class="item-image">
           ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}">` : '<span class="material-symbols-rounded">restaurant</span>'}
         </div>
         <div class="item-name">${escapeHtml(item.item_name_en)}</div>
         <div class="item-category">${escapeHtml(item.item_category || '')}</div>
-        <div class="item-price">${formatCurrency(item.base_price)}</div>
+        <div class="item-price">${priceDisplay}${hasVariations ? ' <span style="font-size:0.75rem;color:#6b7280;">(Variations)</span>' : ''}</div>
       </div>
-    `).join('');
+    `;
+    }).join('');
     
     // Update mobile modal items list
     updateMobileItemsList(items);
@@ -4928,8 +5068,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
-    mobileItemsList.innerHTML = items.map(item => `
-      <div class="mobile-item-card" onclick="addItemFromMobile(${item.id}, '${escapeHtml(item.item_name_en)}', ${item.base_price}, '${escapeHtml(item.item_image || '')}', event)" style="background:white;border:2px solid #e5e7eb;border-radius:8px;padding:0.75rem;cursor:pointer;transition:all 0.2s;">
+    mobileItemsList.innerHTML = items.map(item => {
+      const hasVariations = item.has_variations && item.variations && item.variations.length > 0;
+      return `
+      <div class="mobile-item-card" onclick="handleMobileItemClick(${item.id}, '${escapeHtml(item.item_name_en)}', ${item.base_price}, '${escapeHtml(item.item_image || '')}', ${hasVariations}, ${JSON.stringify(item.variations || []).replace(/'/g, "&#39;")}, event)" style="background:white;border:2px solid #e5e7eb;border-radius:8px;padding:0.75rem;cursor:pointer;transition:all 0.2s;">
         <div style="width:100%;height:80px;border-radius:6px;overflow:hidden;margin-bottom:0.5rem;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
           ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" style="width:100%;height:100%;object-fit:cover;">` : '<span class="material-symbols-rounded" style="font-size:2rem;color:#9ca3af;">restaurant</span>'}
         </div>
@@ -5018,33 +5160,46 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   
   // Add item from mobile modal
-  window.addItemFromMobile = function(itemId, itemName, price, image, event) {
-    addToPOSCart(itemId, itemName, price, image);
-    
-    // Show visual feedback on the item card
+  window.handleMobileItemClick = function(itemId, itemName, basePrice, image, hasVariations, variations, event) {
     if (event) {
-      const itemCard = event.target?.closest('.mobile-item-card');
-      if (itemCard) {
-        itemCard.style.transform = 'scale(0.95)';
-        itemCard.style.backgroundColor = '#d1fae5';
-        setTimeout(() => {
-          itemCard.style.transform = '';
-          itemCard.style.backgroundColor = '';
-        }, 300);
-      }
+      event.stopPropagation();
     }
     
-    // Show brief success message (non-intrusive)
-    const successMsg = document.createElement('div');
-    successMsg.textContent = '✓ Added to cart';
-    successMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#10b981;color:white;padding:0.75rem 1.25rem;border-radius:8px;font-weight:600;z-index:10001;box-shadow:0 4px 12px rgba(16,185,129,0.4);animation:slideInRight 0.3s ease;';
-    document.body.appendChild(successMsg);
-    setTimeout(() => {
-      successMsg.style.animation = 'slideOutRight 0.3s ease';
-      setTimeout(() => successMsg.remove(), 300);
-    }, 2000);
-    
-    // Don't close modal - let user add more items
+    if (hasVariations && variations && variations.length > 0) {
+      // Show variation selection modal
+      showPOSVariationModal(itemId, itemName, basePrice, image, variations);
+    } else {
+      // Add directly to cart
+      addToPOSCart(itemId, itemName, basePrice, image, null);
+      
+      // Show visual feedback
+      if (event) {
+        const itemCard = event.target?.closest('.mobile-item-card');
+        if (itemCard) {
+          itemCard.style.transform = 'scale(0.95)';
+          itemCard.style.backgroundColor = '#d1fae5';
+          setTimeout(() => {
+            itemCard.style.transform = '';
+            itemCard.style.backgroundColor = '';
+          }, 300);
+        }
+      }
+      
+      // Show brief success message
+      const successMsg = document.createElement('div');
+      successMsg.textContent = '✓ Added to cart';
+      successMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#10b981;color:white;padding:0.75rem 1.25rem;border-radius:8px;font-weight:600;z-index:10001;box-shadow:0 4px 12px rgba(16,185,129,0.4);animation:slideInRight 0.3s ease;';
+      document.body.appendChild(successMsg);
+      setTimeout(() => {
+        successMsg.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => successMsg.remove(), 300);
+      }, 2000);
+    }
+  };
+
+  // Legacy function for backward compatibility
+  window.addItemFromMobile = function(itemId, itemName, price, image, event) {
+    handleMobileItemClick(itemId, itemName, price, image, false, [], event);
   };
   
   // Load tables for POS
@@ -5186,17 +5341,79 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   // Add item to POS cart
-  window.addToPOSCart = function(itemId, itemName, price, image) {
-    const existingItem = posCart.find(item => item.id === itemId);
+  // Handle POS item click - check for variations
+  window.handlePOSItemClick = function(itemId, itemName, basePrice, image, hasVariations, variations) {
+    if (hasVariations && variations && variations.length > 0) {
+      // Show variation selection modal
+      showPOSVariationModal(itemId, itemName, basePrice, image, variations);
+    } else {
+      // Add directly to cart
+      addToPOSCart(itemId, itemName, basePrice, image, null);
+    }
+  };
+
+  // Show variation selection modal
+  function showPOSVariationModal(itemId, itemName, basePrice, image, variations) {
+    const modal = document.getElementById('posVariationModal');
+    const itemNameEl = document.getElementById('posVariationItemName');
+    const optionsEl = document.getElementById('posVariationOptions');
+    
+    if (!modal || !itemNameEl || !optionsEl) return;
+    
+    itemNameEl.textContent = `Select a variation for: ${itemName}`;
+    
+    optionsEl.innerHTML = variations.map(variation => `
+      <button class="variation-option-btn" onclick="selectPOSVariation(${itemId}, '${escapeHtml(itemName)}', ${variation.price}, '${escapeHtml(image || '')}', '${escapeHtml(variation.variation_name)}')" 
+              style="padding:1rem;border:2px solid #e5e7eb;border-radius:12px;background:white;cursor:pointer;transition:all 0.2s;text-align:left;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:600;color:#1f2937;font-size:1rem;">${escapeHtml(variation.variation_name)}</div>
+        </div>
+        <div style="font-weight:700;color:#f70000;font-size:1.1rem;">${formatCurrency(variation.price)}</div>
+      </button>
+    `).join('');
+    
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    // Store current item data for selection
+    window.currentPOSItemData = { itemId, itemName, basePrice, image };
+  }
+
+  window.closePOSVariationModal = function() {
+    const modal = document.getElementById('posVariationModal');
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+    window.currentPOSItemData = null;
+  };
+
+  window.selectPOSVariation = function(itemId, itemName, price, image, variationName) {
+    // Add to cart with variation
+    addToPOSCart(itemId, itemName, price, image, variationName);
+    closePOSVariationModal();
+  };
+
+  window.addToPOSCart = function(itemId, itemName, price, image, variationName) {
+    // Create unique key for cart item (itemId + variationName)
+    const cartKey = variationName ? `${itemId}_${variationName}` : itemId.toString();
+    const displayName = variationName ? `${itemName} (${variationName})` : itemName;
+    
+    const existingItem = posCart.find(item => {
+      const itemKey = item.variationName ? `${item.id}_${item.variationName}` : item.id.toString();
+      return itemKey === cartKey;
+    });
     
     if (existingItem) {
       existingItem.quantity += 1;
     } else {
       posCart.push({
         id: itemId,
-        name: itemName,
+        name: displayName,
+        originalName: itemName,
         price: price,
         image: image,
+        variationName: variationName || null,
         quantity: 1
       });
     }

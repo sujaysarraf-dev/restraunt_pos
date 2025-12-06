@@ -93,6 +93,25 @@ try {
                         // Keep mime_type if needed, but we don't need it in the list
                         // unset($item['image_mime_type']);
                     }
+                    
+                    // Load variations for this item
+                    try {
+                        $checkTable = $pdo->query("SHOW TABLES LIKE 'menu_item_variations'");
+                        if ($checkTable->rowCount() > 0) {
+                            $variationsStmt = $pdo->prepare("
+                                SELECT id, variation_name, price, sort_order, is_available 
+                                FROM menu_item_variations 
+                                WHERE menu_item_id = ? AND is_available = TRUE 
+                                ORDER BY sort_order ASC
+                            ");
+                            $variationsStmt->execute([$item['id']]);
+                            $item['variations'] = $variationsStmt->fetchAll(PDO::FETCH_ASSOC);
+                        } else {
+                            $item['variations'] = [];
+                        }
+                    } catch (PDOException $e) {
+                        $item['variations'] = [];
+                    }
                 }
                 unset($item);
                 
@@ -122,6 +141,35 @@ try {
                     $stmt = $pdo->prepare($query);
                     $stmt->execute($params);
                     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    // Load variations for each item
+                    try {
+                        $checkTable = $pdo->query("SHOW TABLES LIKE 'menu_item_variations'");
+                        if ($checkTable->rowCount() > 0) {
+                            foreach ($items as &$item) {
+                                $variationsStmt = $pdo->prepare("
+                                    SELECT id, variation_name, price, sort_order, is_available 
+                                    FROM menu_item_variations 
+                                    WHERE menu_item_id = ? AND is_available = TRUE 
+                                    ORDER BY sort_order ASC
+                                ");
+                                $variationsStmt->execute([$item['id']]);
+                                $item['variations'] = $variationsStmt->fetchAll(PDO::FETCH_ASSOC);
+                            }
+                            unset($item);
+                        } else {
+                            foreach ($items as &$item) {
+                                $item['variations'] = [];
+                            }
+                            unset($item);
+                        }
+                    } catch (PDOException $e) {
+                        foreach ($items as &$item) {
+                            $item['variations'] = [];
+                        }
+                        unset($item);
+                    }
+                    
                     echo json_encode($items);
                 } else {
                     throw $e;
@@ -154,10 +202,35 @@ try {
                 $stmt->execute([':search' => $like, ':rid' => $restaurantId]);
                 $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
-                // Clean up any binary data
+                // Clean up any binary data and load variations
+                try {
+                    $checkTable = $pdo->query("SHOW TABLES LIKE 'menu_item_variations'");
+                    $hasVariationsTable = $checkTable->rowCount() > 0;
+                } catch (PDOException $e) {
+                    $hasVariationsTable = false;
+                }
+                
                 foreach ($items as &$item) {
                     if (isset($item['image_data'])) {
                         unset($item['image_data']);
+                    }
+                    
+                    // Load variations
+                    if ($hasVariationsTable) {
+                        try {
+                            $variationsStmt = $pdo->prepare("
+                                SELECT id, variation_name, price, sort_order, is_available 
+                                FROM menu_item_variations 
+                                WHERE menu_item_id = ? AND is_available = TRUE 
+                                ORDER BY sort_order ASC
+                            ");
+                            $variationsStmt->execute([$item['id']]);
+                            $item['variations'] = $variationsStmt->fetchAll(PDO::FETCH_ASSOC);
+                        } catch (PDOException $e) {
+                            $item['variations'] = [];
+                        }
+                    } else {
+                        $item['variations'] = [];
                     }
                 }
                 unset($item);

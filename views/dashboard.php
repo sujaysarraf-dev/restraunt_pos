@@ -2063,10 +2063,31 @@ try {
             
             <div class="form-group checkbox-group">
               <label class="checkbox-label">
-                <input type="checkbox" id="hasVariations" name="hasVariations">
+                <input type="checkbox" id="hasVariations" name="hasVariations" onchange="toggleVariationsSection()">
                 <span class="checkmark"></span>
-                Has Variations
+                Has Variations (e.g., Small, Medium, Large)
               </label>
+            </div>
+          </div>
+          
+          <!-- Variations Section -->
+          <div id="variationsSection" style="display: none; margin-top: 1.5rem; padding: 1.5rem; background: #f9fafb; border-radius: 8px; border: 2px solid #e5e7eb;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="margin: 0; font-size: 1.1rem; color: #111827; display: flex; align-items: center; gap: 0.5rem;">
+                <span class="material-symbols-rounded" style="font-size: 1.2rem;">tune</span>
+                Item Variations
+              </h3>
+              <button type="button" onclick="addVariationRow()" style="padding: 0.5rem 1rem; background: #f70000; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                <span class="material-symbols-rounded" style="font-size: 1rem;">add</span>
+                Add Variation
+              </button>
+            </div>
+            <p style="margin: 0 0 1rem 0; color: #6b7280; font-size: 0.875rem;">Add different sizes or options with their prices (e.g., Small: ₹100, Medium: ₹150, Large: ₹200)</p>
+            <div id="variationsList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <!-- Variations will be added here dynamically -->
+            </div>
+            <div id="noVariationsMessage" style="text-align: center; padding: 2rem; color: #9ca3af; font-size: 0.9rem;">
+              No variations added yet. Click "Add Variation" to add size options.
             </div>
           </div>
           
@@ -2390,6 +2411,31 @@ try {
         </div>
         <div id="mobileItemsList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;">
           <!-- Items will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POS Variation Selection Modal -->
+  <div id="posVariationModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-header">
+        <h2>
+          <span class="material-symbols-rounded" style="vertical-align:middle;margin-right:0.5rem;">tune</span>
+          Select Variation
+        </h2>
+        <span class="close" onclick="closePOSVariationModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <p style="color:#6b7280;margin-bottom:1.5rem;text-align:center;" id="posVariationItemName">Choose a size or option:</p>
+        <div id="posVariationOptions" style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.5rem;">
+          <!-- Variations will be added here -->
+        </div>
+        <div class="form-actions" style="justify-content:center;">
+          <button type="button" class="btn btn-cancel" onclick="closePOSVariationModal()">
+            <span class="material-symbols-rounded">close</span>
+            Cancel
+          </button>
         </div>
       </div>
     </div>

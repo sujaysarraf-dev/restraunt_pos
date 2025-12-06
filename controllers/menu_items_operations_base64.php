@@ -165,6 +165,11 @@ function handleAddMenuItemBase64($conn, $restaurant_id, $menuId, $itemNameEn, $i
     if ($result) {
         $newMenuItemId = $conn->lastInsertId();
         
+        // Save variations if has_variations is true
+        if ($hasVariations && isset($_POST['variations']) && !empty($_POST['variations'])) {
+            saveMenuItemVariations($conn, $newMenuItemId, $_POST['variations']);
+        }
+        
         echo json_encode([
             'success' => true,
             'message' => 'Menu item added successfully',
@@ -244,6 +249,14 @@ function handleUpdateMenuItemBase64($conn, $restaurant_id, $menuItemId, $menuId,
     ]);
     
     if ($result) {
+        // Update variations if has_variations is true
+        if ($hasVariations && isset($_POST['variations']) && !empty($_POST['variations'])) {
+            saveMenuItemVariations($conn, $menuItemId, $_POST['variations']);
+        } else {
+            // Delete all variations if has_variations is false
+            deleteMenuItemVariations($conn, $menuItemId);
+        }
+        
         echo json_encode([
             'success' => true,
             'message' => 'Menu item updated successfully',
@@ -339,6 +352,78 @@ function handleBase64Image($base64String) {
         'mime_type' => $mimeType,
         'size' => strlen($imageData)
     ];
+}
+
+// Helper function to save menu item variations
+function saveMenuItemVariations($conn, $menuItemId, $variationsJson) {
+    try {
+        // Ensure variations table exists
+        $checkTable = $conn->query("SHOW TABLES LIKE 'menu_item_variations'");
+        if ($checkTable->rowCount() == 0) {
+            // Create table if it doesn't exist
+            $conn->exec("
+                CREATE TABLE IF NOT EXISTS menu_item_variations (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    menu_item_id INT NOT NULL,
+                    variation_name VARCHAR(100) NOT NULL,
+                    price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    sort_order INT DEFAULT 0,
+                    is_available BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (menu_item_id) REFERENCES menu_items(id) ON DELETE CASCADE,
+                    INDEX idx_menu_item_id (menu_item_id),
+                    INDEX idx_sort_order (sort_order),
+                    INDEX idx_is_available (is_available),
+                    UNIQUE KEY unique_variation_per_item (menu_item_id, variation_name)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        }
+        
+        // Delete existing variations
+        deleteMenuItemVariations($conn, $menuItemId);
+        
+        // Parse variations JSON
+        $variations = json_decode($variationsJson, true);
+        if (!is_array($variations) || empty($variations)) {
+            return;
+        }
+        
+        // Insert new variations
+        $insertStmt = $conn->prepare("
+            INSERT INTO menu_item_variations (menu_item_id, variation_name, price, sort_order) 
+            VALUES (?, ?, ?, ?)
+        ");
+        
+        $sortOrder = 0;
+        foreach ($variations as $variation) {
+            if (isset($variation['variation_name']) && isset($variation['price'])) {
+                $insertStmt->execute([
+                    $menuItemId,
+                    trim($variation['variation_name']),
+                    (float)$variation['price'],
+                    $sortOrder++
+                ]);
+            }
+        }
+    } catch (PDOException $e) {
+        error_log("Error saving menu item variations: " . $e->getMessage());
+        // Don't throw - variations are optional
+    }
+}
+
+// Helper function to delete menu item variations
+function deleteMenuItemVariations($conn, $menuItemId) {
+    try {
+        $checkTable = $conn->query("SHOW TABLES LIKE 'menu_item_variations'");
+        if ($checkTable->rowCount() > 0) {
+            $deleteStmt = $conn->prepare("DELETE FROM menu_item_variations WHERE menu_item_id = ?");
+            $deleteStmt->execute([$menuItemId]);
+        }
+    } catch (PDOException $e) {
+        // Table might not exist yet, ignore
+        error_log("Error deleting menu item variations: " . $e->getMessage());
+    }
 }
 ?>
 
