@@ -615,10 +615,18 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Load POS if it's the POS page
       if (pageId === "posPage") {
-        loadPOSMenuItems();
-        loadTablesForPOS();
-        loadMenusForPOSFilters();
-        loadCategoriesForPOSFilters();
+        if (typeof window.loadPOSMenuItems === 'function') {
+          loadPOSMenuItems();
+        }
+        if (typeof window.loadTablesForPOS === 'function') {
+          loadTablesForPOS();
+        }
+        if (typeof window.loadMenusForPOSFilters === 'function') {
+          loadMenusForPOSFilters();
+        }
+        if (typeof window.loadCategoriesForPOSFilters === 'function') {
+          loadCategoriesForPOSFilters();
+        }
         
         // Show/hide mobile add item button based on screen size
         setTimeout(() => {
@@ -785,33 +793,44 @@ document.addEventListener("DOMContentLoaded", () => {
   // Make showPage globally accessible for onclick handlers
   window.showPage = showPage;
 
-  // Restore previously active page (if available), unless forced to dashboard after login
-  try {
-    const ordersListContainer = document.getElementById('ordersList');
-    if (ordersListContainer) {
-      ordersListContainer.innerHTML = '<div class="loading">Refreshing orders...</div>';
-    }
+  // Initialize page restoration after DOM is fully loaded and all functions are defined
+  function initializePageRestoration() {
+    // Restore previously active page (if available), unless forced to dashboard after login
+    try {
+      const ordersListContainer = document.getElementById('ordersList');
+      if (ordersListContainer) {
+        ordersListContainer.innerHTML = '<div class="loading">Refreshing orders...</div>';
+      }
 
-    const forceDashboard = sessionStorage.getItem('forceDashboard');
-    if (forceDashboard) {
-      sessionStorage.removeItem('forceDashboard');
-      try {
-        localStorage.removeItem('admin_active_page');
-      } catch (storageErr) {
-        console.warn('Unable to clear saved admin page', storageErr);
-      }
-      showPage('dashboardPage');
-    } else {
-      const savedPageId = localStorage.getItem('admin_active_page');
-      if (savedPageId && document.getElementById(savedPageId)) {
-        showPage(savedPageId);
-      } else {
+      const forceDashboard = sessionStorage.getItem('forceDashboard');
+      if (forceDashboard) {
+        sessionStorage.removeItem('forceDashboard');
+        try {
+          localStorage.removeItem('admin_active_page');
+        } catch (storageErr) {
+          console.warn('Unable to clear saved admin page', storageErr);
+        }
         showPage('dashboardPage');
+      } else {
+        const savedPageId = localStorage.getItem('admin_active_page');
+        if (savedPageId && document.getElementById(savedPageId)) {
+          showPage(savedPageId);
+        } else {
+          showPage('dashboardPage');
+        }
       }
+    } catch (err) {
+      console.warn('Unable to restore saved page, defaulting to dashboard', err);
+      showPage('dashboardPage');
     }
-  } catch (err) {
-    console.warn('Unable to restore saved page, defaulting to dashboard', err);
-    showPage('dashboardPage');
+  }
+
+  // Call initialization after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializePageRestoration);
+  } else {
+    // DOM already loaded, run immediately
+    setTimeout(initializePageRestoration, 0);
   }
 
   // Modal functionality
