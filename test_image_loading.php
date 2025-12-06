@@ -95,10 +95,10 @@ try {
     
     // Test 3: Check menu item images
     echo "=== Test 3: Menu Item Images ===\n";
-    $stmt = $conn->query("SELECT id, item_name, item_image FROM menu_items WHERE item_image IS NOT NULL AND item_image != '' LIMIT 5");
+    $stmt = $conn->query("SELECT id, item_name_en, item_image FROM menu_items WHERE item_image IS NOT NULL AND item_image != '' LIMIT 5");
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
     foreach ($items as $item) {
-        echo "Item #{$item['id']} ({$item['item_name']}):\n";
+        echo "Item #{$item['id']} ({$item['item_name_en']}):\n";
         echo "  Image path: {$item['item_image']}\n";
         
         if (strpos($item['item_image'], 'db:') === 0) {
