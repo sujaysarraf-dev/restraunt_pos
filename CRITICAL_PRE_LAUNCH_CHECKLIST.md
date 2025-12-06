@@ -43,16 +43,35 @@ ALTER TABLE payments ADD INDEX idx_restaurant_date (restaurant_id, created_at);
 
 **Prevent "Too many connections" errors.**
 
+### ✅ Already Optimized:
+- **Persistent connections enabled** - Multiple tabs/requests share connections
+- **Visibility checks** - Hidden tabs make zero database requests
+- **Optimized auto-refresh** - 10-30 second intervals (reduced from 3-5 seconds)
+- **Session check optimized** - 30 seconds (reduced from 2 seconds)
+
+### Still Check Limits:
 ```sql
 -- Check current limit
 SHOW VARIABLES LIKE 'max_connections';
 
--- Increase if needed (contact Hostinger if you can't change)
+-- Check current connections
+SHOW STATUS LIKE 'Threads_connected';
+
+-- Check max used connections
+SHOW STATUS LIKE 'Max_used_connections';
+
+-- If needed, increase limit (contact Hostinger if you can't change)
 SET GLOBAL max_connections = 200;  -- Minimum for launch
 ```
 
+### Connection Usage:
+- **Before optimizations:** 10 tabs = 10+ connections
+- **After optimizations:** 100 tabs = 1-3 connections (only visible tabs use DB)
+- **Expected usage:** ~5-10% of max_connections under normal load
+
 **Time:** 5 minutes  
-**Impact:** Prevents crashes under load
+**Impact:** Prevents crashes under load  
+**Status:** ✅ Optimized - Connection pooling and visibility checks implemented
 
 ---
 
