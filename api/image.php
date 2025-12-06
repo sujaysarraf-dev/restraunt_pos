@@ -206,6 +206,7 @@ if ($isHostinger) {
         $rootDir . '/' . $normalizedPath,  // From project root
         $scriptDir . '/../' . $normalizedPath, // Relative from api/
         dirname($docRoot) . '/' . $normalizedPath, // One level up from doc root
+        '/home/' . get_current_user() . '/public_html/' . $normalizedPath, // Absolute Hostinger path
     ];
 } else {
     // Local development paths
@@ -237,12 +238,22 @@ foreach ($possiblePaths as $path) {
 if (!$fullPath || !file_exists($fullPath)) {
     http_response_code(404);
     header('Content-Type: text/plain');
-    error_log("Image not found on " . ($isHostinger ? "Hostinger" : "local") . ". Tried paths: " . implode(', ', $possiblePaths));
-    error_log("Requested path: " . $imagePath);
-    error_log("Normalized path: " . $normalizedPath);
-    error_log("Root dir: " . $rootDir);
-    error_log("Document root: " . $docRoot);
-    error_log("Script dir: " . $scriptDir);
+    
+    // Enhanced logging for Hostinger debugging
+    $debugInfo = [
+        'environment' => $isHostinger ? 'Hostinger' : 'Local',
+        'requested_path' => $imagePath,
+        'normalized_path' => $normalizedPath,
+        'root_dir' => $rootDir,
+        'document_root' => $docRoot,
+        'script_dir' => $scriptDir,
+        'tried_paths' => $possiblePaths,
+        'current_user' => get_current_user(),
+        'server_name' => $_SERVER['SERVER_NAME'] ?? 'unknown',
+        'http_host' => $_SERVER['HTTP_HOST'] ?? 'unknown'
+    ];
+    
+    error_log("Image not found: " . json_encode($debugInfo));
     exit('Image not found');
 }
 
