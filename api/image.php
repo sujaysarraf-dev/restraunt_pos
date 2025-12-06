@@ -259,17 +259,16 @@ if (strpos($mimeType, 'image/') !== 0) {
     exit('Invalid image file');
 }
 
+// Clear any output buffer before sending image
+ob_end_clean();
+
 // Set appropriate headers
 header('Content-Type: ' . $mimeType);
 header('Content-Length: ' . filesize($fullPath));
 header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
 header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31536000) . ' GMT');
 
-// Clear any output buffer before sending image
-ob_clean();
-
 // Output the image
 readfile($fullPath);
-ob_end_flush();
 exit();
 ?>
