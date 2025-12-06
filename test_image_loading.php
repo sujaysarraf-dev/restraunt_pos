@@ -91,17 +91,27 @@ try {
                 echo "  Type: File-based\n";
                 echo "  API URL: /api/image.php?path=" . urlencode($logoPath) . "\n";
                 
+                // Use the found uploads directory if available, otherwise try common locations
+                $uploadsBase = $foundUploadsDir ?? $docRoot . '/uploads';
+                
                 // Check if file exists
                 $possiblePaths = [
                     $rootDir . '/' . $logoPath,
                     __DIR__ . '/../' . $logoPath,
-                    $_SERVER['DOCUMENT_ROOT'] . '/' . $logoPath,
+                    $docRoot . '/' . $logoPath,
+                    $uploadsBase . '/' . basename($logoPath),
                     $rootDir . '/uploads/' . basename($logoPath),
                     __DIR__ . '/../uploads/' . basename($logoPath),
                 ];
                 
-                // Also check normalized paths
-                if (strpos($logoPath, 'uploads/') === false) {
+                // If path already contains uploads/, use it directly
+                if (strpos($logoPath, 'uploads/') === 0) {
+                    $possiblePaths[] = $uploadsBase . '/' . substr($logoPath, 8); // Remove 'uploads/' prefix
+                    $possiblePaths[] = $docRoot . '/' . $logoPath;
+                    $possiblePaths[] = $rootDir . '/' . $logoPath;
+                } else {
+                    // Also check normalized paths
+                    $possiblePaths[] = $uploadsBase . '/' . $logoPath;
                     $possiblePaths[] = $rootDir . '/uploads/' . $logoPath;
                     $possiblePaths[] = __DIR__ . '/../uploads/' . $logoPath;
                 }
@@ -144,15 +154,25 @@ try {
             echo "  Type: File-based\n";
             echo "  API URL: /api/image.php?path=" . urlencode($item['item_image']) . "\n";
             
+            // Use the found uploads directory if available, otherwise try common locations
+            $uploadsBase = $foundUploadsDir ?? $docRoot . '/uploads';
+            
             $possiblePaths = [
                 $rootDir . '/' . $item['item_image'],
                 __DIR__ . '/../' . $item['item_image'],
+                $uploadsBase . '/' . basename($item['item_image']),
                 $rootDir . '/uploads/' . basename($item['item_image']),
                 __DIR__ . '/../uploads/' . basename($item['item_image']),
             ];
             
-            // Also check normalized paths
-            if (strpos($item['item_image'], 'uploads/') === false) {
+            // If path already contains uploads/, use it directly
+            if (strpos($item['item_image'], 'uploads/') === 0) {
+                $possiblePaths[] = $uploadsBase . '/' . substr($item['item_image'], 8); // Remove 'uploads/' prefix
+                $possiblePaths[] = $docRoot . '/' . $item['item_image'];
+                $possiblePaths[] = $rootDir . '/' . $item['item_image'];
+            } else {
+                // Also check normalized paths
+                $possiblePaths[] = $uploadsBase . '/' . $item['item_image'];
                 $possiblePaths[] = $rootDir . '/uploads/' . $item['item_image'];
                 $possiblePaths[] = __DIR__ . '/../uploads/' . $item['item_image'];
             }
