@@ -2738,14 +2738,6 @@ select:focus {
 }
 
 /* Professional Orders Page Styling */
-.orders-search-section {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-}
-
 .orders-controls-section {
   background: white;
   padding: 20px;
@@ -2753,32 +2745,15 @@ select:focus {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin-bottom: 24px;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 20px;
+  align-items: center;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-.filters-group {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
+.orders-controls-section .search-wrapper {
   flex: 1;
-}
-
-.filter-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 140px;
-}
-
-.filter-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  min-width: 280px;
+  margin: 0;
 }
 
 .filter-select {
@@ -2791,6 +2766,7 @@ select:focus {
   transition: all 0.2s ease;
   color: #1f2937;
   font-weight: 500;
+  min-width: 140px;
 }
 
 .filter-select:hover {
@@ -2806,12 +2782,7 @@ select:focus {
 .filter-select.date-input {
   padding: 10px 14px;
   font-family: inherit;
-}
-
-.actions-group {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+  min-width: 160px;
 }
 
 .btn-export {
@@ -2828,6 +2799,7 @@ select:focus {
   font-size: 0.9rem;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+  white-space: nowrap;
 }
 
 .btn-export:hover {
@@ -2855,17 +2827,14 @@ select:focus {
     align-items: stretch;
   }
   
-  .filters-group {
+  .orders-controls-section .search-wrapper {
     width: 100%;
+    min-width: 100%;
   }
   
-  .filter-item {
-    flex: 1;
-    min-width: calc(50% - 8px);
-  }
-  
-  .actions-group {
+  .filter-select {
     width: 100%;
+    min-width: 100%;
   }
   
   .btn-export {

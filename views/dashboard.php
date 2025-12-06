@@ -1733,59 +1733,44 @@ try {
         <p>View and manage all orders</p>
       </div>
       <div class="page-content">
-        <!-- Search Section -->
-        <div class="orders-search-section">
-          <div class="search-wrapper">
+        <!-- Search and Filters Section -->
+        <div class="orders-controls-section">
+          <div class="search-wrapper" style="flex: 1; min-width: 280px;">
             <span class="material-symbols-rounded">search</span>
             <input type="text" id="ordersSearch" placeholder="Search by order number, customer name, or table...">
           </div>
-        </div>
-
-        <!-- Filters and Actions Section -->
-        <div class="orders-controls-section">
-          <div class="filters-group">
-            <div class="filter-item">
-              <label class="filter-label">Status</label>
-              <select id="ordersStatusFilter" class="filter-select">
-                <option value="">All Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Preparing">Preparing</option>
-                <option value="Ready">Ready</option>
-                <option value="Served">Served</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-            <div class="filter-item">
-              <label class="filter-label">Payment</label>
-              <select id="ordersPaymentFilter" class="filter-select">
-                <option value="">All Payment</option>
-                <option value="Pending">Pending</option>
-                <option value="Paid">Paid</option>
-                <option value="Partially Paid">Partially Paid</option>
-                <option value="Refunded">Refunded</option>
-              </select>
-            </div>
-            <div class="filter-item">
-              <label class="filter-label">Type</label>
-              <select id="ordersTypeFilter" class="filter-select">
-                <option value="">All Types</option>
-                <option value="Dine-in">Dine-in</option>
-                <option value="Takeaway">Takeaway</option>
-                <option value="Delivery">Delivery</option>
-              </select>
-            </div>
-            <div class="filter-item">
-              <label class="filter-label">Date</label>
-              <input type="date" id="ordersDateFilter" class="filter-select date-input">
-            </div>
-          </div>
-          <div class="actions-group">
-            <button onclick="exportOrdersToCSV()" class="btn-export">
-              <span class="material-symbols-rounded">download</span>
-              <span>Export CSV</span>
-            </button>
-          </div>
+          
+          <select id="ordersStatusFilter" class="filter-select">
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Preparing">Preparing</option>
+            <option value="Ready">Ready</option>
+            <option value="Served">Served</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+          
+          <select id="ordersPaymentFilter" class="filter-select">
+            <option value="">All Payment</option>
+            <option value="Pending">Pending</option>
+            <option value="Paid">Paid</option>
+            <option value="Partially Paid">Partially Paid</option>
+            <option value="Refunded">Refunded</option>
+          </select>
+          
+          <select id="ordersTypeFilter" class="filter-select">
+            <option value="">All Types</option>
+            <option value="Dine-in">Dine-in</option>
+            <option value="Takeaway">Takeaway</option>
+            <option value="Delivery">Delivery</option>
+          </select>
+          
+          <input type="date" id="ordersDateFilter" class="filter-select date-input">
+          
+          <button onclick="exportOrdersToCSV()" class="btn-export">
+            <span class="material-symbols-rounded">download</span>
+            <span>Export CSV</span>
+          </button>
         </div>
 
         <!-- Orders List -->
