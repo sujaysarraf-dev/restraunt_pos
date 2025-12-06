@@ -13,7 +13,7 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 
 // Include authorization configuration
 require_once __DIR__ . '/../config/authorization_config.php';
@@ -26,7 +26,7 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
 } else {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection file not found']);
+    echo json_encode(['success' => false, 'message' => 'Database connection file not found'], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -46,17 +46,17 @@ try {
             break;
             
         default:
-            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+            echo json_encode(['success' => false, 'message' => 'Invalid action'], JSON_UNESCAPED_UNICODE);
     }
 } catch (PDOException $e) {
     error_log("PDO Error in pos_operations.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.']);
+    echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.'], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Exception $e) {
     error_log("Error in pos_operations.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -74,7 +74,7 @@ function handleCreateKOT($conn, $restaurant_id) {
     
     // Validation
     if (empty($cartItems)) {
-        echo json_encode(['success' => false, 'message' => 'Cart is empty']);
+        echo json_encode(['success' => false, 'message' => 'Cart is empty'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -181,11 +181,11 @@ function handleCreateKOT($conn, $restaurant_id) {
             $resp['order_number'] = $orderNumber;
             $resp['order_id'] = $orderId;
         }
-        echo json_encode($resp);
+        echo json_encode($resp, JSON_UNESCAPED_UNICODE);
     } catch (Exception $e) {
         // Rollback transaction on error
         $conn->rollBack();
-        echo json_encode(['success' => false, 'message' => 'Error creating KOT: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => 'Error creating KOT: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     }
 }
 
@@ -198,7 +198,7 @@ function handleHoldOrder($conn, $restaurant_id) {
     
     // Validation
     if (empty($cartItems)) {
-        echo json_encode(['success' => false, 'message' => 'Cart is empty']);
+        echo json_encode(['success' => false, 'message' => 'Cart is empty'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -254,11 +254,11 @@ function handleHoldOrder($conn, $restaurant_id) {
             'message' => 'Order held successfully',
             'order_number' => $orderNumber,
             'order_id' => $orderId
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
     } catch (Exception $e) {
         // Rollback transaction on error
         $conn->rollBack();
-        echo json_encode(['success' => false, 'message' => 'Error holding order: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => 'Error holding order: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     }
 }
 

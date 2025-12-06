@@ -13,7 +13,7 @@ register_shutdown_function(function() {
     if ($error !== NULL && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
         ob_clean(); // Clear any output
         http_response_code(500);
-        header('Content-Type: application/json');
+        header('Content-Type: application/json; charset=UTF-8');
         echo json_encode([
             'success' => false,
             'message' => 'A fatal error occurred: ' . $error['message'],
@@ -21,7 +21,7 @@ register_shutdown_function(function() {
             'file' => basename($error['file']),
             'line' => $error['line'],
             'type' => 'FatalError'
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
         exit();
     }
 });
@@ -42,24 +42,24 @@ try {
 } catch (Exception $e) {
     ob_clean();
     http_response_code(500);
-    header('Content-Type: application/json');
+    header('Content-Type: application/json; charset=UTF-8');
     echo json_encode([
         'success' => false,
         'message' => 'Session initialization failed: ' . $e->getMessage(),
         'error' => $e->getMessage(),
         'type' => 'SessionError'
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Error $e) {
     ob_clean();
     http_response_code(500);
-    header('Content-Type: application/json');
+    header('Content-Type: application/json; charset=UTF-8');
     echo json_encode([
         'success' => false,
         'message' => 'Fatal error during initialization: ' . $e->getMessage(),
         'error' => $e->getMessage(),
         'type' => 'InitError'
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -69,31 +69,31 @@ try {
 } catch (Exception $e) {
     ob_clean();
     http_response_code(500);
-    header('Content-Type: application/json');
+    header('Content-Type: application/json; charset=UTF-8');
     echo json_encode([
         'success' => false,
         'message' => 'Authorization config error: ' . $e->getMessage(),
         'error' => $e->getMessage(),
         'type' => 'AuthConfigError'
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Error $e) {
     ob_clean();
     http_response_code(500);
-    header('Content-Type: application/json');
+    header('Content-Type: application/json; charset=UTF-8');
     echo json_encode([
         'success' => false,
         'message' => 'Fatal error in authorization: ' . $e->getMessage(),
         'error' => $e->getMessage(),
         'type' => 'AuthError'
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
 // Ensure no output before headers
 ob_clean();
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
@@ -108,7 +108,7 @@ try {
         'message' => 'Permission denied: ' . $e->getMessage(),
         'error' => $e->getMessage(),
         'type' => 'PermissionError'
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Error $e) {
     http_response_code(500);
@@ -117,7 +117,7 @@ try {
         'message' => 'Permission check error: ' . $e->getMessage(),
         'error' => $e->getMessage(),
         'type' => 'PermissionCheckError'
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -126,7 +126,7 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
 } else {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection file not found']);
+    echo json_encode(['success' => false, 'message' => 'Database connection file not found'], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sizeCheck = checkRequestSize(5);
     if (!$sizeCheck['valid']) {
         http_response_code(413);
-        echo json_encode(['success' => false, 'message' => $sizeCheck['message']]);
+        echo json_encode(['success' => false, 'message' => $sizeCheck['message']], JSON_UNESCAPED_UNICODE);
         exit();
     }
 }
@@ -283,7 +283,7 @@ try {
                 'message' => 'Validation failed. Please check the form for errors.',
                 'errors' => $validationErrors,
                 'field_errors' => $fieldErrors
-            ]);
+            ], JSON_UNESCAPED_UNICODE);
             exit();
         }
     }
@@ -337,7 +337,7 @@ try {
                         'reservation_date' => $reservationDate,
                         'created_at' => date('Y-m-d H:i:s')
                     ]
-                ]);
+                ], JSON_UNESCAPED_UNICODE);
             } else {
                 throw new Exception('Failed to add reservation');
             }
@@ -373,7 +373,7 @@ try {
                         'customer_name' => $customerName,
                         'updated_at' => date('Y-m-d H:i:s')
                     ]
-                ]);
+                ], JSON_UNESCAPED_UNICODE);
             } else {
                 throw new Exception('Failed to update reservation');
             }
@@ -401,7 +401,7 @@ try {
                         'id' => $reservationId,
                         'customer_name' => $reservation['customer_name']
                     ]
-                ]);
+                ], JSON_UNESCAPED_UNICODE);
             } else {
                 throw new Exception('Failed to delete reservation');
             }
@@ -426,7 +426,7 @@ try {
         'type' => 'PDOException',
         'file' => $e->getFile(),
         'line' => $e->getLine()
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Exception $e) {
     error_log("=== Exception ===");
@@ -443,7 +443,7 @@ try {
         'type' => 'Exception',
         'file' => $e->getFile(),
         'line' => $e->getLine()
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Error $e) {
     error_log("=== Fatal Error ===");
@@ -460,7 +460,7 @@ try {
         'type' => 'Error',
         'file' => $e->getFile(),
         'line' => $e->getLine()
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 ?>

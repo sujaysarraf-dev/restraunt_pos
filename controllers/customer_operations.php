@@ -16,7 +16,7 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 
 // Require permission to manage customers
 requirePermission(PERMISSION_MANAGE_CUSTOMERS);
@@ -26,7 +26,7 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
 } else {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection file not found']);
+    echo json_encode(['success' => false, 'message' => 'Database connection file not found'], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -51,17 +51,17 @@ try {
             
         default:
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+            echo json_encode(['success' => false, 'message' => 'Invalid action'], JSON_UNESCAPED_UNICODE);
     }
 } catch (PDOException $e) {
     error_log("PDO Error in customer_operations.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.']);
+    echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.'], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Exception $e) {
     error_log("Error in customer_operations.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -73,13 +73,13 @@ function handleAddCustomer($conn, $restaurant_id) {
     // Validation
     if (empty($customerName)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Customer name is required']);
+        echo json_encode(['success' => false, 'message' => 'Customer name is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
     if (empty($phone)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Phone number is required']);
+        echo json_encode(['success' => false, 'message' => 'Phone number is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -89,7 +89,7 @@ function handleAddCustomer($conn, $restaurant_id) {
     
     if ($checkStmt->fetch()) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Customer with this phone number already exists']);
+        echo json_encode(['success' => false, 'message' => 'Customer with this phone number already exists'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -97,7 +97,7 @@ function handleAddCustomer($conn, $restaurant_id) {
     $stmt = $conn->prepare("INSERT INTO customers (restaurant_id, customer_name, phone, email) VALUES (?, ?, ?, ?)");
     $stmt->execute([$restaurant_id, $customerName, $phone, $email]);
     
-    echo json_encode(['success' => true, 'message' => 'Customer added successfully']);
+    echo json_encode(['success' => true, 'message' => 'Customer added successfully'], JSON_UNESCAPED_UNICODE);
 }
 
 function handleUpdateCustomer($conn, $restaurant_id) {
@@ -109,13 +109,13 @@ function handleUpdateCustomer($conn, $restaurant_id) {
     // Validation
     if (empty($customerName)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Customer name is required']);
+        echo json_encode(['success' => false, 'message' => 'Customer name is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
     if (empty($phone)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Phone number is required']);
+        echo json_encode(['success' => false, 'message' => 'Phone number is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -125,7 +125,7 @@ function handleUpdateCustomer($conn, $restaurant_id) {
     
     if (!$checkStmt->fetch()) {
         http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Customer not found']);
+        echo json_encode(['success' => false, 'message' => 'Customer not found'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -135,7 +135,7 @@ function handleUpdateCustomer($conn, $restaurant_id) {
     
     if ($phoneCheckStmt->fetch()) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Phone number already exists for another customer']);
+        echo json_encode(['success' => false, 'message' => 'Phone number already exists for another customer'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -143,7 +143,7 @@ function handleUpdateCustomer($conn, $restaurant_id) {
     $stmt = $conn->prepare("UPDATE customers SET customer_name = ?, phone = ?, email = ? WHERE id = ? AND restaurant_id = ?");
     $stmt->execute([$customerName, $phone, $email, $customerId, $restaurant_id]);
     
-    echo json_encode(['success' => true, 'message' => 'Customer updated successfully']);
+    echo json_encode(['success' => true, 'message' => 'Customer updated successfully'], JSON_UNESCAPED_UNICODE);
 }
 
 function handleDeleteCustomer($conn, $restaurant_id) {
@@ -151,7 +151,7 @@ function handleDeleteCustomer($conn, $restaurant_id) {
     
     if (empty($customerId)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Customer ID is required']);
+        echo json_encode(['success' => false, 'message' => 'Customer ID is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -161,7 +161,7 @@ function handleDeleteCustomer($conn, $restaurant_id) {
     
     if (!$checkStmt->fetch()) {
         http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Customer not found']);
+        echo json_encode(['success' => false, 'message' => 'Customer not found'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -169,7 +169,7 @@ function handleDeleteCustomer($conn, $restaurant_id) {
     $stmt = $conn->prepare("DELETE FROM customers WHERE id = ? AND restaurant_id = ?");
     $stmt->execute([$customerId, $restaurant_id]);
     
-    echo json_encode(['success' => true, 'message' => 'Customer deleted successfully']);
+    echo json_encode(['success' => true, 'message' => 'Customer deleted successfully'], JSON_UNESCAPED_UNICODE);
 }
 ?>
 

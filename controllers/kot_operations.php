@@ -13,7 +13,7 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 
 // Include authorization configuration
 require_once __DIR__ . '/../config/authorization_config.php';
@@ -26,7 +26,7 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
 } else {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection file not found']);
+        echo json_encode(['success' => false, 'message' => 'Database connection file not found'], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -44,17 +44,17 @@ try {
             handleCompleteKOT();
             break;
         default:
-            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+            echo json_encode(['success' => false, 'message' => 'Invalid action'], JSON_UNESCAPED_UNICODE);
     }
 } catch (PDOException $e) {
     error_log("PDO Error in kot_operations.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.']);
+    echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.'], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Exception $e) {
     error_log("Error in kot_operations.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -72,7 +72,7 @@ function handleCreateKOT() {
     $notes = $_POST['notes'] ?? '';
     
     if (empty($cart_items)) {
-        echo json_encode(['success' => false, 'message' => 'No items in cart']);
+        echo json_encode(['success' => false, 'message' => 'No items in cart'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -101,7 +101,7 @@ function handleCreateKOT() {
             'message' => 'KOT created successfully',
             'kot_id' => $kot_id,
             'kot_number' => $kot_number
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
         
     } catch (Exception $e) {
         $conn->rollBack();

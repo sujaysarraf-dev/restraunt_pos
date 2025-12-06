@@ -16,7 +16,7 @@ startSecureSession();
 // Include authorization configuration
 require_once __DIR__ . '/../config/authorization_config.php';
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 header('Access-Control-Allow-Headers: Content-Type');
@@ -31,7 +31,7 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
         'message' => 'Database connection file not found',
         'data' => [],
         'categories' => []
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -69,7 +69,7 @@ if (isLoggedIn()) {
             'message' => 'Access denied. Restaurant ID required.',
             'data' => [],
             'categories' => []
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
         exit();
     }
 } elseif (!$requested_restaurant_id) {
@@ -79,7 +79,7 @@ if (isLoggedIn()) {
         'message' => 'Restaurant ID required',
         'data' => [],
         'categories' => []
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -91,7 +91,7 @@ if (!$restaurant_id) {
         'message' => 'Restaurant ID is required',
         'data' => [],
         'categories' => []
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -180,7 +180,7 @@ try {
         'data' => $menuItems,
         'categories' => $categories,
         'count' => count($menuItems)
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     
 } catch (PDOException $e) {
     error_log("PDO Error in get_menu_items.php: " . $e->getMessage());
@@ -190,7 +190,7 @@ try {
         'message' => 'Database error occurred. Please try again later.',
         'data' => [],
         'categories' => []
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Exception $e) {
     error_log("Error in get_menu_items.php: " . $e->getMessage());
@@ -200,7 +200,7 @@ try {
         'message' => $e->getMessage(),
         'data' => [],
         'categories' => []
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 ?>

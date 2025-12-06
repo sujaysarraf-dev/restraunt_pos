@@ -13,7 +13,7 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 
 // Include authorization configuration
 require_once __DIR__ . '/../config/authorization_config.php';
@@ -26,7 +26,7 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
 } else {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection file not found']);
+    echo json_encode(['success' => false, 'message' => 'Database connection file not found'], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -50,17 +50,17 @@ try {
             break;
             
         default:
-            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+            echo json_encode(['success' => false, 'message' => 'Invalid action'], JSON_UNESCAPED_UNICODE);
     }
 } catch (PDOException $e) {
     error_log("PDO Error in waiter_request_operations.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.']);
+    echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.'], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Exception $e) {
     error_log("Error in waiter_request_operations.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -71,7 +71,7 @@ function handleAddRequest($conn, $restaurant_id) {
     
     // Validation
     if (empty($tableId)) {
-        echo json_encode(['success' => false, 'message' => 'Table ID is required']);
+        echo json_encode(['success' => false, 'message' => 'Table ID is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -80,7 +80,7 @@ function handleAddRequest($conn, $restaurant_id) {
     $checkStmt->execute([$tableId, $restaurant_id]);
     
     if (!$checkStmt->fetch()) {
-        echo json_encode(['success' => false, 'message' => 'Invalid table']);
+        echo json_encode(['success' => false, 'message' => 'Invalid table'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -88,14 +88,14 @@ function handleAddRequest($conn, $restaurant_id) {
     $stmt = $conn->prepare("INSERT INTO waiter_requests (restaurant_id, table_id, request_type, notes) VALUES (?, ?, ?, ?)");
     $stmt->execute([$restaurant_id, $tableId, $requestType, $notes]);
     
-    echo json_encode(['success' => true, 'message' => 'Request added successfully']);
+    echo json_encode(['success' => true, 'message' => 'Request added successfully'], JSON_UNESCAPED_UNICODE);
 }
 
 function handleMarkAttended($conn, $restaurant_id) {
     $requestId = $_POST['requestId'] ?? '';
     
     if (empty($requestId)) {
-        echo json_encode(['success' => false, 'message' => 'Request ID is required']);
+        echo json_encode(['success' => false, 'message' => 'Request ID is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -104,7 +104,7 @@ function handleMarkAttended($conn, $restaurant_id) {
     $checkStmt->execute([$requestId, $restaurant_id]);
     
     if (!$checkStmt->fetch()) {
-        echo json_encode(['success' => false, 'message' => 'Request not found']);
+        echo json_encode(['success' => false, 'message' => 'Request not found'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -112,14 +112,14 @@ function handleMarkAttended($conn, $restaurant_id) {
     $stmt = $conn->prepare("UPDATE waiter_requests SET status = 'Attended', attended_at = NOW() WHERE id = ? AND restaurant_id = ?");
     $stmt->execute([$requestId, $restaurant_id]);
     
-    echo json_encode(['success' => true, 'message' => 'Request marked as attended']);
+    echo json_encode(['success' => true, 'message' => 'Request marked as attended'], JSON_UNESCAPED_UNICODE);
 }
 
 function handleDeleteRequest($conn, $restaurant_id) {
     $requestId = $_POST['requestId'] ?? '';
     
     if (empty($requestId)) {
-        echo json_encode(['success' => false, 'message' => 'Request ID is required']);
+        echo json_encode(['success' => false, 'message' => 'Request ID is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -128,7 +128,7 @@ function handleDeleteRequest($conn, $restaurant_id) {
     $checkStmt->execute([$requestId, $restaurant_id]);
     
     if (!$checkStmt->fetch()) {
-        echo json_encode(['success' => false, 'message' => 'Request not found']);
+        echo json_encode(['success' => false, 'message' => 'Request not found'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -136,6 +136,6 @@ function handleDeleteRequest($conn, $restaurant_id) {
     $stmt = $conn->prepare("DELETE FROM waiter_requests WHERE id = ? AND restaurant_id = ?");
     $stmt->execute([$requestId, $restaurant_id]);
     
-    echo json_encode(['success' => true, 'message' => 'Request deleted successfully']);
+    echo json_encode(['success' => true, 'message' => 'Request deleted successfully'], JSON_UNESCAPED_UNICODE);
 }
 

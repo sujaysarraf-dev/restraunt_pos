@@ -27,6 +27,10 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);  // Don't display errors (prevents HTML output)
 ini_set('log_errors', 1);
 
+// Set UTF-8 encoding for all database operations
+ini_set('default_charset', 'UTF-8');
+mb_internal_encoding('UTF-8');
+
 // Auto-detect if running on Hostinger server
 // On Hostinger, use localhost; from local machine, use remote host
 $is_hostinger_server = (
@@ -254,7 +258,7 @@ try {
     error_log("DB Connection Error: " . $error_msg . " (Attempt: $connection_attempt/$max_retries)");
     
     if (!headers_sent()) {
-        header('Content-Type: application/json');
+        header('Content-Type: application/json; charset=UTF-8');
         http_response_code($http_code);
         echo json_encode([
             'success' => false,
@@ -263,7 +267,7 @@ try {
             'database' => $dbname,
             'environment' => $is_hostinger_server ? 'hostinger' : 'local',
             'attempts' => $connection_attempt
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
         exit();
     } else {
         die($error_msg);

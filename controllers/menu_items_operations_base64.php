@@ -16,7 +16,7 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
@@ -32,7 +32,7 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     echo json_encode([
         'success' => false,
         'message' => 'Database connection file not found'
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -102,7 +102,7 @@ try {
     echo json_encode([
         'success' => false,
         'message' => 'Database error occurred. Please try again later.'
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Exception $e) {
     error_log("Error in menu_items_operations_base64.php: " . $e->getMessage());
@@ -110,7 +110,7 @@ try {
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -173,7 +173,7 @@ function handleAddMenuItemBase64($conn, $restaurant_id, $menuId, $itemNameEn, $i
                 'item_name_en' => $itemNameEn,
                 'created_at' => date('Y-m-d H:i:s')
             ]
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
     } else {
         throw new Exception('Failed to add menu item');
     }
@@ -252,7 +252,7 @@ function handleUpdateMenuItemBase64($conn, $restaurant_id, $menuItemId, $menuId,
                 'item_name_en' => $itemNameEn,
                 'updated_at' => date('Y-m-d H:i:s')
             ]
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
     } else {
         throw new Exception('Failed to update menu item');
     }
@@ -285,7 +285,7 @@ function handleDeleteMenuItemBase64($conn, $restaurant_id, $menuItemId) {
                 'id' => $menuItemId,
                 'item_name_en' => $menuItem['item_name_en']
             ]
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
     } else {
         throw new Exception('Failed to delete menu item');
     }

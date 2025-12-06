@@ -16,7 +16,7 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 
 // Require admin permission to manage staff
 requireAdmin();
@@ -26,7 +26,7 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
 } else {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection file not found']);
+    echo json_encode(['success' => false, 'message' => 'Database connection file not found'], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -51,17 +51,17 @@ try {
             
         default:
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+            echo json_encode(['success' => false, 'message' => 'Invalid action'], JSON_UNESCAPED_UNICODE);
     }
 } catch (PDOException $e) {
     error_log("PDO Error in staff_operations.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.']);
+    echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.'], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Exception $e) {
     error_log("Error in staff_operations.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -76,37 +76,37 @@ function handleAddStaff($conn, $restaurant_id) {
     // Validation
     if (empty($memberName)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Member name is required']);
+        echo json_encode(['success' => false, 'message' => 'Member name is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
     if (empty($email)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Email address is required']);
+        echo json_encode(['success' => false, 'message' => 'Email address is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Invalid email address']);
+        echo json_encode(['success' => false, 'message' => 'Invalid email address'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
     if (empty($phone)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Phone number is required']);
+        echo json_encode(['success' => false, 'message' => 'Phone number is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
     if (empty($password)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Password is required']);
+        echo json_encode(['success' => false, 'message' => 'Password is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
     if (strlen($password) < 6) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Password must be at least 6 characters']);
+        echo json_encode(['success' => false, 'message' => 'Password must be at least 6 characters'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -119,7 +119,7 @@ function handleAddStaff($conn, $restaurant_id) {
     
     if ($checkStmt->fetch()) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Staff member with this email already exists']);
+        echo json_encode(['success' => false, 'message' => 'Staff member with this email already exists'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -130,7 +130,7 @@ function handleAddStaff($conn, $restaurant_id) {
     $stmt = $conn->prepare("INSERT INTO staff (restaurant_id, member_name, email, phone, password, role) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->execute([$restaurant_id, $memberName, $email, $fullPhone, $hashedPassword, $role]);
     
-    echo json_encode(['success' => true, 'message' => 'Staff member added successfully']);
+    echo json_encode(['success' => true, 'message' => 'Staff member added successfully'], JSON_UNESCAPED_UNICODE);
 }
 
 function handleUpdateStaff($conn, $restaurant_id) {
@@ -145,25 +145,25 @@ function handleUpdateStaff($conn, $restaurant_id) {
     // Validation
     if (empty($memberName)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Member name is required']);
+        echo json_encode(['success' => false, 'message' => 'Member name is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
     if (empty($email)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Email address is required']);
+        echo json_encode(['success' => false, 'message' => 'Email address is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Invalid email address']);
+        echo json_encode(['success' => false, 'message' => 'Invalid email address'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
     if (empty($phone)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Phone number is required']);
+        echo json_encode(['success' => false, 'message' => 'Phone number is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -173,7 +173,7 @@ function handleUpdateStaff($conn, $restaurant_id) {
     
     if (!$checkStmt->fetch()) {
         http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Staff member not found']);
+        echo json_encode(['success' => false, 'message' => 'Staff member not found'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -183,7 +183,7 @@ function handleUpdateStaff($conn, $restaurant_id) {
     
     if ($emailCheckStmt->fetch()) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Email already exists for another staff member']);
+        echo json_encode(['success' => false, 'message' => 'Email already exists for another staff member'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -194,7 +194,7 @@ function handleUpdateStaff($conn, $restaurant_id) {
     if (!empty($password)) {
         if (strlen($password) < 6) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Password must be at least 6 characters']);
+            echo json_encode(['success' => false, 'message' => 'Password must be at least 6 characters'], JSON_UNESCAPED_UNICODE);
             return;
         }
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
@@ -205,7 +205,7 @@ function handleUpdateStaff($conn, $restaurant_id) {
         $stmt->execute([$memberName, $email, $fullPhone, $role, $staffId, $restaurant_id]);
     }
     
-    echo json_encode(['success' => true, 'message' => 'Staff member updated successfully']);
+    echo json_encode(['success' => true, 'message' => 'Staff member updated successfully'], JSON_UNESCAPED_UNICODE);
 }
 
 function handleDeleteStaff($conn, $restaurant_id) {
@@ -213,7 +213,7 @@ function handleDeleteStaff($conn, $restaurant_id) {
     
     if (empty($staffId)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Staff ID is required']);
+        echo json_encode(['success' => false, 'message' => 'Staff ID is required'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -223,7 +223,7 @@ function handleDeleteStaff($conn, $restaurant_id) {
     
     if (!$checkStmt->fetch()) {
         http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Staff member not found']);
+        echo json_encode(['success' => false, 'message' => 'Staff member not found'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -231,7 +231,7 @@ function handleDeleteStaff($conn, $restaurant_id) {
     $stmt = $conn->prepare("DELETE FROM staff WHERE id = ? AND restaurant_id = ?");
     $stmt->execute([$staffId, $restaurant_id]);
     
-    echo json_encode(['success' => true, 'message' => 'Staff member deleted successfully']);
+    echo json_encode(['success' => true, 'message' => 'Staff member deleted successfully'], JSON_UNESCAPED_UNICODE);
 }
 ?>
 
