@@ -29,21 +29,48 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
         if ($imageType === 'logo' && !empty($imageId)) {
             // Get restaurant logo
             try {
-                $stmt = $pdo->prepare("SELECT logo_data, logo_mime_type FROM users WHERE id = ? LIMIT 1");
+                $stmt = $pdo->prepare("SELECT logo_data, logo_mime_type, restaurant_logo FROM users WHERE id = ? LIMIT 1");
                 $stmt->execute([$imageId]);
                 $logo = $stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if ($logo && !empty($logo['logo_data'])) {
+                    ob_end_clean();
                     header('Content-Type: ' . ($logo['logo_mime_type'] ?? 'image/jpeg'));
                     header('Content-Length: ' . strlen($logo['logo_data']));
                     header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
                     echo $logo['logo_data'];
                     exit();
+                } elseif ($logo && !empty($logo['restaurant_logo']) && strpos($logo['restaurant_logo'], 'db:') !== 0) {
+                    // Logo is file-based, use the path for file-based handling
+                    $imagePath = $logo['restaurant_logo'];
+                    // Fall through to file-based handling below
+                } else {
+                    // No logo found
+                    http_response_code(404);
+                    header('Content-Type: text/plain');
+                    exit('Logo not found');
                 }
             } catch (PDOException $e) {
-                // If logo_data column doesn't exist, fall through to file-based handling
+                // If logo_data column doesn't exist, try to get file-based logo
                 if (strpos($e->getMessage(), 'logo_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
-                    error_log("Logo data column not found, falling back to file-based: " . $e->getMessage());
+                    error_log("Logo data column not found, trying file-based: " . $e->getMessage());
+                    try {
+                        $stmt = $pdo->prepare("SELECT restaurant_logo FROM users WHERE id = ? LIMIT 1");
+                        $stmt->execute([$imageId]);
+                        $logoRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                        if ($logoRow && !empty($logoRow['restaurant_logo']) && strpos($logoRow['restaurant_logo'], 'db:') !== 0) {
+                            $imagePath = $logoRow['restaurant_logo'];
+                            // Fall through to file-based handling below
+                        } else {
+                            http_response_code(404);
+                            header('Content-Type: text/plain');
+                            exit('Logo not found');
+                        }
+                    } catch (PDOException $e2) {
+                        http_response_code(404);
+                        header('Content-Type: text/plain');
+                        exit('Logo not found');
+                    }
                 } else {
                     throw $e;
                 }

@@ -53,18 +53,29 @@ try {
                 echo "  API URL: /api/image.php?type=logo&id={$user['id']}\n";
             } else {
                 echo "  Type: File-based\n";
+                echo "  API URL: /api/image.php?path=" . urlencode($logoPath) . "\n";
+                
                 // Check if file exists
                 $possiblePaths = [
                     $rootDir . '/' . $logoPath,
                     __DIR__ . '/../' . $logoPath,
                     $_SERVER['DOCUMENT_ROOT'] . '/' . $logoPath,
+                    $rootDir . '/uploads/' . basename($logoPath),
+                    __DIR__ . '/../uploads/' . basename($logoPath),
                 ];
+                
+                // Also check normalized paths
+                if (strpos($logoPath, 'uploads/') === false) {
+                    $possiblePaths[] = $rootDir . '/uploads/' . $logoPath;
+                    $possiblePaths[] = __DIR__ . '/../uploads/' . $logoPath;
+                }
                 
                 $found = false;
                 foreach ($possiblePaths as $path) {
-                    if (file_exists($path)) {
-                        echo "  Found at: $path\n";
-                        echo "  Size: " . filesize($path) . " bytes\n";
+                    $normalized = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+                    if (file_exists($normalized)) {
+                        echo "  ✓ Found at: $normalized\n";
+                        echo "  Size: " . filesize($normalized) . " bytes\n";
                         $found = true;
                         break;
                     }
@@ -92,24 +103,41 @@ try {
         
         if (strpos($item['item_image'], 'db:') === 0) {
             echo "  Type: Database-stored\n";
+            echo "  API URL: /api/image.php?path=" . urlencode($item['item_image']) . "\n";
         } else {
             echo "  Type: File-based\n";
+            echo "  API URL: /api/image.php?path=" . urlencode($item['item_image']) . "\n";
+            
             $possiblePaths = [
                 $rootDir . '/' . $item['item_image'],
                 __DIR__ . '/../' . $item['item_image'],
+                $rootDir . '/uploads/' . basename($item['item_image']),
+                __DIR__ . '/../uploads/' . basename($item['item_image']),
             ];
+            
+            // Also check normalized paths
+            if (strpos($item['item_image'], 'uploads/') === false) {
+                $possiblePaths[] = $rootDir . '/uploads/' . $item['item_image'];
+                $possiblePaths[] = __DIR__ . '/../uploads/' . $item['item_image'];
+            }
             
             $found = false;
             foreach ($possiblePaths as $path) {
-                if (file_exists($path)) {
-                    echo "  Found at: $path\n";
+                $normalized = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+                if (file_exists($normalized)) {
+                    echo "  ✓ Found at: $normalized\n";
+                    echo "  Size: " . filesize($normalized) . " bytes\n";
                     $found = true;
                     break;
                 }
             }
             
             if (!$found) {
-                echo "  ❌ NOT FOUND\n";
+                echo "  ❌ NOT FOUND in any location\n";
+                echo "  Tried:\n";
+                foreach ($possiblePaths as $path) {
+                    echo "    - $path\n";
+                }
             }
         }
         echo "\n";
