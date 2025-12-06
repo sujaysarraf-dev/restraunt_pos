@@ -22,7 +22,29 @@ $imagePath = $_GET['path'] ?? '';
 $imageType = $_GET['type'] ?? ''; // 'logo', 'item', or 'banner'
 $imageId = $_GET['id'] ?? '';
 
-// Check if this is a database-stored image (starts with 'db:')
+// FIRST: Check if image data exists in database as BLOB (for menu items with file paths)
+// This handles cases where item_image has a file path but image_data BLOB exists
+if (!empty($imagePath) && strpos($imagePath, 'db:') !== 0 && strpos($imagePath, 'http') !== 0 && empty($imageType)) {
+    try {
+        $stmt = $pdo->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
+        $stmt->execute([$imagePath]);
+        $item = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($item && !empty($item['image_data'])) {
+            ob_end_clean();
+            header('Content-Type: ' . ($item['image_mime_type'] ?? 'image/jpeg'));
+            header('Content-Length: ' . strlen($item['image_data']));
+            header('Cache-Control: public, max-age=31536000');
+            echo $item['image_data'];
+            exit();
+        }
+    } catch (PDOException $e) {
+        // If query fails, continue to other checks
+        error_log("Database BLOB check failed: " . $e->getMessage());
+    }
+}
+
+// Check if this is a database-stored image (starts with 'db:') or type-specific request
 if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
     // Retrieve image from database
     try {

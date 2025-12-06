@@ -154,6 +154,27 @@ try {
             echo "  Type: File-based\n";
             echo "  API URL: /api/image.php?path=" . urlencode($item['item_image']) . "\n";
             
+            // Check if image data exists as BLOB in database
+            try {
+                $blobStmt = $conn->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE id = ? AND image_data IS NOT NULL LIMIT 1");
+                $blobStmt->execute([$item['id']]);
+                $blobData = $blobStmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($blobData && !empty($blobData['image_data'])) {
+                    $blobSize = strlen($blobData['image_data']);
+                    echo "  ✓ BLOB data found in database (" . number_format($blobSize) . " bytes)\n";
+                    echo "  MIME type: " . ($blobData['image_mime_type'] ?? 'unknown') . "\n";
+                    echo "  Note: Image will be served from database BLOB, not file\n";
+                    echo "\n";
+                    continue; // Skip file checking since BLOB exists
+                } else {
+                    echo "  ⚠ No BLOB data in database, checking for file...\n";
+                }
+            } catch (PDOException $e) {
+                echo "  ⚠ Could not check BLOB data: " . $e->getMessage() . "\n";
+                echo "  Checking for file...\n";
+            }
+            
             // Use the found uploads directory if available, otherwise try common locations
             $uploadsBase = $foundUploadsDir ?? $docRoot . '/uploads';
             
