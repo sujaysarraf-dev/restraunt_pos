@@ -2878,11 +2878,17 @@ select:focus {
   }
 }
 
-.kot-list, .orders-list {
+.kot-list {
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
   justify-content: flex-start;
+}
+
+.orders-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
 }
 
 .kot-order-card, .order-card {
