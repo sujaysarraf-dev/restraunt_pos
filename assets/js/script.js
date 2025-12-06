@@ -5103,16 +5103,56 @@ document.addEventListener("DOMContentLoaded", () => {
     
     mobileItemsList.innerHTML = items.map(item => {
       const hasVariations = item.has_variations && item.variations && item.variations.length > 0;
+      const priceDisplay = hasVariations && item.variations && item.variations.length > 0 ? 
+        `${formatCurrency(item.variations[0].price)} - ${formatCurrency(item.variations[item.variations.length - 1].price)}` : 
+        formatCurrency(item.base_price);
+      
+      // Escape variations JSON for data attribute
+      const variationsJson = hasVariations ? encodeURIComponent(JSON.stringify(item.variations || [])) : '';
+      
       return `
-      <div class="mobile-item-card" onclick="handleMobileItemClick(${item.id}, '${escapeHtml(item.item_name_en)}', ${item.base_price}, '${escapeHtml(item.item_image || '')}', ${hasVariations}, ${JSON.stringify(item.variations || []).replace(/'/g, "&#39;")}, event)" style="background:white;border:2px solid #e5e7eb;border-radius:8px;padding:0.75rem;cursor:pointer;transition:all 0.2s;">
+      <div class="mobile-item-card" 
+           data-item-id="${item.id}"
+           data-item-name="${escapeHtml(item.item_name_en)}"
+           data-item-price="${item.base_price}"
+           data-item-image="${escapeHtml(item.item_image || '')}"
+           data-has-variations="${hasVariations ? '1' : '0'}"
+           data-variations="${variationsJson}"
+           style="background:white;border:2px solid #e5e7eb;border-radius:8px;padding:0.75rem;cursor:pointer;transition:all 0.2s;">
         <div style="width:100%;height:80px;border-radius:6px;overflow:hidden;margin-bottom:0.5rem;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
           ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" style="width:100%;height:100%;object-fit:cover;">` : '<span class="material-symbols-rounded" style="font-size:2rem;color:#9ca3af;">restaurant</span>'}
         </div>
         <div style="font-weight:600;color:#111827;font-size:0.85rem;margin-bottom:0.25rem;line-height:1.3;">${escapeHtml(item.item_name_en)}</div>
         <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.5rem;">${escapeHtml(item.item_category || '')}</div>
-        <div style="font-weight:700;color:#f70000;font-size:0.95rem;">${formatCurrency(item.base_price)}</div>
+        <div style="font-weight:700;color:#f70000;font-size:0.95rem;">
+          ${priceDisplay}${hasVariations ? ' <span style="font-size:0.65rem;color:#6b7280;">(Variations)</span>' : ''}
+        </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
+    
+    // Add click event listeners to mobile item cards
+    mobileItemsList.querySelectorAll('.mobile-item-card').forEach(itemEl => {
+      itemEl.addEventListener('click', function(event) {
+        const itemId = parseInt(this.dataset.itemId);
+        const itemName = this.dataset.itemName;
+        const basePrice = parseFloat(this.dataset.itemPrice);
+        const image = this.dataset.itemImage;
+        const hasVariations = this.dataset.hasVariations === '1';
+        let variations = [];
+        
+        if (hasVariations && this.dataset.variations) {
+          try {
+            variations = JSON.parse(decodeURIComponent(this.dataset.variations));
+          } catch (e) {
+            console.error('Error parsing variations:', e);
+            variations = [];
+          }
+        }
+        
+        handleMobileItemClick(itemId, itemName, basePrice, image, hasVariations, variations, event);
+      });
+    });
   }
   
   // Filter mobile items
@@ -5395,15 +5435,26 @@ document.addEventListener("DOMContentLoaded", () => {
     
     itemNameEl.textContent = `Select a variation for: ${itemName}`;
     
-    optionsEl.innerHTML = variations.map(variation => `
-      <button class="variation-option-btn" onclick="selectPOSVariation(${itemId}, '${escapeHtml(itemName)}', ${variation.price}, '${escapeHtml(image || '')}', '${escapeHtml(variation.variation_name)}')" 
-              style="padding:1rem;border:2px solid #e5e7eb;border-radius:12px;background:white;cursor:pointer;transition:all 0.2s;text-align:left;display:flex;justify-content:space-between;align-items:center;">
+    optionsEl.innerHTML = variations.map((variation, index) => `
+      <button class="variation-option-btn" 
+              data-variation-index="${index}"
+              style="padding:1rem;border:2px solid #e5e7eb;border-radius:12px;background:white;cursor:pointer;transition:all 0.2s;text-align:left;display:flex;justify-content:space-between;align-items:center;width:100%;">
         <div>
           <div style="font-weight:600;color:#1f2937;font-size:1rem;">${escapeHtml(variation.variation_name)}</div>
         </div>
         <div style="font-weight:700;color:#f70000;font-size:1.1rem;">${formatCurrency(variation.price)}</div>
       </button>
     `).join('');
+    
+    // Add click event listeners to variation buttons
+    optionsEl.querySelectorAll('.variation-option-btn').forEach((btn, index) => {
+      btn.addEventListener('click', function() {
+        const variation = variations[index];
+        if (variation) {
+          selectPOSVariation(itemId, itemName, variation.price, image, variation.variation_name);
+        }
+      });
+    });
     
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
