@@ -9,9 +9,14 @@
 
 **Without these, your site will be SLOW with just 10-20 users.**
 
-```sql
--- Run these immediately on your database:
+### ✅ Already Completed:
+- **All critical indexes added** to both production and localhost databases
+- **Script available:** `admin/run_indexes_both_dbs.php` - Can run on both databases
+- **SQL file updated:** `database/database_schema.sql` and `database_schema_clean.sql` include all indexes
+- **Indexes are in main schema files** - New installations will have them automatically
 
+### Indexes Added:
+```sql
 -- Users table
 ALTER TABLE users ADD INDEX idx_restaurant_id (restaurant_id);
 ALTER TABLE users ADD INDEX idx_username (username);
@@ -34,8 +39,21 @@ ALTER TABLE payments ADD INDEX idx_order_id (order_id);
 ALTER TABLE payments ADD INDEX idx_restaurant_date (restaurant_id, created_at);
 ```
 
+### To Verify Indexes Exist:
+```sql
+-- Check all indexes on critical tables
+SELECT TABLE_NAME, INDEX_NAME, GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) AS COLUMNS
+FROM INFORMATION_SCHEMA.STATISTICS
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME IN ('users', 'menu_items', 'orders', 'menu', 'payments')
+  AND INDEX_NAME LIKE 'idx_%'
+GROUP BY TABLE_NAME, INDEX_NAME
+ORDER BY TABLE_NAME, INDEX_NAME;
+```
+
 **Time:** 15 minutes  
-**Impact:** 10x faster queries
+**Impact:** 10x faster queries  
+**Status:** ✅ Completed - All indexes added to production and localhost databases
 
 ---
 
