@@ -498,16 +498,42 @@ try {
             
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             curl_close($ch);
             
             if ($httpCode !== 200) {
-                throw new Exception('AI service error: ' . $response);
+                $errorMsg = 'AI service error (HTTP ' . $httpCode . ')';
+                if ($curlError) {
+                    $errorMsg .= ': ' . $curlError;
+                }
+                if ($response) {
+                    $errorData = json_decode($response, true);
+                    if (isset($errorData['error'])) {
+                        $errorMsg .= ': ' . ($errorData['error']['message'] ?? 'Unknown error');
+                        if (isset($errorData['error']['code'])) {
+                            $errorMsg .= ' (Code: ' . $errorData['error']['code'] . ')';
+                        }
+                    } else {
+                        $errorMsg .= ': ' . substr($response, 0, 200);
+                    }
+                }
+                throw new Exception($errorMsg);
             }
             
             $aiResponse = json_decode($response, true);
             
             if (isset($aiResponse['error'])) {
-                throw new Exception('AI API Error: ' . ($aiResponse['error']['message'] ?? 'Unknown error'));
+                $errorCode = $aiResponse['error']['code'] ?? 'Unknown';
+                $errorMessage = $aiResponse['error']['message'] ?? 'Unknown error';
+                
+                // Provide helpful error messages
+                if ($errorCode == 401) {
+                    throw new Exception('AI API Authentication Error: The API key is invalid or expired. Please check the OpenRouter API key configuration.');
+                } elseif ($errorCode == 429) {
+                    throw new Exception('AI API Rate Limit: Too many requests. Please try again later.');
+                } else {
+                    throw new Exception('AI API Error (' . $errorCode . '): ' . $errorMessage);
+                }
             }
             
             $aiContent = $aiResponse['choices'][0]['message']['content'] ?? '';
