@@ -544,21 +544,15 @@
                 if (result.success) {
                     let message = result.message || 'Password reset link has been sent to your email. Please check your inbox.';
                     
-                    // If in development mode or email failed, show the reset link
-                    if (result.reset_link) {
-                        message += '<br><br><strong>Reset Link:</strong><br>';
-                        message += '<a href="' + result.reset_link + '" target="_blank" style="color: #151A2D; text-decoration: underline; word-break: break-all; display: inline-block; margin-top: 8px; padding: 10px; background: #f5f5f5; border-radius: 5px; border: 1px solid #ddd;">' + result.reset_link + '</a>';
-                        message += '<br><small style="color: #666; margin-top: 5px; display: block;">(Click the link above to reset your password)</small>';
-                    }
+                    // Don't show reset link in UI for security reasons
+                    // Link is only sent via email
                     
                     showForgotPasswordMessage(message, 'success');
                     
-                    // Only auto-close if email was actually sent
-                    if (result.email_sent && !result.development_mode) {
-                        setTimeout(() => {
-                            closeForgotPasswordModal();
-                        }, 5000);
-                    }
+                    // Auto-close after showing message
+                    setTimeout(() => {
+                        closeForgotPasswordModal();
+                    }, 5000);
                 } else {
                     showForgotPasswordMessage(result.message || 'Email not found. Please check your email address.', 'error');
                 }

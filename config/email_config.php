@@ -7,7 +7,7 @@
 // Development Mode Configuration
 // When DEVELOPMENT_MODE is true, emails will only be sent on localhost
 // On production servers, emails will be logged instead of sent
-define('DEVELOPMENT_MODE', true); // Set to false to send emails on production
+define('DEVELOPMENT_MODE', false); // Set to false to send emails on production
 
 // Detect if we're on localhost
 function isLocalhost() {

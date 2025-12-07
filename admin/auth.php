@@ -1032,25 +1032,19 @@ function handleForgotPassword() {
         (isset($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR'] === '127.0.0.1')
     );
     
-    // Always return the reset link (especially useful when email doesn't work)
-    // This ensures users can still reset their password even if email fails
-    $responseMessage = 'Password reset link generated successfully!';
+    // Return success message (don't expose reset link in response for security)
+    $responseMessage = 'If the email exists in our system, a password reset link has been sent to your email address. Please check your inbox and spam folder.';
     
-    if ($isDevelopment) {
-        $responseMessage .= ' (Development Mode: Email may not be configured, use link below)';
-    } elseif (!$mailSent) {
-        $responseMessage .= ' (Email sending failed, use link below)';
-    } else {
-        $responseMessage .= ' (Check your email, or use link below if email not received)';
+    if (!$mailSent && !empty($mailError)) {
+        error_log("Password reset email failed for: " . $email . " - Error: " . $mailError);
+        // Still return success to prevent email enumeration, but log the error
     }
     
     echo json_encode([
         'success' => true,
         'message' => $responseMessage,
-        'reset_link' => $resetLink, // Always include reset link
-        'development_mode' => $isDevelopment,
+        // Don't include reset_link in response for security
         'email_sent' => $mailSent,
-        'email_error' => $mailError,
         'expires_in' => '5 minutes'
     ]);
 }
