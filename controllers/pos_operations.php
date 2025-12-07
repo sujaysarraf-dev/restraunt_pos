@@ -73,7 +73,18 @@ function handleCreateKOT($conn, $restaurant_id) {
     $tableIdParam = $tableId ? $tableId : null;
     $orderType = $_POST['orderType'] ?? 'Dine-in';
     $customerName = $_POST['customerName'] ?? '';
-    $cartItems = json_decode($_POST['cartItems'] ?? '[]', true);
+    
+    // Decode cart items with error handling
+    $cartItemsJson = $_POST['cartItems'] ?? '[]';
+    $cartItems = json_decode($cartItemsJson, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        error_log("JSON decode error in handleCreateKOT: " . json_last_error_msg());
+        error_log("Cart items JSON: " . substr($cartItemsJson, 0, 500));
+        echo json_encode(['success' => false, 'message' => 'Invalid cart data: ' . json_last_error_msg()], JSON_UNESCAPED_UNICODE);
+        return;
+    }
+    
     $subtotal = floatval($_POST['subtotal'] ?? 0);
     $tax = floatval($_POST['tax'] ?? 0);
     $total = floatval($_POST['total'] ?? 0);
@@ -81,8 +92,8 @@ function handleCreateKOT($conn, $restaurant_id) {
     $paymentMethod = $_POST['paymentMethod'] ?? 'Cash';
     
     // Validation
-    if (empty($cartItems)) {
-        echo json_encode(['success' => false, 'message' => 'Cart is empty'], JSON_UNESCAPED_UNICODE);
+    if (empty($cartItems) || !is_array($cartItems)) {
+        echo json_encode(['success' => false, 'message' => 'Cart is empty or invalid'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -109,13 +120,19 @@ function handleCreateKOT($conn, $restaurant_id) {
             $kotId = $conn->lastInsertId();
             $itemStmt = $conn->prepare("INSERT INTO kot_items (kot_id, menu_item_id, item_name, quantity, unit_price, total_price) VALUES (?, ?, ?, ?, ?, ?)");
             foreach ($cartItems as $item) {
+                // Validate item structure
+                if (!isset($item['id']) || !isset($item['name']) || !isset($item['price']) || !isset($item['quantity'])) {
+                    error_log("Invalid cart item structure: " . json_encode($item));
+                    throw new Exception("Invalid cart item structure. Missing required fields.");
+                }
+                
                 $itemStmt->execute([
                     $kotId,
-                    $item['id'],
-                    $item['name'],
-                    $item['quantity'],
-                    $item['price'],
-                    $item['price'] * $item['quantity']
+                    (int)$item['id'],
+                    (string)$item['name'],
+                    (int)$item['quantity'],
+                    (float)$item['price'],
+                    (float)($item['price'] * $item['quantity'])
                 ]);
             }
             
@@ -249,13 +266,19 @@ function handleHoldOrder($conn, $restaurant_id) {
         $itemStmt = $conn->prepare("INSERT INTO order_items (order_id, menu_item_id, item_name, quantity, unit_price, total_price) VALUES (?, ?, ?, ?, ?, ?)");
         
         foreach ($cartItems as $item) {
+            // Validate item structure
+            if (!isset($item['id']) || !isset($item['name']) || !isset($item['price']) || !isset($item['quantity'])) {
+                error_log("Invalid cart item structure: " . json_encode($item));
+                throw new Exception("Invalid cart item structure. Missing required fields.");
+            }
+            
             $itemStmt->execute([
                 $orderId,
-                $item['id'],
-                $item['name'],
-                $item['quantity'],
-                $item['price'],
-                $item['price'] * $item['quantity']
+                (int)$item['id'],
+                (string)$item['name'],
+                (int)$item['quantity'],
+                (float)$item['price'],
+                (float)($item['price'] * $item['quantity'])
             ]);
         }
         
