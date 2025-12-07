@@ -28,27 +28,31 @@ $imageId = $_GET['id'] ?? '';
 // BLOB data always takes priority over file-based or db: reference
 if (!empty($imagePath) && strpos($imagePath, 'http') !== 0 && empty($imageType)) {
     try {
-        // First try: Check for BLOB data by matching the item_image value exactly
+        // Strategy 1: Exact path match
         $stmt = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
         $stmt->execute([$imagePath]);
         $item = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        // If not found by path, try to extract ID from path and check by ID
-        // This handles cases where path might not match exactly
+        // Strategy 2: Filename match (if exact match failed)
         if (!$item || empty($item['image_data'])) {
-            // Try to find by ID if path contains an ID pattern
-            // Or try to find any menu item with this path that has BLOB data
-            $stmt2 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE item_image LIKE ? AND image_data IS NOT NULL LIMIT 1");
-            $stmt2->execute(['%' . basename($imagePath) . '%']);
+            $filename = basename($imagePath);
+            // Remove query strings or fragments from filename
+            $filename = preg_replace('/[?#].*$/', '', $filename);
+            $stmt2 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ? OR item_image = ?) AND image_data IS NOT NULL LIMIT 1");
+            $stmt2->execute(['%' . $filename, '%/' . $filename . '%', $imagePath]);
             $item = $stmt2->fetch(PDO::FETCH_ASSOC);
         }
         
-        // Last resort: Check all items with BLOB data and see if any match the filename
+        // Strategy 3: Check if path contains a unique identifier (like item ID or hash)
+        // Extract any alphanumeric identifier from the path
         if (!$item || empty($item['image_data'])) {
-            $filename = basename($imagePath);
-            $stmt3 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image = ?) AND image_data IS NOT NULL LIMIT 1");
-            $stmt3->execute(['%' . $filename . '%', $imagePath]);
-            $item = $stmt3->fetch(PDO::FETCH_ASSOC);
+            preg_match('/([a-f0-9]{10,})/i', $imagePath, $matches);
+            if (!empty($matches[1])) {
+                $identifier = $matches[1];
+                $stmt3 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ?) AND image_data IS NOT NULL LIMIT 1");
+                $stmt3->execute(['%' . $identifier . '%', 'db:' . $identifier]);
+                $item = $stmt3->fetch(PDO::FETCH_ASSOC);
+            }
         }
         
         if ($item && !empty($item['image_data'])) {
