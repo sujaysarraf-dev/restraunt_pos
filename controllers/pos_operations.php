@@ -7,20 +7,50 @@ ini_set('log_errors', 1);
 // Start output buffering to catch any unexpected output
 ob_start();
 
-// Include secure session configuration
-require_once __DIR__ . '/../config/session_config.php';
-startSecureSession();
+try {
+    // Include secure session configuration
+    if (!file_exists(__DIR__ . '/../config/session_config.php')) {
+        throw new Exception('session_config.php not found');
+    }
+    require_once __DIR__ . '/../config/session_config.php';
+    
+    if (!function_exists('startSecureSession')) {
+        throw new Exception('startSecureSession function not found');
+    }
+    startSecureSession();
 
-// Clean any output that might have been generated
-ob_clean();
+    // Clean any output that might have been generated
+    ob_clean();
 
-header('Content-Type: application/json; charset=UTF-8');
+    header('Content-Type: application/json; charset=UTF-8');
 
-// Include authorization configuration
-require_once __DIR__ . '/../config/authorization_config.php';
+    // Include authorization configuration
+    if (!file_exists(__DIR__ . '/../config/authorization_config.php')) {
+        throw new Exception('authorization_config.php not found');
+    }
+    require_once __DIR__ . '/../config/authorization_config.php';
 
-// Require permission to manage orders
-requirePermission(PERMISSION_MANAGE_ORDERS);
+    // Require permission to manage orders
+    if (!function_exists('requirePermission')) {
+        throw new Exception('requirePermission function not found');
+    }
+    if (!defined('PERMISSION_MANAGE_ORDERS')) {
+        throw new Exception('PERMISSION_MANAGE_ORDERS constant not defined');
+    }
+    requirePermission(PERMISSION_MANAGE_ORDERS);
+} catch (Exception $e) {
+    ob_clean();
+    http_response_code(500);
+    error_log("Initialization error in pos_operations.php: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Initialization error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    exit();
+} catch (Error $e) {
+    ob_clean();
+    http_response_code(500);
+    error_log("Fatal initialization error in pos_operations.php: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Fatal initialization error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    exit();
+}
 
 // Include database connection
 if (file_exists(__DIR__ . '/../db_connection.php')) {
