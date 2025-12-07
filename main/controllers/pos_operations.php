@@ -140,6 +140,9 @@ function handleCreateKOT($conn, $restaurant_id) {
     $tableIdParam = $tableId ? $tableId : null;
     $orderType = $_POST['orderType'] ?? 'Dine-in';
     $customerName = $_POST['customerName'] ?? '';
+    $customerPhone = $_POST['customerPhone'] ?? '';
+    $customerEmail = $_POST['customerEmail'] ?? '';
+    $customerAddress = $_POST['customerAddress'] ?? '';
     
     // Decode cart items with error handling
     $cartItemsJson = $_POST['cartItems'] ?? '[]';
@@ -218,6 +221,19 @@ function handleCreateKOT($conn, $restaurant_id) {
     // Generate unique Order number with collision check
     $orderNumber = generateOrderNumber($conn, $restaurant_id);
     
+    // Ensure customer detail columns exist in orders table
+    try {
+        $checkCols = $conn->query("SHOW COLUMNS FROM orders LIKE 'customer_phone'");
+        if ($checkCols->rowCount() == 0) {
+            $conn->exec("ALTER TABLE orders ADD COLUMN customer_phone VARCHAR(20) NULL AFTER customer_name");
+            $conn->exec("ALTER TABLE orders ADD COLUMN customer_email VARCHAR(100) NULL AFTER customer_phone");
+            $conn->exec("ALTER TABLE orders ADD COLUMN customer_address TEXT NULL AFTER customer_email");
+        }
+    } catch (PDOException $e) {
+        // Columns might already exist or error occurred, continue anyway
+        error_log("Error checking/adding customer columns: " . $e->getMessage());
+    }
+    
     // Begin transaction
     $conn->beginTransaction();
     
@@ -263,8 +279,8 @@ function handleCreateKOT($conn, $restaurant_id) {
             if ($row && isset($row['id'])) {
                 // Update the held order into a live order
                 $orderId = (int)$row['id'];
-                $upd = $conn->prepare("UPDATE orders SET order_number = ?, order_type = ?, payment_method = ?, payment_status = 'Paid', order_status = 'Preparing', subtotal = ?, tax = ?, total = ?, notes = ? WHERE id = ?");
-                $upd->execute([$orderNumber, $orderType, $paymentMethod, $subtotal, $tax, $total, $notes, $orderId]);
+                $upd = $conn->prepare("UPDATE orders SET order_number = ?, customer_name = ?, order_type = ?, payment_method = ?, payment_status = 'Paid', order_status = 'Preparing', subtotal = ?, tax = ?, total = ?, notes = ?, customer_phone = ?, customer_email = ?, customer_address = ? WHERE id = ?");
+                $upd->execute([$orderNumber, $customerName, $orderType, $paymentMethod, $subtotal, $tax, $total, $notes, $customerPhone, $customerEmail, $customerAddress, $orderId]);
                 // Replace items
                 $conn->prepare("DELETE FROM order_items WHERE order_id = ?")->execute([$orderId]);
                 $orderItemStmt = $conn->prepare("INSERT INTO order_items (order_id, menu_item_id, item_name, quantity, unit_price, total_price) VALUES (?, ?, ?, ?, ?, ?)");
@@ -286,8 +302,8 @@ function handleCreateKOT($conn, $restaurant_id) {
                 }
             } else {
                 // Create a new order
-                $orderStmt = $conn->prepare("INSERT INTO orders (restaurant_id, table_id, order_number, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, 'Paid', 'Preparing', ?, ?, ?, ?)");
-                $orderStmt->execute([$restaurant_id, $tableIdParam, $orderNumber, $orderType, $paymentMethod, $subtotal, $tax, $total, $notes]);
+                $orderStmt = $conn->prepare("INSERT INTO orders (restaurant_id, table_id, order_number, customer_name, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes, customer_phone, customer_email, customer_address) VALUES (?, ?, ?, ?, ?, ?, 'Paid', 'Preparing', ?, ?, ?, ?, ?, ?, ?)");
+                $orderStmt->execute([$restaurant_id, $tableIdParam, $orderNumber, $customerName, $orderType, $paymentMethod, $subtotal, $tax, $total, $notes, $customerPhone, $customerEmail, $customerAddress]);
                 $orderId = $conn->lastInsertId();
                 $orderItemStmt = $conn->prepare("INSERT INTO order_items (order_id, menu_item_id, item_name, quantity, unit_price, total_price) VALUES (?, ?, ?, ?, ?, ?)");
                 foreach ($cartItems as $item) {

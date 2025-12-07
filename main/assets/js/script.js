@@ -5812,6 +5812,81 @@ document.addEventListener("DOMContentLoaded", () => {
     mobileHoldOrderBtn.addEventListener("click", holdOrder);
   }
   
+  // Show customer details modal for takeaway orders
+  function showTakeawayCustomerModal() {
+    return new Promise((resolve, reject) => {
+      // Remove existing modal if it exists
+      const existingModal = document.getElementById('takeawayCustomerModal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+      
+      // Create modal
+      const modal = document.createElement('div');
+      modal.id = 'takeawayCustomerModal';
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+      modal.innerHTML = `
+        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="margin: 0; color: #1f2937; font-size: 1.5rem;">Customer Details</h2>
+            <button id="closeTakeawayModal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">&times;</button>
+          </div>
+          <form id="takeawayCustomerForm">
+            <div style="margin-bottom: 1rem;">
+              <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500;">Customer Name <span style="color: red;">*</span></label>
+              <input type="text" id="takeawayCustomerName" required placeholder="Enter customer name" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
+            </div>
+            <div style="margin-bottom: 1rem;">
+              <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500;">Phone Number <span style="color: red;">*</span></label>
+              <input type="tel" id="takeawayCustomerPhone" required placeholder="Enter phone number" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
+            </div>
+            <div style="margin-bottom: 1rem;">
+              <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500;">Email Address</label>
+              <input type="email" id="takeawayCustomerEmail" placeholder="Enter email (optional)" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+              <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500;">Address</label>
+              <textarea id="takeawayCustomerAddress" rows="3" placeholder="Enter address (optional)" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; resize: vertical;"></textarea>
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+              <button type="button" id="cancelTakeawayModal" style="padding: 0.75rem 1.5rem; background: #e5e7eb; color: #374151; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">Cancel</button>
+              <button type="submit" style="padding: 0.75rem 1.5rem; background: #dc2626; color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">Continue</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // Close modal handlers
+      const closeModal = () => {
+        modal.remove();
+        reject(new Error('Cancelled'));
+      };
+      
+      document.getElementById('closeTakeawayModal').addEventListener('click', closeModal);
+      document.getElementById('cancelTakeawayModal').addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+      
+      // Form submission
+      document.getElementById('takeawayCustomerForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const customerData = {
+          name: document.getElementById('takeawayCustomerName').value.trim(),
+          phone: document.getElementById('takeawayCustomerPhone').value.trim(),
+          email: document.getElementById('takeawayCustomerEmail').value.trim(),
+          address: document.getElementById('takeawayCustomerAddress').value.trim()
+        };
+        modal.remove();
+        resolve(customerData);
+      });
+      
+      // Focus on first input
+      setTimeout(() => document.getElementById('takeawayCustomerName').focus(), 100);
+    });
+  }
+
   // Process payment function
   async function processPayment() {
     // Support both posCart (admin) and window.posCart (waiter/chef/manager)
@@ -5829,6 +5904,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const total = subtotal + tax;
     const selectPosTable = document.getElementById("selectPosTable");
     const selectedTable = selectPosTable ? selectPosTable.value : '';
+    const isTakeaway = !selectedTable;
+    
+    // For takeaway orders, collect customer details first
+    let customerData = null;
+    if (isTakeaway) {
+      try {
+        customerData = await showTakeawayCustomerModal();
+      } catch (e) {
+        // User cancelled
+        return;
+      }
+    }
     
     // Show payment method selection
     const paymentMethodStr = await showPaymentMethodSelector();
@@ -5839,9 +5926,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const formData = new URLSearchParams();
     formData.append('action', 'create_kot');
     formData.append('tableId', selectedTable || '');
-    const isTakeaway = !selectedTable;
     formData.append('orderType', isTakeaway ? 'Takeaway' : 'Dine-in');
-    formData.append('customerName', isTakeaway ? 'Takeaway' : 'Table Customer');
+    formData.append('customerName', isTakeaway ? (customerData.name || 'Takeaway') : 'Table Customer');
+    if (isTakeaway && customerData) {
+      formData.append('customerPhone', customerData.phone || '');
+      formData.append('customerEmail', customerData.email || '');
+      formData.append('customerAddress', customerData.address || '');
+    }
     formData.append('paymentMethod', paymentMethodStr);
     formData.append('cartItems', JSON.stringify(cart));
     formData.append('subtotal', subtotal.toFixed(2));
