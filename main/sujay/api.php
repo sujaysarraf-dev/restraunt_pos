@@ -161,9 +161,9 @@ function parseSimpleCommand($prompt) {
     $plan = null;
     
     // DELETE operations
-    if (preg_match('/delete\s+(all\s+)?(menu|menus|area|areas|table|tables|item|items|customer|customers)/i', $prompt, $matches)) {
+    if (preg_match('/delete\s+(all\s+)?(menu|menus|area|areas|table|tables|item|items|customer|customers)/i', $promptLower, $matches)) {
         $type = strtolower($matches[2]);
-        $deleteAll = !empty($matches[1]) || stripos($prompt, 'all') !== false;
+        $deleteAll = !empty($matches[1]) || stripos($promptLower, 'all') !== false;
         
         if (in_array($type, ['menu', 'menus'])) {
             $plan = [
@@ -912,7 +912,7 @@ try {
                 } else {
             $aiResponse = json_decode($response, true);
             
-            if (isset($aiResponse['error'])) {
+                    if (isset($aiResponse['error'])) {
                         $errorCode = $aiResponse['error']['code'] ?? 'Unknown';
                         $errorMessage = $aiResponse['error']['message'] ?? 'Unknown error';
                         
@@ -920,14 +920,32 @@ try {
                         if ($errorCode == 401) {
                             $plan = parseSimpleCommand($prompt);
                             if (!$plan) {
-                                throw new Exception('AI API Authentication Error: The OpenRouter API key is invalid or expired. Please update the API key in main/sujay/api.php. Get a new key from https://openrouter.ai. For now, try simple commands like "add 5 menus" or "add 3 areas".');
+                                // Try one more time with a more lenient parse
+                                $plan = parseSimpleCommand($prompt);
+                                if (!$plan) {
+                                    throw new Exception('AI API Authentication Error: The OpenRouter API key is invalid or expired. Please update the API key in main/sujay/api.php. Get a new key from https://openrouter.ai. For now, try simple commands like "add 5 menus", "delete all menus", or "show all areas".');
+                                } else {
+                                    $usedSimpleParser = true;
+                                }
                             } else {
                                 $usedSimpleParser = true;
                             }
                         } elseif ($errorCode == 429) {
-                            throw new Exception('AI API Rate Limit: Too many requests. Please try again later.');
+                            // Try simple parsing for rate limit too
+                            $plan = parseSimpleCommand($prompt);
+                            if (!$plan) {
+                                throw new Exception('AI API Rate Limit: Too many requests. Please try again later.');
+                            } else {
+                                $usedSimpleParser = true;
+                            }
                         } else {
-                            throw new Exception('AI API Error (' . $errorCode . '): ' . $errorMessage);
+                            // Try simple parsing for other errors too
+                            $plan = parseSimpleCommand($prompt);
+                            if (!$plan) {
+                                throw new Exception('AI API Error (' . $errorCode . '): ' . $errorMessage);
+                            } else {
+                                $usedSimpleParser = true;
+                            }
                         }
                     } else {
             $aiContent = $aiResponse['choices'][0]['message']['content'] ?? '';
