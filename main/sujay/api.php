@@ -240,9 +240,9 @@ function parseSimpleCommand($prompt) {
                     ];
                 }
             }
-        } elseif (preg_match('/(item|items|menu\s+item)/i', $prompt)) {
+        } elseif (preg_match('/(item|items|menu\s+item)/i', $promptLower)) {
             if (preg_match('/(price|base_price)/i', $field)) {
-                if (preg_match('/(?:item|name)\s+["\']?([^"\']+)["\']?/i', $prompt, $nameMatch)) {
+                if (preg_match('/(?:item|name)\s+["\']?([^"\']+)["\']?/i', $promptLower, $nameMatch)) {
                     $plan = [
                         'type' => 'action',
                         'action' => 'update',
