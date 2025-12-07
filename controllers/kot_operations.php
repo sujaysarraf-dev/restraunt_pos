@@ -109,7 +109,9 @@ function handleCreateKOT() {
         throw $e;
     }
 }
+}
 
+if (!function_exists('handleUpdateKOTStatus')) {
 function handleUpdateKOTStatus() {
     global $pdo;
     $conn = $pdo;
