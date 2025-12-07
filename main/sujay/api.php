@@ -439,8 +439,17 @@ try {
                 throw new Exception('Prompt is required');
             }
             
+            // Validate restaurant_id
+            if (!$restaurant_id || $restaurant_id <= 0) {
+                throw new Exception('Invalid restaurant_id: ' . $restaurant_id . '. Please select a restaurant.');
+            }
+            
             // Get restaurant code
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            try {
+                $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            } catch (Exception $e) {
+                throw new Exception('Failed to get restaurant code: ' . $e->getMessage());
+            }
             
             // Get current state
             $menusStmt = $pdo->prepare("SELECT id, menu_name FROM menu WHERE restaurant_id = ?");

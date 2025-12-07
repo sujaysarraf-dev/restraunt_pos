@@ -505,12 +505,15 @@ try {
             addToLog(`Processing: "${prompt}"`, 'info');
             
             try {
+                console.log('Sending AI request:', { prompt, restaurant_id: selectedRestaurant });
                 const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=processAI', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt, restaurant_id: selectedRestaurant })
                 });
                 const data = await res.json();
+                
+                console.log('AI response:', data);
                 
                 if (data.success) {
                     if (data.requiresApproval) {
@@ -534,11 +537,13 @@ try {
                     alert.className = 'alert alert-error show';
                     alert.textContent = data.message || 'Failed to process prompt';
                     addToLog(data.message || 'Failed to process prompt', 'error');
+                    console.error('AI API Error:', data);
                 }
             } catch (e) {
                 alert.className = 'alert alert-error show';
                 alert.textContent = 'Error: ' + e.message;
                 addToLog('Error: ' + e.message, 'error');
+                console.error('Fetch Error:', e);
             } finally {
                 btn.disabled = false;
                 loading.classList.remove('show');
