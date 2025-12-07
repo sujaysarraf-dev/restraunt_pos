@@ -5666,21 +5666,31 @@ document.addEventListener("DOMContentLoaded", () => {
           body: formData
         });
         
+        // Get response text first
+        const responseText = await response.text();
+        console.log('Response status:', response.status);
+        console.log('Response text:', responseText.substring(0, 500)); // First 500 chars
+        
         // Check if response is ok
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Server error response:', errorText);
-          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+          console.error('Server error response (full):', responseText);
+          // Try to parse as JSON for error message
+          try {
+            const errorResult = JSON.parse(responseText);
+            throw new Error(errorResult.message || `Server error: ${response.status} ${response.statusText}`);
+          } catch (e) {
+            // Not JSON, show raw error
+            throw new Error(`Server error (${response.status}): ${responseText.substring(0, 200)}`);
+          }
         }
         
-        // Get response text first to check if it's valid JSON
-        const responseText = await response.text();
+        // Parse JSON response
         let result;
         try {
           result = JSON.parse(responseText);
         } catch (e) {
           console.error('Invalid JSON response:', responseText);
-          throw new Error('Invalid response from server. Please check server logs.');
+          throw new Error('Invalid response from server. Response: ' + responseText.substring(0, 200));
         }
         
         if (result.success) {
@@ -5758,18 +5768,43 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append('tax', tax.toFixed(2));
     formData.append('total', total.toFixed(2));
     
-    try {
-      const response = await fetch("../controllers/pos_operations.php", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: formData
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
+      try {
+        const response = await fetch("../controllers/pos_operations.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: formData
+        });
+        
+        // Get response text first
+        const responseText = await response.text();
+        console.log('Response status:', response.status);
+        console.log('Response text:', responseText.substring(0, 500)); // First 500 chars
+        
+        // Check if response is ok
+        if (!response.ok) {
+          console.error('Server error response (full):', responseText);
+          // Try to parse as JSON for error message
+          try {
+            const errorResult = JSON.parse(responseText);
+            throw new Error(errorResult.message || `Server error: ${response.status} ${response.statusText}`);
+          } catch (e) {
+            // Not JSON, show raw error
+            throw new Error(`Server error (${response.status}): ${responseText.substring(0, 200)}`);
+          }
+        }
+        
+        // Parse JSON response
+        let result;
+        try {
+          result = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Invalid JSON response:', responseText);
+          throw new Error('Invalid response from server. Response: ' + responseText.substring(0, 200));
+        }
+        
+        if (result.success) {
         // Clear cart - support both local and window.posCart
         if (typeof posCart !== 'undefined') {
           posCart = [];

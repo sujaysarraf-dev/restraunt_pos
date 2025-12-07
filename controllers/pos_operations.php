@@ -4,14 +4,15 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-// Ensure no output before headers
-if (ob_get_level()) {
-    ob_clean();
-}
+// Start output buffering to catch any unexpected output
+ob_start();
 
 // Include secure session configuration
 require_once __DIR__ . '/../config/session_config.php';
 startSecureSession();
+
+// Clean any output that might have been generated
+ob_clean();
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -51,20 +52,24 @@ try {
 } catch (PDOException $e) {
     error_log("PDO Error in pos_operations.php: " . $e->getMessage());
     error_log("Stack trace: " . $e->getTraceAsString());
-    if (ob_get_level()) {
-        ob_clean();
-    }
+    ob_clean();
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.', 'error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Exception $e) {
     error_log("Error in pos_operations.php: " . $e->getMessage());
     error_log("Stack trace: " . $e->getTraceAsString());
-    if (ob_get_level()) {
-        ob_clean();
-    }
+    ob_clean();
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    exit();
+} catch (Error $e) {
+    // Catch fatal errors (PHP 7+)
+    error_log("Fatal Error in pos_operations.php: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
+    ob_clean();
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Fatal error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
