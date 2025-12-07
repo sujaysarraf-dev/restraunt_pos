@@ -243,7 +243,8 @@ try {
             <h2>8. Contact Us</h2>
             <p>If you have any questions about our use of cookies or this Cookie Policy, please contact us at:</p>
             <p>
-                <strong>Email:</strong> privacy@restrogrow.com<br>
+                <strong>Email:</strong> restrogrow@gmail.com<br>
+                <strong>Phone:</strong> +91 6377568749<br>
                 <strong>Address:</strong> RestroGrow POS, Privacy Team
             </p>
         </div>

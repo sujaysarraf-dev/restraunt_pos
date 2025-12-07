@@ -213,7 +213,8 @@ try {
             <h2>12. Contact Information</h2>
             <p>If you have any questions about these Terms of Service, please contact us at:</p>
             <p>
-                <strong>Email:</strong> legal@restrogrow.com<br>
+                <strong>Email:</strong> restrogrow@gmail.com<br>
+                <strong>Phone:</strong> +91 6377568749<br>
                 <strong>Address:</strong> RestroGrow POS, Legal Department
             </p>
         </div>

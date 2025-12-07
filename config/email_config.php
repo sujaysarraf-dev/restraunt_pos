@@ -9,9 +9,9 @@ define('SMTP_ENABLED', true); // Set to false to use PHP mail() function
 define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_PORT', 587);
 define('SMTP_SECURE', 'tls'); // 'tls' or 'ssl'
-define('SMTP_USERNAME', 'sujaysarraf55@gmail.com'); // Your Gmail address
-define('SMTP_PASSWORD', 'chqguenlntwxicqt'); // Your Gmail App Password (not regular password)
-define('SMTP_FROM_EMAIL', 'sujaysarraf55@gmail.com');
+define('SMTP_USERNAME', 'restrogrow@gmail.com'); // Your Gmail address
+define('SMTP_PASSWORD', 'eelnueoixaluiffq'); // Your Gmail App Password (not regular password)
+define('SMTP_FROM_EMAIL', 'restrogrow@gmail.com');
 define('SMTP_FROM_NAME', 'Restaurant POS System');
 
 /**

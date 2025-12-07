@@ -26,9 +26,9 @@ define('SMTP_ENABLED', true);
 define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_PORT', 587);
 define('SMTP_SECURE', 'tls');
-define('SMTP_USERNAME', 'sujaysarraf775@gmail.com'); // Your Gmail address
+define('SMTP_USERNAME', 'restrogrow@gmail.com'); // Your Gmail address
 define('SMTP_PASSWORD', 'your-16-character-app-password'); // Paste the app password here
-define('SMTP_FROM_EMAIL', 'sujaysarraf775@gmail.com');
+define('SMTP_FROM_EMAIL', 'restrogrow@gmail.com');
 define('SMTP_FROM_NAME', 'Restaurant POS System');
 ```
 

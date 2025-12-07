@@ -215,7 +215,8 @@ try {
             <h2>10. Contact Us</h2>
             <p>If you have any questions about this Privacy Policy or our data practices, please contact us at:</p>
             <p>
-                <strong>Email:</strong> privacy@restrogrow.com<br>
+                <strong>Email:</strong> restrogrow@gmail.com<br>
+                <strong>Phone:</strong> +91 6377568749<br>
                 <strong>Address:</strong> RestroGrow POS, Customer Support
             </p>
         </div>
