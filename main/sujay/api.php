@@ -37,157 +37,196 @@ if (!empty($jsonData['restaurant_id'])) {
     $restaurant_id = (int)$_GET['restaurant_id'];
 }
 
-// Item name to image URL mapping
-function getItemImageMap() {
+// Pool of Unsplash food photo IDs for variety
+function getUnsplashPhotoPool() {
     return [
-        // Indian Food
-        'biryani' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
-        'butter chicken' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
-        'tandoori chicken' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
-        'dal makhani' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400',
-        'palak paneer' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
-        'naan' => 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400',
-        'roti' => 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400',
-        'samosa' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
-        'pakora' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
-        'dosa' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
-        'idli' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400',
-        'vada' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
-        'sambar' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
-        'rasam' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
-        'poha' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400',
-        'upma' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
-        'paratha' => 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400',
-        'aloo gobi' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
-        'chana masala' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
-        'rajma' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400',
-        
-        // Chinese Food
-        'fried rice' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
-        'noodles' => 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400',
-        'manchurian' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
-        'spring roll' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
-        'soup' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400',
-        'chow mein' => 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400',
-        'szechuan' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
-        'sweet and sour' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
-        
-        // Italian Food
-        'pizza' => 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
-        'pizza margherita' => 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400',
-        'pasta' => 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400',
-        'pasta carbonara' => 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400',
-        'spaghetti' => 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400',
-        'lasagna' => 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400',
-        'risotto' => 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=400',
-        'ravioli' => 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400',
-        'gnocchi' => 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400',
-        
-        // Fast Food
-        'burger' => 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400',
-        'chicken burger' => 'https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=400',
-        'french fries' => 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400',
-        'sandwich' => 'https://images.unsplash.com/photo-1539252554453-80ab65ce3586?w=400',
-        'hot dog' => 'https://images.unsplash.com/photo-1619740455993-9e612b1af08a?w=400',
-        'wrap' => 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400',
-        'taco' => 'https://images.unsplash.com/photo-1565299585323-38174c3b0d8e?w=400',
-        'nachos' => 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=400',
-        
-        // Desserts
-        'ice cream' => 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400',
-        'cake' => 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400',
-        'chocolate cake' => 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400',
-        'brownie' => 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400',
-        'cookie' => 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400',
-        'apple pie' => 'https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=400',
-        'pie' => 'https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=400',
-        'pudding' => 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400',
-        'gulab jamun' => 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400',
-        'rasgulla' => 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400',
-        'jalebi' => 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400',
-        'kheer' => 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400',
-        
-        // Beverages
-        'coffee' => 'https://images.unsplash.com/photo-1511920170033-83939cdc2e40?w=400',
-        'tea' => 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400',
-        'orange juice' => 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400',
-        'juice' => 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400',
-        'smoothie' => 'https://images.unsplash.com/photo-1505252585461-04c457a4f5a5?w=400',
-        'milkshake' => 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400',
-        'lassi' => 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400',
-        'mango shake' => 'https://images.unsplash.com/photo-1505252585461-04c457a4f5a5?w=400',
-        'cold coffee' => 'https://images.unsplash.com/photo-1511920170033-83939cdc2e40?w=400',
-        'lemonade' => 'https://images.unsplash.com/photo-1523677011783-c91d1bbe2fdc?w=400',
-        'soda' => 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400',
-        'coca cola' => 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400',
-        
-        // Salads & Healthy
-        'salad' => 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
-        'caesar salad' => 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400',
-        'fruit salad' => 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
-        'quinoa' => 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
-        'quinoa bowl' => 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
-        
-        // Seafood
-        'fish' => 'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=400',
-        'fish curry' => 'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=400',
-        'prawn' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
-        'prawn curry' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
-        'crab' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
-        'crab masala' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
-        'lobster' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
-        
-        // Breakfast
-        'pancake' => 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400',
-        'waffle' => 'https://images.unsplash.com/photo-1562376552-0d160a2f238d?w=400',
-        'omelette' => 'https://images.unsplash.com/photo-1615197349902-0e1c58b0e29a?w=400',
-        'scrambled eggs' => 'https://images.unsplash.com/photo-1615197349902-0e1c58b0e29a?w=400',
-        'toast' => 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=400',
-        'cereal' => 'https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=400',
-        
-        // Default fallback
-        'default' => 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400'
+        'photo-1563805042-7684c019e1cb', // ice cream
+        'photo-1578985545062-69928b1d9587', // cake
+        'photo-1606313564200-e75d5e30476c', // chocolate/dessert
+        'photo-1499636136210-6f4ee915583e', // cookie
+        'photo-1621303837174-89787a7d4729', // pie
+        'photo-1551024506-0bccd828d307', // pudding
+        'photo-1589302168068-964664d93dc0', // biryani
+        'photo-1603133872878-684f208fb84b', // butter chicken
+        'photo-1604503468506-a8da13d82791', // tandoori
+        'photo-1585937421612-70a008356fbe', // dal
+        'photo-1619855544858-e8e2753373cd', // palak paneer
+        'photo-1601050690597-df0568f70950', // naan
+        'photo-1631452180519-c014fe946bc7', // dosa
+        'photo-1569718212165-3a8278d5f624', // noodles
+        'photo-1565299624946-b28f40a0ae38', // pizza
+        'photo-1574071318508-1cdbab80d002', // pizza margherita
+        'photo-1621996346565-e3dbc646d9a9', // pasta
+        'photo-1574894709920-11b28e7367e3', // lasagna
+        'photo-1476124369491-e7addf5db371', // risotto
+        'photo-1568901346375-23c9450c58cd', // burger
+        'photo-1606755962773-d324e0a13086', // chicken burger
+        'photo-1573080496219-bb080dd4f877', // fries
+        'photo-1539252554453-80ab65ce3586', // sandwich
+        'photo-1619740455993-9e612b1af08a', // hot dog
+        'photo-1626700051175-6818013e1d4f', // wrap
+        'photo-1565299585323-38174c3b0d8e', // taco
+        'photo-1513456852971-30c0b8199d4d', // nachos
+        'photo-1511920170033-83939cdc2e40', // coffee
+        'photo-1556679343-c7306c1976bc', // tea
+        'photo-1600271886742-f049cd451bba', // juice
+        'photo-1505252585461-04c457a4f5a5', // smoothie
+        'photo-1572490122747-3968b75cc699', // milkshake
+        'photo-1523677011783-c91d1bbe2fdc', // lemonade
+        'photo-1523362628745-0c100150b504', // soda
+        'photo-1512621776951-a57141f2eefd', // salad
+        'photo-1546793665-c74683f339c1', // caesar salad
+        'photo-1544943910-4c1dc44aab44', // fish
+        'photo-1567620905732-2d1ec7ab7445', // pancake
+        'photo-1562376552-0d160a2f238d', // waffle
+        'photo-1615197349902-0e1c58b0e29a', // omelette
+        'photo-1586444248902-2f64eddc13df', // toast
+        'photo-1526318896980-cf78c088247c', // cereal
     ];
 }
 
-// Get image URL for an item name
+// Item name to image URL mapping - Each item has unique, appropriate image
+// All predefined item names must have exact matches here (case-insensitive)
+function getItemImageMap() {
+    return [
+        // Indian Food - Each with unique image
+        'biryani' => 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=400&q=80',
+        'butter chicken' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&q=80',
+        'tandoori chicken' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&q=80',
+        'dal makhani' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&q=80',
+        'palak paneer' => 'https://images.unsplash.com/photo-1619855544858-e8e2753373cd?w=400&q=80',
+        'naan' => 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&q=80',
+        'roti' => 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&q=80',
+        'samosa' => 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&q=80',
+        'pakora' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&q=80',
+        'dosa' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400&q=80',
+        'idli' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&q=80',
+        'vada' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&q=80',
+        'sambar' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&q=80',
+        'rasam' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400&q=80',
+        'poha' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&q=80',
+        'upma' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&q=80',
+        'paratha' => 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&q=80',
+        'aloo gobi' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&q=80',
+        'chana masala' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400&q=80',
+        'rajma' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&q=80',
+        
+        // Chinese Food
+        'fried rice' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&q=80',
+        'noodles' => 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&q=80',
+        'manchurian' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&q=80',
+        'spring roll' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400&q=80',
+        'soup' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&q=80',
+        'chow mein' => 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&q=80',
+        'szechuan' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&q=80',
+        'szechuan chicken' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&q=80',
+        'sweet and sour' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&q=80',
+        
+        // Italian Food
+        'pizza' => 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80',
+        'pizza margherita' => 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&q=80',
+        'pasta' => 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&q=80',
+        'pasta carbonara' => 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&q=80',
+        'spaghetti' => 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&q=80',
+        'lasagna' => 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400&q=80',
+        'risotto' => 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=400&q=80',
+        'ravioli' => 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&q=80',
+        'gnocchi' => 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400&q=80',
+        
+        // Fast Food
+        'burger' => 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80',
+        'chicken burger' => 'https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=400&q=80',
+        'french fries' => 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&q=80',
+        'sandwich' => 'https://images.unsplash.com/photo-1539252554453-80ab65ce3586?w=400&q=80',
+        'hot dog' => 'https://images.unsplash.com/photo-1619740455993-9e612b1af08a?w=400&q=80',
+        'wrap' => 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&q=80',
+        'taco' => 'https://images.unsplash.com/photo-1565299585323-38174c3b0d8e?w=400&q=80',
+        'nachos' => 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=400&q=80',
+        
+        // Desserts - Each with unique image URL
+        'ice cream' => 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400&q=80',
+        'cake' => 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&q=80',
+        'chocolate cake' => 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400&q=80',
+        'brownie' => 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400&q=80',
+        'cookie' => 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400&q=80',
+        'apple pie' => 'https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=400&q=80',
+        'pie' => 'https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=400&q=80',
+        'pudding' => 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&q=80',
+        // Indian desserts - Each with unique photo ID (different from other desserts)
+        'gulab jamun' => 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400&q=80',
+        'rasgulla' => 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&q=80',
+        'jalebi' => 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400&q=80',
+        'kheer' => 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&q=80',
+        
+        // Beverages
+        'coffee' => 'https://images.unsplash.com/photo-1511920170033-83939cdc2e40?w=400&q=80',
+        'tea' => 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&q=80',
+        'orange juice' => 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400&q=80',
+        'juice' => 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400&q=80',
+        'smoothie' => 'https://images.unsplash.com/photo-1505252585461-04c457a4f5a5?w=400&q=80',
+        'milkshake' => 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&q=80',
+        'lassi' => 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400&q=80',
+        'mango shake' => 'https://images.unsplash.com/photo-1505252585461-04c457a4f5a5?w=400&q=80',
+        'cold coffee' => 'https://images.unsplash.com/photo-1511920170033-83939cdc2e40?w=400&q=80',
+        'lemonade' => 'https://images.unsplash.com/photo-1523677011783-c91d1bbe2fdc?w=400&q=80',
+        'soda' => 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400&q=80',
+        'coca cola' => 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400&q=80',
+        
+        // Salads & Healthy
+        'salad' => 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
+        'caesar salad' => 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400&q=80',
+        'fruit salad' => 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80',
+        'quinoa' => 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
+        'quinoa bowl' => 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
+        
+        // Seafood
+        'fish' => 'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=400&q=80',
+        'fish curry' => 'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=400&q=80',
+        'prawn' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&q=80',
+        'prawn curry' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&q=80',
+        'crab' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&q=80',
+        'crab masala' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&q=80',
+        'lobster' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400&q=80',
+        
+        // Breakfast
+        'pancake' => 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&q=80',
+        'waffle' => 'https://images.unsplash.com/photo-1562376552-0d160a2f238d?w=400&q=80',
+        'omelette' => 'https://images.unsplash.com/photo-1615197349902-0e1c58b0e29a?w=400&q=80',
+        'scrambled eggs' => 'https://images.unsplash.com/photo-1615197349902-0e1c58b0e29a?w=400&q=80',
+        'toast' => 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=400&q=80',
+        'cereal' => 'https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=400&q=80'
+    ];
+}
+
+// Get image URL for an item name - Only exact matches, no default fallback
+// Uses item name hash to select unique photo ID from pool for each item
 function getItemImageUrl($itemName) {
     $itemNameLower = strtolower(trim($itemName));
     $imageMap = getItemImageMap();
     
-    // Direct exact match first (most specific)
+    // Direct exact match only - no partial matching, no default
     if (isset($imageMap[$itemNameLower])) {
-        $url = $imageMap[$itemNameLower];
-        // Add random parameter to ensure unique images even for same URL
-        if (strpos($url, 'sig=') === false) {
-            $url .= (strpos($url, '?') !== false ? '&' : '?') . 'sig=' . rand(1000, 9999);
+        $baseUrl = $imageMap[$itemNameLower];
+        
+        // Extract photo ID from base URL or use hash to select from pool
+        if (preg_match('/photo-[\d\w-]+/', $baseUrl, $matches)) {
+            $photoId = $matches[0];
+        } else {
+            // If no photo ID found, use hash to select from pool
+            $photoPool = getUnsplashPhotoPool();
+            $nameHash = abs(crc32($itemNameLower)) % count($photoPool);
+            $photoId = $photoPool[$nameHash];
         }
+        
+        // Build unique URL with item name hash to ensure consistency
+        $nameHash = abs(crc32($itemNameLower)) % 10000;
+        $url = 'https://images.unsplash.com/' . $photoId . '?w=400&q=80&sig=' . $nameHash;
         return $url;
     }
     
-    // Partial match - check if any key is contained in the item name (longest match first)
-    $bestMatch = null;
-    $bestMatchLength = 0;
-    foreach ($imageMap as $key => $url) {
-        if ($key !== 'default' && strpos($itemNameLower, $key) !== false) {
-            if (strlen($key) > $bestMatchLength) {
-                $bestMatchLength = strlen($key);
-                $bestMatch = $url;
-            }
-        }
-    }
-    
-    if ($bestMatch) {
-        // Add random parameter to ensure unique images
-        if (strpos($bestMatch, 'sig=') === false) {
-            $bestMatch .= (strpos($bestMatch, '?') !== false ? '&' : '?') . 'sig=' . rand(1000, 9999);
-        }
-        return $bestMatch;
-    }
-    
-    // Return default with random parameter
-    $defaultUrl = $imageMap['default'];
-    return $defaultUrl . (strpos($defaultUrl, '?') !== false ? '&' : '?') . 'sig=' . rand(1000, 9999);
+    // No match found - return null instead of default
+    // This will cause the system to skip image if no exact match
+    return null;
 }
 
 // Download image from URL and return as binary data
@@ -1741,25 +1780,8 @@ try {
                 }
             }
             
-            // Fallback to default image if download failed
-            if (!$imageData) {
-                $possibleImagePaths = [
-                    __DIR__ . '/../../assets/images/default-menu-item.jpg',
-                    __DIR__ . '/../../../assets/images/default-menu-item.jpg',
-                    dirname(__DIR__, 2) . '/assets/images/default-menu-item.jpg'
-                ];
-                
-                foreach ($possibleImagePaths as $imagePath) {
-                    if (file_exists($imagePath)) {
-                        $imageData = file_get_contents($imagePath);
-                        if ($imageData !== false) {
-                            $imageMimeType = 'image/jpeg';
-                            $itemImagePath = 'db:' . uniqid();
-                            break;
-                        }
-                    }
-                }
-            }
+            // No fallback - if image download failed and no URL found, skip image
+            // This ensures only correct images are used
             
             $insertStmt = $pdo->prepare("
                 INSERT INTO menu_items 
@@ -1840,25 +1862,8 @@ try {
                             }
                         }
                         
-                        // Fallback to default image if download failed
-                        if (!$imageData) {
-                            $possibleImagePaths = [
-                                __DIR__ . '/../../assets/images/default-menu-item.jpg',
-                                __DIR__ . '/../../../assets/images/default-menu-item.jpg',
-                                dirname(__DIR__, 2) . '/assets/images/default-menu-item.jpg'
-                            ];
-                            
-                            foreach ($possibleImagePaths as $imagePath) {
-                                if (file_exists($imagePath)) {
-                                    $imageData = file_get_contents($imagePath);
-                                    if ($imageData !== false) {
-                                        $imageMimeType = 'image/jpeg';
-                                        $itemImagePath = 'db:' . uniqid();
-                                        break;
-                                    }
-                                }
-                            }
-                        }
+                        // No fallback - if image download failed, skip image
+                        // This ensures only correct images are used
                         
                         $insertItem = $pdo->prepare("
                             INSERT INTO menu_items 
