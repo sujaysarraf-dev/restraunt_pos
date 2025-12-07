@@ -730,97 +730,201 @@ try {
 
         async function quickAddMenu() {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
+            const quantity = parseInt(document.getElementById('menuQuantity')?.value || 1);
+            
             if (!selectedRestaurant) {
                 addToLog('Please select a restaurant first', 'error');
                 return;
             }
             
-            // Get restaurant name for logging
-            const restaurantSelect = document.getElementById('restaurantSelect');
-            const selectedOption = restaurantSelect?.options[restaurantSelect.selectedIndex];
-            const restaurantName = selectedOption ? selectedOption.text : 'Unknown';
+            if (quantity < 1 || quantity > 50) {
+                addToLog('Quantity must be between 1 and 50', 'error');
+                return;
+            }
             
-            addToLog(`Adding menu for restaurant ID: ${selectedRestaurant} (${restaurantName})`, 'info');
+            const btn = event?.target || document.querySelector('button[onclick*="quickAddMenu"]');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '⏳ Adding...';
             
             try {
-                const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddMenu', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ restaurant_id: selectedRestaurant })
-                });
-                const data = await res.json();
+                let added = 0;
+                let errors = 0;
                 
-                console.log('quickAddMenu response:', data);
-                
-                if (data.success) {
-                    if (data.debug) {
-                        addToLog(`Menu added: ${data.name} (ID: ${data.id}) for ${data.debug.restaurant_username || 'restaurant'}`, 'success');
-                        console.log('Debug info:', data.debug);
-                    } else {
-                        addToLog(`Menu added: ${data.name}`, 'success');
+                for (let i = 0; i < quantity; i++) {
+                    try {
+                        const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddMenu', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ restaurant_id: selectedRestaurant })
+                        });
+                        const data = await res.json();
+                        
+                        if (data.success) {
+                            added++;
+                            if (quantity === 1) {
+                                if (data.debug) {
+                                    addToLog(`Menu added: ${data.name} (ID: ${data.id})`, 'success');
+                                } else {
+                                    addToLog(`Menu added: ${data.name}`, 'success');
+                                }
+                            }
+                        } else {
+                            errors++;
+                            if (quantity === 1) {
+                                addToLog(`Failed: ${data.message}`, 'error');
+                            }
+                        }
+                    } catch (e) {
+                        errors++;
+                        if (quantity === 1) {
+                            addToLog('Error: ' + e.message, 'error');
+                        }
                     }
-                    loadMenus();
-                    refreshStatus();
-                } else {
-                    addToLog(`Failed: ${data.message}`, 'error');
                 }
+                
+                if (quantity > 1) {
+                    addToLog(`Added ${added} menu(s)${errors > 0 ? `, ${errors} failed` : ''}`, added > 0 ? 'success' : 'error');
+                }
+                
+                loadMenus();
+                refreshStatus();
             } catch (e) {
                 addToLog('Error: ' + e.message, 'error');
                 console.error('quickAddMenu error:', e);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
         }
 
         async function quickAddArea() {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
+            const quantity = parseInt(document.getElementById('areaQuantity')?.value || 1);
+            
             if (!selectedRestaurant) {
                 addToLog('Please select a restaurant first', 'error');
                 return;
             }
             
+            if (quantity < 1 || quantity > 50) {
+                addToLog('Quantity must be between 1 and 50', 'error');
+                return;
+            }
+            
+            const btn = event?.target || document.querySelector('button[onclick*="quickAddArea"]');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '⏳ Adding...';
+            
             try {
-                const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddArea', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ restaurant_id: selectedRestaurant })
-                });
-                const data = await res.json();
+                let added = 0;
+                let errors = 0;
                 
-                if (data.success) {
-                    addToLog(`Area added: ${data.name}`, 'success');
-                    loadAreas();
-                    refreshStatus();
-                } else {
-                    addToLog(`Failed: ${data.message}`, 'error');
+                for (let i = 0; i < quantity; i++) {
+                    try {
+                        const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddArea', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ restaurant_id: selectedRestaurant })
+                        });
+                        const data = await res.json();
+                        
+                        if (data.success) {
+                            added++;
+                            if (quantity === 1) {
+                                addToLog(`Area added: ${data.name}`, 'success');
+                            }
+                        } else {
+                            errors++;
+                            if (quantity === 1) {
+                                addToLog(`Failed: ${data.message}`, 'error');
+                            }
+                        }
+                    } catch (e) {
+                        errors++;
+                        if (quantity === 1) {
+                            addToLog('Error: ' + e.message, 'error');
+                        }
+                    }
                 }
+                
+                if (quantity > 1) {
+                    addToLog(`Added ${added} area(s)${errors > 0 ? `, ${errors} failed` : ''}`, added > 0 ? 'success' : 'error');
+                }
+                
+                loadAreas();
+                refreshStatus();
             } catch (e) {
                 addToLog('Error: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
         }
 
         async function quickAddTable() {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
+            const quantity = parseInt(document.getElementById('tableQuantity')?.value || 1);
+            
             if (!selectedRestaurant) {
                 addToLog('Please select a restaurant first', 'error');
                 return;
             }
             
+            if (quantity < 1 || quantity > 50) {
+                addToLog('Quantity must be between 1 and 50', 'error');
+                return;
+            }
+            
+            const btn = event?.target || document.querySelector('button[onclick*="quickAddTable"]');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '⏳ Adding...';
+            
             try {
-                const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddTable', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ restaurant_id: selectedRestaurant })
-                });
-                const data = await res.json();
+                let added = 0;
+                let errors = 0;
                 
-                if (data.success) {
-                    addToLog(`Table added: ${data.table_number}`, 'success');
-                    loadAreas();
-                    refreshStatus();
-                } else {
-                    addToLog(`Failed: ${data.message}`, 'error');
+                for (let i = 0; i < quantity; i++) {
+                    try {
+                        const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddTable', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ restaurant_id: selectedRestaurant })
+                        });
+                        const data = await res.json();
+                        
+                        if (data.success) {
+                            added++;
+                            if (quantity === 1) {
+                                addToLog(`Table added: ${data.table_number}`, 'success');
+                            }
+                        } else {
+                            errors++;
+                            if (quantity === 1) {
+                                addToLog(`Failed: ${data.message}`, 'error');
+                            }
+                        }
+                    } catch (e) {
+                        errors++;
+                        if (quantity === 1) {
+                            addToLog('Error: ' + e.message, 'error');
+                        }
+                    }
                 }
+                
+                if (quantity > 1) {
+                    addToLog(`Added ${added} table(s)${errors > 0 ? `, ${errors} failed` : ''}`, added > 0 ? 'success' : 'error');
+                }
+                
+                loadAreas();
+                refreshStatus();
             } catch (e) {
                 addToLog('Error: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
         }
 
