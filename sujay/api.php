@@ -27,6 +27,38 @@ if (!$restaurant_id) {
 
 try {
     switch ($action) {
+        case 'getMenus':
+            $stmt = $pdo->prepare("SELECT id, menu_name, is_active, created_at, updated_at FROM menu WHERE restaurant_id = ? ORDER BY sort_order ASC, created_at DESC");
+            $stmt->execute([$restaurant_id]);
+            $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'menus' => $menus,
+                'count' => count($menus)
+            ], JSON_UNESCAPED_UNICODE);
+            break;
+            
+        case 'getAreas':
+            $stmt = $pdo->prepare("
+                SELECT a.id, a.area_name, a.created_at, a.updated_at, 
+                       COUNT(t.id) as no_of_tables 
+                FROM areas a 
+                LEFT JOIN tables t ON a.id = t.area_id 
+                WHERE a.restaurant_id = ? 
+                GROUP BY a.id, a.area_name, a.created_at, a.updated_at
+                ORDER BY a.sort_order ASC, a.created_at DESC
+            ");
+            $stmt->execute([$restaurant_id]);
+            $areas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'areas' => $areas,
+                'count' => count($areas)
+            ], JSON_UNESCAPED_UNICODE);
+            break;
+            
         case 'addMenu':
             $menuName = $_POST['menuName'] ?? '';
             if (empty($menuName)) {

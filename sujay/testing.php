@@ -378,7 +378,7 @@ try {
 
         async function loadAreas() {
             try {
-                const res = await fetch(`https://restrogrow.com/api/get_areas.php?restaurant_id=${restaurantId}`);
+                const res = await fetch(`https://restrogrow.com/sujay/api.php?action=getAreas&restaurant_id=${restaurantId}`);
                 const data = await res.json();
                 const select = document.getElementById('chooseArea');
                 if (data.success && data.areas) {
@@ -389,12 +389,13 @@ try {
                 }
             } catch (e) {
                 console.error('Error loading areas:', e);
+                document.getElementById('chooseArea').innerHTML = '<option value="">Error loading areas</option>';
             }
         }
 
         async function loadMenus() {
             try {
-                const res = await fetch(`https://restrogrow.com/api/get_menus.php?restaurant_id=${restaurantId}`);
+                const res = await fetch(`https://restrogrow.com/sujay/api.php?action=getMenus&restaurant_id=${restaurantId}`);
                 const data = await res.json();
                 const select = document.getElementById('chooseMenu');
                 if (data.success && data.menus) {
@@ -405,6 +406,7 @@ try {
                 }
             } catch (e) {
                 console.error('Error loading menus:', e);
+                document.getElementById('chooseMenu').innerHTML = '<option value="">Error loading menus</option>';
             }
         }
 
