@@ -507,8 +507,7 @@ try {
                 throw new Exception('Invalid restaurant_id: ' . $restaurant_id);
             }
             
-            // Verify restaurant exists and get the numeric ID
-            // The restaurant_id parameter should be the numeric ID from users.id, not the code
+            // Verify restaurant exists and get the restaurant_id CODE (like RES005)
             $verifyStmt = $pdo->prepare("SELECT id, username, restaurant_name, restaurant_id as restaurant_code FROM users WHERE id = ?");
             $verifyStmt->execute([$restaurant_id]);
             $restaurant = $verifyStmt->fetch(PDO::FETCH_ASSOC);
@@ -516,28 +515,28 @@ try {
                 throw new Exception('Restaurant with ID ' . $restaurant_id . ' not found');
             }
             
-            // Use the numeric ID (users.id) for menu.restaurant_id, NOT the code
-            $numericRestaurantId = (int)$restaurant['id'];
-            error_log("quickAddMenu - Restaurant verified: " . json_encode($restaurant) . " - Using numeric ID: " . $numericRestaurantId);
+            // Use the restaurant_id CODE (like RES005) for menu.restaurant_id, NOT the numeric ID
+            $restaurantCode = $restaurant['restaurant_code'];
+            error_log("quickAddMenu - Restaurant verified: " . json_encode($restaurant) . " - Using restaurant code: " . $restaurantCode);
             
-            // Get next menu number - use numeric ID
+            // Get next menu number - use restaurant code
             $countStmt = $pdo->prepare("SELECT COUNT(*) FROM menu WHERE restaurant_id = ?");
-            $countStmt->execute([$numericRestaurantId]);
+            $countStmt->execute([$restaurantCode]);
             $count = $countStmt->fetchColumn();
             $menuName = 'Menu ' . ($count + 1);
             
-            // Check if exists, increment if needed - use numeric ID
+            // Check if exists, increment if needed - use restaurant code
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu WHERE menu_name = ? AND restaurant_id = ?");
-            $checkStmt->execute([$menuName, $numericRestaurantId]);
+            $checkStmt->execute([$menuName, $restaurantCode]);
             $exists = $checkStmt->fetchColumn();
             
             if ($exists > 0) {
                 $menuName = 'Menu ' . ($count + 2);
             }
             
-            // Insert menu - use numeric ID, NOT the code
+            // Insert menu - use restaurant CODE (like RES005), NOT the numeric ID
             $insertStmt = $pdo->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
-            $insertResult = $insertStmt->execute([$numericRestaurantId, $menuName]);
+            $insertResult = $insertStmt->execute([$restaurantCode, $menuName]);
             
             if (!$insertResult) {
                 $errorInfo = $insertStmt->errorInfo();
@@ -545,7 +544,7 @@ try {
             }
             
             $insertedId = $pdo->lastInsertId();
-            error_log("quickAddMenu - Successfully inserted menu '$menuName' with ID $insertedId for numeric restaurant_id: $numericRestaurantId (username: " . $restaurant['username'] . ", code: " . $restaurant['restaurant_code'] . ")");
+            error_log("quickAddMenu - Successfully inserted menu '$menuName' with ID $insertedId for restaurant_code: $restaurantCode (username: " . $restaurant['username'] . ", numeric ID: " . $restaurant['id'] . ")");
             
             // Verify the insert
             $verifyInsertStmt = $pdo->prepare("SELECT id, menu_name, restaurant_id FROM menu WHERE id = ?");
@@ -560,8 +559,7 @@ try {
                 'id' => $insertedId,
                 'debug' => [
                     'restaurant_id_sent' => $restaurant_id,
-                    'restaurant_id_used' => $numericRestaurantId,
-                    'restaurant_code' => $restaurant['restaurant_code'],
+                    'restaurant_code_used' => $restaurantCode,
                     'restaurant_username' => $restaurant['username'],
                     'restaurant_name' => $restaurant['restaurant_name'],
                     'inserted_id' => $insertedId,
@@ -576,9 +574,18 @@ try {
                 throw new Exception('Invalid restaurant_id: ' . $restaurant_id);
             }
             
-            // Get next area number
+            // Verify restaurant exists and get numeric ID
+            $verifyStmt = $pdo->prepare("SELECT id FROM users WHERE id = ?");
+            $verifyStmt->execute([$restaurant_id]);
+            $restaurant = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+            if (!$restaurant) {
+                throw new Exception('Restaurant with ID ' . $restaurant_id . ' not found');
+            }
+            $numericRestaurantId = (int)$restaurant['id'];
+            
+            // Get next area number - use numeric ID
             $countStmt = $pdo->prepare("SELECT COUNT(*) FROM areas WHERE restaurant_id = ?");
-            $countStmt->execute([$restaurant_id]);
+            $countStmt->execute([$numericRestaurantId]);
             $count = $countStmt->fetchColumn();
             $areaName = 'Area ' . ($count + 1);
             
