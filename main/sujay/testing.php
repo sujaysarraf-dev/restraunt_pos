@@ -345,26 +345,38 @@ try {
         <div class="forms-grid">
             <div class="form-card">
                 <h3>Quick Add Menu</h3>
-                <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add a menu with a random name</p>
-                <button class="btn btn-success" onclick="quickAddMenu()">➕ Add Menu</button>
+                <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add menu(s) with random names</p>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="number" id="menuQuantity" min="1" max="50" value="1" style="width: 80px; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px; text-align: center;">
+                    <button class="btn btn-success" onclick="quickAddMenu()">➕ Add Menu(s)</button>
+                </div>
             </div>
 
             <div class="form-card">
                 <h3>Quick Add Area</h3>
-                <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add an area with a random name</p>
-                <button class="btn btn-success" onclick="quickAddArea()">➕ Add Area</button>
+                <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add area(s) with random names</p>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="number" id="areaQuantity" min="1" max="50" value="1" style="width: 80px; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px; text-align: center;">
+                    <button class="btn btn-success" onclick="quickAddArea()">➕ Add Area(s)</button>
+                </div>
             </div>
 
             <div class="form-card">
                 <h3>Quick Add Table</h3>
-                <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add a table to a random area</p>
-                <button class="btn btn-success" onclick="quickAddTable()">➕ Add Table</button>
+                <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add table(s) to random area(s)</p>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="number" id="tableQuantity" min="1" max="50" value="1" style="width: 80px; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px; text-align: center;">
+                    <button class="btn btn-success" onclick="quickAddTable()">➕ Add Table(s)</button>
+                </div>
             </div>
 
             <div class="form-card">
                 <h3>Quick Add Menu Item</h3>
-                <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add a menu item to a random menu</p>
-                <button class="btn btn-success" onclick="quickAddMenuItem()">➕ Add Menu Item</button>
+                <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add menu item(s) to random menu(s)</p>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="number" id="itemQuantity" min="1" max="50" value="1" style="width: 80px; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px; text-align: center;">
+                    <button class="btn btn-success" onclick="quickAddMenuItem()">➕ Add Menu Item(s)</button>
+                </div>
             </div>
         </div>
     </div>
