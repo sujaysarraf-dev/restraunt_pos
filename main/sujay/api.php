@@ -944,36 +944,36 @@ try {
                             }
                         }
                     } else {
-            $aiContent = $aiResponse['choices'][0]['message']['content'] ?? '';
-            
-            if (empty($aiContent)) {
+                        $aiContent = $aiResponse['choices'][0]['message']['content'] ?? '';
+                        
+                        if (empty($aiContent)) {
                             // Try simple parsing as fallback
                             $plan = parseSimpleCommand($prompt);
                             if (!$plan) {
-                throw new Exception('Empty response from AI. Full response: ' . substr($response, 0, 500));
+                                throw new Exception('Empty response from AI. Full response: ' . substr($response, 0, 500));
                             } else {
                                 $usedSimpleParser = true;
-            }
+                            }
                         } else {
-            // Extract JSON from response (handle markdown code blocks)
-            if (preg_match('/```json\s*(.*?)\s*```/s', $aiContent, $matches)) {
-                $aiContent = $matches[1];
-            } elseif (preg_match('/```\s*(.*?)\s*```/s', $aiContent, $matches)) {
-                $aiContent = $matches[1];
-            }
-            
-            // Try to find JSON object in the response
-            if (preg_match('/\{.*\}/s', $aiContent, $jsonMatch)) {
-                $aiContent = $jsonMatch[0];
-            }
-            
-            $plan = json_decode(trim($aiContent), true);
-            
-            if (!$plan || json_last_error() !== JSON_ERROR_NONE) {
+                            // Extract JSON from response (handle markdown code blocks)
+                            if (preg_match('/```json\s*(.*?)\s*```/s', $aiContent, $matches)) {
+                                $aiContent = $matches[1];
+                            } elseif (preg_match('/```\s*(.*?)\s*```/s', $aiContent, $matches)) {
+                                $aiContent = $matches[1];
+                            }
+                            
+                            // Try to find JSON object in the response
+                            if (preg_match('/\{.*\}/s', $aiContent, $jsonMatch)) {
+                                $aiContent = $jsonMatch[0];
+                            }
+                            
+                            $plan = json_decode(trim($aiContent), true);
+                            
+                            if (!$plan || json_last_error() !== JSON_ERROR_NONE) {
                                 // Try simple parsing as fallback
                                 $plan = parseSimpleCommand($prompt);
                                 if (!$plan) {
-                throw new Exception('Failed to parse AI response. JSON Error: ' . json_last_error_msg() . '. Raw: ' . substr($aiContent, 0, 300));
+                                    throw new Exception('Failed to parse AI response. JSON Error: ' . json_last_error_msg() . '. Raw: ' . substr($aiContent, 0, 300));
                                 } else {
                                     $usedSimpleParser = true;
                                 }
@@ -981,9 +981,6 @@ try {
                         }
                     }
                 }
-            } else {
-                $usedSimpleParser = true;
-            }
             
             // Execute the plan directly
             if ($plan) {
