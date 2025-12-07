@@ -546,9 +546,9 @@
                     
                     // If in development mode or email failed, show the reset link
                     if (result.reset_link) {
-                        message += '<br><br><strong>Reset Link (Click to copy):</strong><br>';
-                        message += '<div style="background: #f5f5f5; padding: 10px; border-radius: 5px; margin-top: 10px; word-break: break-all; cursor: pointer; border: 1px solid #ddd;" onclick="copyToClipboard(this.textContent)">' + result.reset_link + '</div>';
-                        message += '<small style="color: #666; margin-top: 5px; display: block;">Click the link above to copy it</small>';
+                        message += '<br><br><strong>Reset Link:</strong><br>';
+                        message += '<a href="' + result.reset_link + '" target="_blank" style="color: #151A2D; text-decoration: underline; word-break: break-all; display: inline-block; margin-top: 8px; padding: 10px; background: #f5f5f5; border-radius: 5px; border: 1px solid #ddd;">' + result.reset_link + '</a>';
+                        message += '<br><small style="color: #666; margin-top: 5px; display: block;">(Click the link above to reset your password)</small>';
                     }
                     
                     showForgotPasswordMessage(message, 'success');
