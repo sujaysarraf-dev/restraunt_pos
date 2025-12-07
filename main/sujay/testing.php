@@ -452,6 +452,9 @@ try {
                 // Debug logging
                 console.log('Status refresh for restaurant:', selectedRestaurant);
                 console.log('Menus data:', menusData);
+                if (menusData.success && menusData.menus) {
+                    console.log('Menu names:', menusData.menus.map(m => m.menu_name));
+                }
                 
                 document.getElementById('statusMenus').textContent = menusData.success ? menusData.count : '0';
                 document.getElementById('statusAreas').textContent = areasData.success ? areasData.count : '0';
