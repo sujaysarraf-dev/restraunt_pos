@@ -314,6 +314,37 @@ require_superadmin();
         </div>
         <div class="card">
           <div class="card-header">
+            <div class="card-title">Password Reset Data</div>
+          </div>
+          <div class="card-body">
+            <div style="overflow-x:auto;">
+              <table id="passwordResetTable">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Restaurant</th>
+                    <th>Email</th>
+                    <th>Token</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Expires</th>
+                  </tr>
+                </thead>
+                <tbody id="passwordResetTbody">
+                  <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;">
+              <button class="btn btn-outline" id="prevResetPage">Prev</button>
+              <div id="resetPageInfo" style="color:var(--muted)">Page 1</div>
+              <button class="btn btn-outline" id="nextResetPage">Next</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
             <div class="card-title">Database Tools</div>
           </div>
           <div class="card-body">

@@ -507,6 +507,41 @@ $connectionStats = getConnectionStats();
 
         <div class="section">
             <div class="section-header">
+                <h2 class="section-title">Password Reset Data</h2>
+                <div class="section-divider"></div>
+            </div>
+            <div class="card" style="margin-bottom: 0;">
+                <div class="card-body">
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:0.95rem;">
+                            <thead>
+                                <tr style="background:var(--gray-100);">
+                                    <th style="padding:12px;border-bottom:1px solid var(--gray-200);text-align:left;font-weight:600;font-size:0.8rem;text-transform:uppercase;">ID</th>
+                                    <th style="padding:12px;border-bottom:1px solid var(--gray-200);text-align:left;font-weight:600;font-size:0.8rem;text-transform:uppercase;">User</th>
+                                    <th style="padding:12px;border-bottom:1px solid var(--gray-200);text-align:left;font-weight:600;font-size:0.8rem;text-transform:uppercase;">Restaurant</th>
+                                    <th style="padding:12px;border-bottom:1px solid var(--gray-200);text-align:left;font-weight:600;font-size:0.8rem;text-transform:uppercase;">Email</th>
+                                    <th style="padding:12px;border-bottom:1px solid var(--gray-200);text-align:left;font-weight:600;font-size:0.8rem;text-transform:uppercase;">Token</th>
+                                    <th style="padding:12px;border-bottom:1px solid var(--gray-200);text-align:left;font-weight:600;font-size:0.8rem;text-transform:uppercase;">Status</th>
+                                    <th style="padding:12px;border-bottom:1px solid var(--gray-200);text-align:left;font-weight:600;font-size:0.8rem;text-transform:uppercase;">Created</th>
+                                    <th style="padding:12px;border-bottom:1px solid var(--gray-200);text-align:left;font-weight:600;font-size:0.8rem;text-transform:uppercase;">Expires</th>
+                                </tr>
+                            </thead>
+                            <tbody id="passwordResetTbody">
+                                <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;">
+                        <button class="btn btn-outline" id="prevResetPage" style="padding:8px 16px;border:1px solid var(--gray-300);border-radius:6px;background:white;cursor:pointer;">Prev</button>
+                        <div id="resetPageInfo" style="color:var(--gray-600);">Page 1</div>
+                        <button class="btn btn-outline" id="nextResetPage" style="padding:8px 16px;border:1px solid var(--gray-300);border-radius:6px;background:white;cursor:pointer;">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
                 <h2 class="section-title">Configuration Files</h2>
                 <div class="section-divider"></div>
             </div>

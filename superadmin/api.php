@@ -107,6 +107,36 @@ try {
       echo json_encode(['success' => true, 'message' => 'Password reset']);
       break;
 
+    case 'getPasswordResetData':
+      $page = max(1, (int)($_GET['page'] ?? 1));
+      $limit = min(50, max(5, (int)($_GET['limit'] ?? 10)));
+      $offset = ($page - 1) * $limit;
+
+      // Check if table exists
+      $tableCheck = $pdo->query("SHOW TABLES LIKE 'password_reset_tokens'");
+      if ($tableCheck->rowCount() == 0) {
+        echo json_encode(['success' => false, 'message' => 'password_reset_tokens table does not exist']);
+        break;
+      }
+
+      $sql = "SELECT 
+                prt.id, prt.user_id, prt.token, prt.expires_at, prt.used, prt.created_at,
+                u.username, u.restaurant_name, u.email
+              FROM password_reset_tokens prt
+              LEFT JOIN users u ON prt.user_id = u.id
+              ORDER BY prt.created_at DESC 
+              LIMIT :limit OFFSET :offset";
+      $stmt = $pdo->prepare($sql);
+      $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+      $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+      $stmt->execute();
+
+      $countStmt = $pdo->query("SELECT COUNT(*) as c FROM password_reset_tokens");
+      $total = (int)($countStmt->fetch()['c'] ?? 0);
+
+      echo json_encode(['success' => true, 'tokens' => $stmt->fetchAll(), 'total' => $total, 'page' => $page, 'limit' => $limit]);
+      break;
+
     case 'getStats':
       $stats = [];
       // totals
