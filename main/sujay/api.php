@@ -313,7 +313,7 @@ try {
             $demoAreas = ['Main Hall', 'Outdoor Seating', 'VIP Section', 'Bar Area'];
             $demoItems = [
                 ['Margherita Pizza', 'Classic Italian pizza', 'Pizza', 'Veg', 12.99],
-                ['Chicken Burger', 'Juicy chicken burger', 'Burgers', 'Non-Veg', 9.99],
+                ['Chicken Burger', 'Juicy chicken burger', 'Burgers', 'Non Veg', 9.99],
                 ['Caesar Salad', 'Fresh garden salad', 'Salads', 'Veg', 8.99],
                 ['Chocolate Cake', 'Rich chocolate cake', 'Desserts', 'Veg', 6.99],
                 ['Coca Cola', 'Refreshing soft drink', 'Beverages', 'Veg', 2.99],
@@ -462,7 +462,7 @@ try {
             $context .= "Sample items: " . implode(', ', array_slice(array_column($items, 'item_name_en'), 0, 5)) . "\n\n";
             $context .= "User request: $prompt\n\n";
             $context .= "Respond with a JSON plan. Format:\n";
-            $context .= '{"action": "add_items|add_menu|add_area|add_table", "items": [{"name": "...", "description": "...", "category": "...", "type": "Veg|Non-Veg", "price": 0.00, "menu": "menu_name"}], "requiresApproval": true, "plan": "human readable plan"}';
+            $context .= '{"action": "add_items|add_menu|add_area|add_table", "items": [{"name": "...", "description": "...", "category": "...", "type": "Veg|Non Veg", "price": 0.00, "menu": "menu_name"}], "requiresApproval": true, "plan": "human readable plan"}';
             
             // Call OpenRouter API
             $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
