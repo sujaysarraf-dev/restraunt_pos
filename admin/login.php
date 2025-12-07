@@ -549,20 +549,56 @@
                     
                     showForgotPasswordMessage(message, 'success');
                     
-                    // Auto-close after showing message
-                    setTimeout(() => {
-                        closeForgotPasswordModal();
-                    }, 5000);
+                    // Don't auto-close - let user close manually
+                    
+                    // Handle cooldown if present
+                    if (result.cooldown_seconds) {
+                        startCooldown(result.cooldown_seconds);
+                    } else {
+                        forgotPasswordBtn.disabled = false;
+                        forgotPasswordBtn.textContent = 'Send Reset Link';
+                    }
                 } else {
                     showForgotPasswordMessage(result.message || 'Email not found. Please check your email address.', 'error');
+                    forgotPasswordBtn.disabled = false;
+                    forgotPasswordBtn.textContent = 'Send Reset Link';
+                    
+                    // Handle cooldown even on error
+                    if (result.cooldown_seconds) {
+                        startCooldown(result.cooldown_seconds);
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);
                 showForgotPasswordMessage('Network error. Please try again.', 'error');
-            } finally {
                 forgotPasswordBtn.disabled = false;
                 forgotPasswordBtn.textContent = 'Send Reset Link';
             }
+        });
+        
+        // Cooldown function
+        function startCooldown(seconds) {
+            const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+            if (!forgotPasswordBtn) return;
+            
+            let remaining = seconds;
+            forgotPasswordBtn.disabled = true;
+            
+            const updateButton = () => {
+                if (remaining > 0) {
+                    const minutes = Math.floor(remaining / 60);
+                    const secs = remaining % 60;
+                    forgotPasswordBtn.textContent = `Please wait ${minutes}:${secs.toString().padStart(2, '0')}`;
+                    remaining--;
+                    setTimeout(updateButton, 1000);
+                } else {
+                    forgotPasswordBtn.disabled = false;
+                    forgotPasswordBtn.textContent = 'Send Reset Link';
+                }
+            };
+            
+            updateButton();
+        }
         });
         
         function showForgotPasswordMessage(message, type) {

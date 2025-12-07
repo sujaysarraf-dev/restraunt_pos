@@ -879,6 +879,65 @@ function handleForgotPassword() {
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
+    // Check cooldown for this email (even if user doesn't exist, to prevent enumeration)
+    $cooldownSeconds = 0;
+    $requestCount = 0;
+    
+    try {
+        // Count recent reset requests in the last hour
+        $cooldownStmt = $pdo->prepare("
+            SELECT COUNT(*) as request_count, 
+                   MAX(created_at) as last_request,
+                   TIMESTAMPDIFF(SECOND, MAX(created_at), NOW()) as seconds_since_last
+            FROM password_reset_tokens prt
+            JOIN users u ON prt.user_id = u.id
+            WHERE u.email = ? 
+            AND prt.created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
+        ");
+        $cooldownStmt->execute([$email]);
+        $cooldownData = $cooldownStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($cooldownData) {
+            $requestCount = (int)$cooldownData['request_count'];
+            $secondsSinceLast = (int)($cooldownData['seconds_since_last'] ?? 0);
+            
+            // Progressive cooldown:
+            // 1st request: no cooldown
+            // 2nd request: 60 seconds
+            // 3rd request: 60 seconds
+            // 4th+ requests: 30 minutes (1800 seconds)
+            if ($requestCount >= 4) {
+                $requiredCooldown = 1800; // 30 minutes
+            } elseif ($requestCount >= 2) {
+                $requiredCooldown = 60; // 60 seconds
+            } else {
+                $requiredCooldown = 0; // No cooldown
+            }
+            
+            // Calculate remaining cooldown
+            if ($requiredCooldown > 0 && $secondsSinceLast < $requiredCooldown) {
+                $cooldownSeconds = $requiredCooldown - $secondsSinceLast;
+            }
+        }
+    } catch (PDOException $e) {
+        // If table doesn't exist yet, no cooldown
+        error_log("Error checking cooldown: " . $e->getMessage());
+    }
+    
+    // If cooldown is active, return error
+    if ($cooldownSeconds > 0) {
+        $minutes = floor($cooldownSeconds / 60);
+        $seconds = $cooldownSeconds % 60;
+        $timeStr = $minutes > 0 ? "{$minutes} minute(s) and {$seconds} second(s)" : "{$seconds} second(s)";
+        
+        echo json_encode([
+            'success' => false,
+            'message' => "Please wait {$timeStr} before requesting another password reset.",
+            'cooldown_seconds' => $cooldownSeconds
+        ]);
+        return;
+    }
+    
     // Always return success message (security: don't reveal if email exists)
     if (!$user) {
         // Still return success to prevent email enumeration
