@@ -292,9 +292,15 @@ function parseSimpleCommand($prompt) {
         }
     }
     // ADD operations (existing logic)
-    elseif (preg_match('/(add|create|insert)\s+(\d+)\s*(menu|menus|area|areas|table|tables|item|items)/i', $promptLower, $matches)) {
+    // Check for "menu items" first (more specific), then other types
+    elseif (preg_match('/(add|create|insert)\s+(\d+)\s*(menu\s+items?|items?|menu|menus|area|areas|table|tables)/i', $promptLower, $matches)) {
         $count = (int)$matches[2];
-        $type = strtolower($matches[3]);
+        $type = strtolower(trim($matches[3]));
+        
+        // Normalize "menu items" or "menu item" to "items"
+        if (preg_match('/menu\s+items?/i', $matches[3])) {
+            $type = 'items';
+        }
         
         if ($count > 0 && $count <= 50) { // Limit to 50 items
             $items = [];
