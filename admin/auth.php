@@ -874,21 +874,43 @@ function handleForgotPassword() {
         throw new Exception('Please enter a valid email address');
     }
     
-    // Check if email exists in users table
-    $stmt = $pdo->prepare("SELECT id, username, restaurant_name, email FROM users WHERE email = ? AND is_active = 1 LIMIT 1");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Create password_reset_tokens table if it doesn't exist (do this first for cooldown check)
+    try {
+        // Check if table exists first
+        $checkTable = $pdo->query("SHOW TABLES LIKE 'password_reset_tokens'");
+        if ($checkTable->rowCount() == 0) {
+            // Create table without foreign key first (to avoid constraint issues)
+            $createTableStmt = $pdo->prepare("
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    token VARCHAR(64) NOT NULL UNIQUE,
+                    expires_at DATETIME NOT NULL,
+                    used BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_token (token),
+                    INDEX idx_user_id (user_id),
+                    INDEX idx_expires_at (expires_at),
+                    INDEX idx_created_at (created_at)
+                )
+            ");
+            $createTableStmt->execute();
+        }
+    } catch (PDOException $e) {
+        error_log("Error creating password_reset_tokens table: " . $e->getMessage());
+        // Continue anyway - table might already exist or we'll handle it in the insert
+    }
     
-    // Check cooldown for this email (even if user doesn't exist, to prevent enumeration)
+    // Check cooldown for this email (check BEFORE checking if user exists, for security)
     $cooldownSeconds = 0;
     $requestCount = 0;
     
     try {
-        // Count recent reset requests in the last hour
+        // Count recent reset requests in the last hour for this email
         $cooldownStmt = $pdo->prepare("
             SELECT COUNT(*) as request_count, 
-                   MAX(created_at) as last_request,
-                   TIMESTAMPDIFF(SECOND, MAX(created_at), NOW()) as seconds_since_last
+                   MAX(prt.created_at) as last_request,
+                   TIMESTAMPDIFF(SECOND, MAX(prt.created_at), NOW()) as seconds_since_last
             FROM password_reset_tokens prt
             JOIN users u ON prt.user_id = u.id
             WHERE u.email = ? 
@@ -920,11 +942,11 @@ function handleForgotPassword() {
             }
         }
     } catch (PDOException $e) {
-        // If table doesn't exist yet, no cooldown
+        // If table doesn't exist yet or query fails, no cooldown (but log error)
         error_log("Error checking cooldown: " . $e->getMessage());
     }
     
-    // If cooldown is active, return error
+    // If cooldown is active, return error (even if user doesn't exist, for security)
     if ($cooldownSeconds > 0) {
         $minutes = floor($cooldownSeconds / 60);
         $seconds = $cooldownSeconds % 60;
@@ -937,6 +959,11 @@ function handleForgotPassword() {
         ]);
         return;
     }
+    
+    // Check if email exists in users table
+    $stmt = $pdo->prepare("SELECT id, username, restaurant_name, email FROM users WHERE email = ? AND is_active = 1 LIMIT 1");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
     // Always return success message (security: don't reveal if email exists)
     if (!$user) {
@@ -952,38 +979,13 @@ function handleForgotPassword() {
     $token = bin2hex(random_bytes(32));
     $expiresAt = date('Y-m-d H:i:s', strtotime('+5 minutes')); // Token expires in 5 minutes
     
-    // Create password_reset_tokens table if it doesn't exist
-    try {
-        // Check if table exists first
-        $checkTable = $pdo->query("SHOW TABLES LIKE 'password_reset_tokens'");
-        if ($checkTable->rowCount() == 0) {
-            // Create table without foreign key first (to avoid constraint issues)
-            $createTableStmt = $pdo->prepare("
-                CREATE TABLE IF NOT EXISTS password_reset_tokens (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id INT NOT NULL,
-                    token VARCHAR(64) NOT NULL UNIQUE,
-                    expires_at DATETIME NOT NULL,
-                    used BOOLEAN DEFAULT FALSE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    INDEX idx_token (token),
-                    INDEX idx_user_id (user_id),
-                    INDEX idx_expires_at (expires_at)
-                )
-            ");
-            $createTableStmt->execute();
-        }
-    } catch (PDOException $e) {
-        error_log("Error creating password_reset_tokens table: " . $e->getMessage());
-        // Continue anyway - table might already exist or we'll handle it in the insert
-    }
-    
     // Invalidate any existing tokens for this user
     try {
         $invalidateStmt = $pdo->prepare("UPDATE password_reset_tokens SET used = TRUE WHERE user_id = ? AND used = FALSE");
         $invalidateStmt->execute([$user['id']]);
     } catch (PDOException $e) {
         // Ignore if table doesn't exist yet
+        error_log("Error invalidating tokens: " . $e->getMessage());
     }
     
     // Insert new token
