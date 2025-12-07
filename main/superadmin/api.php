@@ -25,10 +25,10 @@ try {
                 subscription_status,
                 trial_end_date,
                 renewal_date,
-                GREATEST(DATEDIFF(COALESCE(renewal_date, trial_end_date, DATE_ADD(DATE(created_at), INTERVAL 7 DAY)), CURRENT_DATE()), 0) AS days_left,
+                GREATEST(DATEDIFF(COALESCE(renewal_date, trial_end_date, DATE_ADD(DATE(created_at), INTERVAL 30 DAY)), CURRENT_DATE()), 0) AS days_left,
                 CASE 
                   WHEN subscription_status = 'disabled' THEN 'Disabled'
-                  WHEN CURRENT_DATE() < COALESCE(renewal_date, trial_end_date, DATE_ADD(DATE(created_at), INTERVAL 7 DAY)) THEN 'Active'
+                  WHEN CURRENT_DATE() < COALESCE(renewal_date, trial_end_date, DATE_ADD(DATE(created_at), INTERVAL 30 DAY)) THEN 'Active'
                   ELSE 'Expired'
                 END AS trial_status
               FROM users $where 
@@ -81,8 +81,8 @@ try {
       $active = (int)($data['is_active'] ?? 1);
       if ($id <= 0) throw new Exception('Invalid id');
       if ($active === 1) {
-        // Re-enable: set renewal_date +7d and status trial
-        $stmt = $pdo->prepare("UPDATE users SET is_active=1, subscription_status='trial', renewal_date = DATE_ADD(CURRENT_DATE(), INTERVAL 7 DAY), disabled_at=NULL WHERE id=:id");
+        // Re-enable: set renewal_date +30d and status trial
+        $stmt = $pdo->prepare("UPDATE users SET is_active=1, subscription_status='trial', renewal_date = DATE_ADD(CURRENT_DATE(), INTERVAL 30 DAY), disabled_at=NULL WHERE id=:id");
         $stmt->execute([':id'=>$id]);
         $info = $pdo->prepare('SELECT renewal_date FROM users WHERE id=:id');
         $info->execute([':id'=>$id]);

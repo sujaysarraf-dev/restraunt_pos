@@ -296,7 +296,7 @@ require_superadmin();
           <div class="card-body">
             <div class="form-group">
               <label>Trial Period (Days)</label>
-              <input type="number" id="trialDays" value="7" min="1" max="365">
+              <input type="number" id="trialDays" value="30" min="1" max="365">
             </div>
             <div class="form-group">
               <label>Subscription Price (₹)</label>

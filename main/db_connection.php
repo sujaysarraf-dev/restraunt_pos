@@ -111,6 +111,17 @@ try {
             // For persistent connections, use longer timeouts to allow connection reuse
             $pdo->exec("SET SESSION wait_timeout = 300");  // 5 minutes for persistent connections (allows reuse)
             $pdo->exec("SET SESSION interactive_timeout = 300");
+            
+            // Automatically expire trials that have passed their end date
+            try {
+                $pdo->exec("UPDATE users SET subscription_status = 'expired', is_active = 0 
+                           WHERE subscription_status = 'trial' 
+                           AND trial_end_date IS NOT NULL 
+                           AND trial_end_date < CURRENT_DATE()");
+            } catch (PDOException $e) {
+                // Silently fail if columns don't exist or other error
+                error_log("Error auto-expiring trials: " . $e->getMessage());
+            }
             $pdo->exec("SET SESSION query_cache_type = OFF");  // Disable query cache (let MySQL handle it)
             // Note: max_execution_time is not available in all MySQL versions, removed
             $pdo->exec("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'");

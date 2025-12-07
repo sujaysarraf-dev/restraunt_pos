@@ -112,6 +112,26 @@ try {
         }
     }
     
+    // Check and update trial expiry automatically
+    if ($isAdmin && !empty($row['subscription_status']) && !empty($row['trial_end_date'])) {
+        $subscriptionStatus = $row['subscription_status'];
+        $trialEndDate = $row['trial_end_date'];
+        $today = date('Y-m-d');
+        
+        // If trial status and trial_end_date has passed, automatically expire
+        if ($subscriptionStatus === 'trial' && $trialEndDate < $today) {
+            try {
+                $updateStmt = $conn->prepare("UPDATE users SET subscription_status = 'expired', is_active = 0 WHERE id = :id");
+                $updateStmt->execute([':id' => $_SESSION['user_id']]);
+                // Update the row data for response
+                $row['subscription_status'] = 'expired';
+                $row['is_active'] = 0;
+            } catch (PDOException $e) {
+                error_log("Error updating trial expiry: " . $e->getMessage());
+            }
+        }
+    }
+    
     // Build response data
     $responseData = [
         'id' => $row['id'] ?? ($_SESSION['user_id'] ?? $_SESSION['staff_id'] ?? null),
@@ -135,7 +155,8 @@ try {
         'subscription_status' => $row['subscription_status'] ?? null,
         'trial_end_date' => $row['trial_end_date'] ?? null,
         'renewal_date' => $row['renewal_date'] ?? null,
-        'created_at' => $row['created_at'] ?? null
+        'created_at' => $row['created_at'] ?? null,
+        'is_active' => $row['is_active'] ?? 1
     ];
     
     echo json_encode([

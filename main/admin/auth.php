@@ -302,10 +302,10 @@ function handleSignup() {
     // Hash password
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
     
-    // Insert new user
+    // Insert new user with 30-day trial period
     $insertStmt = $pdo->prepare("
-        INSERT INTO users (username, password, restaurant_id, restaurant_name, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, NOW(), NOW())
+        INSERT INTO users (username, password, restaurant_id, restaurant_name, subscription_status, trial_end_date, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, 'trial', DATE_ADD(CURRENT_DATE(), INTERVAL 30 DAY), NOW(), NOW())
     ");
     
     $result = $insertStmt->execute([$username, $hashedPassword, $restaurantId, $restaurantName]);
