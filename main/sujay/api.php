@@ -300,27 +300,16 @@ function parseSimpleCommand($prompt) {
             $items = [];
             
             if (in_array($type, ['menu', 'menus'])) {
-                // Check if prompt mentions city names or Indian cities
-                $cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow', 'Surat', 'Kanpur', 'Nagpur', 'Indore', 'Thane', 'Bhopal', 'Visakhapatnam', 'Patna', 'Vadodara', 'Ghaziabad'];
-                $indianCuisines = ['North Indian', 'South Indian', 'Gujarati', 'Punjabi', 'Bengali', 'Rajasthani', 'Maharashtrian', 'Tamil', 'Telugu', 'Kerala'];
+                // Simple parser - only for very basic "add X menus" without any modifiers
+                // If there are any modifiers (cities, singers, games, indian, etc.), let AI handle it
+                if (preg_match('/(city|cities|singer|singers|game|games|indian|cuisine|name|names)/i', $promptLower)) {
+                    // Has modifiers - don't handle, let AI do it
+                    return null;
+                }
                 
-                if (preg_match('/(city|cities|indian|cuisine)/i', $promptLower)) {
-                    // Use city names or cuisine names
-                    $useCities = stripos($promptLower, 'city') !== false || stripos($promptLower, 'cities') !== false;
-                    $nameList = $useCities ? $cities : $indianCuisines;
-                    
-                    for ($i = 0; $i < $count && $i < count($nameList); $i++) {
-                        $items[] = ['name' => $nameList[$i] . ' Menu'];
-                    }
-                    // If more items needed, add numbered menus
-                    for ($i = count($nameList); $i < $count; $i++) {
-                        $items[] = ['name' => "Menu " . ($i + 1)];
-                    }
-                } else {
-                    // Default: numbered menus
-                    for ($i = 1; $i <= $count; $i++) {
-                        $items[] = ['name' => "Menu $i"];
-                    }
+                // Very basic: just "add X menus" - create numbered menus
+                for ($i = 1; $i <= $count; $i++) {
+                    $items[] = ['name' => "Menu $i"];
                 }
                 $plan = [
                     'action' => 'add_menu',
@@ -354,34 +343,17 @@ function parseSimpleCommand($prompt) {
                     'plan' => "Create $count table(s)"
                 ];
             } elseif (in_array($type, ['item', 'items'])) {
-                // For menu items, check for cuisine type
-                $cuisines = [
-                    'south indian' => ['Dosa', 'Idli', 'Vada', 'Sambar', 'Rasam', 'Upma', 'Pongal', 'Biryani'],
-                    'north indian' => ['Butter Chicken', 'Naan', 'Dal Makhani', 'Paneer Tikka', 'Biryani', 'Tandoori'],
-                    'chinese' => ['Fried Rice', 'Noodles', 'Manchurian', 'Spring Roll', 'Dumpling'],
-                    'italian' => ['Pizza', 'Pasta', 'Risotto', 'Lasagna', 'Bruschetta']
-                ];
-                
-                $itemNames = [];
-                foreach ($cuisines as $cuisine => $names) {
-                    if (stripos($promptLower, $cuisine) !== false) {
-                        $itemNames = $names;
-                        break;
-                    }
+                // Simple parser - only for very basic "add X items" without modifiers
+                // If there are any modifiers (south indian, singers, games, etc.), let AI handle it
+                if (preg_match('/(south|north|indian|chinese|italian|singer|singers|game|games|cuisine|name|names)/i', $promptLower)) {
+                    // Has modifiers - don't handle, let AI do it
+                    return null;
                 }
                 
-                // If no cuisine match, use generic names
-                if (empty($itemNames)) {
-                    for ($i = 1; $i <= $count; $i++) {
-                        $itemNames[] = "Item $i";
-                    }
-                }
-                
-                // Get first menu or create default
-                for ($i = 0; $i < $count; $i++) {
-                    $name = $itemNames[$i % count($itemNames)] . ($i >= count($itemNames) ? ' ' . ($i + 1) : '');
+                // Very basic: just "add X items" - create generic items
+                for ($i = 1; $i <= $count; $i++) {
                     $items[] = [
-                        'name' => $name,
+                        'name' => "Item $i",
                         'category' => 'Main Course',
                         'type' => 'Veg',
                         'price' => round(rand(100, 500) / 10, 2),
@@ -821,6 +793,7 @@ try {
             
             // Try AI API first for ALL commands (it understands natural language)
             // Only fall back to simple parser if AI fails completely
+            
             // Get current state
             $menusStmt = $pdo->prepare("SELECT id, menu_name FROM menu WHERE restaurant_id = ?");
                 $menusStmt->execute([$restaurantCode]);
