@@ -269,7 +269,9 @@ function handleUpdateKOTStatus() {
         echo json_encode(['success' => false, 'message' => 'Error updating KOT status: ' . $e->getMessage()]);
     }
 }
+}
 
+if (!function_exists('handleCompleteKOT')) {
 function handleCompleteKOT() {
     global $pdo;
     $conn = $pdo;
