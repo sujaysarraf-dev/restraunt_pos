@@ -1520,10 +1520,21 @@ document.addEventListener("DOMContentLoaded", () => {
           fileInput.value = '';
         }
         
+        // Reset crop applied flag
+        cropApplied = false;
+        
         // Reset base64 data
         const base64Input = document.getElementById('itemImageBase64');
         if (base64Input) {
           base64Input.value = '';
+        }
+        
+        // Reset crop button appearance
+        const cropBtn = document.getElementById('cropImageBtn');
+        if (cropBtn) {
+          cropBtn.style.background = '';
+          cropBtn.style.color = '';
+          cropBtn.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">crop</span> Apply Crop';
         }
         
         // Reset file name display
@@ -1671,6 +1682,18 @@ document.addEventListener("DOMContentLoaded", () => {
         imageCropper = null;
       }
       
+      // Reset crop applied flag when new image is selected
+      cropApplied = false;
+      document.getElementById('itemImageBase64').value = '';
+      
+      // Reset crop button appearance
+      const cropBtn = document.getElementById('cropImageBtn');
+      if (cropBtn) {
+        cropBtn.style.background = '';
+        cropBtn.style.color = '';
+        cropBtn.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">crop</span> Apply Crop';
+      }
+      
       // Show preview and initialize cropper
       const reader = new FileReader();
       reader.onload = function(e) {
@@ -1754,6 +1777,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
   
+  // Track if crop has been applied
+  let cropApplied = false;
+  
   // Apply crop button (initialize when DOM is ready)
   function initializeCropButtons() {
     const cropBtn = document.getElementById('cropImageBtn');
@@ -1765,28 +1791,52 @@ document.addEventListener("DOMContentLoaded", () => {
       cropBtn.parentNode.replaceChild(newCropBtn, cropBtn);
       
       newCropBtn.addEventListener('click', function() {
-    if (!imageCropper) return;
-    
-    const croppedCanvas = imageCropper.getCroppedCanvas({
-      width: 1200,
-      height: 800,
-      imageSmoothingEnabled: true,
-      imageSmoothingQuality: 'high'
-    });
-    
-    if (croppedCanvas) {
-      const croppedDataUrl = croppedCanvas.toDataURL('image/jpeg', 0.9);
-      
-      // Store cropped image as base64
-      document.getElementById('itemImageBase64').value = croppedDataUrl;
-      
-      // Update preview
-      updateWebsitePreview();
-      
-      // Show success message
-        showMessage('Image cropped successfully!', 'success');
-      }
-    });
+        if (!imageCropper) return;
+        
+        // Show loading state
+        const originalBtnHTML = newCropBtn.innerHTML;
+        newCropBtn.disabled = true;
+        newCropBtn.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">hourglass_empty</span> Processing...';
+        
+        const croppedCanvas = imageCropper.getCroppedCanvas({
+          width: 1200,
+          height: 800,
+          imageSmoothingEnabled: true,
+          imageSmoothingQuality: 'high'
+        });
+        
+        if (croppedCanvas) {
+          const croppedDataUrl = croppedCanvas.toDataURL('image/jpeg', 0.9);
+          
+          // Store cropped image as base64
+          document.getElementById('itemImageBase64').value = croppedDataUrl;
+          cropApplied = true; // Mark that crop has been applied
+          
+          // Update preview
+          updateWebsitePreview();
+          
+          // Show success state on button
+          newCropBtn.disabled = false;
+          newCropBtn.style.background = '#10b981';
+          newCropBtn.style.color = 'white';
+          newCropBtn.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">check_circle</span> Crop Applied!';
+          
+          // Show success message
+          showMessage('Image cropped successfully!', 'success');
+          
+          // Reset button after 3 seconds
+          setTimeout(() => {
+            newCropBtn.style.background = '';
+            newCropBtn.style.color = '';
+            newCropBtn.innerHTML = originalBtnHTML;
+          }, 3000);
+        } else {
+          // Error state
+          newCropBtn.disabled = false;
+          newCropBtn.innerHTML = originalBtnHTML;
+          showMessage('Failed to crop image. Please try again.', 'error');
+        }
+      });
     }
     
     if (resetBtn) {
@@ -1798,6 +1848,17 @@ document.addEventListener("DOMContentLoaded", () => {
         if (imageCropper) {
           imageCropper.reset();
           updateWebsitePreview();
+          // Clear cropped image and reset crop applied flag
+          document.getElementById('itemImageBase64').value = '';
+          cropApplied = false;
+          
+          // Reset crop button appearance
+          const cropBtn = document.getElementById('cropImageBtn');
+          if (cropBtn) {
+            cropBtn.style.background = '';
+            cropBtn.style.color = '';
+            cropBtn.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">crop</span> Apply Crop';
+          }
         }
       });
     }
@@ -1824,6 +1885,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const isEdit = menuItemIdInput.value !== "";
     
     formData.append('action', isEdit ? 'update' : 'add');
+    
+    // Handle image: if crop was not applied, use original file
+    const itemImageBase64 = document.getElementById('itemImageBase64');
+    const itemImageInput = document.getElementById('itemImage');
+    
+    // If crop was not applied and there's a file, use the original file
+    if (!cropApplied && itemImageInput && itemImageInput.files && itemImageInput.files.length > 0) {
+      // Remove base64 if it exists (from previous crop)
+      if (itemImageBase64) {
+        itemImageBase64.value = '';
+      }
+      // The original file will be sent via FormData automatically
+    } else if (cropApplied && itemImageBase64 && itemImageBase64.value) {
+      // Crop was applied, use the cropped base64 image
+      // Remove the file input so it doesn't override the base64
+      if (itemImageInput) {
+        itemImageInput.value = '';
+      }
+    }
     
     // Add variations data if has variations is checked
     const hasVariations = document.getElementById("hasVariations").checked;

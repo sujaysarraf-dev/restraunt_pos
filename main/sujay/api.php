@@ -37,6 +37,251 @@ if (!empty($jsonData['restaurant_id'])) {
     $restaurant_id = (int)$_GET['restaurant_id'];
 }
 
+// Item name to image URL mapping
+function getItemImageMap() {
+    return [
+        // Indian Food
+        'biryani' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
+        'butter chicken' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
+        'tandoori chicken' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
+        'dal makhani' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400',
+        'palak paneer' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
+        'naan' => 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400',
+        'roti' => 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400',
+        'samosa' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
+        'pakora' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
+        'dosa' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
+        'idli' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400',
+        'vada' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
+        'sambar' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
+        'rasam' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
+        'poha' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400',
+        'upma' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
+        'paratha' => 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400',
+        'aloo gobi' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
+        'chana masala' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
+        'rajma' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400',
+        
+        // Chinese Food
+        'fried rice' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
+        'noodles' => 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400',
+        'manchurian' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
+        'spring roll' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
+        'soup' => 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400',
+        'chow mein' => 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400',
+        'szechuan' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
+        'sweet and sour' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
+        
+        // Italian Food
+        'pizza' => 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
+        'pizza margherita' => 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400',
+        'pasta' => 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400',
+        'pasta carbonara' => 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400',
+        'spaghetti' => 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400',
+        'lasagna' => 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400',
+        'risotto' => 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=400',
+        'ravioli' => 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400',
+        'gnocchi' => 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400',
+        
+        // Fast Food
+        'burger' => 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400',
+        'chicken burger' => 'https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=400',
+        'french fries' => 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400',
+        'sandwich' => 'https://images.unsplash.com/photo-1539252554453-80ab65ce3586?w=400',
+        'hot dog' => 'https://images.unsplash.com/photo-1619740455993-9e612b1af08a?w=400',
+        'wrap' => 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400',
+        'taco' => 'https://images.unsplash.com/photo-1565299585323-38174c3b0d8e?w=400',
+        'nachos' => 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=400',
+        
+        // Desserts
+        'ice cream' => 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400',
+        'cake' => 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400',
+        'chocolate cake' => 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400',
+        'brownie' => 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400',
+        'cookie' => 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400',
+        'apple pie' => 'https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=400',
+        'pie' => 'https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=400',
+        'pudding' => 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400',
+        'gulab jamun' => 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400',
+        'rasgulla' => 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400',
+        'jalebi' => 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400',
+        'kheer' => 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400',
+        
+        // Beverages
+        'coffee' => 'https://images.unsplash.com/photo-1511920170033-83939cdc2e40?w=400',
+        'tea' => 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400',
+        'orange juice' => 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400',
+        'juice' => 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400',
+        'smoothie' => 'https://images.unsplash.com/photo-1505252585461-04c457a4f5a5?w=400',
+        'milkshake' => 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400',
+        'lassi' => 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400',
+        'mango shake' => 'https://images.unsplash.com/photo-1505252585461-04c457a4f5a5?w=400',
+        'cold coffee' => 'https://images.unsplash.com/photo-1511920170033-83939cdc2e40?w=400',
+        'lemonade' => 'https://images.unsplash.com/photo-1523677011783-c91d1bbe2fdc?w=400',
+        'soda' => 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400',
+        'coca cola' => 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400',
+        
+        // Salads & Healthy
+        'salad' => 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
+        'caesar salad' => 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400',
+        'fruit salad' => 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
+        'quinoa' => 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
+        'quinoa bowl' => 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
+        
+        // Seafood
+        'fish' => 'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=400',
+        'fish curry' => 'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=400',
+        'prawn' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
+        'prawn curry' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
+        'crab' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
+        'crab masala' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400',
+        'lobster' => 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
+        
+        // Breakfast
+        'pancake' => 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400',
+        'waffle' => 'https://images.unsplash.com/photo-1562376552-0d160a2f238d?w=400',
+        'omelette' => 'https://images.unsplash.com/photo-1615197349902-0e1c58b0e29a?w=400',
+        'scrambled eggs' => 'https://images.unsplash.com/photo-1615197349902-0e1c58b0e29a?w=400',
+        'toast' => 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=400',
+        'cereal' => 'https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=400',
+        
+        // Default fallback
+        'default' => 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400'
+    ];
+}
+
+// Get image URL for an item name
+function getItemImageUrl($itemName) {
+    $itemNameLower = strtolower(trim($itemName));
+    $imageMap = getItemImageMap();
+    
+    // Direct exact match first (most specific)
+    if (isset($imageMap[$itemNameLower])) {
+        $url = $imageMap[$itemNameLower];
+        // Add random parameter to ensure unique images even for same URL
+        if (strpos($url, 'sig=') === false) {
+            $url .= (strpos($url, '?') !== false ? '&' : '?') . 'sig=' . rand(1000, 9999);
+        }
+        return $url;
+    }
+    
+    // Partial match - check if any key is contained in the item name (longest match first)
+    $bestMatch = null;
+    $bestMatchLength = 0;
+    foreach ($imageMap as $key => $url) {
+        if ($key !== 'default' && strpos($itemNameLower, $key) !== false) {
+            if (strlen($key) > $bestMatchLength) {
+                $bestMatchLength = strlen($key);
+                $bestMatch = $url;
+            }
+        }
+    }
+    
+    if ($bestMatch) {
+        // Add random parameter to ensure unique images
+        if (strpos($bestMatch, 'sig=') === false) {
+            $bestMatch .= (strpos($bestMatch, '?') !== false ? '&' : '?') . 'sig=' . rand(1000, 9999);
+        }
+        return $bestMatch;
+    }
+    
+    // Return default with random parameter
+    $defaultUrl = $imageMap['default'];
+    return $defaultUrl . (strpos($defaultUrl, '?') !== false ? '&' : '?') . 'sig=' . rand(1000, 9999);
+}
+
+// Download image from URL and return as binary data
+function downloadImageAsBinary($url) {
+    try {
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 3); // Reduced timeout to 3 seconds
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2); // Connection timeout 2 seconds
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+        curl_setopt($ch, CURLOPT_MAXFILESIZE, 5242880); // Max 5MB
+        $imageData = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        
+        if ($error) {
+            error_log("CURL error downloading image from $url: $error");
+            return null;
+        }
+        
+        if ($httpCode === 200 && $imageData !== false && !empty($imageData)) {
+            return $imageData;
+        } else {
+            error_log("Failed to download image from $url: HTTP $httpCode");
+        }
+    } catch (Exception $e) {
+        error_log("Exception downloading image from $url: " . $e->getMessage());
+    }
+    
+    return null;
+}
+
+// Get predefined item names list
+function getPredefinedItemNames() {
+    return [
+        // Indian Food
+        'Biryani', 'Butter Chicken', 'Tandoori Chicken', 'Dal Makhani', 'Palak Paneer',
+        'Naan', 'Roti', 'Samosa', 'Pakora', 'Dosa', 'Idli', 'Vada', 'Sambar', 'Rasam',
+        'Poha', 'Upma', 'Paratha', 'Aloo Gobi', 'Chana Masala', 'Rajma',
+        
+        // Chinese Food
+        'Fried Rice', 'Noodles', 'Manchurian', 'Spring Roll', 'Soup', 'Chow Mein',
+        'Szechuan Chicken', 'Sweet and Sour',
+        
+        // Italian Food
+        'Pizza Margherita', 'Pasta Carbonara', 'Spaghetti', 'Lasagna', 'Risotto',
+        'Ravioli', 'Gnocchi',
+        
+        // Fast Food
+        'Burger', 'French Fries', 'Sandwich', 'Hot Dog', 'Wrap', 'Taco', 'Nachos',
+        
+        // Desserts
+        'Ice Cream', 'Chocolate Cake', 'Brownie', 'Cookie', 'Apple Pie', 'Pudding',
+        'Gulab Jamun', 'Rasgulla', 'Jalebi', 'Kheer',
+        
+        // Beverages
+        'Coffee', 'Tea', 'Orange Juice', 'Smoothie', 'Milkshake', 'Lassi',
+        'Mango Shake', 'Cold Coffee', 'Lemonade', 'Soda',
+        
+        // Salads & Healthy
+        'Caesar Salad', 'Fruit Salad', 'Quinoa Bowl',
+        
+        // Seafood
+        'Fish Curry', 'Prawn Curry', 'Crab Masala', 'Lobster',
+        
+        // Breakfast
+        'Pancake', 'Waffle', 'Omelette', 'Scrambled Eggs', 'Toast', 'Cereal'
+    ];
+}
+
+// Get random item name from predefined list
+function getRandomItemName($existingNames = []) {
+    $itemNames = getPredefinedItemNames();
+    $availableNames = array_diff($itemNames, $existingNames);
+    
+    if (empty($availableNames)) {
+        // If all names are used, add a number suffix
+        $baseName = $itemNames[array_rand($itemNames)];
+        $counter = 1;
+        do {
+            $newName = $baseName . ' ' . $counter;
+            $counter++;
+        } while (in_array($newName, $existingNames) && $counter < 100);
+        return $newName;
+    }
+    
+    // Shuffle the array to ensure better randomization
+    shuffle($availableNames);
+    return $availableNames[0];
+}
+
 // Get database schema information for AI context
 function getDatabaseSchema($pdo, $restaurantCode) {
     $schema = [];
@@ -755,12 +1000,47 @@ try {
                                 // Columns might already exist
                             }
                             
+                            // Get image URL based on item name
+                            $imageUrl = getItemImageUrl($name);
+                            $imageData = null;
+                            $imageMimeType = null;
+                            $itemImagePath = null;
+                            
+                            // Download image from URL
+                            if ($imageUrl) {
+                                $imageData = downloadImageAsBinary($imageUrl);
+                                if ($imageData) {
+                                    $imageMimeType = 'image/jpeg';
+                                    $itemImagePath = 'db:' . uniqid();
+                                }
+                            }
+                            
+                            // Fallback to default image if download failed
+                            if (!$imageData) {
+                                $possibleImagePaths = [
+                                    __DIR__ . '/../../assets/images/default-menu-item.jpg',
+                                    __DIR__ . '/../../../assets/images/default-menu-item.jpg',
+                                    dirname(__DIR__, 2) . '/assets/images/default-menu-item.jpg'
+                                ];
+                                
+                                foreach ($possibleImagePaths as $imagePath) {
+                                    if (file_exists($imagePath)) {
+                                        $imageData = file_get_contents($imagePath);
+                                        if ($imageData !== false) {
+                                            $imageMimeType = 'image/jpeg';
+                                            $itemImagePath = 'db:' . uniqid();
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            
                             $insertStmt = $pdo->prepare("
                                 INSERT INTO menu_items 
-                                (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, created_at, updated_at) 
-                                VALUES (?, ?, ?, ?, ?, ?, 15, 1, ?, 0, NULL, NOW(), NOW())
+                                (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, image_data, image_mime_type, created_at, updated_at) 
+                                VALUES (?, ?, ?, ?, ?, ?, 15, 1, ?, 0, ?, ?, ?, NOW(), NOW())
                             ");
-                            $insertStmt->execute([$restaurantCode, $menuId, $name, $desc, $cat, $type, $price]);
+                            $insertStmt->execute([$restaurantCode, $menuId, $name, $desc, $cat, $type, $price, $itemImagePath, $imageData, $imageMimeType]);
                             $created[] = "Menu Item: $name";
                         }
                     } catch (Exception $e) {
@@ -1359,20 +1639,76 @@ try {
                 $menuId = $menu['id'];
             }
             
-            // Get next item number
-            $countStmt = $pdo->prepare("SELECT COUNT(*) FROM menu_items WHERE restaurant_id = ?");
-            $countStmt->execute([$restaurantCode]);
-            $count = $countStmt->fetchColumn();
-            $itemName = 'Item ' . ($count + 1);
+            // Get existing item names to avoid duplicates (case-insensitive comparison)
+            $existingStmt = $pdo->prepare("SELECT item_name_en FROM menu_items WHERE restaurant_id = ?");
+            $existingStmt->execute([$restaurantCode]);
+            $existingNamesRaw = $existingStmt->fetchAll(PDO::FETCH_COLUMN);
             
-            // Check if exists, increment if needed
-            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu_items WHERE item_name_en = ? AND restaurant_id = ?");
-            $checkStmt->execute([$itemName, $restaurantCode]);
-            $exists = $checkStmt->fetchColumn();
+            // Normalize existing names to lowercase for comparison
+            $existingNamesLower = array_map('strtolower', array_map('trim', $existingNamesRaw));
             
-            if ($exists > 0) {
-                $itemName = 'Item ' . ($count + 2);
+            // Get all predefined names
+            $allPredefinedNames = getPredefinedItemNames();
+            
+            // Filter out names that already exist (case-insensitive)
+            $availableNames = [];
+            foreach ($allPredefinedNames as $predefinedName) {
+                $predefinedLower = strtolower(trim($predefinedName));
+                if (!in_array($predefinedLower, $existingNamesLower)) {
+                    $availableNames[] = $predefinedName;
+                }
             }
+            
+            // If we have available names, pick a random one
+            if (!empty($availableNames)) {
+                // Shuffle to ensure better randomization, especially for concurrent requests
+                shuffle($availableNames);
+                $itemName = $availableNames[0];
+                
+                // Double-check it doesn't exist (race condition protection, case-insensitive)
+                $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu_items WHERE LOWER(TRIM(item_name_en)) = LOWER(TRIM(?)) AND restaurant_id = ?");
+                $checkStmt->execute([$itemName, $restaurantCode]);
+                $exists = $checkStmt->fetchColumn();
+                
+                if ($exists > 0) {
+                    // Name was taken between check and now, try another one
+                    $availableNames = array_filter($availableNames, function($name) use ($itemName) {
+                        return strtolower(trim($name)) !== strtolower(trim($itemName));
+                    });
+                    $availableNames = array_values($availableNames); // Re-index array
+                    
+                    if (!empty($availableNames)) {
+                        shuffle($availableNames);
+                        $itemName = $availableNames[0];
+                    } else {
+                        // All names taken, use a predefined name with number suffix
+                        $baseName = $allPredefinedNames[array_rand($allPredefinedNames)];
+                        $counter = 1;
+                        do {
+                            $itemName = $baseName . ' ' . $counter;
+                            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu_items WHERE LOWER(TRIM(item_name_en)) = LOWER(TRIM(?)) AND restaurant_id = ?");
+                            $checkStmt->execute([$itemName, $restaurantCode]);
+                            $exists = $checkStmt->fetchColumn();
+                            $counter++;
+                        } while ($exists > 0 && $counter < 1000);
+                    }
+                }
+            } else {
+                // All predefined names are used, create a unique one by adding a number
+                // Pick a random predefined name and add a number suffix
+                $baseName = $allPredefinedNames[array_rand($allPredefinedNames)];
+                $counter = 1;
+                do {
+                    $itemName = $baseName . ' ' . $counter;
+                    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu_items WHERE LOWER(TRIM(item_name_en)) = LOWER(TRIM(?)) AND restaurant_id = ?");
+                    $checkStmt->execute([$itemName, $restaurantCode]);
+                    $exists = $checkStmt->fetchColumn();
+                    $counter++;
+                } while ($exists > 0 && $counter < 1000);
+            }
+            
+            // Log for debugging
+            error_log("quickAddMenuItem - Selected name: $itemName (Available: " . (isset($availableNames) ? count($availableNames) : 0) . ", Total predefined: " . count($allPredefinedNames) . ", Existing: " . count($existingNamesRaw) . ")");
             
             // Ensure columns exist
             try {
@@ -1390,25 +1726,37 @@ try {
             $types = ['Veg', 'Non Veg'];
             $type = $types[array_rand($types)];
             
-            // Load default image if available
+            // Get image URL based on item name
+            $imageUrl = getItemImageUrl($itemName);
             $imageData = null;
             $imageMimeType = null;
             $itemImagePath = null;
             
-            // Try multiple possible paths for the default image
-            $possibleImagePaths = [
-                __DIR__ . '/../../assets/images/default-menu-item.jpg',
-                __DIR__ . '/../../../assets/images/default-menu-item.jpg',
-                dirname(__DIR__, 2) . '/assets/images/default-menu-item.jpg'
-            ];
+            // Download image from URL
+            if ($imageUrl) {
+                $imageData = downloadImageAsBinary($imageUrl);
+                if ($imageData) {
+                    $imageMimeType = 'image/jpeg';
+                    $itemImagePath = 'db:' . uniqid(); // Reference ID for database storage
+                }
+            }
             
-            foreach ($possibleImagePaths as $imagePath) {
-                if (file_exists($imagePath)) {
-                    $imageData = file_get_contents($imagePath);
-                    if ($imageData !== false) {
-                        $imageMimeType = 'image/jpeg';
-                        $itemImagePath = 'db:' . uniqid(); // Reference ID for database storage
-                        break;
+            // Fallback to default image if download failed
+            if (!$imageData) {
+                $possibleImagePaths = [
+                    __DIR__ . '/../../assets/images/default-menu-item.jpg',
+                    __DIR__ . '/../../../assets/images/default-menu-item.jpg',
+                    dirname(__DIR__, 2) . '/assets/images/default-menu-item.jpg'
+                ];
+                
+                foreach ($possibleImagePaths as $imagePath) {
+                    if (file_exists($imagePath)) {
+                        $imageData = file_get_contents($imagePath);
+                        if ($imageData !== false) {
+                            $imageMimeType = 'image/jpeg';
+                            $itemImagePath = 'db:' . uniqid();
+                            break;
+                        }
                     }
                 }
             }
@@ -1475,10 +1823,47 @@ try {
                     }
                     
                     if ($menuId) {
+                        $itemName = $item['name'] ?? 'Untitled Item';
+                        
+                        // Get image URL based on item name
+                        $imageUrl = getItemImageUrl($itemName);
+                        $imageData = null;
+                        $imageMimeType = null;
+                        $itemImagePath = null;
+                        
+                        // Download image from URL
+                        if ($imageUrl) {
+                            $imageData = downloadImageAsBinary($imageUrl);
+                            if ($imageData) {
+                                $imageMimeType = 'image/jpeg';
+                                $itemImagePath = 'db:' . uniqid();
+                            }
+                        }
+                        
+                        // Fallback to default image if download failed
+                        if (!$imageData) {
+                            $possibleImagePaths = [
+                                __DIR__ . '/../../assets/images/default-menu-item.jpg',
+                                __DIR__ . '/../../../assets/images/default-menu-item.jpg',
+                                dirname(__DIR__, 2) . '/assets/images/default-menu-item.jpg'
+                            ];
+                            
+                            foreach ($possibleImagePaths as $imagePath) {
+                                if (file_exists($imagePath)) {
+                                    $imageData = file_get_contents($imagePath);
+                                    if ($imageData !== false) {
+                                        $imageMimeType = 'image/jpeg';
+                                        $itemImagePath = 'db:' . uniqid();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
                         $insertItem = $pdo->prepare("
                             INSERT INTO menu_items 
-                            (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, created_at, updated_at) 
-                            VALUES (?, ?, ?, ?, ?, ?, 15, 1, ?, 0, NULL, NOW(), NOW())
+                            (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, image_data, image_mime_type, created_at, updated_at) 
+                            VALUES (?, ?, ?, ?, ?, ?, 15, 1, ?, 0, ?, ?, ?, NOW(), NOW())
                         ");
                         // Normalize item_type: convert 'Non-Veg' to 'Non Veg' to match database enum
                         $itemType = $item['type'] ?? 'Veg';
@@ -1489,13 +1874,16 @@ try {
                         $insertItem->execute([
                             $restaurantCode,
                             $menuId,
-                            $item['name'] ?? 'Untitled Item',
+                            $itemName,
                             $item['description'] ?? '',
                             $item['category'] ?? 'General',
                             $itemType,
-                            (float)($item['price'] ?? 0)
+                            (float)($item['price'] ?? 0),
+                            $itemImagePath,
+                            $imageData,
+                            $imageMimeType
                         ]);
-                        $created[] = "Menu Item: " . ($item['name'] ?? 'Untitled');
+                        $created[] = "Menu Item: " . $itemName;
                     }
                 }
             } elseif ($action === 'add_menu') {

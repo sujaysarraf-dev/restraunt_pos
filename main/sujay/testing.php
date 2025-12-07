@@ -348,7 +348,7 @@ try {
                 <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add menu(s) with random names</p>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <input type="number" id="menuQuantity" min="1" max="50" value="1" style="width: 80px; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px; text-align: center;">
-                    <button class="btn btn-success" onclick="quickAddMenu()">➕ Add Menu(s)</button>
+                    <button class="btn btn-success" onclick="quickAddMenu(event)">➕ Add Menu(s)</button>
                 </div>
             </div>
 
@@ -357,7 +357,7 @@ try {
                 <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add area(s) with random names</p>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <input type="number" id="areaQuantity" min="1" max="50" value="1" style="width: 80px; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px; text-align: center;">
-                    <button class="btn btn-success" onclick="quickAddArea()">➕ Add Area(s)</button>
+                    <button class="btn btn-success" onclick="quickAddArea(event)">➕ Add Area(s)</button>
                 </div>
             </div>
 
@@ -366,7 +366,7 @@ try {
                 <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add table(s) to random area(s)</p>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <input type="number" id="tableQuantity" min="1" max="50" value="1" style="width: 80px; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px; text-align: center;">
-                    <button class="btn btn-success" onclick="quickAddTable()">➕ Add Table(s)</button>
+                    <button class="btn btn-success" onclick="quickAddTable(event)">➕ Add Table(s)</button>
                 </div>
             </div>
 
@@ -375,7 +375,7 @@ try {
                 <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add menu item(s) to random menu(s)</p>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <input type="number" id="itemQuantity" min="1" max="50" value="1" style="width: 80px; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px; text-align: center;">
-                    <button class="btn btn-success" onclick="quickAddMenuItem()">➕ Add Menu Item(s)</button>
+                    <button class="btn btn-success" onclick="quickAddMenuItem(event)">➕ Add Menu Item(s)</button>
                 </div>
             </div>
         </div>
@@ -728,7 +728,7 @@ try {
             }
         });
 
-        async function quickAddMenu() {
+        async function quickAddMenu(event) {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             const quantity = parseInt(document.getElementById('menuQuantity')?.value || 1);
             
@@ -742,7 +742,18 @@ try {
                 return;
             }
             
-            const btn = event?.target || document.querySelector('button[onclick*="quickAddMenu"]');
+            let btn;
+            if (event && event.target) {
+                btn = event.target;
+            } else {
+                btn = document.querySelector('button[onclick*="quickAddMenu"]');
+            }
+            
+            if (!btn) {
+                addToLog('Could not find button element', 'error');
+                return;
+            }
+            
             const originalText = btn.textContent;
             btn.disabled = true;
             btn.textContent = '⏳ Adding...';
@@ -753,11 +764,20 @@ try {
                 
                 for (let i = 0; i < quantity; i++) {
                     try {
+                        if (quantity > 1) {
+                            btn.textContent = `⏳ Adding ${i + 1}/${quantity}...`;
+                        }
+                        
                         const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddMenu', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ restaurant_id: selectedRestaurant })
                         });
+                        
+                        if (!res.ok) {
+                            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                        }
+                        
                         const data = await res.json();
                         
                         if (data.success) {
@@ -774,6 +794,10 @@ try {
                             if (quantity === 1) {
                                 addToLog(`Failed: ${data.message}`, 'error');
                             }
+                        }
+                        
+                        if (i < quantity - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 100));
                         }
                     } catch (e) {
                         errors++;
@@ -798,7 +822,7 @@ try {
             }
         }
 
-        async function quickAddArea() {
+        async function quickAddArea(event) {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             const quantity = parseInt(document.getElementById('areaQuantity')?.value || 1);
             
@@ -812,7 +836,18 @@ try {
                 return;
             }
             
-            const btn = event?.target || document.querySelector('button[onclick*="quickAddArea"]');
+            let btn;
+            if (event && event.target) {
+                btn = event.target;
+            } else {
+                btn = document.querySelector('button[onclick*="quickAddArea"]');
+            }
+            
+            if (!btn) {
+                addToLog('Could not find button element', 'error');
+                return;
+            }
+            
             const originalText = btn.textContent;
             btn.disabled = true;
             btn.textContent = '⏳ Adding...';
@@ -823,11 +858,20 @@ try {
                 
                 for (let i = 0; i < quantity; i++) {
                     try {
+                        if (quantity > 1) {
+                            btn.textContent = `⏳ Adding ${i + 1}/${quantity}...`;
+                        }
+                        
                         const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddArea', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ restaurant_id: selectedRestaurant })
                         });
+                        
+                        if (!res.ok) {
+                            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                        }
+                        
                         const data = await res.json();
                         
                         if (data.success) {
@@ -840,6 +884,10 @@ try {
                             if (quantity === 1) {
                                 addToLog(`Failed: ${data.message}`, 'error');
                             }
+                        }
+                        
+                        if (i < quantity - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 100));
                         }
                     } catch (e) {
                         errors++;
@@ -863,7 +911,7 @@ try {
             }
         }
 
-        async function quickAddTable() {
+        async function quickAddTable(event) {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             const quantity = parseInt(document.getElementById('tableQuantity')?.value || 1);
             
@@ -877,7 +925,18 @@ try {
                 return;
             }
             
-            const btn = event?.target || document.querySelector('button[onclick*="quickAddTable"]');
+            let btn;
+            if (event && event.target) {
+                btn = event.target;
+            } else {
+                btn = document.querySelector('button[onclick*="quickAddTable"]');
+            }
+            
+            if (!btn) {
+                addToLog('Could not find button element', 'error');
+                return;
+            }
+            
             const originalText = btn.textContent;
             btn.disabled = true;
             btn.textContent = '⏳ Adding...';
@@ -888,11 +947,20 @@ try {
                 
                 for (let i = 0; i < quantity; i++) {
                     try {
+                        if (quantity > 1) {
+                            btn.textContent = `⏳ Adding ${i + 1}/${quantity}...`;
+                        }
+                        
                         const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddTable', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ restaurant_id: selectedRestaurant })
                         });
+                        
+                        if (!res.ok) {
+                            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                        }
+                        
                         const data = await res.json();
                         
                         if (data.success) {
@@ -905,6 +973,10 @@ try {
                             if (quantity === 1) {
                                 addToLog(`Failed: ${data.message}`, 'error');
                             }
+                        }
+                        
+                        if (i < quantity - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 100));
                         }
                     } catch (e) {
                         errors++;
@@ -928,9 +1000,10 @@ try {
             }
         }
 
-        async function quickAddMenuItem() {
+        async function quickAddMenuItem(event) {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
-            const quantity = parseInt(document.getElementById('itemQuantity')?.value || 1);
+            const quantityInput = document.getElementById('itemQuantity');
+            const quantity = parseInt(quantityInput?.value || 1);
             
             if (!selectedRestaurant) {
                 addToLog('Please select a restaurant first', 'error');
@@ -942,7 +1015,19 @@ try {
                 return;
             }
             
-            const btn = event?.target || document.querySelector('button[onclick*="quickAddMenuItem"]');
+            // Get button more reliably
+            let btn;
+            if (event && event.target) {
+                btn = event.target;
+            } else {
+                btn = document.querySelector('button[onclick*="quickAddMenuItem"]');
+            }
+            
+            if (!btn) {
+                addToLog('Could not find button element', 'error');
+                return;
+            }
+            
             const originalText = btn.textContent;
             btn.disabled = true;
             btn.textContent = '⏳ Adding...';
@@ -950,46 +1035,78 @@ try {
             try {
                 let added = 0;
                 let errors = 0;
+                const addedItems = [];
                 
                 for (let i = 0; i < quantity; i++) {
                     try {
+                        // Update button text with progress
+                        if (quantity > 1) {
+                            btn.textContent = `⏳ Adding ${i + 1}/${quantity}...`;
+                        }
+                        
+                        console.log(`[${i + 1}/${quantity}] Starting request...`);
+                        
                         const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddMenuItem', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ restaurant_id: selectedRestaurant })
                         });
+                        
+                        console.log(`[${i + 1}/${quantity}] Response status:`, res.status, res.statusText);
+                        
+                        if (!res.ok) {
+                            const errorText = await res.text();
+                            console.error(`[${i + 1}/${quantity}] HTTP Error Response:`, errorText);
+                            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                        }
+                        
                         const data = await res.json();
+                        console.log(`[${i + 1}/${quantity}] Response data:`, data);
                         
                         if (data.success) {
                             added++;
+                            addedItems.push(data.name);
+                            console.log(`[${i + 1}/${quantity}] ✓ Successfully added:`, data.name);
                             if (quantity === 1) {
                                 addToLog(`Menu item added: ${data.name} (₹${data.price || 'N/A'})`, 'success');
                             }
                         } else {
                             errors++;
+                            console.error(`[${i + 1}/${quantity}] ✗ API returned error:`, data.message);
                             if (quantity === 1) {
                                 addToLog(`Failed: ${data.message || 'Unknown error'}`, 'error');
                                 console.error('API Error:', data);
                             }
                         }
+                        
+                        // Small delay between requests to avoid overwhelming the server
+                        if (i < quantity - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 200));
+                        }
                     } catch (e) {
                         errors++;
+                        console.error(`[${i + 1}/${quantity}] ✗ Exception caught:`, e);
                         if (quantity === 1) {
                             addToLog('Error: ' + e.message, 'error');
-                            console.error('Fetch Error:', e);
                         }
                     }
                 }
                 
+                console.log(`=== Loop completed === Added: ${added}, Errors: ${errors}, Total attempts: ${quantity}`);
+                
                 if (quantity > 1) {
-                    addToLog(`Added ${added} menu item(s)${errors > 0 ? `, ${errors} failed` : ''}`, added > 0 ? 'success' : 'error');
+                    const message = `Added ${added} menu item(s)${errors > 0 ? `, ${errors} failed` : ''}`;
+                    addToLog(message, added > 0 ? 'success' : 'error');
+                    if (addedItems.length > 0 && addedItems.length <= 10) {
+                        addToLog(`Items: ${addedItems.join(', ')}`, 'info');
+                    }
                 }
                 
                 loadMenus();
                 refreshStatus();
             } catch (e) {
                 addToLog('Error: ' + e.message, 'error');
-                console.error('Fetch Error:', e);
+                console.error('quickAddMenuItem error:', e);
             } finally {
                 btn.disabled = false;
                 btn.textContent = originalText;
