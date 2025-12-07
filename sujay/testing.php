@@ -335,86 +335,27 @@ try {
 
         <div class="forms-grid">
             <div class="form-card">
-                <h3>Add Menu</h3>
-                <div class="alert" id="menuAlert"></div>
-                <form id="menuForm" onsubmit="addMenu(event)">
-                    <div class="form-group">
-                        <label for="menuName">Menu Name</label>
-                        <input type="text" id="menuName" name="menuName" required placeholder="e.g., Breakfast Menu">
-                    </div>
-                    <button type="submit" class="btn btn-success">Add Menu</button>
-                </form>
+                <h3>Quick Add Menu</h3>
+                <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add a menu with a random name</p>
+                <button class="btn btn-success" onclick="quickAddMenu()">➕ Add Menu</button>
             </div>
 
             <div class="form-card">
-                <h3>Add Area</h3>
-                <div class="alert" id="areaAlert"></div>
-                <form id="areaForm" onsubmit="addArea(event)">
-                    <div class="form-group">
-                        <label for="areaName">Area Name</label>
-                        <input type="text" id="areaName" name="areaName" required placeholder="e.g., Main Hall">
-                    </div>
-                    <button type="submit" class="btn btn-success">Add Area</button>
-                </form>
+                <h3>Quick Add Area</h3>
+                <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add an area with a random name</p>
+                <button class="btn btn-success" onclick="quickAddArea()">➕ Add Area</button>
             </div>
 
             <div class="form-card">
-                <h3>Add Table</h3>
-                <div class="alert" id="tableAlert"></div>
-                <form id="tableForm" onsubmit="addTable(event)">
-                    <div class="form-group">
-                        <label for="chooseArea">Select Area</label>
-                        <select id="chooseArea" name="chooseArea" required>
-                            <option value="">Loading areas...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="tableNumber">Table Number</label>
-                        <input type="text" id="tableNumber" name="tableNumber" required placeholder="e.g., T1">
-                    </div>
-                    <div class="form-group">
-                        <label for="capacity">Capacity</label>
-                        <input type="number" id="capacity" name="capacity" required min="1" value="4">
-                    </div>
-                    <button type="submit" class="btn btn-success">Add Table</button>
-                </form>
+                <h3>Quick Add Table</h3>
+                <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add a table to a random area</p>
+                <button class="btn btn-success" onclick="quickAddTable()">➕ Add Table</button>
             </div>
 
             <div class="form-card">
-                <h3>Add Menu Item</h3>
-                <div class="alert" id="itemAlert"></div>
-                <form id="itemForm" onsubmit="addMenuItem(event)">
-                    <div class="form-group">
-                        <label for="chooseMenu">Select Menu</label>
-                        <select id="chooseMenu" name="chooseMenu" required>
-                            <option value="">Loading menus...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="itemNameEn">Item Name</label>
-                        <input type="text" id="itemNameEn" name="itemNameEn" required placeholder="e.g., Margherita Pizza">
-                    </div>
-                    <div class="form-group">
-                        <label for="itemDescriptionEn">Description</label>
-                        <input type="text" id="itemDescriptionEn" name="itemDescriptionEn" placeholder="Delicious pizza">
-                    </div>
-                    <div class="form-group">
-                        <label for="itemCategory">Category</label>
-                        <input type="text" id="itemCategory" name="itemCategory" placeholder="e.g., Pizza">
-                    </div>
-                    <div class="form-group">
-                        <label for="itemType">Type</label>
-                        <select id="itemType" name="itemType">
-                            <option value="Veg">Veg</option>
-                            <option value="Non-Veg">Non-Veg</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="basePrice">Price</label>
-                        <input type="number" id="basePrice" name="basePrice" step="0.01" min="0" value="0.00" required>
-                    </div>
-                    <button type="submit" class="btn btn-success">Add Menu Item</button>
-                </form>
+                <h3>Quick Add Menu Item</h3>
+                <p style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: 1rem;">Add a menu item to a random menu</p>
+                <button class="btn btn-success" onclick="quickAddMenuItem()">➕ Add Menu Item</button>
             </div>
         </div>
     </div>
@@ -640,180 +581,111 @@ try {
             }
         });
 
-        async function addMenu(e) {
-            e.preventDefault();
-            const form = e.target;
-            const alert = document.getElementById('menuAlert');
-            const btn = form.querySelector('button[type="submit"]');
+        async function quickAddMenu() {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            if (!selectedRestaurant) {
+                addToLog('Please select a restaurant first', 'error');
+                return;
+            }
             
-            const formData = new FormData();
-            formData.append('action', 'add');
-            formData.append('menuName', document.getElementById('menuName').value);
-            formData.append('restaurant_id', selectedRestaurant);
-
-            btn.disabled = true;
-            alert.className = 'alert';
-            alert.style.display = 'none';
-
             try {
-                const res = await fetch('https://restrogrow.com/sujay/api.php?action=addMenu', {
+                const res = await fetch('https://restrogrow.com/sujay/api.php?action=quickAddMenu', {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ restaurant_id: selectedRestaurant })
                 });
                 const data = await res.json();
                 
                 if (data.success) {
-                    alert.className = 'alert alert-success show';
-                    alert.textContent = data.message || 'Menu added successfully!';
-                    addToLog(`Menu added: ${document.getElementById('menuName').value}`, 'success');
-                    form.reset();
+                    addToLog(`Menu added: ${data.name}`, 'success');
                     loadMenus();
                     refreshStatus();
                 } else {
-                    alert.className = 'alert alert-error show';
-                    alert.textContent = data.message || 'Failed to add menu';
+                    addToLog(`Failed: ${data.message}`, 'error');
                 }
             } catch (e) {
-                alert.className = 'alert alert-error show';
-                alert.textContent = 'Error: ' + e.message;
-            } finally {
-                btn.disabled = false;
+                addToLog('Error: ' + e.message, 'error');
             }
         }
 
-        async function addArea(e) {
-            e.preventDefault();
-            const form = e.target;
-            const alert = document.getElementById('areaAlert');
-            const btn = form.querySelector('button[type="submit"]');
+        async function quickAddArea() {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            if (!selectedRestaurant) {
+                addToLog('Please select a restaurant first', 'error');
+                return;
+            }
             
-            const formData = new FormData();
-            formData.append('action', 'add');
-            formData.append('areaName', document.getElementById('areaName').value);
-            formData.append('restaurant_id', selectedRestaurant);
-
-            btn.disabled = true;
-            alert.className = 'alert';
-            alert.style.display = 'none';
-
             try {
-                const res = await fetch('https://restrogrow.com/sujay/api.php?action=addArea', {
+                const res = await fetch('https://restrogrow.com/sujay/api.php?action=quickAddArea', {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ restaurant_id: selectedRestaurant })
                 });
                 const data = await res.json();
                 
                 if (data.success) {
-                    alert.className = 'alert alert-success show';
-                    alert.textContent = data.message || 'Area added successfully!';
-                    addToLog(`Area added: ${document.getElementById('areaName').value}`, 'success');
-                    form.reset();
+                    addToLog(`Area added: ${data.name}`, 'success');
                     loadAreas();
                     refreshStatus();
                 } else {
-                    alert.className = 'alert alert-error show';
-                    alert.textContent = data.message || 'Failed to add area';
+                    addToLog(`Failed: ${data.message}`, 'error');
                 }
             } catch (e) {
-                alert.className = 'alert alert-error show';
-                alert.textContent = 'Error: ' + e.message;
-            } finally {
-                btn.disabled = false;
+                addToLog('Error: ' + e.message, 'error');
             }
         }
 
-        async function addTable(e) {
-            e.preventDefault();
-            const form = e.target;
-            const alert = document.getElementById('tableAlert');
-            const btn = form.querySelector('button[type="submit"]');
+        async function quickAddTable() {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            if (!selectedRestaurant) {
+                addToLog('Please select a restaurant first', 'error');
+                return;
+            }
             
-            const formData = new FormData();
-            formData.append('action', 'add');
-            formData.append('tableNumber', document.getElementById('tableNumber').value);
-            formData.append('capacity', document.getElementById('capacity').value);
-            formData.append('chooseArea', document.getElementById('chooseArea').value);
-            formData.append('restaurant_id', selectedRestaurant);
-
-            btn.disabled = true;
-            alert.className = 'alert';
-            alert.style.display = 'none';
-
             try {
-                const res = await fetch('https://restrogrow.com/sujay/api.php?action=addTable', {
+                const res = await fetch('https://restrogrow.com/sujay/api.php?action=quickAddTable', {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ restaurant_id: selectedRestaurant })
                 });
                 const data = await res.json();
                 
                 if (data.success) {
-                    alert.className = 'alert alert-success show';
-                    alert.textContent = data.message || 'Table added successfully!';
-                    addToLog(`Table added: ${document.getElementById('tableNumber').value}`, 'success');
-                    form.reset();
+                    addToLog(`Table added: ${data.table_number}`, 'success');
                     loadAreas();
                     refreshStatus();
                 } else {
-                    alert.className = 'alert alert-error show';
-                    alert.textContent = data.message || 'Failed to add table';
+                    addToLog(`Failed: ${data.message}`, 'error');
                 }
             } catch (e) {
-                alert.className = 'alert alert-error show';
-                alert.textContent = 'Error: ' + e.message;
-            } finally {
-                btn.disabled = false;
+                addToLog('Error: ' + e.message, 'error');
             }
         }
 
-        async function addMenuItem(e) {
-            e.preventDefault();
-            const form = e.target;
-            const alert = document.getElementById('itemAlert');
-            const btn = form.querySelector('button[type="submit"]');
+        async function quickAddMenuItem() {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            if (!selectedRestaurant) {
+                addToLog('Please select a restaurant first', 'error');
+                return;
+            }
             
-            const formData = new FormData();
-            formData.append('action', 'add');
-            formData.append('chooseMenu', document.getElementById('chooseMenu').value);
-            formData.append('itemNameEn', document.getElementById('itemNameEn').value);
-            formData.append('itemDescriptionEn', document.getElementById('itemDescriptionEn').value);
-            formData.append('itemCategory', document.getElementById('itemCategory').value);
-            formData.append('itemType', document.getElementById('itemType').value);
-            formData.append('basePrice', document.getElementById('basePrice').value);
-            formData.append('preparationTime', 15);
-            formData.append('isAvailable', 1);
-            formData.append('restaurant_id', selectedRestaurant);
-
-            btn.disabled = true;
-            alert.className = 'alert';
-            alert.style.display = 'none';
-
             try {
-                const res = await fetch('https://restrogrow.com/sujay/api.php?action=addMenuItem', {
+                const res = await fetch('https://restrogrow.com/sujay/api.php?action=quickAddMenuItem', {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ restaurant_id: selectedRestaurant })
                 });
                 const data = await res.json();
                 
                 if (data.success) {
-                    alert.className = 'alert alert-success show';
-                    alert.textContent = data.message || 'Menu item added successfully!';
-                    addToLog(`Menu item added: ${document.getElementById('itemNameEn').value}`, 'success');
-                    form.reset();
+                    addToLog(`Menu item added: ${data.name}`, 'success');
                     loadMenus();
                     refreshStatus();
                 } else {
-                    alert.className = 'alert alert-error show';
-                    alert.textContent = data.message || 'Failed to add menu item';
+                    addToLog(`Failed: ${data.message}`, 'error');
                 }
             } catch (e) {
-                alert.className = 'alert alert-error show';
-                alert.textContent = 'Error: ' + e.message;
-            } finally {
-                btn.disabled = false;
+                addToLog('Error: ' + e.message, 'error');
             }
         }
 
