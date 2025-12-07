@@ -350,6 +350,29 @@ foreach ($possiblePaths as $path) {
 
 // Check if file exists
 if (!$fullPath || !file_exists($fullPath)) {
+    // Before returning 404, try one more time to check database for BLOB data
+    // This handles cases where file doesn't exist but BLOB might
+    if (!empty($imagePath) && strpos($imagePath, 'http') !== 0) {
+        try {
+            // Try to find BLOB by any matching criteria
+            $finalStmt = $pdo->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE (item_image = ? OR item_image LIKE ?) AND image_data IS NOT NULL LIMIT 1");
+            $finalStmt->execute([$imagePath, '%' . basename($imagePath) . '%']);
+            $finalItem = $finalStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($finalItem && !empty($finalItem['image_data'])) {
+                ob_end_clean();
+                header('Content-Type: ' . ($finalItem['image_mime_type'] ?? 'image/jpeg'));
+                header('Content-Length: ' . strlen($finalItem['image_data']));
+                header('Cache-Control: public, max-age=31536000');
+                echo $finalItem['image_data'];
+                exit();
+            }
+        } catch (PDOException $e) {
+            // Ignore and continue to 404
+            error_log("Final BLOB check failed: " . $e->getMessage());
+        }
+    }
+    
     http_response_code(404);
     header('Content-Type: text/plain');
     
