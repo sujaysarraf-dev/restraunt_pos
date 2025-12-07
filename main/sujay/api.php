@@ -465,13 +465,21 @@ try {
             $items = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
             
             // Build context for AI
-            $context = "You are a restaurant management assistant. Current state:\n";
-            $context .= "Menus: " . implode(', ', array_column($menus, 'menu_name')) . "\n";
-            $context .= "Areas: " . implode(', ', array_column($areas, 'area_name')) . "\n";
-            $context .= "Sample items: " . implode(', ', array_slice(array_column($items, 'item_name_en'), 0, 5)) . "\n\n";
+            $context = "You are a restaurant management assistant. Read the user's request and create a JSON plan to execute it.\n\n";
+            $context .= "Current restaurant state:\n";
+            $context .= "- Menus: " . (count($menus) > 0 ? implode(', ', array_column($menus, 'menu_name')) : 'None') . "\n";
+            $context .= "- Areas: " . (count($areas) > 0 ? implode(', ', array_column($areas, 'area_name')) : 'None') . "\n";
+            $context .= "- Sample items: " . (count($items) > 0 ? implode(', ', array_slice(array_column($items, 'item_name_en'), 0, 5)) : 'None') . "\n\n";
             $context .= "User request: $prompt\n\n";
-            $context .= "Respond with a JSON plan. Format:\n";
-            $context .= '{"action": "add_items|add_menu|add_area|add_table", "items": [{"name": "...", "description": "...", "category": "...", "type": "Veg|Non Veg", "price": 0.00, "menu": "menu_name"}], "requiresApproval": true, "plan": "human readable plan"}';
+            $context .= "Analyze the request and respond with ONLY valid JSON in this exact format:\n";
+            $context .= '{"action": "add_items|add_menu|add_area|add_table", "items": [{"name": "...", "description": "...", "category": "...", "type": "Veg|Non Veg", "price": 0.00, "menu": "menu_name", "area": "area_name", "table": "table_number", "capacity": 4}], "plan": "Brief description of what will be created"}' . "\n\n";
+            $context .= "Rules:\n";
+            $context .= "- For areas: use action 'add_area', items should have 'name' field\n";
+            $context .= "- For menus: use action 'add_menu', items should have 'name' or 'menu' field\n";
+            $context .= "- For menu items: use action 'add_items', items need 'name', 'category', 'type' (Veg or Non Veg), 'price', and 'menu' (menu name)\n";
+            $context .= "- For tables: use action 'add_table', items need 'table', 'area' (area name), and optional 'capacity'\n";
+            $context .= "- item_type must be exactly 'Veg' or 'Non Veg' (with space, not hyphen)\n";
+            $context .= "- Respond with ONLY the JSON object, no other text";
             
             // Call OpenRouter API
             $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');

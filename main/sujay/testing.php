@@ -516,23 +516,20 @@ try {
                 console.log('AI response:', data);
                 
                 if (data.success) {
-                    if (data.requiresApproval) {
-                        // Show approval dialog
-                        const approved = confirm(`AI wants to:\n\n${data.plan}\n\nApprove to execute?`);
-                        if (approved) {
-                            addToLog('Approved! Executing...', 'info');
-                            await executeAIPlan(data.plan, selectedRestaurant);
-                        } else {
-                            addToLog('Cancelled by user', 'warning');
-                        }
-                    } else {
-                        alert.className = 'alert alert-success show';
-                        alert.textContent = data.message || 'Action completed';
-                        addToLog(data.message || 'Action completed', 'success');
-                        refreshStatus();
-                        loadAreas();
-                        loadMenus();
+                    // AI executes directly now, no approval needed
+                    alert.className = 'alert alert-success show';
+                    alert.textContent = data.message || 'Action completed';
+                    addToLog(data.plan || data.message || 'Action completed', 'success');
+                    
+                    if (data.created && data.created.length > 0) {
+                        data.created.forEach(item => {
+                            addToLog(`✓ ${item}`, 'success');
+                        });
                     }
+                    
+                    refreshStatus();
+                    loadAreas();
+                    loadMenus();
                 } else {
                     alert.className = 'alert alert-error show';
                     alert.textContent = data.message || 'Failed to process prompt';
