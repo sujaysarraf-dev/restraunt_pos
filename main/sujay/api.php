@@ -157,13 +157,144 @@ function executeSafeSQL($pdo, $sql, $restaurantCode, $restaurant_id) {
 
 // Simple command parser for basic requests (fallback when AI API is unavailable)
 function parseSimpleCommand($prompt) {
-    $prompt = strtolower(trim($prompt));
+    $promptLower = strtolower(trim($prompt));
     $plan = null;
     
-    // Extract number and action
-    if (preg_match('/(\d+)\s*(menu|menus|area|areas|table|tables|item|items)/i', $prompt, $matches)) {
-        $count = (int)$matches[1];
+    // DELETE operations
+    if (preg_match('/delete\s+(all\s+)?(menu|menus|area|areas|table|tables|item|items|customer|customers)/i', $prompt, $matches)) {
         $type = strtolower($matches[2]);
+        $deleteAll = !empty($matches[1]) || stripos($prompt, 'all') !== false;
+        
+        if (in_array($type, ['menu', 'menus'])) {
+            $plan = [
+                'type' => 'action',
+                'action' => 'delete',
+                'table' => 'menu',
+                'where' => $deleteAll ? [] : ['menu_name' => ''],
+                'plan' => $deleteAll ? 'Delete all menus' : 'Delete menu'
+            ];
+        } elseif (in_array($type, ['area', 'areas'])) {
+            $plan = [
+                'type' => 'action',
+                'action' => 'delete',
+                'table' => 'areas',
+                'where' => $deleteAll ? [] : ['area_name' => ''],
+                'plan' => $deleteAll ? 'Delete all areas' : 'Delete area'
+            ];
+        } elseif (in_array($type, ['table', 'tables'])) {
+            $plan = [
+                'type' => 'action',
+                'action' => 'delete',
+                'table' => 'tables',
+                'where' => $deleteAll ? [] : ['table_number' => ''],
+                'plan' => $deleteAll ? 'Delete all tables' : 'Delete table'
+            ];
+        } elseif (in_array($type, ['item', 'items'])) {
+            $plan = [
+                'type' => 'action',
+                'action' => 'delete',
+                'table' => 'menu_items',
+                'where' => $deleteAll ? [] : ['item_name_en' => ''],
+                'plan' => $deleteAll ? 'Delete all menu items' : 'Delete menu item'
+            ];
+        } elseif (in_array($type, ['customer', 'customers'])) {
+            $plan = [
+                'type' => 'action',
+                'action' => 'delete',
+                'table' => 'customers',
+                'where' => $deleteAll ? [] : ['customer_name' => ''],
+                'plan' => $deleteAll ? 'Delete all customers' : 'Delete customer'
+            ];
+        }
+    }
+    // UPDATE/EDIT operations
+    elseif (preg_match('/(update|edit|change|set)\s+(.+?)\s+(to|as|=\s*)(.+)/i', $prompt, $matches)) {
+        $field = trim($matches[2]);
+        $value = trim($matches[4]);
+        
+        // Try to identify table and field
+        if (preg_match('/(menu|menus)/i', $prompt)) {
+            if (preg_match('/(name|menu_name)/i', $field)) {
+                // Extract old name if provided
+                if (preg_match('/(?:menu|name)\s+["\']?([^"\']+)["\']?\s+(?:to|as|=)/i', $prompt, $nameMatch)) {
+                    $plan = [
+                        'type' => 'action',
+                        'action' => 'update',
+                        'table' => 'menu',
+                        'where' => ['menu_name' => $nameMatch[1]],
+                        'set' => ['menu_name' => $value],
+                        'plan' => "Update menu name to $value"
+                    ];
+                }
+            }
+        } elseif (preg_match('/(area|areas)/i', $prompt)) {
+            if (preg_match('/(name|area_name)/i', $field)) {
+                if (preg_match('/(?:area|name)\s+["\']?([^"\']+)["\']?\s+(?:to|as|=)/i', $prompt, $nameMatch)) {
+                    $plan = [
+                        'type' => 'action',
+                        'action' => 'update',
+                        'table' => 'areas',
+                        'where' => ['area_name' => $nameMatch[1]],
+                        'set' => ['area_name' => $value],
+                        'plan' => "Update area name to $value"
+                    ];
+                }
+            }
+        } elseif (preg_match('/(item|items|menu\s+item)/i', $prompt)) {
+            if (preg_match('/(price|base_price)/i', $field)) {
+                if (preg_match('/(?:item|name)\s+["\']?([^"\']+)["\']?/i', $prompt, $nameMatch)) {
+                    $plan = [
+                        'type' => 'action',
+                        'action' => 'update',
+                        'table' => 'menu_items',
+                        'where' => ['item_name_en' => $nameMatch[1]],
+                        'set' => ['base_price' => floatval($value)],
+                        'plan' => "Update item price to $value"
+                    ];
+                }
+            }
+        }
+    }
+    // SELECT/QUERY operations
+    elseif (preg_match('/(show|list|get|select|display|find)\s+(all\s+)?(menu|menus|area|areas|table|tables|item|items|customer|customers)/i', $prompt, $matches)) {
+        $type = strtolower($matches[3]);
+        
+        if (in_array($type, ['menu', 'menus'])) {
+            $plan = [
+                'type' => 'sql',
+                'sql' => "SELECT * FROM menu WHERE restaurant_id = ? ORDER BY created_at DESC",
+                'plan' => 'Show all menus'
+            ];
+        } elseif (in_array($type, ['area', 'areas'])) {
+            $plan = [
+                'type' => 'sql',
+                'sql' => "SELECT * FROM areas WHERE restaurant_id = ? ORDER BY created_at DESC",
+                'plan' => 'Show all areas'
+            ];
+        } elseif (in_array($type, ['table', 'tables'])) {
+            $plan = [
+                'type' => 'sql',
+                'sql' => "SELECT t.*, a.area_name FROM tables t LEFT JOIN areas a ON t.area_id = a.id WHERE t.restaurant_id = ? ORDER BY t.created_at DESC",
+                'plan' => 'Show all tables'
+            ];
+        } elseif (in_array($type, ['item', 'items'])) {
+            $plan = [
+                'type' => 'sql',
+                'sql' => "SELECT * FROM menu_items WHERE restaurant_id = ? ORDER BY created_at DESC",
+                'plan' => 'Show all menu items'
+            ];
+        } elseif (in_array($type, ['customer', 'customers'])) {
+            $plan = [
+                'type' => 'sql',
+                'sql' => "SELECT * FROM customers WHERE restaurant_id = ? ORDER BY created_at DESC",
+                'plan' => 'Show all customers'
+            ];
+        }
+    }
+    // ADD operations (existing logic)
+    elseif (preg_match('/(add|create|insert)\s+(\d+)\s*(menu|menus|area|areas|table|tables|item|items)/i', $prompt, $matches)) {
+        $count = (int)$matches[2];
+        $type = strtolower($matches[3]);
         
         if ($count > 0 && $count <= 50) { // Limit to 50 items
             $items = [];
@@ -675,19 +806,19 @@ try {
             
             // If simple parsing didn't work, try AI API
             if (!$plan) {
-                // Get current state
-                $menusStmt = $pdo->prepare("SELECT id, menu_name FROM menu WHERE restaurant_id = ?");
+            // Get current state
+            $menusStmt = $pdo->prepare("SELECT id, menu_name FROM menu WHERE restaurant_id = ?");
                 $menusStmt->execute([$restaurantCode]);
-                $menus = $menusStmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                $areasStmt = $pdo->prepare("SELECT id, area_name FROM areas WHERE restaurant_id = ?");
+            $menus = $menusStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $areasStmt = $pdo->prepare("SELECT id, area_name FROM areas WHERE restaurant_id = ?");
                 $areasStmt->execute([$restaurantCode]);
-                $areas = $areasStmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                $itemsStmt = $pdo->prepare("SELECT item_name_en, item_category FROM menu_items WHERE restaurant_id = ? LIMIT 10");
+            $areas = $areasStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $itemsStmt = $pdo->prepare("SELECT item_name_en, item_category FROM menu_items WHERE restaurant_id = ? LIMIT 10");
                 $itemsStmt->execute([$restaurantCode]);
-                $items = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
-                
+            $items = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
+            
                 // Get database schema
                 $schema = getDatabaseSchema($pdo, $restaurantCode);
                 
@@ -726,36 +857,36 @@ try {
                 $context .= "8. For SQL type, generate valid MySQL/MariaDB SQL only\n";
                 $context .= "9. SQL can only use: SELECT, INSERT, UPDATE, DELETE (no DROP, ALTER, etc.)\n";
                 $context .= "10. Respond with ONLY the JSON object, no other text\n";
-                
-                // Call OpenRouter API
-                $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
-                curl_setopt_array($ch, [
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_POST => true,
-                    CURLOPT_HTTPHEADER => [
-                        'Authorization: Bearer ' . OPENROUTER_API_KEY,
-                        'Content-Type: application/json',
-                        'HTTP-Referer: https://restrogrow.com',
-                        'X-Title: RestroGrow Testing',
-                        'User-Agent: RestroGrow/1.0'
+            
+            // Call OpenRouter API
+            $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => [
+                    'Authorization: Bearer ' . OPENROUTER_API_KEY,
+                    'Content-Type: application/json',
+                    'HTTP-Referer: https://restrogrow.com',
+                    'X-Title: RestroGrow Testing',
+                    'User-Agent: RestroGrow/1.0'
+                ],
+                CURLOPT_POSTFIELDS => json_encode([
+                    'model' => OPENROUTER_MODEL,
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'You are a helpful restaurant management assistant. Always respond with valid JSON only. Do not include any text outside the JSON.'],
+                        ['role' => 'user', 'content' => $context]
                     ],
-                    CURLOPT_POSTFIELDS => json_encode([
-                        'model' => OPENROUTER_MODEL,
-                        'messages' => [
-                            ['role' => 'system', 'content' => 'You are a helpful restaurant management assistant. Always respond with valid JSON only. Do not include any text outside the JSON.'],
-                            ['role' => 'user', 'content' => $context]
-                        ],
-                        'temperature' => 0.7,
-                        'max_tokens' => 2000
-                    ])
-                ]);
-                
-                $response = curl_exec($ch);
-                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    'temperature' => 0.7,
+                    'max_tokens' => 2000
+                ])
+            ]);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 $curlError = curl_error($ch);
-                curl_close($ch);
-                
-                if ($httpCode !== 200) {
+            curl_close($ch);
+            
+            if ($httpCode !== 200) {
                     // If AI API fails, try simple parsing as fallback
                     $plan = parseSimpleCommand($prompt);
                     if (!$plan) {
@@ -779,9 +910,9 @@ try {
                         $usedSimpleParser = true;
                     }
                 } else {
-                    $aiResponse = json_decode($response, true);
-                    
-                    if (isset($aiResponse['error'])) {
+            $aiResponse = json_decode($response, true);
+            
+            if (isset($aiResponse['error'])) {
                         $errorCode = $aiResponse['error']['code'] ?? 'Unknown';
                         $errorMessage = $aiResponse['error']['message'] ?? 'Unknown error';
                         
@@ -799,36 +930,36 @@ try {
                             throw new Exception('AI API Error (' . $errorCode . '): ' . $errorMessage);
                         }
                     } else {
-                        $aiContent = $aiResponse['choices'][0]['message']['content'] ?? '';
-                        
-                        if (empty($aiContent)) {
+            $aiContent = $aiResponse['choices'][0]['message']['content'] ?? '';
+            
+            if (empty($aiContent)) {
                             // Try simple parsing as fallback
                             $plan = parseSimpleCommand($prompt);
                             if (!$plan) {
-                                throw new Exception('Empty response from AI. Full response: ' . substr($response, 0, 500));
+                throw new Exception('Empty response from AI. Full response: ' . substr($response, 0, 500));
                             } else {
                                 $usedSimpleParser = true;
-                            }
+            }
                         } else {
-                            // Extract JSON from response (handle markdown code blocks)
-                            if (preg_match('/```json\s*(.*?)\s*```/s', $aiContent, $matches)) {
-                                $aiContent = $matches[1];
-                            } elseif (preg_match('/```\s*(.*?)\s*```/s', $aiContent, $matches)) {
-                                $aiContent = $matches[1];
-                            }
-                            
-                            // Try to find JSON object in the response
-                            if (preg_match('/\{.*\}/s', $aiContent, $jsonMatch)) {
-                                $aiContent = $jsonMatch[0];
-                            }
-                            
-                            $plan = json_decode(trim($aiContent), true);
-                            
-                            if (!$plan || json_last_error() !== JSON_ERROR_NONE) {
+            // Extract JSON from response (handle markdown code blocks)
+            if (preg_match('/```json\s*(.*?)\s*```/s', $aiContent, $matches)) {
+                $aiContent = $matches[1];
+            } elseif (preg_match('/```\s*(.*?)\s*```/s', $aiContent, $matches)) {
+                $aiContent = $matches[1];
+            }
+            
+            // Try to find JSON object in the response
+            if (preg_match('/\{.*\}/s', $aiContent, $jsonMatch)) {
+                $aiContent = $jsonMatch[0];
+            }
+            
+            $plan = json_decode(trim($aiContent), true);
+            
+            if (!$plan || json_last_error() !== JSON_ERROR_NONE) {
                                 // Try simple parsing as fallback
                                 $plan = parseSimpleCommand($prompt);
                                 if (!$plan) {
-                                    throw new Exception('Failed to parse AI response. JSON Error: ' . json_last_error_msg() . '. Raw: ' . substr($aiContent, 0, 300));
+                throw new Exception('Failed to parse AI response. JSON Error: ' . json_last_error_msg() . '. Raw: ' . substr($aiContent, 0, 300));
                                 } else {
                                     $usedSimpleParser = true;
                                 }
@@ -1005,15 +1136,15 @@ try {
                 $message = $usedSimpleParser 
                     ? 'Command executed using simple parser. ' . (count($created) > 0 ? count($created) . ' item(s) created.' : 'No new items created.')
                     : ($plan['plan'] ?? 'Action executed successfully');
-                
-                echo json_encode([
-                    'success' => true,
+            
+            echo json_encode([
+                'success' => true,
                     'message' => $message,
                     'created' => $created,
                     'errors' => $errors,
                     'results' => $results,
-                    'rawPlan' => $plan
-                ], JSON_UNESCAPED_UNICODE);
+                'rawPlan' => $plan
+            ], JSON_UNESCAPED_UNICODE);
             } else {
                 throw new Exception('Could not parse command. Try simple commands like "add 5 menus" or "add 3 areas".');
             }
