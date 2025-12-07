@@ -611,6 +611,15 @@ try {
                 
                 outputField.value = outputText;
             } catch (e) {
+                const outputField = document.getElementById('aiOutput');
+                let errorText = '❌ Error Occurred:\n';
+                errorText += '═══════════════════════════════════════\n\n';
+                errorText += `Error: ${e.message}\n\n`;
+                errorText += 'Stack Trace:\n';
+                errorText += '─────────────────────────────────────\n';
+                errorText += e.stack || 'No stack trace available';
+                outputField.value = errorText;
+                
                 alert.className = 'alert alert-error show';
                 alert.textContent = 'Error: ' + e.message;
                 addToLog('Error: ' + e.message, 'error');
