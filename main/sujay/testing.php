@@ -517,6 +517,11 @@ try {
             
             try {
                 console.log('Sending AI request:', { prompt, restaurant_id: selectedRestaurant });
+                
+                // Clear and show loading in output field
+                const outputField = document.getElementById('aiOutput');
+                outputField.value = '🔄 Sending request to AI...\n\n';
+                
                 const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=processAI', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -526,7 +531,53 @@ try {
                 
                 console.log('AI response:', data);
                 
+                // Display AI response in output field
+                let outputText = '📥 AI Response Received:\n';
+                outputText += '═══════════════════════════════════════\n\n';
+                
                 if (data.success) {
+                    outputText += '✅ Status: SUCCESS\n\n';
+                    outputText += `📋 Message: ${data.message || 'Action completed'}\n\n`;
+                    
+                    if (data.rawPlan) {
+                        outputText += '🤖 AI Generated Plan:\n';
+                        outputText += '─────────────────────────────────────\n';
+                        outputText += JSON.stringify(data.rawPlan, null, 2);
+                        outputText += '\n\n';
+                    }
+                    
+                    if (data.plan) {
+                        outputText += `📝 Plan Description: ${data.plan}\n\n`;
+                    }
+                    
+                    if (data.created && data.created.length > 0) {
+                        outputText += '✨ Created Items:\n';
+                        outputText += '─────────────────────────────────────\n';
+                        data.created.forEach((item, index) => {
+                            outputText += `${index + 1}. ${item}\n`;
+                        });
+                        outputText += '\n';
+                    }
+                    
+                    if (data.results && data.results.length > 0) {
+                        outputText += '📊 Execution Results:\n';
+                        outputText += '─────────────────────────────────────\n';
+                        data.results.forEach((result, index) => {
+                            outputText += `Result ${index + 1}:\n`;
+                            outputText += JSON.stringify(result, null, 2);
+                            outputText += '\n\n';
+                        });
+                    }
+                    
+                    if (data.errors && data.errors.length > 0) {
+                        outputText += '⚠️ Errors:\n';
+                        outputText += '─────────────────────────────────────\n';
+                        data.errors.forEach((error, index) => {
+                            outputText += `${index + 1}. ${error}\n`;
+                        });
+                        outputText += '\n';
+                    }
+                    
                     // AI executes directly now, no approval needed
                     alert.className = 'alert alert-success show';
                     alert.textContent = data.message || 'Action completed';
@@ -542,11 +593,23 @@ try {
                     loadAreas();
                     loadMenus();
                 } else {
+                    outputText += '❌ Status: FAILED\n\n';
+                    outputText += `❌ Error: ${data.message || 'Failed to process prompt'}\n\n`;
+                    
+                    if (data.rawPlan) {
+                        outputText += '🤖 AI Attempted Plan:\n';
+                        outputText += '─────────────────────────────────────\n';
+                        outputText += JSON.stringify(data.rawPlan, null, 2);
+                        outputText += '\n\n';
+                    }
+                    
                     alert.className = 'alert alert-error show';
                     alert.textContent = data.message || 'Failed to process prompt';
                     addToLog(data.message || 'Failed to process prompt', 'error');
                     console.error('AI API Error:', data);
                 }
+                
+                outputField.value = outputText;
             } catch (e) {
                 alert.className = 'alert alert-error show';
                 alert.textContent = 'Error: ' + e.message;
