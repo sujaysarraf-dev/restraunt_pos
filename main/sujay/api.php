@@ -406,7 +406,7 @@ try {
                                 (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, created_at, updated_at) 
                                 VALUES (?, ?, ?, ?, ?, ?, 15, 1, ?, 0, NULL, NOW(), NOW())
                             ");
-                            $insertStmt->execute([$restaurant_id, $menuId, $name, $desc, $cat, $type, $price]);
+                            $insertStmt->execute([$restaurantCode, $menuId, $name, $desc, $cat, $type, $price]);
                             $created[] = "Menu Item: $name";
                         }
                     } catch (Exception $e) {
@@ -432,17 +432,20 @@ try {
                 throw new Exception('Prompt is required');
             }
             
+            // Get restaurant code
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            
             // Get current state
             $menusStmt = $pdo->prepare("SELECT id, menu_name FROM menu WHERE restaurant_id = ?");
-            $menusStmt->execute([$restaurant_id]);
+            $menusStmt->execute([$restaurantCode]);
             $menus = $menusStmt->fetchAll(PDO::FETCH_ASSOC);
             
             $areasStmt = $pdo->prepare("SELECT id, area_name FROM areas WHERE restaurant_id = ?");
-            $areasStmt->execute([$restaurant_id]);
+            $areasStmt->execute([$restaurantCode]);
             $areas = $areasStmt->fetchAll(PDO::FETCH_ASSOC);
             
             $itemsStmt = $pdo->prepare("SELECT item_name_en, item_category FROM menu_items WHERE restaurant_id = ? LIMIT 10");
-            $itemsStmt->execute([$restaurant_id]);
+            $itemsStmt->execute([$restaurantCode]);
             $items = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
             
             // Build context for AI
@@ -755,6 +758,9 @@ try {
             $plan = $input['rawPlan'] ?? $input['plan'] ?? [];
             $restaurant_id = $input['restaurant_id'] ?? $restaurant_id;
             
+            // Get restaurant code
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            
             $created = [];
             $action = $plan['action'] ?? '';
             $items = $plan['items'] ?? [];
@@ -763,7 +769,7 @@ try {
                 // Get menu IDs
                 $menuMap = [];
                 $menusStmt = $pdo->prepare("SELECT id, menu_name FROM menu WHERE restaurant_id = ?");
-                $menusStmt->execute([$restaurant_id]);
+                $menusStmt->execute([$restaurantCode]);
                 while ($menu = $menusStmt->fetch(PDO::FETCH_ASSOC)) {
                     $menuMap[strtolower($menu['menu_name'])] = $menu['id'];
                 }
@@ -786,7 +792,7 @@ try {
                     if (!$menuId && !empty($menuName)) {
                         // Create menu if it doesn't exist
                         $insertMenu = $pdo->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
-                        $insertMenu->execute([$restaurant_id, $menuName]);
+                        $insertMenu->execute([$restaurantCode, $menuName]);
                         $menuId = $pdo->lastInsertId();
                         $menuMap[strtolower($menuName)] = $menuId;
                         $created[] = "Menu: $menuName";
@@ -799,7 +805,7 @@ try {
                             VALUES (?, ?, ?, ?, ?, ?, 15, 1, ?, 0, NULL, NOW(), NOW())
                         ");
                         $insertItem->execute([
-                            $restaurant_id,
+                            $restaurantCode,
                             $menuId,
                             $item['name'] ?? 'Untitled Item',
                             $item['description'] ?? '',
@@ -815,10 +821,10 @@ try {
                     $menuName = $item['menu'] ?? $item['name'] ?? '';
                     if ($menuName) {
                         $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu WHERE menu_name = ? AND restaurant_id = ?");
-                        $checkStmt->execute([$menuName, $restaurant_id]);
+                        $checkStmt->execute([$menuName, $restaurantCode]);
                         if ($checkStmt->fetchColumn() == 0) {
                             $insertStmt = $pdo->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
-                            $insertStmt->execute([$restaurant_id, $menuName]);
+                            $insertStmt->execute([$restaurantCode, $menuName]);
                             $created[] = "Menu: $menuName";
                         }
                     }
@@ -828,10 +834,10 @@ try {
                     $areaName = $item['name'] ?? $item['area'] ?? '';
                     if ($areaName) {
                         $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM areas WHERE area_name = ? AND restaurant_id = ?");
-                        $checkStmt->execute([$areaName, $restaurant_id]);
+                        $checkStmt->execute([$areaName, $restaurantCode]);
                         if ($checkStmt->fetchColumn() == 0) {
                             $insertStmt = $pdo->prepare("INSERT INTO areas (restaurant_id, area_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
-                            $insertStmt->execute([$restaurant_id, $areaName]);
+                            $insertStmt->execute([$restaurantCode, $areaName]);
                             $created[] = "Area: $areaName";
                         }
                     }
@@ -840,7 +846,7 @@ try {
                 // Get area IDs
                 $areaMap = [];
                 $areasStmt = $pdo->prepare("SELECT id, area_name FROM areas WHERE restaurant_id = ?");
-                $areasStmt->execute([$restaurant_id]);
+                $areasStmt->execute([$restaurantCode]);
                 while ($area = $areasStmt->fetch(PDO::FETCH_ASSOC)) {
                     $areaMap[strtolower($area['area_name'])] = $area['id'];
                 }
@@ -856,7 +862,7 @@ try {
                         $checkStmt->execute([$tableNumber, $areaId]);
                         if ($checkStmt->fetchColumn() == 0) {
                             $insertStmt = $pdo->prepare("INSERT INTO tables (restaurant_id, area_id, table_number, capacity, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())");
-                            $insertStmt->execute([$restaurant_id, $areaId, $tableNumber, $capacity]);
+                            $insertStmt->execute([$restaurantCode, $areaId, $tableNumber, $capacity]);
                             $created[] = "Table: $tableNumber in $areaName";
                         }
                     }
