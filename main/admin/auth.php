@@ -95,33 +95,44 @@ try {
     }
     
 } catch (PDOException $e) {
-    // Database error
+    // Database error - log full error, show generic message to user
     error_log("Database error in auth.php: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
     
     // Clear any output
     ob_clean();
     
-    // Return JSON error
+    // Return generic error message to user (don't expose server details)
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Database error occurred. Please try again later.',
+        'message' => 'Incorrect username or password',
         'error_code' => 'DB_ERROR'
     ], JSON_UNESCAPED_UNICODE);
     exit();
     
 } catch (Exception $e) {
-    // General error
+    // General error - log full error, show user-friendly message
     error_log("Error in auth.php: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
     
     // Clear any output
     ob_clean();
+    
+    // For login errors, show generic message. For other errors, show the message
+    $userMessage = $e->getMessage();
+    if (stripos($e->getMessage(), 'username') !== false || 
+        stripos($e->getMessage(), 'password') !== false || 
+        stripos($e->getMessage(), 'invalid') !== false ||
+        stripos($e->getMessage(), 'login') !== false) {
+        $userMessage = 'Incorrect username or password';
+    }
     
     // Return JSON error
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage(),
+        'message' => $userMessage,
         'error_code' => 'GENERAL_ERROR'
     ], JSON_UNESCAPED_UNICODE);
     exit();

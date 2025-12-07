@@ -351,29 +351,26 @@
                 
                 clearTimeout(timeoutId);
                 
-                if (!response.ok) {
-                    // Try to get error message from response
-                    let errorText = '';
-                    try {
-                        errorText = await response.text();
-                        const errorJson = JSON.parse(errorText);
-                        throw new Error(errorJson.message || `Server error: ${response.status} ${response.statusText}`);
-                    } catch (parseError) {
-                        throw new Error(`Server error: ${response.status} ${response.statusText}. ${errorText.substring(0, 200)}`);
-                    }
-                }
-                
                 // Get response text first to check if it's valid JSON
                 const responseText = await response.text();
                 
+                // Log full response to console for debugging
+                console.log('Login response status:', response.status);
+                if (!response.ok) {
+                    console.error('Server error response:', responseText);
+                }
+                
                 if (!responseText || responseText.trim() === '') {
-                    throw new Error('Server returned empty response. Please check server logs.');
+                    console.error('Server returned empty response');
+                    showMessage('Incorrect username or password', 'error');
+                    return;
                 }
                 
                 // Check if response is HTML (likely a PHP error page)
                 if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
                     console.error('Server returned HTML instead of JSON:', responseText.substring(0, 500));
-                    throw new Error('Server error: PHP error page returned. Please check server configuration.');
+                    showMessage('Incorrect username or password', 'error');
+                    return;
                 }
                 
                 let result;
@@ -382,7 +379,17 @@
                 } catch (parseError) {
                     console.error('JSON Parse Error:', parseError);
                     console.error('Response Text:', responseText.substring(0, 500));
-                    throw new Error('Server returned invalid JSON. Check console for details.');
+                    showMessage('Incorrect username or password', 'error');
+                    return;
+                }
+                
+                // Check if response is ok
+                if (!response.ok) {
+                    // Log error details to console
+                    console.error('Server error:', result);
+                    // Show user-friendly message
+                    showMessage(result.message || 'Incorrect username or password', 'error');
+                    return;
                 }
                 
                 if (result.success) {
@@ -397,23 +404,26 @@
                         window.location.href = result.redirect || '../views/dashboard.php';
                     }, 1000);
                 } else {
-                    showMessage(result.message || 'Login failed. Please try again.', 'error');
+                    // Show user-friendly message (backend should already return friendly message)
+                    showMessage(result.message || 'Incorrect username or password', 'error');
                 }
             } catch (error) {
+                // Log full error to console for debugging
                 console.error('Login Error:', error);
-                let errorMessage = 'Network error. Please try again.';
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
                 
-                // Provide more specific error messages
+                // Show only user-friendly message
+                let errorMessage = 'Incorrect username or password';
+                
+                // Only show network errors if it's clearly a network issue
                 if (error.name === 'AbortError') {
-                    errorMessage = 'Request timeout. The server is taking too long to respond. Please try again.';
-                } else if (error.message) {
-                    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                        errorMessage = 'Network error. Please check your internet connection and try again.';
-                    } else if (error.message.includes('JSON') || error.message.includes('parse')) {
-                        errorMessage = 'Server returned invalid response. Please try again.';
-                    } else if (error.message.includes('Server error')) {
-                        errorMessage = error.message;
-                    }
+                    errorMessage = 'Request timeout. Please try again.';
+                } else if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
+                    errorMessage = 'Network error. Please check your internet connection and try again.';
                 }
                 
                 showMessage(errorMessage, 'error');

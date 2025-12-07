@@ -1794,6 +1794,7 @@ try {
                 <th>Name</th>
                 <th>Phone</th>
                 <th>Email</th>
+                <th>Address</th>
                 <th>Total Visits</th>
                 <th>Total Spent</th>
                 <th>Actions</th>

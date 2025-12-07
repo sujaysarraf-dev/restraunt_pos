@@ -4432,8 +4432,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="avatar-small">${initials(customer.customer_name)}</div>
           </td>
           <td>${escapeHtml(customer.customer_name)}</td>
-          <td>${customer.phone}</td>
+          <td>${customer.phone || '-'}</td>
           <td>${escapeHtml(customer.email || '-')}</td>
+          <td>${escapeHtml(customer.address || '-')}</td>
           <td>${customer.total_visits}</td>
           <td>${totalSpent}</td>
           <td class="action-cell">
