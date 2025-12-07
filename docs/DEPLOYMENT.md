@@ -6,7 +6,7 @@ Your repository is connected to Hostinger via Git. The deployment should work au
 
 ## 📋 Pre-Deployment Checklist
 
-1. ✅ **Database Imported** - Import `full_database_dump.sql` via phpMyAdmin
+1. ✅ **Database Imported** - Import `database/full_database_dump.sql` via phpMyAdmin
 2. ✅ **Database Connection** - Auto-detects Hostinger environment
 3. ✅ **.htaccess** - Created for proper routing and security
 
@@ -15,7 +15,7 @@ Your repository is connected to Hostinger via Git. The deployment should work au
 ### 1. Import Database
 - Go to: https://auth-db1336.hstgr.io
 - Select database: `u509616587_restrogrow`
-- Import: `full_database_dump.sql`
+- Import: `database/full_database_dump.sql`
 
 ### 2. Git Deployment (Automatic)
 - Hostinger will auto-deploy when you push to GitHub

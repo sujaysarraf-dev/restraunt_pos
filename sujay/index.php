@@ -623,7 +623,7 @@ $connectionStats = getConnectionStats();
                     <div class="card-description">Documentation on image storage options and implementation.</div>
                 </a>
 
-                <a href="https://restrogrow.com/DEPLOYMENT.md" class="card" target="_blank">
+                <a href="https://restrogrow.com/docs/DEPLOYMENT.md" class="card" target="_blank">
                     <div class="card-icon">🚀</div>
                     <div class="card-title">Deployment Guide</div>
                     <div class="card-description">Deployment instructions and server configuration.</div>

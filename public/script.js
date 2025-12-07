@@ -4170,13 +4170,13 @@ async function loadRestaurantInfo() {
         dashboardLogo.style.objectFit = 'cover';
         dashboardLogo.onerror = function() {
           // Fallback to default logo if restaurant logo fails to load
-          this.src = 'logo.png';
+          this.src = 'assets/images/logo.png';
           this.style.borderRadius = '50%';
           this.style.objectFit = 'cover';
         };
       } else if (dashboardLogo) {
         // Reset to default logo if no restaurant logo
-        dashboardLogo.src = 'logo.png';
+        dashboardLogo.src = 'assets/images/logo.png';
         dashboardLogo.style.borderRadius = '50%';
         dashboardLogo.style.objectFit = 'cover';
       }
@@ -5311,7 +5311,7 @@ async function loadProfileData() {
           dashboardLogo.style.borderRadius = '50%';
           dashboardLogo.style.objectFit = 'cover';
           dashboardLogo.onerror = function() {
-            this.src = 'logo.png';
+            this.src = 'assets/images/logo.png';
             this.style.borderRadius = '50%';
             this.style.objectFit = 'cover';
           };

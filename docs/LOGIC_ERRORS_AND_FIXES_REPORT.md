@@ -406,7 +406,7 @@ sessionCheckInterval = setInterval(async () => {
 
 ## 📝 NOTES
 
-- Most security issues are already addressed in `SECURITY_AUDIT_REPORT.md`
+- Most security issues are already addressed in `docs/SECURITY_AUDIT_REPORT.md`
 - This report focuses on logic errors and potential bugs
 - All fixes should be tested thoroughly before deployment
 - Consider code review for critical fixes

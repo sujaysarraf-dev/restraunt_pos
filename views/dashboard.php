@@ -101,9 +101,9 @@ try {
                 // Use centralized Unicode fix function
                 require_once __DIR__ . '/../config/unicode_utils.php';
                 $db_currency = fixCurrencySymbol($userRow['currency_symbol']);
-                $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
-                // Save to session for faster loading next time
-                $_SESSION['currency_symbol'] = $currency_symbol;
+                    $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
+                    // Save to session for faster loading next time
+                    $_SESSION['currency_symbol'] = $currency_symbol;
             }
             // Timezone
             if (!empty($userRow['timezone'])) {
@@ -145,9 +145,9 @@ try {
                     // Use centralized Unicode fix function
                     require_once __DIR__ . '/../config/unicode_utils.php';
                     $db_currency = fixCurrencySymbol($logoRow['currency_symbol']);
-                    $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
-                    // Save to session for faster loading next time
-                    $_SESSION['currency_symbol'] = $currency_symbol;
+                        $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
+                        // Save to session for faster loading next time
+                        $_SESSION['currency_symbol'] = $currency_symbol;
                 }
             }
         } catch (PDOException $e2) {

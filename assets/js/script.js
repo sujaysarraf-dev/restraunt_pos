@@ -714,7 +714,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 kotNoChangeCount++;
                 if (kotNoChangeCount > 3) {
                   kotRefreshInterval = Math.min(30000, kotRefreshInterval * 1.5); // Max 30 seconds
-                }
+          }
               } else {
                 kotNoChangeCount = 0;
                 kotRefreshInterval = 10000; // Reset to 10 seconds when active
@@ -5126,7 +5126,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.5rem;">${escapeHtml(item.item_category || '')}</div>
         <div style="font-weight:700;color:#f70000;font-size:0.95rem;">
           ${priceDisplay}${hasVariations ? ' <span style="font-size:0.65rem;color:#6b7280;">(Variations)</span>' : ''}
-        </div>
+      </div>
       </div>
     `;
     }).join('');
@@ -5244,32 +5244,32 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       // Add directly to cart
       addToPOSCart(itemId, itemName, basePrice, image, null);
-      
+    
       // Show visual feedback
-      if (event) {
-        const itemCard = event.target?.closest('.mobile-item-card');
-        if (itemCard) {
-          itemCard.style.transform = 'scale(0.95)';
-          itemCard.style.backgroundColor = '#d1fae5';
-          setTimeout(() => {
-            itemCard.style.transform = '';
-            itemCard.style.backgroundColor = '';
-          }, 300);
-        }
+    if (event) {
+      const itemCard = event.target?.closest('.mobile-item-card');
+      if (itemCard) {
+        itemCard.style.transform = 'scale(0.95)';
+        itemCard.style.backgroundColor = '#d1fae5';
+        setTimeout(() => {
+          itemCard.style.transform = '';
+          itemCard.style.backgroundColor = '';
+        }, 300);
       }
-      
+    }
+    
       // Show brief success message
-      const successMsg = document.createElement('div');
-      successMsg.textContent = '✓ Added to cart';
-      successMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#10b981;color:white;padding:0.75rem 1.25rem;border-radius:8px;font-weight:600;z-index:10001;box-shadow:0 4px 12px rgba(16,185,129,0.4);animation:slideInRight 0.3s ease;';
-      document.body.appendChild(successMsg);
-      setTimeout(() => {
-        successMsg.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => successMsg.remove(), 300);
-      }, 2000);
+    const successMsg = document.createElement('div');
+    successMsg.textContent = '✓ Added to cart';
+    successMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#10b981;color:white;padding:0.75rem 1.25rem;border-radius:8px;font-weight:600;z-index:10001;box-shadow:0 4px 12px rgba(16,185,129,0.4);animation:slideInRight 0.3s ease;';
+    document.body.appendChild(successMsg);
+    setTimeout(() => {
+      successMsg.style.animation = 'slideOutRight 0.3s ease';
+      setTimeout(() => successMsg.remove(), 300);
+    }, 2000);
     }
   };
-
+    
   // Legacy function for backward compatibility
   window.addItemFromMobile = function(itemId, itemName, price, image, event) {
     handleMobileItemClick(itemId, itemName, price, image, false, [], event);
@@ -5768,15 +5768,15 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append('tax', tax.toFixed(2));
     formData.append('total', total.toFixed(2));
     
-      try {
-        const response = await fetch("../controllers/pos_operations.php", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: formData
-        });
-        
+    try {
+      const response = await fetch("../controllers/pos_operations.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData
+      });
+      
         // Get response text first
         const responseText = await response.text();
         console.log('Response status:', response.status);
@@ -5803,8 +5803,8 @@ document.addEventListener("DOMContentLoaded", () => {
           console.error('Invalid JSON response:', responseText);
           throw new Error('Invalid response from server. Response: ' + responseText.substring(0, 200));
         }
-        
-        if (result.success) {
+      
+      if (result.success) {
         // Clear cart - support both local and window.posCart
         if (typeof posCart !== 'undefined') {
           posCart = [];
