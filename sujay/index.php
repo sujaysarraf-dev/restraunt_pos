@@ -648,16 +648,29 @@ $connectionStats = getConnectionStats();
                 const res = await fetch('https://restrogrow.com/superadmin/api.php?action=getPasswordResetData&page='+resetPage+'&limit='+resetLimit);
                 
                 if (!res.ok) {
+                    // If we get HTML back, it means we're being redirected to login
+                    const contentType = res.headers.get('content-type');
+                    if (contentType && contentType.includes('text/html')) {
+                        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Authentication required. <a href="https://restrogrow.com/superadmin/login.php" style="color:var(--primary);text-decoration:underline;">Login as Superadmin</a> to view password reset data.</td></tr>';
+                        return;
+                    }
                     throw new Error('HTTP error: ' + res.status);
                 }
                 
                 const text = await res.text();
+                
+                // Check if response is HTML (login page redirect)
+                if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Authentication required. <a href="https://restrogrow.com/superadmin/login.php" style="color:var(--primary);text-decoration:underline;">Login as Superadmin</a> to view password reset data.</td></tr>';
+                    return;
+                }
+                
                 let data;
                 try {
                     data = JSON.parse(text);
                 } catch(e) {
-                    console.error('JSON parse error:', text);
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Invalid response from server. Check console for details.</td></tr>';
+                    console.error('JSON parse error:', text.substring(0, 200));
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Invalid response from server. Authentication may be required.</td></tr>';
                     return;
                 }
                 
@@ -700,7 +713,7 @@ $connectionStats = getConnectionStats();
                 }
             } catch(e) {
                 console.error('Error loading password reset data:', e);
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Error: ' + e.message + '</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Error: ' + e.message + '. <a href="https://restrogrow.com/superadmin/login.php" style="color:var(--primary);text-decoration:underline;">Login as Superadmin</a> may be required.</td></tr>';
             }
         }
         document.getElementById('prevResetPage')?.addEventListener('click', ()=>{ if(resetPage>1){ resetPage--; loadPasswordResetData(); }});
