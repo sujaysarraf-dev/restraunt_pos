@@ -10,8 +10,8 @@
 ### 2. **Database Setup**
 1. Open browser and go to: `http://localhost/phpmyadmin`
 2. Create a new database called `restro2`
-3. Import the SQL file: `database_schema.sql`
-4. Or run the SQL commands from `database_schema.sql` in phpMyAdmin
+3. Import the SQL file: `database/database_schema.sql`
+4. Or run the SQL commands from `database/database_schema.sql` in phpMyAdmin
 
 ### 3. **Access the Application**
 - Open browser and go to: `http://localhost/menu/`
@@ -30,7 +30,7 @@ C:\xampp\htdocs\menu\
 ├── index.html (original dashboard - not used directly)
 ├── script.js
 ├── style.css
-├── database_schema.sql
+├── database/database_schema.sql
 ├── db_connection.php
 ├── menu_operations.php
 ├── menu_items_operations.php

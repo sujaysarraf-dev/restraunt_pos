@@ -73,7 +73,7 @@ The page will:
 **Solution:** 
 1. Check `db_connection.php` has correct credentials
 2. Ensure database `restro2` exists
-3. Run `database_schema.sql` to create tables
+3. Run `database/database_schema.sql` to create tables
 
 ### Issue: KOT/Orders not showing
 **Solution:**
@@ -105,7 +105,7 @@ Make sure these tables exist:
 - `order_items` - Order line items
 - `schema_migrations` - Migration tracking
 
-If any table is missing, run `database_schema.sql` or create a new migration.
+If any table is missing, run `database/database_schema.sql` or create a new migration.
 
 ## Adding New Features
 

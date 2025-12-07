@@ -62,8 +62,8 @@ All documentation files:
 
 ### Database (`database/`)
 SQL schema files:
-- `database_schema.sql` - Main database schema
-- `database_schema_clean.sql` - Clean schema
+- `database/database_schema.sql` - Main database schema
+- `database/database_schema_clean.sql` - Clean schema
 
 ## Path References
 

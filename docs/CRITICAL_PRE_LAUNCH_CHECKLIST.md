@@ -12,7 +12,7 @@
 ### ✅ Already Completed:
 - **All critical indexes added** to both production and localhost databases
 - **Script available:** `admin/run_indexes_both_dbs.php` - Can run on both databases
-- **SQL file updated:** `database/database_schema.sql` and `database_schema_clean.sql` include all indexes
+- **SQL file updated:** `database/database_schema.sql` and `database/database_schema_clean.sql` include all indexes
 - **Indexes are in main schema files** - New installations will have them automatically
 
 ### Indexes Added:

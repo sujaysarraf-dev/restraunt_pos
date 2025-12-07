@@ -3,7 +3,7 @@
 ## ✅ What Was Created
 
 ### 1. Database Table
-- **Payments table** added to `database_schema.sql`
+- **Payments table** added to `database/database_schema.sql`
 - Fields: ID, Amount, Payment Method, Transaction ID, Order, Status, Date
 
 ### 2. Migration File
@@ -75,7 +75,7 @@ When you create an order in POS with a payment method, the payment is **automati
 ✅ `migrations/002_create_payments_table.sql` - Migration  
 
 ### Modified:
-✅ `database_schema.sql` - Added payments table  
+✅ `database/database_schema.sql` - Added payments table  
 ✅ `dashboard.php` - Added Payments menu and page  
 ✅ `script.js` - Added loadPayments() function  
 ✅ `pos_operations.php` - Auto-saves payments  
