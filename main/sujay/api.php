@@ -26,17 +26,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['CONTENT_TYPE']) &&
 
 $action = $_GET['action'] ?? $_POST['action'] ?? $jsonData['action'] ?? '';
 
-// Get restaurant ID from JSON, POST, GET, or use sujay's restaurant
-$restaurant_id = $jsonData['restaurant_id'] ?? $_POST['restaurant_id'] ?? $_GET['restaurant_id'] ?? null;
-if (!$restaurant_id && $action !== 'getRestaurants') {
-    try {
-        $restaurantStmt = $pdo->query("SELECT id FROM users WHERE username = 'sujay' LIMIT 1");
-        $restaurant = $restaurantStmt->fetch(PDO::FETCH_ASSOC);
-        $restaurant_id = $restaurant ? $restaurant['id'] : 1;
-    } catch (Exception $e) {
-        $restaurant_id = 1;
-    }
+// Get restaurant ID from JSON, POST, GET - DO NOT default to sujay's restaurant
+// The frontend MUST always send restaurant_id for actions that need it
+$restaurant_id = null;
+if (!empty($jsonData['restaurant_id'])) {
+    $restaurant_id = (int)$jsonData['restaurant_id'];
+} elseif (!empty($_POST['restaurant_id'])) {
+    $restaurant_id = (int)$_POST['restaurant_id'];
+} elseif (!empty($_GET['restaurant_id'])) {
+    $restaurant_id = (int)$_GET['restaurant_id'];
 }
+
+// Only default for actions that don't require restaurant_id
+// For actions that need restaurant_id, we'll validate it in each case
 
 try {
     switch ($action) {
@@ -263,6 +265,11 @@ try {
             break;
             
         case 'createDemo':
+            // Verify restaurant_id is valid
+            if (!$restaurant_id || $restaurant_id <= 0) {
+                throw new Exception('Invalid restaurant_id: ' . $restaurant_id . '. Please select a restaurant.');
+            }
+            
             // Generate random demo data
             $demoMenus = ['Breakfast Menu', 'Lunch Menu', 'Dinner Menu', 'Desserts', 'Beverages'];
             $demoAreas = ['Main Hall', 'Outdoor Seating', 'VIP Section', 'Bar Area'];
