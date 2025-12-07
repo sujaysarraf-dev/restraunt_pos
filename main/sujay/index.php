@@ -387,8 +387,8 @@ $connectionStats = getConnectionStats();
             <a href="/" class="logo">RestroGrow</a>
             <div class="nav-links">
                 <a href="testing.php">More Options</a>
-                <a href="https://restrogrow.com/superadmin/dashboard.php">Dashboard</a>
-                <a href="https://restrogrow.com/superadmin/login.php">Login</a>
+                <a href="https://restrogrow.com/main/superadmin/dashboard.php">Dashboard</a>
+                <a href="https://restrogrow.com/main/superadmin/login.php">Login</a>
             </div>
         </div>
     </nav>
@@ -450,7 +450,7 @@ $connectionStats = getConnectionStats();
                     <strong>Username:</strong> <code>sujay</code><br>
                     <strong>Password:</strong> <code>sujay123</code>
                 </div>
-                <a href="https://restrogrow.com/superadmin/login.php">
+                <a href="https://restrogrow.com/main/superadmin/login.php">
                     Access Superadmin Dashboard →
                 </a>
             </div>
@@ -462,43 +462,43 @@ $connectionStats = getConnectionStats();
                 <div class="section-divider"></div>
             </div>
             <div class="cards-grid">
-                <a href="https://restrogrow.com/test_image_loading.php" class="card">
+                <a href="https://restrogrow.com/main/test_image_loading.php" class="card">
                     <div class="card-icon">🖼️</div>
                     <div class="card-title">Image Loading Test</div>
                     <div class="card-description">Test image loading from database and file system. Check uploads directory and image paths.</div>
                 </a>
 
-                <a href="https://restrogrow.com/db_connection.php" class="card" target="_blank">
+                <a href="https://restrogrow.com/main/db_connection.php" class="card" target="_blank">
                     <div class="card-icon">🔌</div>
                     <div class="card-title">Database Connection</div>
                     <div class="card-description">View database connection configuration and test connection status.</div>
                 </a>
 
-                <a href="https://restrogrow.com/admin/test_email.php" class="card">
+                <a href="https://restrogrow.com/main/admin/test_email.php" class="card">
                     <div class="card-icon">📧</div>
                     <div class="card-title">Email Test</div>
                     <div class="card-description">Test email sending functionality and SMTP configuration.</div>
                 </a>
 
-                <a href="https://restrogrow.com/admin/connection_monitor.php" class="card">
+                <a href="https://restrogrow.com/main/admin/connection_monitor.php" class="card">
                     <div class="card-icon">📡</div>
                     <div class="card-title">Connection Monitor</div>
                     <div class="card-description">Monitor database connections and view connection statistics.</div>
                 </a>
 
-                <a href="https://restrogrow.com/admin/db_test.php" class="card">
+                <a href="https://restrogrow.com/main/admin/db_test.php" class="card">
                     <div class="card-icon">⚡</div>
                     <div class="card-title">Database Performance Test</div>
                     <div class="card-description">Test database speed, query performance, indexes, buffer pool, and connection status.</div>
                 </a>
 
-                <a href="https://restrogrow.com/admin/run_indexes_both_dbs.php" class="card">
+                <a href="https://restrogrow.com/main/admin/run_indexes_both_dbs.php" class="card">
                     <div class="card-icon">📊</div>
                     <div class="card-title">Run Database Indexes</div>
                     <div class="card-description">Add critical database indexes to improve query performance on both production and localhost.</div>
                 </a>
 
-                <a href="https://restrogrow.com/admin/run_password_reset_table_both_dbs.php" class="card">
+                <a href="https://restrogrow.com/main/admin/run_password_reset_table_both_dbs.php" class="card">
                     <div class="card-icon">🔐</div>
                     <div class="card-title">Password Reset Tokens Migration</div>
                     <div class="card-description">Create password_reset_tokens table and add idx_created_at index on both production and localhost databases.</div>
@@ -547,25 +547,25 @@ $connectionStats = getConnectionStats();
                 <div class="section-divider"></div>
             </div>
             <div class="cards-grid">
-                <a href="https://restrogrow.com/config/session_config.php" class="card" target="_blank">
+                <a href="https://restrogrow.com/main/config/session_config.php" class="card" target="_blank">
                     <div class="card-icon">🔐</div>
                     <div class="card-title">Session Configuration</div>
                     <div class="card-description">Session configuration and security settings.</div>
                 </a>
 
-                <a href="https://restrogrow.com/config/email_config.php" class="card" target="_blank">
+                <a href="https://restrogrow.com/main/config/email_config.php" class="card" target="_blank">
                     <div class="card-icon">⚙️</div>
                     <div class="card-title">Email Configuration</div>
                     <div class="card-description">Email server configuration and SMTP settings.</div>
                 </a>
 
-                <a href="https://restrogrow.com/config/db_migration.php" class="card" target="_blank">
+                <a href="https://restrogrow.com/main/config/db_migration.php" class="card" target="_blank">
                     <div class="card-icon">🔄</div>
                     <div class="card-title">Database Migration</div>
                     <div class="card-description">Database migration scripts and schema updates.</div>
                 </a>
 
-                <a href="https://restrogrow.com/superadmin/dashboard.php" class="card">
+                <a href="https://restrogrow.com/main/superadmin/dashboard.php" class="card">
                     <div class="card-icon">📊</div>
                     <div class="card-title">Superadmin Dashboard</div>
                     <div class="card-description">Access the superadmin dashboard for managing restaurants.</div>
@@ -579,25 +579,25 @@ $connectionStats = getConnectionStats();
                 <div class="section-divider"></div>
             </div>
             <div class="cards-grid">
-                <a href="https://restrogrow.com/api/image.php" class="card" target="_blank">
+                <a href="https://restrogrow.com/main/api/image.php" class="card" target="_blank">
                     <div class="card-icon">🖼️</div>
                     <div class="card-title">Image API</div>
                     <div class="card-description">Image serving endpoint for database and file-based images.</div>
                 </a>
 
-                <a href="https://restrogrow.com/api/get_menu_items.php" class="card" target="_blank">
+                <a href="https://restrogrow.com/main/api/get_menu_items.php" class="card" target="_blank">
                     <div class="card-icon">🍽️</div>
                     <div class="card-title">Menu Items API</div>
                     <div class="card-description">Get menu items for restaurants.</div>
                 </a>
 
-                <a href="https://restrogrow.com/api/get_dashboard_stats.php" class="card" target="_blank">
+                <a href="https://restrogrow.com/main/api/get_dashboard_stats.php" class="card" target="_blank">
                     <div class="card-icon">📈</div>
                     <div class="card-title">Dashboard Stats API</div>
                     <div class="card-description">Get dashboard statistics and analytics.</div>
                 </a>
 
-                <a href="https://restrogrow.com/superadmin/api.php" class="card" target="_blank">
+                <a href="https://restrogrow.com/main/superadmin/api.php" class="card" target="_blank">
                     <div class="card-icon">⚡</div>
                     <div class="card-title">Superadmin API</div>
                     <div class="card-description">Superadmin API endpoints for restaurant management.</div>
@@ -611,25 +611,25 @@ $connectionStats = getConnectionStats();
                 <div class="section-divider"></div>
             </div>
             <div class="cards-grid">
-                <a href="https://restrogrow.com/docs/DATABASE_CONNECTION_OPTIMIZATION.md" class="card" target="_blank">
+                <a href="https://restrogrow.com/main/docs/DATABASE_CONNECTION_OPTIMIZATION.md" class="card" target="_blank">
                     <div class="card-icon">📖</div>
                     <div class="card-title">Database Connection Docs</div>
                     <div class="card-description">Documentation on database connection optimization.</div>
                 </a>
 
-                <a href="https://restrogrow.com/docs/IMAGE_STORAGE_OPTIONS.md" class="card" target="_blank">
+                <a href="https://restrogrow.com/main/docs/IMAGE_STORAGE_OPTIONS.md" class="card" target="_blank">
                     <div class="card-icon">📸</div>
                     <div class="card-title">Image Storage Docs</div>
                     <div class="card-description">Documentation on image storage options and implementation.</div>
                 </a>
 
-                <a href="https://restrogrow.com/docs/DEPLOYMENT.md" class="card" target="_blank">
+                <a href="https://restrogrow.com/main/docs/DEPLOYMENT.md" class="card" target="_blank">
                     <div class="card-icon">🚀</div>
                     <div class="card-title">Deployment Guide</div>
                     <div class="card-description">Deployment instructions and server configuration.</div>
                 </a>
 
-                <a href="https://restrogrow.com/database/database_schema.sql" class="card" target="_blank">
+                <a href="https://restrogrow.com/main/database/database_schema.sql" class="card" target="_blank">
                     <div class="card-icon">🗄️</div>
                     <div class="card-title">Database Schema</div>
                     <div class="card-description">Complete database schema and table structures.</div>
@@ -646,13 +646,13 @@ $connectionStats = getConnectionStats();
             if (!tbody) return;
             
             try {
-                const res = await fetch('https://restrogrow.com/superadmin/api.php?action=getPasswordResetData&page='+resetPage+'&limit='+resetLimit);
+                const res = await fetch('https://restrogrow.com/main/superadmin/api.php?action=getPasswordResetData&page='+resetPage+'&limit='+resetLimit);
                 
                 if (!res.ok) {
                     // If we get HTML back, it means we're being redirected to login
                     const contentType = res.headers.get('content-type');
                     if (contentType && contentType.includes('text/html')) {
-                        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Authentication required. <a href="https://restrogrow.com/superadmin/login.php" style="color:var(--primary);text-decoration:underline;">Login as Superadmin</a> to view password reset data.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Authentication required. <a href="https://restrogrow.com/main/superadmin/login.php" style="color:var(--primary);text-decoration:underline;">Login as Superadmin</a> to view password reset data.</td></tr>';
                         return;
                     }
                     throw new Error('HTTP error: ' + res.status);
@@ -714,7 +714,7 @@ $connectionStats = getConnectionStats();
                 }
             } catch(e) {
                 console.error('Error loading password reset data:', e);
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Error: ' + e.message + '. <a href="https://restrogrow.com/superadmin/login.php" style="color:var(--primary);text-decoration:underline;">Login as Superadmin</a> may be required.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Error: ' + e.message + '. <a href="https://restrogrow.com/main/superadmin/login.php" style="color:var(--primary);text-decoration:underline;">Login as Superadmin</a> may be required.</td></tr>';
             }
         }
         document.getElementById('prevResetPage')?.addEventListener('click', ()=>{ if(resetPage>1){ resetPage--; loadPasswordResetData(); }});

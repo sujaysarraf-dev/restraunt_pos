@@ -408,7 +408,7 @@ try {
 
         async function loadRestaurants() {
             try {
-                const res = await fetch(`https://restrogrow.com/sujay/api.php?action=getRestaurants`);
+                const res = await fetch(`https://restrogrow.com/main/sujay/api.php?action=getRestaurants`);
                 const data = await res.json();
                 const select = document.getElementById('restaurantSelect');
                 if (data.success && data.restaurants) {
@@ -432,10 +432,10 @@ try {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             try {
                 const [menusRes, areasRes, tablesRes, itemsRes] = await Promise.all([
-                    fetch(`https://restrogrow.com/sujay/api.php?action=getMenus&restaurant_id=${selectedRestaurant}`),
-                    fetch(`https://restrogrow.com/sujay/api.php?action=getAreas&restaurant_id=${selectedRestaurant}`),
-                    fetch(`https://restrogrow.com/sujay/api.php?action=getTables&restaurant_id=${selectedRestaurant}`),
-                    fetch(`https://restrogrow.com/sujay/api.php?action=getMenuItems&restaurant_id=${selectedRestaurant}`)
+                    fetch(`https://restrogrow.com/main/sujay/api.php?action=getMenus&restaurant_id=${selectedRestaurant}`),
+                    fetch(`https://restrogrow.com/main/sujay/api.php?action=getAreas&restaurant_id=${selectedRestaurant}`),
+                    fetch(`https://restrogrow.com/main/sujay/api.php?action=getTables&restaurant_id=${selectedRestaurant}`),
+                    fetch(`https://restrogrow.com/main/sujay/api.php?action=getMenuItems&restaurant_id=${selectedRestaurant}`)
                 ]);
                 
                 const menusData = await menusRes.json();
@@ -449,7 +449,7 @@ try {
                 document.getElementById('statusItems').textContent = itemsData.success ? itemsData.count : '0';
                 
                 // Get restaurant count
-                const restaurantsRes = await fetch(`https://restrogrow.com/sujay/api.php?action=getRestaurants`);
+                const restaurantsRes = await fetch(`https://restrogrow.com/main/sujay/api.php?action=getRestaurants`);
                 const restaurantsData = await restaurantsRes.json();
                 document.getElementById('statusRestaurants').textContent = restaurantsData.success ? restaurantsData.count : '0';
             } catch (e) {
@@ -482,7 +482,7 @@ try {
             addToLog(`Processing: "${prompt}"`, 'info');
             
             try {
-                const res = await fetch('https://restrogrow.com/sujay/api.php?action=processAI', {
+                const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=processAI', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt, restaurant_id: selectedRestaurant })
@@ -524,7 +524,7 @@ try {
 
         async function executeAIPlan(plan, restaurantId) {
             try {
-                const res = await fetch('https://restrogrow.com/sujay/api.php?action=executeAIPlan', {
+                const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=executeAIPlan', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ plan, restaurant_id: restaurantId })
@@ -552,7 +552,7 @@ try {
         async function loadAreas() {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             try {
-                const res = await fetch(`https://restrogrow.com/sujay/api.php?action=getAreas&restaurant_id=${selectedRestaurant}`);
+                const res = await fetch(`https://restrogrow.com/main/sujay/api.php?action=getAreas&restaurant_id=${selectedRestaurant}`);
                 const data = await res.json();
                 const select = document.getElementById('chooseArea');
                 if (select && data.success && data.areas) {
@@ -571,7 +571,7 @@ try {
         async function loadMenus() {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             try {
-                const res = await fetch(`https://restrogrow.com/sujay/api.php?action=getMenus&restaurant_id=${selectedRestaurant}`);
+                const res = await fetch(`https://restrogrow.com/main/sujay/api.php?action=getMenus&restaurant_id=${selectedRestaurant}`);
                 const data = await res.json();
                 const select = document.getElementById('chooseMenu');
                 if (select && data.success && data.menus) {
@@ -616,7 +616,7 @@ try {
             }
             
             try {
-                const res = await fetch('https://restrogrow.com/sujay/api.php?action=quickAddMenu', {
+                const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddMenu', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ restaurant_id: selectedRestaurant })
@@ -643,7 +643,7 @@ try {
             }
             
             try {
-                const res = await fetch('https://restrogrow.com/sujay/api.php?action=quickAddArea', {
+                const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddArea', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ restaurant_id: selectedRestaurant })
@@ -670,7 +670,7 @@ try {
             }
             
             try {
-                const res = await fetch('https://restrogrow.com/sujay/api.php?action=quickAddTable', {
+                const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddTable', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ restaurant_id: selectedRestaurant })
@@ -697,7 +697,7 @@ try {
             }
             
             try {
-                const res = await fetch('https://restrogrow.com/sujay/api.php?action=quickAddMenuItem', {
+                const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddMenuItem', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ restaurant_id: selectedRestaurant })
@@ -734,7 +734,7 @@ try {
             addToLog('Creating demo data...', 'info');
 
             try {
-                const res = await fetch('https://restrogrow.com/sujay/api.php?action=createDemo', {
+                const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=createDemo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ restaurant_id: selectedRestaurant })
