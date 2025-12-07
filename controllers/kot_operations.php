@@ -58,6 +58,7 @@ try {
     exit();
 }
 
+if (!function_exists('handleCreateKOT')) {
 function handleCreateKOT() {
     global $pdo;
     $conn = $pdo;
