@@ -635,6 +635,13 @@ try {
                 return;
             }
             
+            // Get restaurant name for logging
+            const restaurantSelect = document.getElementById('restaurantSelect');
+            const selectedOption = restaurantSelect?.options[restaurantSelect.selectedIndex];
+            const restaurantName = selectedOption ? selectedOption.text : 'Unknown';
+            
+            addToLog(`Adding menu for restaurant ID: ${selectedRestaurant} (${restaurantName})`, 'info');
+            
             try {
                 const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddMenu', {
                     method: 'POST',
@@ -643,8 +650,15 @@ try {
                 });
                 const data = await res.json();
                 
+                console.log('quickAddMenu response:', data);
+                
                 if (data.success) {
-                    addToLog(`Menu added: ${data.name}`, 'success');
+                    if (data.debug) {
+                        addToLog(`Menu added: ${data.name} (ID: ${data.id}) for ${data.debug.restaurant_username || 'restaurant'}`, 'success');
+                        console.log('Debug info:', data.debug);
+                    } else {
+                        addToLog(`Menu added: ${data.name}`, 'success');
+                    }
                     loadMenus();
                     refreshStatus();
                 } else {
@@ -652,6 +666,7 @@ try {
                 }
             } catch (e) {
                 addToLog('Error: ' + e.message, 'error');
+                console.error('quickAddMenu error:', e);
             }
         }
 

@@ -488,6 +488,26 @@ try {
             break;
             
         case 'quickAddMenu':
+            // Debug: Log all sources of restaurant_id
+            error_log("quickAddMenu - JSON data: " . json_encode($jsonData));
+            error_log("quickAddMenu - POST data: " . json_encode($_POST));
+            error_log("quickAddMenu - GET data: " . json_encode($_GET));
+            error_log("quickAddMenu - Final restaurant_id: " . $restaurant_id);
+            
+            // Verify restaurant_id is valid
+            if (!$restaurant_id || $restaurant_id <= 0) {
+                throw new Exception('Invalid restaurant_id: ' . $restaurant_id);
+            }
+            
+            // Verify restaurant exists
+            $verifyStmt = $pdo->prepare("SELECT id, username, restaurant_name FROM users WHERE id = ?");
+            $verifyStmt->execute([$restaurant_id]);
+            $restaurant = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+            if (!$restaurant) {
+                throw new Exception('Restaurant with ID ' . $restaurant_id . ' not found');
+            }
+            error_log("quickAddMenu - Restaurant verified: " . json_encode($restaurant));
+            
             // Get next menu number
             $countStmt = $pdo->prepare("SELECT COUNT(*) FROM menu WHERE restaurant_id = ?");
             $countStmt->execute([$restaurant_id]);
@@ -503,18 +523,36 @@ try {
                 $menuName = 'Menu ' . ($count + 2);
             }
             
+            // Insert menu
             $insertStmt = $pdo->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
-            $insertStmt->execute([$restaurant_id, $menuName]);
+            $insertResult = $insertStmt->execute([$restaurant_id, $menuName]);
+            
+            if (!$insertResult) {
+                $errorInfo = $insertStmt->errorInfo();
+                throw new Exception('Database insert failed: ' . json_encode($errorInfo));
+            }
             
             $insertedId = $pdo->lastInsertId();
-            error_log("quickAddMenu inserted menu '$menuName' with ID $insertedId for restaurant_id: $restaurant_id");
+            error_log("quickAddMenu - Successfully inserted menu '$menuName' with ID $insertedId for restaurant_id: $restaurant_id (username: " . $restaurant['username'] . ")");
+            
+            // Verify the insert
+            $verifyInsertStmt = $pdo->prepare("SELECT id, menu_name, restaurant_id FROM menu WHERE id = ?");
+            $verifyInsertStmt->execute([$insertedId]);
+            $insertedMenu = $verifyInsertStmt->fetch(PDO::FETCH_ASSOC);
+            error_log("quickAddMenu - Verified inserted menu: " . json_encode($insertedMenu));
             
             echo json_encode([
                 'success' => true,
                 'message' => 'Menu added successfully',
                 'name' => $menuName,
                 'id' => $insertedId,
-                'debug' => ['restaurant_id' => $restaurant_id, 'inserted_id' => $insertedId]
+                'debug' => [
+                    'restaurant_id' => $restaurant_id,
+                    'restaurant_username' => $restaurant['username'],
+                    'restaurant_name' => $restaurant['restaurant_name'],
+                    'inserted_id' => $insertedId,
+                    'inserted_menu' => $insertedMenu
+                ]
             ], JSON_UNESCAPED_UNICODE);
             break;
             
