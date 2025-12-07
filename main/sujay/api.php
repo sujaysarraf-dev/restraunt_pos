@@ -90,11 +90,20 @@ try {
             break;
             
         case 'getMenus':
-            // Debug: Log the restaurant_id being used
-            error_log("getMenus called with restaurant_id: " . $restaurant_id);
+            // Convert numeric ID to restaurant code if needed
+            $restaurantCode = $restaurant_id;
+            if (is_numeric($restaurant_id)) {
+                $codeStmt = $pdo->prepare("SELECT restaurant_id FROM users WHERE id = ?");
+                $codeStmt->execute([$restaurant_id]);
+                $codeResult = $codeStmt->fetch(PDO::FETCH_ASSOC);
+                if ($codeResult) {
+                    $restaurantCode = $codeResult['restaurant_id'];
+                }
+            }
+            error_log("getMenus called with restaurant_id: " . $restaurant_id . " -> using code: " . $restaurantCode);
             
             $stmt = $pdo->prepare("SELECT id, menu_name, is_active, created_at, updated_at FROM menu WHERE restaurant_id = ? ORDER BY sort_order ASC, created_at DESC");
-            $stmt->execute([$restaurant_id]);
+            $stmt->execute([$restaurantCode]);
             $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             // Debug: Log the results
