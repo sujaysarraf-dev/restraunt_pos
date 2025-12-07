@@ -701,7 +701,7 @@ try {
             if (!$menu) {
                 // Create a menu first
                 $insertMenu = $pdo->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, 'Menu 1', NOW(), NOW())");
-                $insertMenu->execute([$restaurant_id]);
+                $insertMenu->execute([$restaurantCode]);
                 $menuId = $pdo->lastInsertId();
             } else {
                 $menuId = $menu['id'];
