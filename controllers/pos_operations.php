@@ -165,17 +165,52 @@ function handleCreateKOT($conn, $restaurant_id) {
     }
     
     // Include helper functions for generating unique numbers
+    // Only include the helper functions, not the handler functions
     if (!file_exists(__DIR__ . '/kot_operations.php')) {
         throw new Exception('kot_operations.php file not found');
     }
-    require_once __DIR__ . '/kot_operations.php';
     
-    // Check if functions exist
-    if (!function_exists('generateKOTNumber')) {
-        throw new Exception('generateKOTNumber function not found in kot_operations.php');
-    }
-    if (!function_exists('generateOrderNumber')) {
-        throw new Exception('generateOrderNumber function not found in kot_operations.php');
+    // Check if functions already exist (to avoid redeclaration)
+    if (!function_exists('generateKOTNumber') || !function_exists('generateOrderNumber')) {
+        // Extract only the helper functions we need
+        // We'll define them here instead of requiring the whole file
+        if (!function_exists('generateKOTNumber')) {
+            function generateKOTNumber($conn, $restaurant_id) {
+                $maxAttempts = 100;
+                $attempt = 0;
+                do {
+                    $kotNumber = 'KOT-' . date('Ymd') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+                    $checkStmt = $conn->prepare("SELECT COUNT(*) FROM kot WHERE kot_number = ? AND restaurant_id = ?");
+                    $checkStmt->execute([$kotNumber, $restaurant_id]);
+                    $exists = $checkStmt->fetchColumn() > 0;
+                    $attempt++;
+                    if ($attempt >= $maxAttempts) {
+                        $kotNumber = 'KOT-' . date('YmdHis') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+                        break;
+                    }
+                } while ($exists);
+                return $kotNumber;
+            }
+        }
+        
+        if (!function_exists('generateOrderNumber')) {
+            function generateOrderNumber($conn, $restaurant_id) {
+                $maxAttempts = 100;
+                $attempt = 0;
+                do {
+                    $orderNumber = 'ORD-' . date('Ymd') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+                    $checkStmt = $conn->prepare("SELECT COUNT(*) FROM orders WHERE order_number = ? AND restaurant_id = ?");
+                    $checkStmt->execute([$orderNumber, $restaurant_id]);
+                    $exists = $checkStmt->fetchColumn() > 0;
+                    $attempt++;
+                    if ($attempt >= $maxAttempts) {
+                        $orderNumber = 'ORD-' . date('YmdHis') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+                        break;
+                    }
+                } while ($exists);
+                return $orderNumber;
+            }
+        }
     }
     
     // Generate unique KOT number with collision check
