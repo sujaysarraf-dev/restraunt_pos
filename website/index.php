@@ -706,7 +706,15 @@ try {
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($restaurant_name, ENT_QUOTES, 'UTF-8'); ?>. All rights reserved.</p>
+            <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; text-align: center;">
+                <p>&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($restaurant_name, ENT_QUOTES, 'UTF-8'); ?>. All rights reserved.</p>
+                <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; font-size: 0.9rem;">
+                    <a href="privacy-policy.php<?php echo $restaurant_id ? '?restaurant_id=' . urlencode($restaurant_id) : ''; ?>" style="color: var(--text-light); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-red)'" onmouseout="this.style.color='var(--text-light)'">Privacy Policy</a>
+                    <a href="terms-of-service.php<?php echo $restaurant_id ? '?restaurant_id=' . urlencode($restaurant_id) : ''; ?>" style="color: var(--text-light); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-red)'" onmouseout="this.style.color='var(--text-light)'">Terms of Service</a>
+                    <a href="cookie-policy.php<?php echo $restaurant_id ? '?restaurant_id=' . urlencode($restaurant_id) : ''; ?>" style="color: var(--text-light); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-red)'" onmouseout="this.style.color='var(--text-light)'">Cookie Policy</a>
+                    <a href="#" id="cookieSettingsLink" style="color: var(--text-light); text-decoration: none; transition: color 0.2s; cursor: pointer;" onmouseover="this.style.color='var(--primary-red)'" onmouseout="this.style.color='var(--text-light)'">Cookie Settings</a>
+                </div>
+            </div>
         </div>
     </footer>
         </div>
@@ -744,7 +752,244 @@ try {
         </div>
     </nav>
 
+    <!-- Cookie Consent Banner -->
+    <div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 10000; padding: 1.5rem; border-top: 3px solid var(--primary-red);">
+        <div class="container" style="max-width: 1200px; margin: 0 auto;">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-dark); font-size: 1.1rem;">We use cookies</h3>
+                        <p style="margin: 0; color: var(--text-light); font-size: 0.9rem; line-height: 1.6;">
+                            We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. By clicking "Accept All", you consent to our use of cookies. 
+                            <a href="cookie-policy.php<?php echo $restaurant_id ? '?restaurant_id=' . urlencode($restaurant_id) : ''; ?>" style="color: var(--primary-red); text-decoration: underline;">Learn more</a>
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                        <button id="acceptAllCookies" style="padding: 0.75rem 1.5rem; background: var(--primary-red); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap;" onmouseover="this.style.background='var(--dark-red)'" onmouseout="this.style.background='var(--primary-red)'">Accept All</button>
+                        <button id="rejectNonEssential" style="padding: 0.75rem 1.5rem; background: white; color: var(--text-dark); border: 2px solid #e5e7eb; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap;" onmouseover="this.style.borderColor='var(--primary-red)'; this.style.color='var(--primary-red)'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.color='var(--text-dark)'">Reject Non-Essential</button>
+                        <button id="customizeCookies" style="padding: 0.75rem 1.5rem; background: transparent; color: var(--primary-red); border: 2px solid var(--primary-red); border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap;" onmouseover="this.style.background='var(--primary-red)'; this.style.color='white'" onmouseout="this.style.background='transparent'; this.style.color='var(--primary-red)'">Customize</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cookie Settings Modal -->
+    <div id="cookieSettingsModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 10001; align-items: center; justify-content: center; padding: 1rem;" onclick="if(event.target === this) closeCookieSettings()">
+        <div style="background: white; border-radius: 12px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem; position: relative;">
+            <button onclick="closeCookieSettings()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); transition: color 0.2s;" onmouseover="this.style.color='var(--text-dark)'" onmouseout="this.style.color='var(--text-light)'">&times;</button>
+            <h2 style="margin: 0 0 1.5rem 0; color: var(--primary-red); font-size: 1.5rem;">Cookie Settings</h2>
+            <p style="color: var(--text-light); margin-bottom: 2rem; line-height: 1.6;">Manage your cookie preferences. You can enable or disable different types of cookies below.</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb;">
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-dark); font-size: 1.1rem;">Essential Cookies</h3>
+                        <p style="margin: 0; color: var(--text-light); font-size: 0.9rem; line-height: 1.5;">These cookies are necessary for the website to function and cannot be switched off.</p>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 50px; height: 26px;">
+                        <input type="checkbox" checked disabled style="opacity: 0; width: 0; height: 0;">
+                        <span style="position: absolute; cursor: not-allowed; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--primary-red); border-radius: 26px; transition: 0.3s;"></span>
+                        <span style="position: absolute; content: ''; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: 0.3s; transform: translateX(24px);"></span>
+                    </label>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb;">
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-dark); font-size: 1.1rem;">Performance Cookies</h3>
+                        <p style="margin: 0; color: var(--text-light); font-size: 0.9rem; line-height: 1.5;">These cookies help us understand how visitors interact with our website.</p>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 50px; height: 26px;">
+                        <input type="checkbox" id="performanceCookies" style="opacity: 0; width: 0; height: 0;">
+                        <span class="cookie-toggle" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 26px; transition: 0.3s;"></span>
+                        <span class="cookie-toggle-slider" style="position: absolute; content: ''; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: 0.3s;"></span>
+                    </label>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb;">
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-dark); font-size: 1.1rem;">Functionality Cookies</h3>
+                        <p style="margin: 0; color: var(--text-light); font-size: 0.9rem; line-height: 1.5;">These cookies allow the website to remember your choices and preferences.</p>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 50px; height: 26px;">
+                        <input type="checkbox" id="functionalityCookies" style="opacity: 0; width: 0; height: 0;">
+                        <span class="cookie-toggle" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 26px; transition: 0.3s;"></span>
+                        <span class="cookie-toggle-slider" style="position: absolute; content: ''; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: 0.3s;"></span>
+                    </label>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-dark); font-size: 1.1rem;">Targeting/Advertising Cookies</h3>
+                        <p style="margin: 0; color: var(--text-light); font-size: 0.9rem; line-height: 1.5;">These cookies may be used to build a profile of your interests.</p>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 50px; height: 26px;">
+                        <input type="checkbox" id="targetingCookies" style="opacity: 0; width: 0; height: 0;">
+                        <span class="cookie-toggle" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 26px; transition: 0.3s;"></span>
+                        <span class="cookie-toggle-slider" style="position: absolute; content: ''; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: 0.3s;"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
+                <button onclick="saveCookiePreferences()" style="padding: 0.75rem 2rem; background: var(--primary-red); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--dark-red)'" onmouseout="this.style.background='var(--primary-red)'">Save Preferences</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
+    <script>
+    // Cookie Consent Management
+    (function() {
+        // Check if user has already made a choice
+        const cookieConsent = localStorage.getItem('cookie_consent');
+        const cookieBanner = document.getElementById('cookieConsentBanner');
+        const cookieSettingsModal = document.getElementById('cookieSettingsModal');
+        const cookieSettingsLink = document.getElementById('cookieSettingsLink');
+        
+        // Initialize cookie toggles
+        function initCookieToggles() {
+            const preferences = getCookiePreferences();
+            document.getElementById('performanceCookies').checked = preferences.performance;
+            document.getElementById('functionalityCookies').checked = preferences.functionality;
+            document.getElementById('targetingCookies').checked = preferences.targeting;
+            updateToggleStyles();
+        }
+        
+        function updateToggleStyles() {
+            ['performanceCookies', 'functionalityCookies', 'targetingCookies'].forEach(id => {
+                const checkbox = document.getElementById(id);
+                const toggle = checkbox.nextElementSibling;
+                const slider = toggle.nextElementSibling;
+                if (checkbox.checked) {
+                    toggle.style.backgroundColor = 'var(--primary-red)';
+                    slider.style.transform = 'translateX(24px)';
+                } else {
+                    toggle.style.backgroundColor = '#ccc';
+                    slider.style.transform = 'translateX(0)';
+                }
+            });
+        }
+        
+        function getCookiePreferences() {
+            const stored = localStorage.getItem('cookie_preferences');
+            if (stored) {
+                return JSON.parse(stored);
+            }
+            return {
+                essential: true,
+                performance: false,
+                functionality: false,
+                targeting: false
+            };
+        }
+        
+        function saveCookiePreferences(preferences) {
+            if (!preferences) {
+                preferences = {
+                    essential: true,
+                    performance: document.getElementById('performanceCookies').checked,
+                    functionality: document.getElementById('functionalityCookies').checked,
+                    targeting: document.getElementById('targetingCookies').checked
+                };
+            }
+            localStorage.setItem('cookie_preferences', JSON.stringify(preferences));
+            localStorage.setItem('cookie_consent', 'true');
+            localStorage.setItem('cookie_consent_date', new Date().toISOString());
+            
+            // Set cookie consent cookie (expires in 1 year)
+            const expiryDate = new Date();
+            expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+            document.cookie = `cookie_consent=true; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
+            
+            if (cookieBanner) cookieBanner.style.display = 'none';
+            if (cookieSettingsModal) cookieSettingsModal.style.display = 'none';
+        }
+        
+        // Show banner if no consent given
+        if (!cookieConsent && cookieBanner) {
+            cookieBanner.style.display = 'block';
+        }
+        
+        // Accept All button
+        const acceptAllBtn = document.getElementById('acceptAllCookies');
+        if (acceptAllBtn) {
+            acceptAllBtn.addEventListener('click', function() {
+                saveCookiePreferences({
+                    essential: true,
+                    performance: true,
+                    functionality: true,
+                    targeting: true
+                });
+            });
+        }
+        
+        // Reject Non-Essential button
+        const rejectBtn = document.getElementById('rejectNonEssential');
+        if (rejectBtn) {
+            rejectBtn.addEventListener('click', function() {
+                saveCookiePreferences({
+                    essential: true,
+                    performance: false,
+                    functionality: false,
+                    targeting: false
+                });
+            });
+        }
+        
+        // Customize button
+        const customizeBtn = document.getElementById('customizeCookies');
+        if (customizeBtn) {
+            customizeBtn.addEventListener('click', function() {
+                if (cookieSettingsModal) {
+                    cookieSettingsModal.style.display = 'flex';
+                    initCookieToggles();
+                }
+            });
+        }
+        
+        // Cookie Settings Link
+        if (cookieSettingsLink) {
+            cookieSettingsLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (cookieSettingsModal) {
+                    cookieSettingsModal.style.display = 'flex';
+                    initCookieToggles();
+                }
+            });
+        }
+        
+        // Toggle handlers
+        ['performanceCookies', 'functionalityCookies', 'targetingCookies'].forEach(id => {
+            const checkbox = document.getElementById(id);
+            if (checkbox) {
+                checkbox.addEventListener('change', function() {
+                    updateToggleStyles();
+                });
+                // Also handle click on toggle span
+                const toggle = checkbox.nextElementSibling;
+                if (toggle) {
+                    toggle.addEventListener('click', function() {
+                        checkbox.checked = !checkbox.checked;
+                        updateToggleStyles();
+                    });
+                }
+            }
+        });
+        
+        // Save preferences button
+        window.saveCookiePreferences = function() {
+            saveCookiePreferences();
+        };
+        
+        // Close modal function
+        window.closeCookieSettings = function() {
+            if (cookieSettingsModal) {
+                cookieSettingsModal.style.display = 'none';
+            }
+        };
+    })();
+    </script>
 </body>
 </html>
 
