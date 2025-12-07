@@ -37,6 +37,124 @@ if (!empty($jsonData['restaurant_id'])) {
     $restaurant_id = (int)$_GET['restaurant_id'];
 }
 
+// Get database schema information for AI context
+function getDatabaseSchema($pdo, $restaurantCode) {
+    $schema = [];
+    
+    // Get table structures
+    $tables = ['menu', 'menu_items', 'areas', 'tables', 'customers', 'orders', 'order_items', 'kot', 'kot_items', 'staff', 'reservations'];
+    
+    foreach ($tables as $table) {
+        try {
+            $stmt = $pdo->query("DESCRIBE `$table`");
+            $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $schema[$table] = $columns;
+        } catch (PDOException $e) {
+            // Table might not exist, skip
+        }
+    }
+    
+    return $schema;
+}
+
+// Validate and execute SQL query safely
+function executeSafeSQL($pdo, $sql, $restaurantCode, $restaurant_id) {
+    // Remove comments and normalize
+    $sql = preg_replace('/--.*$/m', '', $sql);
+    $sql = preg_replace('/\/\*.*?\*\//s', '', $sql);
+    $sql = trim($sql);
+    
+    // Only allow SELECT, INSERT, UPDATE, DELETE
+    $allowedOperations = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'];
+    $operation = strtoupper(trim(explode(' ', $sql)[0]));
+    
+    if (!in_array($operation, $allowedOperations)) {
+        throw new Exception("Only SELECT, INSERT, UPDATE, DELETE operations are allowed. Found: $operation");
+    }
+    
+    // Block dangerous operations
+    $dangerous = ['DROP', 'TRUNCATE', 'ALTER', 'CREATE', 'GRANT', 'REVOKE', 'EXEC', 'EXECUTE', 'CALL'];
+    foreach ($dangerous as $danger) {
+        if (stripos($sql, $danger) !== false) {
+            throw new Exception("Dangerous operation '$danger' is not allowed");
+        }
+    }
+    
+    // For INSERT/UPDATE/DELETE, ensure restaurant_id is included
+    if (in_array($operation, ['INSERT', 'UPDATE', 'DELETE'])) {
+        // For INSERT, add restaurant_id if not present
+        if ($operation === 'INSERT' && stripos($sql, 'restaurant_id') === false) {
+            // Try to add restaurant_id to INSERT statement
+            if (preg_match('/INSERT\s+INTO\s+`?(\w+)`?\s*\(/i', $sql, $matches)) {
+                $table = $matches[1];
+                // Check if table has restaurant_id column
+                try {
+                    $checkStmt = $pdo->query("SHOW COLUMNS FROM `$table` LIKE 'restaurant_id'");
+                    if ($checkStmt->rowCount() > 0) {
+                        // Add restaurant_id to column list and values
+                        $sql = preg_replace(
+                            '/INSERT\s+INTO\s+`?' . $table . '`?\s*\(/i',
+                            "INSERT INTO `$table` (restaurant_id, ",
+                            $sql,
+                            1
+                        );
+                        // Add restaurant_id value
+                        if (preg_match('/VALUES\s*\(/i', $sql)) {
+                            $sql = preg_replace('/VALUES\s*\(/i', "VALUES ('$restaurantCode', ", $sql, 1);
+                        }
+                    }
+                } catch (PDOException $e) {
+                    // Ignore
+                }
+            }
+        }
+        
+        // For UPDATE/DELETE, add WHERE restaurant_id condition if not present
+        if (in_array($operation, ['UPDATE', 'DELETE'])) {
+            if (stripos($sql, 'WHERE') === false) {
+                throw new Exception("UPDATE and DELETE operations must include a WHERE clause with restaurant_id");
+            }
+            if (stripos($sql, 'restaurant_id') === false) {
+                // Try to add restaurant_id condition
+                if (preg_match('/WHERE\s+(.+)$/i', $sql, $matches)) {
+                    $existingWhere = $matches[1];
+                    $sql = preg_replace(
+                        '/WHERE\s+.+$/i',
+                        "WHERE restaurant_id = '$restaurantCode' AND ($existingWhere)",
+                        $sql
+                    );
+                }
+            }
+        }
+    }
+    
+    // Execute the query
+    try {
+        if ($operation === 'SELECT') {
+            $stmt = $pdo->query($sql);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return [
+                'success' => true,
+                'operation' => $operation,
+                'rows_affected' => count($results),
+                'data' => $results
+            ];
+        } else {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute();
+            $rowsAffected = $stmt->rowCount();
+            return [
+                'success' => true,
+                'operation' => $operation,
+                'rows_affected' => $rowsAffected,
+                'last_insert_id' => $operation === 'INSERT' ? $pdo->lastInsertId() : null
+            ];
+        }
+    } catch (PDOException $e) {
+        throw new Exception("SQL execution error: " . $e->getMessage());
+    }
+}
+
 // Simple command parser for basic requests (fallback when AI API is unavailable)
 function parseSimpleCommand($prompt) {
     $prompt = strtolower(trim($prompt));
@@ -570,22 +688,44 @@ try {
                 $itemsStmt->execute([$restaurantCode]);
                 $items = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
                 
-                // Build context for AI
-                $context = "You are a restaurant management assistant. Read the user's request and create a JSON plan to execute it.\n\n";
-                $context .= "Current restaurant state:\n";
+                // Get database schema
+                $schema = getDatabaseSchema($pdo, $restaurantCode);
+                
+                // Build comprehensive context for AI
+                $context = "You are an advanced restaurant management AI assistant. You can perform ANY database operation: ADD, EDIT, UPDATE, DELETE, SELECT.\n\n";
+                $context .= "DATABASE SCHEMA:\n";
+                foreach ($schema as $table => $columns) {
+                    $context .= "\nTable: $table\n";
+                    foreach ($columns as $col) {
+                        $context .= "  - {$col['Field']} ({$col['Type']}) " . ($col['Null'] === 'NO' ? 'NOT NULL' : 'NULL') . "\n";
+                    }
+                }
+                
+                $context .= "\nCURRENT RESTAURANT STATE (restaurant_id: $restaurantCode):\n";
                 $context .= "- Menus: " . (count($menus) > 0 ? implode(', ', array_column($menus, 'menu_name')) : 'None') . "\n";
                 $context .= "- Areas: " . (count($areas) > 0 ? implode(', ', array_column($areas, 'area_name')) : 'None') . "\n";
                 $context .= "- Sample items: " . (count($items) > 0 ? implode(', ', array_slice(array_column($items, 'item_name_en'), 0, 5)) : 'None') . "\n\n";
-                $context .= "User request: $prompt\n\n";
-                $context .= "Analyze the request and respond with ONLY valid JSON in this exact format:\n";
-                $context .= '{"action": "add_items|add_menu|add_area|add_table", "items": [{"name": "...", "description": "...", "category": "...", "type": "Veg|Non Veg", "price": 0.00, "menu": "menu_name", "area": "area_name", "table": "table_number", "capacity": 4}], "plan": "Brief description of what will be created"}' . "\n\n";
-                $context .= "Rules:\n";
-                $context .= "- For areas: use action 'add_area', items should have 'name' field\n";
-                $context .= "- For menus: use action 'add_menu', items should have 'name' or 'menu' field\n";
-                $context .= "- For menu items: use action 'add_items', items need 'name', 'category', 'type' (Veg or Non Veg), 'price', and 'menu' (menu name)\n";
-                $context .= "- For tables: use action 'add_table', items need 'table', 'area' (area name), and optional 'capacity'\n";
-                $context .= "- item_type must be exactly 'Veg' or 'Non Veg' (with space, not hyphen)\n";
-                $context .= "- Respond with ONLY the JSON object, no other text";
+                
+                $context .= "USER REQUEST: $prompt\n\n";
+                
+                $context .= "RESPOND WITH JSON IN ONE OF THESE FORMATS:\n\n";
+                $context .= "OPTION 1 - Action Plan (for complex operations):\n";
+                $context .= '{"type": "action", "action": "add|edit|delete|update|select", "table": "table_name", "items": [...], "where": {...}, "set": {...}, "plan": "description"}' . "\n\n";
+                
+                $context .= "OPTION 2 - Direct SQL (for precise operations):\n";
+                $context .= '{"type": "sql", "sql": "SELECT/INSERT/UPDATE/DELETE SQL query", "plan": "description"}' . "\n\n";
+                
+                $context .= "RULES:\n";
+                $context .= "1. For ADD operations: use action 'add' with table and items array\n";
+                $context .= "2. For EDIT/UPDATE: use action 'update' with table, where conditions, and set values\n";
+                $context .= "3. For DELETE: use action 'delete' with table and where conditions\n";
+                $context .= "4. For SELECT/QUERY: use type 'sql' with SELECT query\n";
+                $context .= "5. ALWAYS include restaurant_id = '$restaurantCode' in WHERE clauses for UPDATE/DELETE\n";
+                $context .= "6. For INSERT, include restaurant_id = '$restaurantCode' in values\n";
+                $context .= "7. item_type enum values: 'Veg', 'Non Veg', 'Egg' (use space, not hyphen)\n";
+                $context .= "8. For SQL type, generate valid MySQL/MariaDB SQL only\n";
+                $context .= "9. SQL can only use: SELECT, INSERT, UPDATE, DELETE (no DROP, ALTER, etc.)\n";
+                $context .= "10. Respond with ONLY the JSON object, no other text\n";
                 
                 // Call OpenRouter API
                 $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
@@ -702,15 +842,82 @@ try {
             
             // Execute the plan directly
             if ($plan) {
-                // Use executeAIPlan logic to execute the plan
-                $action = $plan['action'] ?? '';
-                $items = $plan['items'] ?? [];
+                $planType = $plan['type'] ?? 'action';
                 $created = [];
                 $errors = [];
+                $results = [];
                 
-                foreach ($items as $item) {
+                // Handle SQL type plans
+                if ($planType === 'sql' && isset($plan['sql'])) {
                     try {
-                        if ($action === 'add_menu') {
+                        $sqlResult = executeSafeSQL($pdo, $plan['sql'], $restaurantCode, $restaurant_id);
+                        $results[] = $sqlResult;
+                        if ($sqlResult['operation'] === 'SELECT') {
+                            $created[] = "Query returned " . $sqlResult['rows_affected'] . " row(s)";
+                        } else {
+                            $created[] = ucfirst(strtolower($sqlResult['operation'])) . " affected " . $sqlResult['rows_affected'] . " row(s)";
+                        }
+                    } catch (Exception $e) {
+                        $errors[] = "SQL Error: " . $e->getMessage();
+                    }
+                } else {
+                    // Handle action type plans
+                    $action = $plan['action'] ?? $plan['type'] ?? '';
+                    $table = $plan['table'] ?? '';
+                    $items = $plan['items'] ?? [];
+                    $where = $plan['where'] ?? [];
+                    $set = $plan['set'] ?? [];
+                    
+                    // Handle different action types
+                    if ($action === 'delete' && $table) {
+                        // DELETE operation
+                        try {
+                            $whereClause = "restaurant_id = ?";
+                            $params = [$restaurantCode];
+                            
+                            foreach ($where as $key => $value) {
+                                $whereClause .= " AND $key = ?";
+                                $params[] = $value;
+                            }
+                            
+                            $deleteStmt = $pdo->prepare("DELETE FROM `$table` WHERE $whereClause");
+                            $deleteStmt->execute($params);
+                            $rowsAffected = $deleteStmt->rowCount();
+                            $created[] = "Deleted $rowsAffected row(s) from $table";
+                        } catch (Exception $e) {
+                            $errors[] = "Delete error: " . $e->getMessage();
+                        }
+                    } elseif ($action === 'update' && $table && !empty($set)) {
+                        // UPDATE operation
+                        try {
+                            $setClause = [];
+                            $params = [];
+                            
+                            foreach ($set as $key => $value) {
+                                $setClause[] = "$key = ?";
+                                $params[] = $value;
+                            }
+                            
+                            $whereClause = "restaurant_id = ?";
+                            $params[] = $restaurantCode;
+                            
+                            foreach ($where as $key => $value) {
+                                $whereClause .= " AND $key = ?";
+                                $params[] = $value;
+                            }
+                            
+                            $updateStmt = $pdo->prepare("UPDATE `$table` SET " . implode(', ', $setClause) . " WHERE $whereClause");
+                            $updateStmt->execute($params);
+                            $rowsAffected = $updateStmt->rowCount();
+                            $created[] = "Updated $rowsAffected row(s) in $table";
+                        } catch (Exception $e) {
+                            $errors[] = "Update error: " . $e->getMessage();
+                        }
+                    } else {
+                        // ADD operations (existing logic)
+                        foreach ($items as $item) {
+                            try {
+                                if ($action === 'add_menu' || ($action === 'add' && $table === 'menu')) {
                             $menuName = $item['name'] ?? $item['menu'] ?? 'Menu';
                             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu WHERE menu_name = ? AND restaurant_id = ?");
                             $checkStmt->execute([$menuName, $restaurantCode]);
@@ -792,6 +999,7 @@ try {
                         $errors[] = $e->getMessage();
                     }
                 }
+                }
                 
                 $message = $usedSimpleParser 
                     ? 'Command executed using simple parser. ' . (count($created) > 0 ? count($created) . ' item(s) created.' : 'No new items created.')
@@ -802,6 +1010,7 @@ try {
                     'message' => $message,
                     'created' => $created,
                     'errors' => $errors,
+                    'results' => $results,
                     'rawPlan' => $plan
                 ], JSON_UNESCAPED_UNICODE);
             } else {
