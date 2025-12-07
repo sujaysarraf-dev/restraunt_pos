@@ -28,30 +28,56 @@ $imageId = $_GET['id'] ?? '';
 // BLOB data always takes priority over file-based or db: reference
 if (!empty($imagePath) && strpos($imagePath, 'http') !== 0 && empty($imageType)) {
     try {
-        // Strategy 1: Exact path match
+        // Strategy 1: Exact path match (works for both db: and file paths)
         $stmt = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
         $stmt->execute([$imagePath]);
         $item = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        // Strategy 2: Filename match (if exact match failed)
+        if ($item && !empty($item['image_data'])) {
+            ob_end_clean();
+            header('Content-Type: ' . ($item['image_mime_type'] ?? 'image/jpeg'));
+            header('Content-Length: ' . strlen($item['image_data']));
+            header('Cache-Control: public, max-age=31536000');
+            echo $item['image_data'];
+            exit();
+        }
+        
+        // Strategy 2: For db: paths, extract identifier and try direct match
+        if (strpos($imagePath, 'db:') === 0) {
+            $dbId = substr($imagePath, 3); // Remove 'db:' prefix
+            $stmt2 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
+            $stmt2->execute([$imagePath]); // Try full path again
+            $item = $stmt2->fetch(PDO::FETCH_ASSOC);
+            
+            if ($item && !empty($item['image_data'])) {
+                ob_end_clean();
+                header('Content-Type: ' . ($item['image_mime_type'] ?? 'image/jpeg'));
+                header('Content-Length: ' . strlen($item['image_data']));
+                header('Cache-Control: public, max-age=31536000');
+                echo $item['image_data'];
+                exit();
+            }
+        }
+        
+        // Strategy 3: Filename match (if exact match failed) - for file-based paths
         if (!$item || empty($item['image_data'])) {
             $filename = basename($imagePath);
             // Remove query strings or fragments from filename
             $filename = preg_replace('/[?#].*$/', '', $filename);
-            $stmt2 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ? OR item_image = ?) AND image_data IS NOT NULL LIMIT 1");
-            $stmt2->execute(['%' . $filename, '%/' . $filename . '%', $imagePath]);
-            $item = $stmt2->fetch(PDO::FETCH_ASSOC);
+            $stmt3 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ? OR item_image = ?) AND image_data IS NOT NULL LIMIT 1");
+            $stmt3->execute(['%' . $filename, '%/' . $filename . '%', $imagePath]);
+            $item = $stmt3->fetch(PDO::FETCH_ASSOC);
         }
         
-        // Strategy 3: Check if path contains a unique identifier (like item ID or hash)
+        // Strategy 4: Check if path contains a unique identifier (like item ID or hash)
         // Extract any alphanumeric identifier from the path
         if (!$item || empty($item['image_data'])) {
             preg_match('/([a-f0-9]{10,})/i', $imagePath, $matches);
             if (!empty($matches[1])) {
                 $identifier = $matches[1];
-                $stmt3 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ?) AND image_data IS NOT NULL LIMIT 1");
-                $stmt3->execute(['%' . $identifier . '%', 'db:' . $identifier]);
-                $item = $stmt3->fetch(PDO::FETCH_ASSOC);
+                $stmt4 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ?) AND image_data IS NOT NULL LIMIT 1");
+                $stmt4->execute(['%' . $identifier . '%', 'db:' . $identifier]);
+                $item = $stmt4->fetch(PDO::FETCH_ASSOC);
             }
         }
         
@@ -65,7 +91,9 @@ if (!empty($imagePath) && strpos($imagePath, 'http') !== 0 && empty($imageType))
         }
     } catch (PDOException $e) {
         // If query fails, continue to other checks
-        error_log("Database BLOB check failed: " . $e->getMessage());
+        error_log("Database BLOB check failed for path '$imagePath': " . $e->getMessage());
+    } catch (Exception $e) {
+        error_log("Unexpected error in BLOB check for path '$imagePath': " . $e->getMessage());
     }
 }
 
