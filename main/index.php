@@ -32,7 +32,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
     }
 } else {
     // User is not logged in, redirect to frontend landing page
-    header('Location: frontend/index.html');
+    header('Location: ../frontend/index.html');
     exit();
 }
 ?>
