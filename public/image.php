@@ -27,10 +27,18 @@ $imageId = $_GET['id'] ?? '';
 // BLOB data always takes priority over file-based or db: reference
 if (!empty($imagePath) && strpos($imagePath, 'http') !== 0 && empty($imageType)) {
     try {
-        // Check for BLOB data by matching the item_image value
-        $stmt = $pdo->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
+        // First try: Check for BLOB data by matching the item_image value exactly
+        $stmt = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
         $stmt->execute([$imagePath]);
         $item = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // If not found by path, try to find by filename match
+        if (!$item || empty($item['image_data'])) {
+            $filename = basename($imagePath);
+            $stmt2 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image = ?) AND image_data IS NOT NULL LIMIT 1");
+            $stmt2->execute(['%' . $filename . '%', $imagePath]);
+            $item = $stmt2->fetch(PDO::FETCH_ASSOC);
+        }
         
         if ($item && !empty($item['image_data'])) {
             ob_end_clean();
