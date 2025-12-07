@@ -555,8 +555,8 @@
                     if (result.cooldown_seconds) {
                         const minutes = Math.floor(result.cooldown_seconds / 60);
                         const seconds = result.cooldown_seconds % 60;
-                        const timeStr = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`;
-                        showForgotPasswordMessage(result.message || `Please wait ${timeStr} before requesting another password reset.`, 'error');
+                        const timeStr = minutes > 0 ? (minutes + ' minute(s) and ' + seconds + ' second(s)') : (seconds + ' second(s)');
+                        showForgotPasswordMessage(result.message || 'Please wait ' + timeStr + ' before requesting another password reset.', 'error');
                     } else {
                         showForgotPasswordMessage(result.message || 'Email not found. Please check your email address.', 'error');
                     }
