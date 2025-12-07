@@ -1,4 +1,21 @@
 <?php
+// Register error handler to catch all errors
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error !== NULL && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        ob_clean();
+        http_response_code(500);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Fatal error: ' . $error['message'],
+            'file' => $error['file'],
+            'line' => $error['line']
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+});
+
 // Suppress error display, log errors instead
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
@@ -42,12 +59,16 @@ try {
     ob_clean();
     http_response_code(500);
     error_log("Initialization error in pos_operations.php: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
+    header('Content-Type: application/json; charset=UTF-8');
     echo json_encode(['success' => false, 'message' => 'Initialization error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Error $e) {
     ob_clean();
     http_response_code(500);
     error_log("Fatal initialization error in pos_operations.php: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
+    header('Content-Type: application/json; charset=UTF-8');
     echo json_encode(['success' => false, 'message' => 'Fatal initialization error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit();
 }
