@@ -35,7 +35,18 @@ $restaurant_id = $_SESSION['restaurant_id'];
 $action = $_POST['action'] ?? '';
 
 try {
+    // Validate database connection
+    if (!isset($pdo)) {
+        throw new Exception('Database connection not available');
+    }
+    
     $conn = $pdo;
+    
+    // Validate action
+    if (empty($action)) {
+        echo json_encode(['success' => false, 'message' => 'Action is required'], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
     
     switch ($action) {
         case 'create_kot':
@@ -47,7 +58,7 @@ try {
             break;
             
         default:
-            echo json_encode(['success' => false, 'message' => 'Invalid action'], JSON_UNESCAPED_UNICODE);
+            echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action], JSON_UNESCAPED_UNICODE);
     }
 } catch (PDOException $e) {
     error_log("PDO Error in pos_operations.php: " . $e->getMessage());
@@ -103,7 +114,18 @@ function handleCreateKOT($conn, $restaurant_id) {
     }
     
     // Include helper functions for generating unique numbers
+    if (!file_exists(__DIR__ . '/kot_operations.php')) {
+        throw new Exception('kot_operations.php file not found');
+    }
     require_once __DIR__ . '/kot_operations.php';
+    
+    // Check if functions exist
+    if (!function_exists('generateKOTNumber')) {
+        throw new Exception('generateKOTNumber function not found in kot_operations.php');
+    }
+    if (!function_exists('generateOrderNumber')) {
+        throw new Exception('generateOrderNumber function not found in kot_operations.php');
+    }
     
     // Generate unique KOT number with collision check
     $kotNumber = generateKOTNumber($conn, $restaurant_id);
@@ -250,6 +272,9 @@ function handleHoldOrder($conn, $restaurant_id) {
     }
     
     // Include helper functions for generating unique numbers
+    if (!file_exists(__DIR__ . '/kot_operations.php')) {
+        throw new Exception('kot_operations.php file not found');
+    }
     require_once __DIR__ . '/kot_operations.php';
     
     // Generate unique order number for held order (using same function but with HOLD prefix)
