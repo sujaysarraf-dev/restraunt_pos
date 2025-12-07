@@ -930,32 +930,69 @@ try {
 
         async function quickAddMenuItem() {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
+            const quantity = parseInt(document.getElementById('itemQuantity')?.value || 1);
+            
             if (!selectedRestaurant) {
                 addToLog('Please select a restaurant first', 'error');
                 return;
             }
             
+            if (quantity < 1 || quantity > 50) {
+                addToLog('Quantity must be between 1 and 50', 'error');
+                return;
+            }
+            
+            const btn = event?.target || document.querySelector('button[onclick*="quickAddMenuItem"]');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '⏳ Adding...';
+            
             try {
-                const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddMenuItem', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ restaurant_id: selectedRestaurant })
-                });
-                const data = await res.json();
+                let added = 0;
+                let errors = 0;
                 
-                console.log('quickAddMenuItem response:', data);
-                
-                if (data.success) {
-                    addToLog(`Menu item added: ${data.name}`, 'success');
-                    loadMenus();
-                    refreshStatus();
-                } else {
-                    addToLog(`Failed: ${data.message || 'Unknown error'}`, 'error');
-                    console.error('API Error:', data);
+                for (let i = 0; i < quantity; i++) {
+                    try {
+                        const res = await fetch('https://restrogrow.com/main/sujay/api.php?action=quickAddMenuItem', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ restaurant_id: selectedRestaurant })
+                        });
+                        const data = await res.json();
+                        
+                        if (data.success) {
+                            added++;
+                            if (quantity === 1) {
+                                addToLog(`Menu item added: ${data.name} (₹${data.price || 'N/A'})`, 'success');
+                            }
+                        } else {
+                            errors++;
+                            if (quantity === 1) {
+                                addToLog(`Failed: ${data.message || 'Unknown error'}`, 'error');
+                                console.error('API Error:', data);
+                            }
+                        }
+                    } catch (e) {
+                        errors++;
+                        if (quantity === 1) {
+                            addToLog('Error: ' + e.message, 'error');
+                            console.error('Fetch Error:', e);
+                        }
+                    }
                 }
+                
+                if (quantity > 1) {
+                    addToLog(`Added ${added} menu item(s)${errors > 0 ? `, ${errors} failed` : ''}`, added > 0 ? 'success' : 'error');
+                }
+                
+                loadMenus();
+                refreshStatus();
             } catch (e) {
                 addToLog('Error: ' + e.message, 'error');
                 console.error('Fetch Error:', e);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
         }
 
