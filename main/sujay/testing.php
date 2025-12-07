@@ -301,6 +301,7 @@ try {
                 <div style="padding: 1rem; background: var(--gray-50); border-radius: 8px;">
                     <div style="font-size: 0.875rem; color: var(--gray-600);">Menus</div>
                     <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="statusMenus">-</div>
+                    <div id="statusMenusList"></div>
                 </div>
                 <div style="padding: 1rem; background: var(--gray-50); border-radius: 8px;">
                     <div style="font-size: 0.875rem; color: var(--gray-600);">Areas</div>
@@ -430,6 +431,11 @@ try {
 
         async function refreshStatus() {
             const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
+            if (!selectedRestaurant) {
+                console.warn('No restaurant selected for status refresh');
+                return;
+            }
+            
             try {
                 const [menusRes, areasRes, tablesRes, itemsRes] = await Promise.all([
                     fetch(`https://restrogrow.com/main/sujay/api.php?action=getMenus&restaurant_id=${selectedRestaurant}`),
@@ -443,10 +449,24 @@ try {
                 const tablesData = await tablesRes.json();
                 const itemsData = await itemsRes.json();
                 
+                // Debug logging
+                console.log('Status refresh for restaurant:', selectedRestaurant);
+                console.log('Menus data:', menusData);
+                
                 document.getElementById('statusMenus').textContent = menusData.success ? menusData.count : '0';
                 document.getElementById('statusAreas').textContent = areasData.success ? areasData.count : '0';
                 document.getElementById('statusTables').textContent = tablesData.success ? tablesData.count : '0';
                 document.getElementById('statusItems').textContent = itemsData.success ? itemsData.count : '0';
+                
+                // Show actual menu names if available
+                const menusListEl = document.getElementById('statusMenusList');
+                if (menusListEl) {
+                    if (menusData.success && menusData.menus && menusData.menus.length > 0) {
+                        menusListEl.innerHTML = menusData.menus.map(m => `<div style="font-size: 0.75rem; color: var(--gray-600); margin-top: 0.25rem;">• ${m.menu_name}</div>`).join('');
+                    } else {
+                        menusListEl.innerHTML = '<div style="font-size: 0.75rem; color: var(--gray-400); margin-top: 0.25rem;">No menus</div>';
+                    }
+                }
                 
                 // Get restaurant count
                 const restaurantsRes = await fetch(`https://restrogrow.com/main/sujay/api.php?action=getRestaurants`);

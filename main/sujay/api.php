@@ -87,14 +87,21 @@ try {
             break;
             
         case 'getMenus':
+            // Debug: Log the restaurant_id being used
+            error_log("getMenus called with restaurant_id: " . $restaurant_id);
+            
             $stmt = $pdo->prepare("SELECT id, menu_name, is_active, created_at, updated_at FROM menu WHERE restaurant_id = ? ORDER BY sort_order ASC, created_at DESC");
             $stmt->execute([$restaurant_id]);
             $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
+            // Debug: Log the results
+            error_log("getMenus found " . count($menus) . " menus for restaurant_id: " . $restaurant_id);
+            
             echo json_encode([
                 'success' => true,
                 'menus' => $menus,
-                'count' => count($menus)
+                'count' => count($menus),
+                'debug' => ['restaurant_id' => $restaurant_id, 'query_count' => count($menus)]
             ], JSON_UNESCAPED_UNICODE);
             break;
             
@@ -499,11 +506,15 @@ try {
             $insertStmt = $pdo->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
             $insertStmt->execute([$restaurant_id, $menuName]);
             
+            $insertedId = $pdo->lastInsertId();
+            error_log("quickAddMenu inserted menu '$menuName' with ID $insertedId for restaurant_id: $restaurant_id");
+            
             echo json_encode([
                 'success' => true,
                 'message' => 'Menu added successfully',
                 'name' => $menuName,
-                'id' => $pdo->lastInsertId()
+                'id' => $insertedId,
+                'debug' => ['restaurant_id' => $restaurant_id, 'inserted_id' => $insertedId]
             ], JSON_UNESCAPED_UNICODE);
             break;
             
