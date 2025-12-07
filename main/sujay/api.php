@@ -15,10 +15,19 @@ require_once __DIR__ . '/../db_connection.php';
 define('OPENROUTER_API_KEY', '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');
 define('OPENROUTER_MODEL', 'google/gemini-flash-1.5'); // Free lifetime model
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+// Handle JSON POST data
+$jsonData = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+    $rawInput = file_get_contents('php://input');
+    if (!empty($rawInput)) {
+        $jsonData = json_decode($rawInput, true) ?? [];
+    }
+}
 
-// Get restaurant ID from POST or use sujay's restaurant
-$restaurant_id = $_POST['restaurant_id'] ?? $_GET['restaurant_id'] ?? null;
+$action = $_GET['action'] ?? $_POST['action'] ?? $jsonData['action'] ?? '';
+
+// Get restaurant ID from JSON, POST, GET, or use sujay's restaurant
+$restaurant_id = $jsonData['restaurant_id'] ?? $_POST['restaurant_id'] ?? $_GET['restaurant_id'] ?? null;
 if (!$restaurant_id && $action !== 'getRestaurants') {
     try {
         $restaurantStmt = $pdo->query("SELECT id FROM users WHERE username = 'sujay' LIMIT 1");
@@ -370,7 +379,7 @@ try {
             break;
             
         case 'processAI':
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = $jsonData; // Use already parsed JSON data
             $prompt = $input['prompt'] ?? '';
             $restaurant_id = $input['restaurant_id'] ?? $restaurant_id;
             
@@ -630,8 +639,8 @@ try {
             break;
             
         case 'executeAIPlan':
-            $input = json_decode(file_get_contents('php://input'), true);
-            $plan = $input['rawPlan'] ?? [];
+            $input = $jsonData; // Use already parsed JSON data
+            $plan = $input['rawPlan'] ?? $input['plan'] ?? [];
             $restaurant_id = $input['restaurant_id'] ?? $restaurant_id;
             
             $created = [];
