@@ -557,6 +557,11 @@ try {
             break;
             
         case 'quickAddArea':
+            // Verify restaurant_id is valid
+            if (!$restaurant_id || $restaurant_id <= 0) {
+                throw new Exception('Invalid restaurant_id: ' . $restaurant_id);
+            }
+            
             // Get next area number
             $countStmt = $pdo->prepare("SELECT COUNT(*) FROM areas WHERE restaurant_id = ?");
             $countStmt->execute([$restaurant_id]);
@@ -584,6 +589,11 @@ try {
             break;
             
         case 'quickAddTable':
+            // Verify restaurant_id is valid
+            if (!$restaurant_id || $restaurant_id <= 0) {
+                throw new Exception('Invalid restaurant_id: ' . $restaurant_id);
+            }
+            
             // Get a random area or create one if none exists
             $areaStmt = $pdo->prepare("SELECT id FROM areas WHERE restaurant_id = ? LIMIT 1");
             $areaStmt->execute([$restaurant_id]);
@@ -627,6 +637,11 @@ try {
             break;
             
         case 'quickAddMenuItem':
+            // Verify restaurant_id is valid
+            if (!$restaurant_id || $restaurant_id <= 0) {
+                throw new Exception('Invalid restaurant_id: ' . $restaurant_id);
+            }
+            
             // Get a random menu or create one if none exists
             $menuStmt = $pdo->prepare("SELECT id FROM menu WHERE restaurant_id = ? LIMIT 1");
             $menuStmt->execute([$restaurant_id]);
