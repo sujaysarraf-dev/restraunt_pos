@@ -208,15 +208,15 @@ function parseSimpleCommand($prompt) {
         }
     }
     // UPDATE/EDIT operations
-    elseif (preg_match('/(update|edit|change|set)\s+(.+?)\s+(to|as|=\s*)(.+)/i', $prompt, $matches)) {
+    elseif (preg_match('/(update|edit|change|set)\s+(.+?)\s+(to|as|=\s*)(.+)/i', $promptLower, $matches)) {
         $field = trim($matches[2]);
         $value = trim($matches[4]);
         
         // Try to identify table and field
-        if (preg_match('/(menu|menus)/i', $prompt)) {
+        if (preg_match('/(menu|menus)/i', $promptLower)) {
             if (preg_match('/(name|menu_name)/i', $field)) {
                 // Extract old name if provided
-                if (preg_match('/(?:menu|name)\s+["\']?([^"\']+)["\']?\s+(?:to|as|=)/i', $prompt, $nameMatch)) {
+                if (preg_match('/(?:menu|name)\s+["\']?([^"\']+)["\']?\s+(?:to|as|=)/i', $promptLower, $nameMatch)) {
                     $plan = [
                         'type' => 'action',
                         'action' => 'update',
@@ -227,9 +227,9 @@ function parseSimpleCommand($prompt) {
                     ];
                 }
             }
-        } elseif (preg_match('/(area|areas)/i', $prompt)) {
+        } elseif (preg_match('/(area|areas)/i', $promptLower)) {
             if (preg_match('/(name|area_name)/i', $field)) {
-                if (preg_match('/(?:area|name)\s+["\']?([^"\']+)["\']?\s+(?:to|as|=)/i', $prompt, $nameMatch)) {
+                if (preg_match('/(?:area|name)\s+["\']?([^"\']+)["\']?\s+(?:to|as|=)/i', $promptLower, $nameMatch)) {
                     $plan = [
                         'type' => 'action',
                         'action' => 'update',
@@ -256,7 +256,7 @@ function parseSimpleCommand($prompt) {
         }
     }
     // SELECT/QUERY operations
-    elseif (preg_match('/(show|list|get|select|display|find)\s+(all\s+)?(menu|menus|area|areas|table|tables|item|items|customer|customers)/i', $prompt, $matches)) {
+    elseif (preg_match('/(show|list|get|select|display|find)\s+(all\s+)?(menu|menus|area|areas|table|tables|item|items|customer|customers)/i', $promptLower, $matches)) {
         $type = strtolower($matches[3]);
         
         if (in_array($type, ['menu', 'menus'])) {
@@ -292,7 +292,7 @@ function parseSimpleCommand($prompt) {
         }
     }
     // ADD operations (existing logic)
-    elseif (preg_match('/(add|create|insert)\s+(\d+)\s*(menu|menus|area|areas|table|tables|item|items)/i', $prompt, $matches)) {
+    elseif (preg_match('/(add|create|insert)\s+(\d+)\s*(menu|menus|area|areas|table|tables|item|items)/i', $promptLower, $matches)) {
         $count = (int)$matches[2];
         $type = strtolower($matches[3]);
         
@@ -311,7 +311,7 @@ function parseSimpleCommand($prompt) {
             } elseif (in_array($type, ['area', 'areas'])) {
                 // Check if prompt mentions city names
                 $cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow'];
-                if (preg_match('/(city|cities|indian)/i', $prompt)) {
+                if (preg_match('/(city|cities|indian)/i', $promptLower)) {
                     for ($i = 0; $i < $count && $i < count($cities); $i++) {
                         $items[] = ['name' => $cities[$i]];
                     }
@@ -350,7 +350,7 @@ function parseSimpleCommand($prompt) {
                 
                 $itemNames = [];
                 foreach ($cuisines as $cuisine => $names) {
-                    if (stripos($prompt, $cuisine) !== false) {
+                    if (stripos($promptLower, $cuisine) !== false) {
                         $itemNames = $names;
                         break;
                     }
