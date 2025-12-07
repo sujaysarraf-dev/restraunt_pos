@@ -644,40 +644,66 @@ require_superadmin();
     // Password Reset Data
     let resetPage = 1, resetLimit = 10;
     async function loadPasswordResetData(){
+      const tbody = document.getElementById('passwordResetTbody');
+      if (!tbody) return;
+      
       try {
         const res = await fetch('api.php?action=getPasswordResetData&page='+resetPage+'&limit='+resetLimit);
-        const data = await res.json();
-        const tbody = document.getElementById('passwordResetTbody');
+        
+        if (!res.ok) {
+          throw new Error('HTTP error: ' + res.status);
+        }
+        
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch(e) {
+          console.error('JSON parse error:', text);
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);">Invalid response from server. Check console for details.</td></tr>';
+          return;
+        }
+        
         if(data.success && data.tokens){
-          tbody.innerHTML = data.tokens.map(t => {
-            const isUsed = Number(t.used) === 1;
-            const isExpired = new Date(t.expires_at) < new Date();
-            const status = isUsed ? 'Used' : (isExpired ? 'Expired' : 'Active');
-            const statusClass = isUsed ? 'badge-warning' : (isExpired ? 'badge-danger' : 'badge-success');
-            return `
-              <tr>
-                <td>${t.id}</td>
-                <td>${t.username || 'N/A'}</td>
-                <td>${t.restaurant_name || 'N/A'}</td>
-                <td>${t.email || 'N/A'}</td>
-                <td style="font-family:monospace;font-size:0.8rem;">${t.token.substring(0,16)}...</td>
-                <td><span class="badge ${statusClass}">${status}</span></td>
-                <td>${t.created_at ? new Date(t.created_at).toLocaleString() : 'N/A'}</td>
-                <td>${t.expires_at ? new Date(t.expires_at).toLocaleString() : 'N/A'}</td>
-              </tr>
-            `;
-          }).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);">No password reset tokens found</td></tr>';
+          if (data.tokens.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);">No password reset tokens found</td></tr>';
+          } else {
+            tbody.innerHTML = data.tokens.map(t => {
+              const isUsed = Number(t.used) === 1;
+              const isExpired = new Date(t.expires_at) < new Date();
+              const status = isUsed ? 'Used' : (isExpired ? 'Expired' : 'Active');
+              const statusClass = isUsed ? 'badge-warning' : (isExpired ? 'badge-danger' : 'badge-success');
+              return `
+                <tr>
+                  <td>${t.id}</td>
+                  <td>${t.username || 'N/A'}</td>
+                  <td>${t.restaurant_name || 'N/A'}</td>
+                  <td>${t.email || 'N/A'}</td>
+                  <td style="font-family:monospace;font-size:0.8rem;">${(t.token || '').substring(0,16)}...</td>
+                  <td><span class="badge ${statusClass}">${status}</span></td>
+                  <td>${t.created_at ? new Date(t.created_at).toLocaleString() : 'N/A'}</td>
+                  <td>${t.expires_at ? new Date(t.expires_at).toLocaleString() : 'N/A'}</td>
+                </tr>
+              `;
+            }).join('');
+          }
           const total = data.total || 0;
           const pages = Math.max(1, Math.ceil(total/resetLimit));
-          document.getElementById('resetPageInfo').textContent = `Page ${resetPage} of ${pages}`;
-          document.getElementById('prevResetPage').disabled = resetPage <= 1;
-          document.getElementById('nextResetPage').disabled = resetPage >= pages;
+          const pageInfo = document.getElementById('resetPageInfo');
+          if (pageInfo) {
+            pageInfo.textContent = `Page ${resetPage} of ${pages}`;
+          }
+          const prevBtn = document.getElementById('prevResetPage');
+          const nextBtn = document.getElementById('nextResetPage');
+          if (prevBtn) prevBtn.disabled = resetPage <= 1;
+          if (nextBtn) nextBtn.disabled = resetPage >= pages;
         } else {
-          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);">' + (data.message || 'Error loading data') + '</td></tr>';
+          const message = data.message || 'Error loading data';
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);">' + message + '</td></tr>';
         }
       } catch(e) {
         console.error('Error loading password reset data:', e);
-        document.getElementById('passwordResetTbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);">Error loading data</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);">Error: ' + e.message + '</td></tr>';
       }
     }
     document.getElementById('prevResetPage')?.addEventListener('click', ()=>{ if(resetPage>1){ resetPage--; loadPasswordResetData(); }});
