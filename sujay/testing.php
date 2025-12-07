@@ -270,7 +270,59 @@ try {
     <div class="container">
         <div class="page-header">
             <h1>Testing Tools</h1>
-            <p>Quick tools for adding menu, area, table, and menu items. Restaurant: <strong><?php echo htmlspecialchars($restaurant_name); ?></strong> (ID: <?php echo $restaurant_id; ?>)</p>
+            <p>Quick tools for adding menu, area, table, and menu items. Use AI prompts or manual forms.</p>
+        </div>
+
+        <div class="form-card" style="margin-bottom: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+            <h3 style="color: white; margin-bottom: 1rem;">🤖 AI Assistant</h3>
+            <p style="color: rgba(255,255,255,0.9); margin-bottom: 1rem;">Tell me what to add! Example: "Add 5 South Indian items" or "Create 3 tables in Main Hall"</p>
+            <div class="form-group">
+                <label for="restaurantSelect" style="color: white;">Select Restaurant</label>
+                <select id="restaurantSelect" style="background: white; color: var(--gray-900);">
+                    <option value="">Loading restaurants...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="aiPrompt" style="color: white;">Your Prompt</label>
+                <textarea id="aiPrompt" rows="3" placeholder="e.g., Add 5 South Indian items to the menu" style="width: 100%; padding: 0.75rem; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(255,255,255,0.95); color: var(--gray-900); font-size: 1rem;"></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="processAIPrompt()" id="aiProcessBtn" style="background: white; color: #667eea; margin-top: 0.5rem;">🚀 Process Prompt</button>
+            <div class="loading" id="aiLoading" style="color: white;">Processing your request...</div>
+            <div class="alert" id="aiAlert"></div>
+        </div>
+
+        <div class="form-card" style="margin-bottom: 2rem;">
+            <h3>📊 Current Status</h3>
+            <div id="statusDashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div style="padding: 1rem; background: var(--gray-50); border-radius: 8px;">
+                    <div style="font-size: 0.875rem; color: var(--gray-600);">Restaurants</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="statusRestaurants">-</div>
+                </div>
+                <div style="padding: 1rem; background: var(--gray-50); border-radius: 8px;">
+                    <div style="font-size: 0.875rem; color: var(--gray-600);">Menus</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="statusMenus">-</div>
+                </div>
+                <div style="padding: 1rem; background: var(--gray-50); border-radius: 8px;">
+                    <div style="font-size: 0.875rem; color: var(--gray-600);">Areas</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="statusAreas">-</div>
+                </div>
+                <div style="padding: 1rem; background: var(--gray-50); border-radius: 8px;">
+                    <div style="font-size: 0.875rem; color: var(--gray-600);">Tables</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="statusTables">-</div>
+                </div>
+                <div style="padding: 1rem; background: var(--gray-50); border-radius: 8px;">
+                    <div style="font-size: 0.875rem; color: var(--gray-600);">Menu Items</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="statusItems">-</div>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="refreshStatus()" style="margin-top: 1rem;">🔄 Refresh Status</button>
+        </div>
+
+        <div class="form-card" style="margin-bottom: 2rem;">
+            <h3>📝 Activity Log</h3>
+            <div id="activityLog" style="max-height: 300px; overflow-y: auto; background: var(--gray-50); padding: 1rem; border-radius: 8px; font-size: 0.875rem;">
+                <div style="color: var(--gray-600);">No activity yet...</div>
+            </div>
         </div>
 
         <div class="demo-section">
@@ -372,54 +424,233 @@ try {
 
         // Load areas and menus on page load
         window.addEventListener('DOMContentLoaded', () => {
+            loadRestaurants();
             loadAreas();
             loadMenus();
+            refreshStatus();
         });
 
-        async function loadAreas() {
+        function addToLog(message, type = 'info') {
+            const log = document.getElementById('activityLog');
+            const time = new Date().toLocaleTimeString();
+            const colors = {
+                success: '#10b981',
+                error: '#ef4444',
+                info: '#3b82f6',
+                warning: '#f59e0b'
+            };
+            const color = colors[type] || colors.info;
+            const entry = document.createElement('div');
+            entry.style.marginBottom = '0.5rem';
+            entry.style.padding = '0.5rem';
+            entry.style.background = 'white';
+            entry.style.borderLeft = `3px solid ${color}`;
+            entry.style.borderRadius = '4px';
+            entry.innerHTML = `<span style="color: var(--gray-600); font-size: 0.75rem;">[${time}]</span> <span style="color: ${color}; font-weight: 600;">${type.toUpperCase()}</span>: ${message}`;
+            log.insertBefore(entry, log.firstChild);
+            if (log.children.length > 50) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        async function loadRestaurants() {
             try {
-                const res = await fetch(`https://restrogrow.com/sujay/api.php?action=getAreas&restaurant_id=${restaurantId}`);
+                const res = await fetch(`https://restrogrow.com/sujay/api.php?action=getRestaurants`);
+                const data = await res.json();
+                const select = document.getElementById('restaurantSelect');
+                if (data.success && data.restaurants) {
+                    select.innerHTML = '<option value="">Select Restaurant</option>' + 
+                        data.restaurants.map(r => `<option value="${r.id}" ${r.id == restaurantId ? 'selected' : ''}>${r.restaurant_name} (ID: ${r.id})</option>`).join('');
+                } else {
+                    select.innerHTML = '<option value="">No restaurants found</option>';
+                }
+            } catch (e) {
+                console.error('Error loading restaurants:', e);
+            }
+        }
+
+        async function refreshStatus() {
+            const selectedRestaurant = document.getElementById('restaurantSelect').value || restaurantId;
+            try {
+                const [menusRes, areasRes, tablesRes, itemsRes] = await Promise.all([
+                    fetch(`https://restrogrow.com/sujay/api.php?action=getMenus&restaurant_id=${selectedRestaurant}`),
+                    fetch(`https://restrogrow.com/sujay/api.php?action=getAreas&restaurant_id=${selectedRestaurant}`),
+                    fetch(`https://restrogrow.com/sujay/api.php?action=getTables&restaurant_id=${selectedRestaurant}`),
+                    fetch(`https://restrogrow.com/sujay/api.php?action=getMenuItems&restaurant_id=${selectedRestaurant}`)
+                ]);
+                
+                const menusData = await menusRes.json();
+                const areasData = await areasRes.json();
+                const tablesData = await tablesRes.json();
+                const itemsData = await itemsRes.json();
+                
+                document.getElementById('statusMenus').textContent = menusData.success ? menusData.count : '0';
+                document.getElementById('statusAreas').textContent = areasData.success ? areasData.count : '0';
+                document.getElementById('statusTables').textContent = tablesData.success ? tablesData.count : '0';
+                document.getElementById('statusItems').textContent = itemsData.success ? itemsData.count : '0';
+                
+                // Get restaurant count
+                const restaurantsRes = await fetch(`https://restrogrow.com/sujay/api.php?action=getRestaurants`);
+                const restaurantsData = await restaurantsRes.json();
+                document.getElementById('statusRestaurants').textContent = restaurantsData.success ? restaurantsData.count : '0';
+            } catch (e) {
+                console.error('Error refreshing status:', e);
+            }
+        }
+
+        async function processAIPrompt() {
+            const prompt = document.getElementById('aiPrompt').value.trim();
+            const restaurantId = document.getElementById('restaurantSelect').value;
+            
+            if (!prompt) {
+                addToLog('Please enter a prompt', 'error');
+                return;
+            }
+            
+            if (!restaurantId) {
+                addToLog('Please select a restaurant', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('aiProcessBtn');
+            const loading = document.getElementById('aiLoading');
+            const alert = document.getElementById('aiAlert');
+            
+            btn.disabled = true;
+            loading.classList.add('show');
+            alert.className = 'alert';
+            alert.style.display = 'none';
+            addToLog(`Processing: "${prompt}"`, 'info');
+            
+            try {
+                const res = await fetch('https://restrogrow.com/sujay/api.php?action=processAI', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, restaurant_id: restaurantId })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    if (data.requiresApproval) {
+                        // Show approval dialog
+                        const approved = confirm(`AI wants to:\n\n${data.plan}\n\nApprove to execute?`);
+                        if (approved) {
+                            addToLog('Approved! Executing...', 'info');
+                            await executeAIPlan(data.plan, restaurantId);
+                        } else {
+                            addToLog('Cancelled by user', 'warning');
+                        }
+                    } else {
+                        alert.className = 'alert alert-success show';
+                        alert.textContent = data.message || 'Action completed';
+                        addToLog(data.message || 'Action completed', 'success');
+                        refreshStatus();
+                        loadAreas();
+                        loadMenus();
+                    }
+                } else {
+                    alert.className = 'alert alert-error show';
+                    alert.textContent = data.message || 'Failed to process prompt';
+                    addToLog(data.message || 'Failed to process prompt', 'error');
+                }
+            } catch (e) {
+                alert.className = 'alert alert-error show';
+                alert.textContent = 'Error: ' + e.message;
+                addToLog('Error: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('show');
+            }
+        }
+
+        async function executeAIPlan(plan, restaurantId) {
+            try {
+                const res = await fetch('https://restrogrow.com/sujay/api.php?action=executeAIPlan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plan, restaurant_id: restaurantId })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    addToLog(`Success! ${data.message}`, 'success');
+                    if (data.created && data.created.length > 0) {
+                        data.created.forEach(item => {
+                            addToLog(`✓ ${item}`, 'success');
+                        });
+                    }
+                    refreshStatus();
+                    loadAreas();
+                    loadMenus();
+                } else {
+                    addToLog(`Failed: ${data.message}`, 'error');
+                }
+            } catch (e) {
+                addToLog('Execution error: ' + e.message, 'error');
+            }
+        }
+
+        async function loadAreas() {
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            try {
+                const res = await fetch(`https://restrogrow.com/sujay/api.php?action=getAreas&restaurant_id=${selectedRestaurant}`);
                 const data = await res.json();
                 const select = document.getElementById('chooseArea');
-                if (data.success && data.areas) {
+                if (select && data.success && data.areas) {
                     select.innerHTML = '<option value="">Select Area</option>' + 
                         data.areas.map(a => `<option value="${a.id}">${a.area_name}</option>`).join('');
-                } else {
+                } else if (select) {
                     select.innerHTML = '<option value="">No areas found</option>';
                 }
             } catch (e) {
                 console.error('Error loading areas:', e);
-                document.getElementById('chooseArea').innerHTML = '<option value="">Error loading areas</option>';
+                const select = document.getElementById('chooseArea');
+                if (select) select.innerHTML = '<option value="">Error loading areas</option>';
             }
         }
 
         async function loadMenus() {
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
             try {
-                const res = await fetch(`https://restrogrow.com/sujay/api.php?action=getMenus&restaurant_id=${restaurantId}`);
+                const res = await fetch(`https://restrogrow.com/sujay/api.php?action=getMenus&restaurant_id=${selectedRestaurant}`);
                 const data = await res.json();
                 const select = document.getElementById('chooseMenu');
-                if (data.success && data.menus) {
+                if (select && data.success && data.menus) {
                     select.innerHTML = '<option value="">Select Menu</option>' + 
                         data.menus.map(m => `<option value="${m.id}">${m.menu_name}</option>`).join('');
-                } else {
+                } else if (select) {
                     select.innerHTML = '<option value="">No menus found</option>';
                 }
             } catch (e) {
                 console.error('Error loading menus:', e);
-                document.getElementById('chooseMenu').innerHTML = '<option value="">Error loading menus</option>';
+                const select = document.getElementById('chooseMenu');
+                if (select) select.innerHTML = '<option value="">Error loading menus</option>';
             }
         }
+
+        // Reload areas/menus when restaurant changes
+        document.addEventListener('DOMContentLoaded', () => {
+            const restaurantSelect = document.getElementById('restaurantSelect');
+            if (restaurantSelect) {
+                restaurantSelect.addEventListener('change', () => {
+                    loadAreas();
+                    loadMenus();
+                    refreshStatus();
+                });
+            }
+        });
 
         async function addMenu(e) {
             e.preventDefault();
             const form = e.target;
             const alert = document.getElementById('menuAlert');
             const btn = form.querySelector('button[type="submit"]');
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
             
             const formData = new FormData();
             formData.append('action', 'add');
             formData.append('menuName', document.getElementById('menuName').value);
-            formData.append('restaurant_id', restaurantId);
+            formData.append('restaurant_id', selectedRestaurant);
 
             btn.disabled = true;
             alert.className = 'alert';
@@ -435,8 +666,10 @@ try {
                 if (data.success) {
                     alert.className = 'alert alert-success show';
                     alert.textContent = data.message || 'Menu added successfully!';
+                    addToLog(`Menu added: ${document.getElementById('menuName').value}`, 'success');
                     form.reset();
                     loadMenus();
+                    refreshStatus();
                 } else {
                     alert.className = 'alert alert-error show';
                     alert.textContent = data.message || 'Failed to add menu';
@@ -454,11 +687,12 @@ try {
             const form = e.target;
             const alert = document.getElementById('areaAlert');
             const btn = form.querySelector('button[type="submit"]');
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
             
             const formData = new FormData();
             formData.append('action', 'add');
             formData.append('areaName', document.getElementById('areaName').value);
-            formData.append('restaurant_id', restaurantId);
+            formData.append('restaurant_id', selectedRestaurant);
 
             btn.disabled = true;
             alert.className = 'alert';
@@ -474,8 +708,10 @@ try {
                 if (data.success) {
                     alert.className = 'alert alert-success show';
                     alert.textContent = data.message || 'Area added successfully!';
+                    addToLog(`Area added: ${document.getElementById('areaName').value}`, 'success');
                     form.reset();
                     loadAreas();
+                    refreshStatus();
                 } else {
                     alert.className = 'alert alert-error show';
                     alert.textContent = data.message || 'Failed to add area';
@@ -493,13 +729,14 @@ try {
             const form = e.target;
             const alert = document.getElementById('tableAlert');
             const btn = form.querySelector('button[type="submit"]');
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
             
             const formData = new FormData();
             formData.append('action', 'add');
             formData.append('tableNumber', document.getElementById('tableNumber').value);
             formData.append('capacity', document.getElementById('capacity').value);
             formData.append('chooseArea', document.getElementById('chooseArea').value);
-            formData.append('restaurant_id', restaurantId);
+            formData.append('restaurant_id', selectedRestaurant);
 
             btn.disabled = true;
             alert.className = 'alert';
@@ -515,8 +752,10 @@ try {
                 if (data.success) {
                     alert.className = 'alert alert-success show';
                     alert.textContent = data.message || 'Table added successfully!';
+                    addToLog(`Table added: ${document.getElementById('tableNumber').value}`, 'success');
                     form.reset();
                     loadAreas();
+                    refreshStatus();
                 } else {
                     alert.className = 'alert alert-error show';
                     alert.textContent = data.message || 'Failed to add table';
@@ -534,6 +773,7 @@ try {
             const form = e.target;
             const alert = document.getElementById('itemAlert');
             const btn = form.querySelector('button[type="submit"]');
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
             
             const formData = new FormData();
             formData.append('action', 'add');
@@ -545,7 +785,7 @@ try {
             formData.append('basePrice', document.getElementById('basePrice').value);
             formData.append('preparationTime', 15);
             formData.append('isAvailable', 1);
-            formData.append('restaurant_id', restaurantId);
+            formData.append('restaurant_id', selectedRestaurant);
 
             btn.disabled = true;
             alert.className = 'alert';
@@ -561,8 +801,10 @@ try {
                 if (data.success) {
                     alert.className = 'alert alert-success show';
                     alert.textContent = data.message || 'Menu item added successfully!';
+                    addToLog(`Menu item added: ${document.getElementById('itemNameEn').value}`, 'success');
                     form.reset();
                     loadMenus();
+                    refreshStatus();
                 } else {
                     alert.className = 'alert alert-error show';
                     alert.textContent = data.message || 'Failed to add menu item';
@@ -579,17 +821,24 @@ try {
             const btn = document.getElementById('demoBtn');
             const loading = document.getElementById('demoLoading');
             const alert = document.getElementById('demoAlert');
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            
+            if (!selectedRestaurant) {
+                addToLog('Please select a restaurant first', 'error');
+                return;
+            }
             
             btn.disabled = true;
             loading.classList.add('show');
             alert.className = 'alert';
             alert.style.display = 'none';
+            addToLog('Creating demo data...', 'info');
 
             try {
                 const res = await fetch('https://restrogrow.com/sujay/api.php?action=createDemo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ restaurant_id: restaurantId })
+                    body: JSON.stringify({ restaurant_id: selectedRestaurant })
                 });
                 const data = await res.json();
                 
@@ -597,9 +846,16 @@ try {
                     alert.className = 'alert alert-success show';
                     alert.innerHTML = '<strong>Demo data created successfully!</strong><br>' + 
                         (data.message || 'All demo items have been added.');
+                    addToLog('Demo data created successfully!', 'success');
+                    if (data.created && data.created.length > 0) {
+                        data.created.forEach(item => {
+                            addToLog(`✓ ${item}`, 'success');
+                        });
+                    }
                     // Reload dropdowns
                     loadAreas();
                     loadMenus();
+                    refreshStatus();
                 } else {
                     alert.className = 'alert alert-error show';
                     alert.textContent = data.message || 'Failed to create demo data';
@@ -615,4 +871,5 @@ try {
     </script>
 </body>
 </html>
+
 

@@ -11,11 +11,15 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 require_once __DIR__ . '/../db_connection.php';
 
+// OpenRouter API Configuration
+define('OPENROUTER_API_KEY', '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');
+define('OPENROUTER_MODEL', 'google/gemini-flash-1.5'); // Free lifetime model
+
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 // Get restaurant ID from POST or use sujay's restaurant
 $restaurant_id = $_POST['restaurant_id'] ?? $_GET['restaurant_id'] ?? null;
-if (!$restaurant_id) {
+if (!$restaurant_id && $action !== 'getRestaurants') {
     try {
         $restaurantStmt = $pdo->query("SELECT id FROM users WHERE username = 'sujay' LIMIT 1");
         $restaurant = $restaurantStmt->fetch(PDO::FETCH_ASSOC);
@@ -27,6 +31,52 @@ if (!$restaurant_id) {
 
 try {
     switch ($action) {
+        case 'getRestaurants':
+            $stmt = $pdo->query("SELECT id, restaurant_name, username FROM users ORDER BY id ASC");
+            $restaurants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'restaurants' => $restaurants,
+                'count' => count($restaurants)
+            ], JSON_UNESCAPED_UNICODE);
+            break;
+            
+        case 'getTables':
+            $stmt = $pdo->prepare("
+                SELECT t.id, t.table_number, t.capacity, a.area_name 
+                FROM tables t 
+                LEFT JOIN areas a ON t.area_id = a.id 
+                WHERE t.restaurant_id = ? 
+                ORDER BY t.table_number ASC
+            ");
+            $stmt->execute([$restaurant_id]);
+            $tables = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'tables' => $tables,
+                'count' => count($tables)
+            ], JSON_UNESCAPED_UNICODE);
+            break;
+            
+        case 'getMenuItems':
+            $stmt = $pdo->prepare("
+                SELECT id, item_name_en, item_category, item_type, base_price 
+                FROM menu_items 
+                WHERE restaurant_id = ? 
+                ORDER BY item_name_en ASC
+            ");
+            $stmt->execute([$restaurant_id]);
+            $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'items' => $items,
+                'count' => count($items)
+            ], JSON_UNESCAPED_UNICODE);
+            break;
+            
         case 'getMenus':
             $stmt = $pdo->prepare("SELECT id, menu_name, is_active, created_at, updated_at FROM menu WHERE restaurant_id = ? ORDER BY sort_order ASC, created_at DESC");
             $stmt->execute([$restaurant_id]);
