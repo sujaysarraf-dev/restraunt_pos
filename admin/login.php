@@ -550,55 +550,24 @@
                     showForgotPasswordMessage(message, 'success');
                     
                     // Don't auto-close - let user close manually
-                    
-                    // Handle cooldown if present
-                    if (result.cooldown_seconds) {
-                        startCooldown(result.cooldown_seconds);
-                    } else {
-                        forgotPasswordBtn.disabled = false;
-                        forgotPasswordBtn.textContent = 'Send Reset Link';
-                    }
                 } else {
-                    showForgotPasswordMessage(result.message || 'Email not found. Please check your email address.', 'error');
-                    forgotPasswordBtn.disabled = false;
-                    forgotPasswordBtn.textContent = 'Send Reset Link';
-                    
-                    // Handle cooldown even on error
+                    // Check if there's a cooldown
                     if (result.cooldown_seconds) {
-                        startCooldown(result.cooldown_seconds);
+                        const minutes = Math.floor(result.cooldown_seconds / 60);
+                        const seconds = result.cooldown_seconds % 60;
+                        const timeStr = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`;
+                        showForgotPasswordMessage(result.message || `Please wait ${timeStr} before requesting another password reset.`, 'error');
+                    } else {
+                        showForgotPasswordMessage(result.message || 'Email not found. Please check your email address.', 'error');
                     }
                 }
             } catch (error) {
                 console.error('Error:', error);
                 showForgotPasswordMessage('Network error. Please try again.', 'error');
+            } finally {
                 forgotPasswordBtn.disabled = false;
                 forgotPasswordBtn.textContent = 'Send Reset Link';
             }
-        });
-        
-        // Cooldown function
-        function startCooldown(seconds) {
-            const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
-            if (!forgotPasswordBtn) return;
-            
-            let remaining = seconds;
-            forgotPasswordBtn.disabled = true;
-            
-            const updateButton = () => {
-                if (remaining > 0) {
-                    const minutes = Math.floor(remaining / 60);
-                    const secs = remaining % 60;
-                    forgotPasswordBtn.textContent = `Please wait ${minutes}:${secs.toString().padStart(2, '0')}`;
-                    remaining--;
-                    setTimeout(updateButton, 1000);
-                } else {
-                    forgotPasswordBtn.disabled = false;
-                    forgotPasswordBtn.textContent = 'Send Reset Link';
-                }
-            };
-            
-            updateButton();
-        }
         });
         
         function showForgotPasswordMessage(message, type) {
