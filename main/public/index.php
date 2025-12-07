@@ -10,7 +10,7 @@ if (isSessionValid() && isset($_SESSION['user_id']) && isset($_SESSION['username
     exit();
 } else {
     // User is not logged in, redirect to login page
-    header('Location: admin/login.php');
+    header('Location: ../admin/login.php');
     exit();
 }
 ?>

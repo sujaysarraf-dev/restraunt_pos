@@ -5,7 +5,7 @@ startSecureSession();
 
 // Check if user is logged in and session is valid
 if (!isSessionValid() || !isset($_SESSION['user_id']) || !isset($_SESSION['username']) || !isset($_SESSION['restaurant_id'])) {
-    header('Location: /admin/login.php');
+    header('Location: login.php');
     exit();
 }
 

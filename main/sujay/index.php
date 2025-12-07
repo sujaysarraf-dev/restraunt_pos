@@ -662,7 +662,7 @@ $connectionStats = getConnectionStats();
                 
                 // Check if response is HTML (login page redirect)
                 if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Authentication required. <a href="https://restrogrow.com/superadmin/login.php" style="color:var(--primary);text-decoration:underline;">Login as Superadmin</a> to view password reset data.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--gray-600);">Authentication required. <a href="https://restrogrow.com/main/superadmin/login.php" style="color:var(--primary);text-decoration:underline;">Login as Superadmin</a> to view password reset data.</td></tr>';
                     return;
                 }
                 
