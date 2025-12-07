@@ -43,7 +43,8 @@ if (!empty($jsonData['restaurant_id'])) {
 try {
     switch ($action) {
         case 'getRestaurants':
-            $stmt = $pdo->query("SELECT id, restaurant_name, username FROM users ORDER BY id ASC");
+            // Return both id (numeric) and restaurant_id (code) so frontend can use numeric id
+            $stmt = $pdo->query("SELECT id, restaurant_id, restaurant_name, username FROM users ORDER BY id ASC");
             $restaurants = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             echo json_encode([
@@ -506,33 +507,37 @@ try {
                 throw new Exception('Invalid restaurant_id: ' . $restaurant_id);
             }
             
-            // Verify restaurant exists
-            $verifyStmt = $pdo->prepare("SELECT id, username, restaurant_name FROM users WHERE id = ?");
+            // Verify restaurant exists and get the numeric ID
+            // The restaurant_id parameter should be the numeric ID from users.id, not the code
+            $verifyStmt = $pdo->prepare("SELECT id, username, restaurant_name, restaurant_id as restaurant_code FROM users WHERE id = ?");
             $verifyStmt->execute([$restaurant_id]);
             $restaurant = $verifyStmt->fetch(PDO::FETCH_ASSOC);
             if (!$restaurant) {
                 throw new Exception('Restaurant with ID ' . $restaurant_id . ' not found');
             }
-            error_log("quickAddMenu - Restaurant verified: " . json_encode($restaurant));
             
-            // Get next menu number
+            // Use the numeric ID (users.id) for menu.restaurant_id, NOT the code
+            $numericRestaurantId = (int)$restaurant['id'];
+            error_log("quickAddMenu - Restaurant verified: " . json_encode($restaurant) . " - Using numeric ID: " . $numericRestaurantId);
+            
+            // Get next menu number - use numeric ID
             $countStmt = $pdo->prepare("SELECT COUNT(*) FROM menu WHERE restaurant_id = ?");
-            $countStmt->execute([$restaurant_id]);
+            $countStmt->execute([$numericRestaurantId]);
             $count = $countStmt->fetchColumn();
             $menuName = 'Menu ' . ($count + 1);
             
-            // Check if exists, increment if needed
+            // Check if exists, increment if needed - use numeric ID
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu WHERE menu_name = ? AND restaurant_id = ?");
-            $checkStmt->execute([$menuName, $restaurant_id]);
+            $checkStmt->execute([$menuName, $numericRestaurantId]);
             $exists = $checkStmt->fetchColumn();
             
             if ($exists > 0) {
                 $menuName = 'Menu ' . ($count + 2);
             }
             
-            // Insert menu
+            // Insert menu - use numeric ID, NOT the code
             $insertStmt = $pdo->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
-            $insertResult = $insertStmt->execute([$restaurant_id, $menuName]);
+            $insertResult = $insertStmt->execute([$numericRestaurantId, $menuName]);
             
             if (!$insertResult) {
                 $errorInfo = $insertStmt->errorInfo();
@@ -540,7 +545,7 @@ try {
             }
             
             $insertedId = $pdo->lastInsertId();
-            error_log("quickAddMenu - Successfully inserted menu '$menuName' with ID $insertedId for restaurant_id: $restaurant_id (username: " . $restaurant['username'] . ")");
+            error_log("quickAddMenu - Successfully inserted menu '$menuName' with ID $insertedId for numeric restaurant_id: $numericRestaurantId (username: " . $restaurant['username'] . ", code: " . $restaurant['restaurant_code'] . ")");
             
             // Verify the insert
             $verifyInsertStmt = $pdo->prepare("SELECT id, menu_name, restaurant_id FROM menu WHERE id = ?");
@@ -554,7 +559,9 @@ try {
                 'name' => $menuName,
                 'id' => $insertedId,
                 'debug' => [
-                    'restaurant_id' => $restaurant_id,
+                    'restaurant_id_sent' => $restaurant_id,
+                    'restaurant_id_used' => $numericRestaurantId,
+                    'restaurant_code' => $restaurant['restaurant_code'],
                     'restaurant_username' => $restaurant['username'],
                     'restaurant_name' => $restaurant['restaurant_name'],
                     'inserted_id' => $insertedId,
