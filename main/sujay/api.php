@@ -748,7 +748,8 @@ try {
             }
             
             $price = round(rand(50, 500) / 10, 2); // Random price between 5.00 and 50.00
-            $types = ['Veg', 'Non-Veg'];
+            // Valid item_type values: 'Veg', 'Non Veg', 'Egg', 'Drink', 'Other'
+            $types = ['Veg', 'Non Veg'];
             $type = $types[array_rand($types)];
             
             // Load default image if available
