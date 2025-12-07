@@ -328,20 +328,15 @@ function parseSimpleCommand($prompt) {
                     'plan' => "Create $count menu(s)"
                 ];
             } elseif (in_array($type, ['area', 'areas'])) {
-                // Check if prompt mentions city names
-                $cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow'];
-                if (preg_match('/(city|cities|indian)/i', $promptLower)) {
-                    for ($i = 0; $i < $count && $i < count($cities); $i++) {
-                        $items[] = ['name' => $cities[$i]];
-                    }
-                    // If more items needed, add numbered areas
-                    for ($i = count($cities); $i < $count; $i++) {
-                        $items[] = ['name' => "Area " . ($i + 1)];
-                    }
-                } else {
-                    for ($i = 1; $i <= $count; $i++) {
-                        $items[] = ['name' => "Area $i"];
-                    }
+                // Simple parser - only for very basic "add X areas" without modifiers
+                if (preg_match('/(city|cities|singer|singers|game|games|indian|name|names)/i', $promptLower)) {
+                    // Has modifiers - don't handle, let AI do it
+                    return null;
+                }
+                
+                // Very basic: just "add X areas" - create numbered areas
+                for ($i = 1; $i <= $count; $i++) {
+                    $items[] = ['name' => "Area $i"];
                 }
                 $plan = [
                     'action' => 'add_area',
@@ -819,12 +814,13 @@ try {
                 throw new Exception('Failed to get restaurant code: ' . $e->getMessage());
             }
             
-            // Try simple command parsing first (works without AI API)
-            $plan = parseSimpleCommand($prompt);
+            // ALWAYS try AI first - it understands natural language
+            // Simple parser is ONLY a fallback if AI completely fails
+            $plan = null;
             $usedSimpleParser = false;
             
-            // If simple parsing didn't work, try AI API
-            if (!$plan) {
+            // Try AI API first for ALL commands (it understands natural language)
+            // Only fall back to simple parser if AI fails completely
             // Get current state
             $menusStmt = $pdo->prepare("SELECT id, menu_name FROM menu WHERE restaurant_id = ?");
                 $menusStmt->execute([$restaurantCode]);
