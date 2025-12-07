@@ -742,15 +742,19 @@ try {
                 });
                 const data = await res.json();
                 
+                console.log('quickAddMenuItem response:', data);
+                
                 if (data.success) {
                     addToLog(`Menu item added: ${data.name}`, 'success');
                     loadMenus();
                     refreshStatus();
                 } else {
-                    addToLog(`Failed: ${data.message}`, 'error');
+                    addToLog(`Failed: ${data.message || 'Unknown error'}`, 'error');
+                    console.error('API Error:', data);
                 }
             } catch (e) {
                 addToLog('Error: ' + e.message, 'error');
+                console.error('Fetch Error:', e);
             }
         }
 

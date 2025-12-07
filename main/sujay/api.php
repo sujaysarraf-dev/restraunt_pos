@@ -42,10 +42,17 @@ function getRestaurantCode($pdo, $restaurant_id) {
     if (!$restaurant_id || !is_numeric($restaurant_id)) {
         return $restaurant_id; // Return as-is if not numeric
     }
-    $codeStmt = $pdo->prepare("SELECT restaurant_id FROM users WHERE id = ?");
-    $codeStmt->execute([$restaurant_id]);
-    $codeResult = $codeStmt->fetch(PDO::FETCH_ASSOC);
-    return $codeResult ? $codeResult['restaurant_id'] : $restaurant_id;
+    try {
+        $codeStmt = $pdo->prepare("SELECT restaurant_id FROM users WHERE id = ?");
+        $codeStmt->execute([$restaurant_id]);
+        $codeResult = $codeStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$codeResult || empty($codeResult['restaurant_id'])) {
+            throw new Exception('Restaurant code not found for ID: ' . $restaurant_id);
+        }
+        return $codeResult['restaurant_id'];
+    } catch (PDOException $e) {
+        throw new Exception('Database error getting restaurant code: ' . $e->getMessage());
+    }
 }
 
 // Only default for actions that don't require restaurant_id
@@ -694,7 +701,11 @@ try {
             }
             
             // Get restaurant code
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            try {
+                $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            } catch (Exception $e) {
+                throw new Exception('Failed to get restaurant code: ' . $e->getMessage());
+            }
             
             // Get a random menu or create one if none exists
             $menuStmt = $pdo->prepare("SELECT id FROM menu WHERE restaurant_id = ? LIMIT 1");
