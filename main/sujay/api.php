@@ -333,7 +333,13 @@ function parseSimpleCommand($prompt) {
                     'plan' => "Create $count area(s)"
                 ];
             } elseif (in_array($type, ['table', 'tables'])) {
-                // For tables, we'll need an area - create default
+                // Simple parser - only for very basic "add X tables" without modifiers
+                if (preg_match('/(city|cities|singer|singers|game|games|indian|name|names|area|hall|room)/i', $promptLower)) {
+                    // Has modifiers - don't handle, let AI do it
+                    return null;
+                }
+                
+                // Very basic: just "add X tables" - create default tables
                 for ($i = 1; $i <= $count; $i++) {
                     $items[] = ['table' => "T$i", 'area' => 'Area 1', 'capacity' => 4];
                 }
