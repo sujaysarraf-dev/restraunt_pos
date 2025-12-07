@@ -369,6 +369,214 @@ try {
             ], JSON_UNESCAPED_UNICODE);
             break;
             
+        case 'processAI':
+            $input = json_decode(file_get_contents('php://input'), true);
+            $prompt = $input['prompt'] ?? '';
+            $restaurant_id = $input['restaurant_id'] ?? $restaurant_id;
+            
+            if (empty($prompt)) {
+                throw new Exception('Prompt is required');
+            }
+            
+            // Get current state
+            $menusStmt = $pdo->prepare("SELECT id, menu_name FROM menu WHERE restaurant_id = ?");
+            $menusStmt->execute([$restaurant_id]);
+            $menus = $menusStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $areasStmt = $pdo->prepare("SELECT id, area_name FROM areas WHERE restaurant_id = ?");
+            $areasStmt->execute([$restaurant_id]);
+            $areas = $areasStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $itemsStmt = $pdo->prepare("SELECT item_name_en, item_category FROM menu_items WHERE restaurant_id = ? LIMIT 10");
+            $itemsStmt->execute([$restaurant_id]);
+            $items = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Build context for AI
+            $context = "You are a restaurant management assistant. Current state:\n";
+            $context .= "Menus: " . implode(', ', array_column($menus, 'menu_name')) . "\n";
+            $context .= "Areas: " . implode(', ', array_column($areas, 'area_name')) . "\n";
+            $context .= "Sample items: " . implode(', ', array_slice(array_column($items, 'item_name_en'), 0, 5)) . "\n\n";
+            $context .= "User request: $prompt\n\n";
+            $context .= "Respond with a JSON plan. Format:\n";
+            $context .= '{"action": "add_items|add_menu|add_area|add_table", "items": [{"name": "...", "description": "...", "category": "...", "type": "Veg|Non-Veg", "price": 0.00, "menu": "menu_name"}], "requiresApproval": true, "plan": "human readable plan"}';
+            
+            // Call OpenRouter API
+            $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_HTTPHEADER => [
+                    'Authorization: Bearer ' . OPENROUTER_API_KEY,
+                    'Content-Type: application/json',
+                    'HTTP-Referer: https://restrogrow.com',
+                    'X-Title: RestroGrow Testing'
+                ],
+                CURLOPT_POSTFIELDS => json_encode([
+                    'model' => OPENROUTER_MODEL,
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'You are a helpful restaurant management assistant. Always respond with valid JSON only.'],
+                        ['role' => 'user', 'content' => $context]
+                    ],
+                    'temperature' => 0.7,
+                    'max_tokens' => 2000
+                ])
+            ]);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            if ($httpCode !== 200) {
+                throw new Exception('AI service error: ' . $response);
+            }
+            
+            $aiResponse = json_decode($response, true);
+            $aiContent = $aiResponse['choices'][0]['message']['content'] ?? '';
+            
+            // Extract JSON from response (handle markdown code blocks)
+            if (preg_match('/```json\s*(.*?)\s*```/s', $aiContent, $matches)) {
+                $aiContent = $matches[1];
+            } elseif (preg_match('/```\s*(.*?)\s*```/s', $aiContent, $matches)) {
+                $aiContent = $matches[1];
+            }
+            
+            $plan = json_decode(trim($aiContent), true);
+            
+            if (!$plan) {
+                throw new Exception('Failed to parse AI response. Raw: ' . substr($aiContent, 0, 200));
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'requiresApproval' => true,
+                'plan' => $plan['plan'] ?? 'Execute the requested action',
+                'action' => $plan['action'] ?? '',
+                'items' => $plan['items'] ?? [],
+                'rawPlan' => $plan
+            ], JSON_UNESCAPED_UNICODE);
+            break;
+            
+        case 'executeAIPlan':
+            $input = json_decode(file_get_contents('php://input'), true);
+            $plan = $input['rawPlan'] ?? [];
+            $restaurant_id = $input['restaurant_id'] ?? $restaurant_id;
+            
+            $created = [];
+            $action = $plan['action'] ?? '';
+            $items = $plan['items'] ?? [];
+            
+            if ($action === 'add_items' || $action === 'add_menu_items') {
+                // Get menu IDs
+                $menuMap = [];
+                $menusStmt = $pdo->prepare("SELECT id, menu_name FROM menu WHERE restaurant_id = ?");
+                $menusStmt->execute([$restaurant_id]);
+                while ($menu = $menusStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $menuMap[strtolower($menu['menu_name'])] = $menu['id'];
+                }
+                
+                // Ensure columns exist
+                try {
+                    $checkCol = $pdo->query("SHOW COLUMNS FROM menu_items LIKE 'image_data'");
+                    if ($checkCol->rowCount() == 0) {
+                        $pdo->exec("ALTER TABLE menu_items ADD COLUMN image_data LONGBLOB NULL AFTER item_image");
+                        $pdo->exec("ALTER TABLE menu_items ADD COLUMN image_mime_type VARCHAR(50) NULL AFTER image_data");
+                    }
+                } catch (PDOException $e) {
+                    // Columns might already exist
+                }
+                
+                foreach ($items as $item) {
+                    $menuName = $item['menu'] ?? '';
+                    $menuId = $menuMap[strtolower($menuName)] ?? null;
+                    
+                    if (!$menuId && !empty($menuName)) {
+                        // Create menu if it doesn't exist
+                        $insertMenu = $pdo->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
+                        $insertMenu->execute([$restaurant_id, $menuName]);
+                        $menuId = $pdo->lastInsertId();
+                        $menuMap[strtolower($menuName)] = $menuId;
+                        $created[] = "Menu: $menuName";
+                    }
+                    
+                    if ($menuId) {
+                        $insertItem = $pdo->prepare("
+                            INSERT INTO menu_items 
+                            (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, created_at, updated_at) 
+                            VALUES (?, ?, ?, ?, ?, ?, 15, 1, ?, 0, NULL, NOW(), NOW())
+                        ");
+                        $insertItem->execute([
+                            $restaurant_id,
+                            $menuId,
+                            $item['name'] ?? 'Untitled Item',
+                            $item['description'] ?? '',
+                            $item['category'] ?? 'General',
+                            $item['type'] ?? 'Veg',
+                            (float)($item['price'] ?? 0)
+                        ]);
+                        $created[] = "Menu Item: " . ($item['name'] ?? 'Untitled');
+                    }
+                }
+            } elseif ($action === 'add_menu') {
+                foreach ($items as $item) {
+                    $menuName = $item['menu'] ?? $item['name'] ?? '';
+                    if ($menuName) {
+                        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu WHERE menu_name = ? AND restaurant_id = ?");
+                        $checkStmt->execute([$menuName, $restaurant_id]);
+                        if ($checkStmt->fetchColumn() == 0) {
+                            $insertStmt = $pdo->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
+                            $insertStmt->execute([$restaurant_id, $menuName]);
+                            $created[] = "Menu: $menuName";
+                        }
+                    }
+                }
+            } elseif ($action === 'add_area') {
+                foreach ($items as $item) {
+                    $areaName = $item['name'] ?? $item['area'] ?? '';
+                    if ($areaName) {
+                        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM areas WHERE area_name = ? AND restaurant_id = ?");
+                        $checkStmt->execute([$areaName, $restaurant_id]);
+                        if ($checkStmt->fetchColumn() == 0) {
+                            $insertStmt = $pdo->prepare("INSERT INTO areas (restaurant_id, area_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
+                            $insertStmt->execute([$restaurant_id, $areaName]);
+                            $created[] = "Area: $areaName";
+                        }
+                    }
+                }
+            } elseif ($action === 'add_table') {
+                // Get area IDs
+                $areaMap = [];
+                $areasStmt = $pdo->prepare("SELECT id, area_name FROM areas WHERE restaurant_id = ?");
+                $areasStmt->execute([$restaurant_id]);
+                while ($area = $areasStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $areaMap[strtolower($area['area_name'])] = $area['id'];
+                }
+                
+                foreach ($items as $item) {
+                    $areaName = $item['area'] ?? '';
+                    $areaId = $areaMap[strtolower($areaName)] ?? null;
+                    $tableNumber = $item['table'] ?? $item['name'] ?? '';
+                    $capacity = (int)($item['capacity'] ?? 4);
+                    
+                    if ($areaId && $tableNumber) {
+                        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM tables WHERE table_number = ? AND area_id = ?");
+                        $checkStmt->execute([$tableNumber, $areaId]);
+                        if ($checkStmt->fetchColumn() == 0) {
+                            $insertStmt = $pdo->prepare("INSERT INTO tables (restaurant_id, area_id, table_number, capacity, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())");
+                            $insertStmt->execute([$restaurant_id, $areaId, $tableNumber, $capacity]);
+                            $created[] = "Table: $tableNumber in $areaName";
+                        }
+                    }
+                }
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Plan executed successfully',
+                'created' => $created,
+                'count' => count($created)
+            ], JSON_UNESCAPED_UNICODE);
+            break;
+            
         default:
             throw new Exception('Invalid action');
     }
