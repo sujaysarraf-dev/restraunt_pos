@@ -37,6 +37,106 @@ if (!empty($jsonData['restaurant_id'])) {
     $restaurant_id = (int)$_GET['restaurant_id'];
 }
 
+// Simple command parser for basic requests (fallback when AI API is unavailable)
+function parseSimpleCommand($prompt) {
+    $prompt = strtolower(trim($prompt));
+    $plan = null;
+    
+    // Extract number and action
+    if (preg_match('/(\d+)\s*(menu|menus|area|areas|table|tables|item|items)/i', $prompt, $matches)) {
+        $count = (int)$matches[1];
+        $type = strtolower($matches[2]);
+        
+        if ($count > 0 && $count <= 50) { // Limit to 50 items
+            $items = [];
+            
+            if (in_array($type, ['menu', 'menus'])) {
+                for ($i = 1; $i <= $count; $i++) {
+                    $items[] = ['name' => "Menu $i"];
+                }
+                $plan = [
+                    'action' => 'add_menu',
+                    'items' => $items,
+                    'plan' => "Create $count menu(s)"
+                ];
+            } elseif (in_array($type, ['area', 'areas'])) {
+                // Check if prompt mentions city names
+                $cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow'];
+                if (preg_match('/(city|cities|indian)/i', $prompt)) {
+                    for ($i = 0; $i < $count && $i < count($cities); $i++) {
+                        $items[] = ['name' => $cities[$i]];
+                    }
+                    // If more items needed, add numbered areas
+                    for ($i = count($cities); $i < $count; $i++) {
+                        $items[] = ['name' => "Area " . ($i + 1)];
+                    }
+                } else {
+                    for ($i = 1; $i <= $count; $i++) {
+                        $items[] = ['name' => "Area $i"];
+                    }
+                }
+                $plan = [
+                    'action' => 'add_area',
+                    'items' => $items,
+                    'plan' => "Create $count area(s)"
+                ];
+            } elseif (in_array($type, ['table', 'tables'])) {
+                // For tables, we'll need an area - create default
+                for ($i = 1; $i <= $count; $i++) {
+                    $items[] = ['table' => "T$i", 'area' => 'Area 1', 'capacity' => 4];
+                }
+                $plan = [
+                    'action' => 'add_table',
+                    'items' => $items,
+                    'plan' => "Create $count table(s)"
+                ];
+            } elseif (in_array($type, ['item', 'items'])) {
+                // For menu items, check for cuisine type
+                $cuisines = [
+                    'south indian' => ['Dosa', 'Idli', 'Vada', 'Sambar', 'Rasam', 'Upma', 'Pongal', 'Biryani'],
+                    'north indian' => ['Butter Chicken', 'Naan', 'Dal Makhani', 'Paneer Tikka', 'Biryani', 'Tandoori'],
+                    'chinese' => ['Fried Rice', 'Noodles', 'Manchurian', 'Spring Roll', 'Dumpling'],
+                    'italian' => ['Pizza', 'Pasta', 'Risotto', 'Lasagna', 'Bruschetta']
+                ];
+                
+                $itemNames = [];
+                foreach ($cuisines as $cuisine => $names) {
+                    if (stripos($prompt, $cuisine) !== false) {
+                        $itemNames = $names;
+                        break;
+                    }
+                }
+                
+                // If no cuisine match, use generic names
+                if (empty($itemNames)) {
+                    for ($i = 1; $i <= $count; $i++) {
+                        $itemNames[] = "Item $i";
+                    }
+                }
+                
+                // Get first menu or create default
+                for ($i = 0; $i < $count; $i++) {
+                    $name = $itemNames[$i % count($itemNames)] . ($i >= count($itemNames) ? ' ' . ($i + 1) : '');
+                    $items[] = [
+                        'name' => $name,
+                        'category' => 'Main Course',
+                        'type' => 'Veg',
+                        'price' => round(rand(100, 500) / 10, 2),
+                        'menu' => 'Menu 1'
+                    ];
+                }
+                $plan = [
+                    'action' => 'add_items',
+                    'items' => $items,
+                    'plan' => "Create $count menu item(s)"
+                ];
+            }
+        }
+    }
+    
+    return $plan;
+}
+
 // Helper function to convert numeric restaurant ID to restaurant code (RES005)
 function getRestaurantCode($pdo, $restaurant_id) {
     if (!$restaurant_id || !is_numeric($restaurant_id)) {
