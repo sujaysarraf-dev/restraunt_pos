@@ -156,13 +156,19 @@ function handleCreateKOT($conn, $restaurant_id) {
                 $conn->prepare("DELETE FROM order_items WHERE order_id = ?")->execute([$orderId]);
                 $orderItemStmt = $conn->prepare("INSERT INTO order_items (order_id, menu_item_id, item_name, quantity, unit_price, total_price) VALUES (?, ?, ?, ?, ?, ?)");
                 foreach ($cartItems as $item) {
+                    // Validate item structure
+                    if (!isset($item['id']) || !isset($item['name']) || !isset($item['price']) || !isset($item['quantity'])) {
+                        error_log("Invalid cart item structure: " . json_encode($item));
+                        throw new Exception("Invalid cart item structure. Missing required fields.");
+                    }
+                    
                     $orderItemStmt->execute([
                         $orderId,
-                        $item['id'],
-                        $item['name'],
-                        $item['quantity'],
-                        $item['price'],
-                        $item['price'] * $item['quantity']
+                        (int)$item['id'],
+                        (string)$item['name'],
+                        (int)$item['quantity'],
+                        (float)$item['price'],
+                        (float)($item['price'] * $item['quantity'])
                     ]);
                 }
             } else {
@@ -172,13 +178,19 @@ function handleCreateKOT($conn, $restaurant_id) {
                 $orderId = $conn->lastInsertId();
                 $orderItemStmt = $conn->prepare("INSERT INTO order_items (order_id, menu_item_id, item_name, quantity, unit_price, total_price) VALUES (?, ?, ?, ?, ?, ?)");
                 foreach ($cartItems as $item) {
+                    // Validate item structure
+                    if (!isset($item['id']) || !isset($item['name']) || !isset($item['price']) || !isset($item['quantity'])) {
+                        error_log("Invalid cart item structure: " . json_encode($item));
+                        throw new Exception("Invalid cart item structure. Missing required fields.");
+                    }
+                    
                     $orderItemStmt->execute([
                         $orderId,
-                        $item['id'],
-                        $item['name'],
-                        $item['quantity'],
-                        $item['price'],
-                        $item['price'] * $item['quantity']
+                        (int)$item['id'],
+                        (string)$item['name'],
+                        (int)$item['quantity'],
+                        (float)$item['price'],
+                        (float)($item['price'] * $item['quantity'])
                     ]);
                 }
             }
