@@ -384,7 +384,7 @@ $connectionStats = getConnectionStats();
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <a href="/" class="logo">RestroGrow</a>
+            <a href="../index.html" class="logo">RestroGrow</a>
             <div class="nav-links">
                 <a href="testing.php">More Options</a>
                 <a href="https://restrogrow.com/main/superadmin/dashboard.php">Dashboard</a>

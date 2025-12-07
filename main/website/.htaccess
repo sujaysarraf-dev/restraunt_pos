@@ -2,7 +2,7 @@
 # Allows URLs like: website/restaurant-name instead of website/index.php?restaurant=restaurant-name
 
 RewriteEngine On
-RewriteBase /test/restraunt_pos/website/
+RewriteBase /main/website/
 
 # If the request is for a file that exists, don't rewrite
 RewriteCond %{REQUEST_FILENAME} !-f
