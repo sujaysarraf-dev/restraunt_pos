@@ -357,12 +357,6 @@ function handleHoldOrder($conn, $restaurant_id) {
         return;
     }
     
-    // Include helper functions for generating unique numbers
-    if (!file_exists(__DIR__ . '/kot_operations.php')) {
-        throw new Exception('kot_operations.php file not found');
-    }
-    require_once __DIR__ . '/kot_operations.php';
-    
     // Generate unique order number for held order (using same function but with HOLD prefix)
     // For held orders, we'll use a similar pattern but check against orders table
     $maxAttempts = 100;
