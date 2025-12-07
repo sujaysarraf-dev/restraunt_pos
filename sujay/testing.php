@@ -365,10 +365,22 @@ try {
 
         // Load areas and menus on page load
         window.addEventListener('DOMContentLoaded', () => {
-            loadRestaurants();
-            loadAreas();
-            loadMenus();
-            refreshStatus();
+            loadRestaurants().then(() => {
+                // Load saved restaurant ID from localStorage
+                const savedRestaurantId = localStorage.getItem('selectedRestaurantId');
+                const restaurantSelect = document.getElementById('restaurantSelect');
+                
+                if (savedRestaurantId && restaurantSelect) {
+                    restaurantSelect.value = savedRestaurantId;
+                    // Update global restaurantId variable
+                    window.restaurantId = savedRestaurantId;
+                }
+                
+                // Load data for selected restaurant
+                loadAreas();
+                loadMenus();
+                refreshStatus();
+            });
         });
 
         function addToLog(message, type = 'info') {
@@ -400,8 +412,14 @@ try {
                 const data = await res.json();
                 const select = document.getElementById('restaurantSelect');
                 if (data.success && data.restaurants) {
+                    const savedRestaurantId = localStorage.getItem('selectedRestaurantId') || restaurantId;
                     select.innerHTML = '<option value="">Select Restaurant</option>' + 
-                        data.restaurants.map(r => `<option value="${r.id}" ${r.id == restaurantId ? 'selected' : ''}>${r.restaurant_name} (ID: ${r.id})</option>`).join('');
+                        data.restaurants.map(r => `<option value="${r.id}" ${r.id == savedRestaurantId ? 'selected' : ''}>${r.restaurant_name} (ID: ${r.id})</option>`).join('');
+                    
+                    // Update global restaurantId if saved one exists
+                    if (savedRestaurantId) {
+                        window.restaurantId = savedRestaurantId;
+                    }
                 } else {
                     select.innerHTML = '<option value="">No restaurants found</option>';
                 }
@@ -411,7 +429,7 @@ try {
         }
 
         async function refreshStatus() {
-            const selectedRestaurant = document.getElementById('restaurantSelect').value || restaurantId;
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             try {
                 const [menusRes, areasRes, tablesRes, itemsRes] = await Promise.all([
                     fetch(`https://restrogrow.com/sujay/api.php?action=getMenus&restaurant_id=${selectedRestaurant}`),
@@ -441,14 +459,14 @@ try {
 
         async function processAIPrompt() {
             const prompt = document.getElementById('aiPrompt').value.trim();
-            const restaurantId = document.getElementById('restaurantSelect').value;
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             
             if (!prompt) {
                 addToLog('Please enter a prompt', 'error');
                 return;
             }
             
-            if (!restaurantId) {
+            if (!selectedRestaurant) {
                 addToLog('Please select a restaurant', 'error');
                 return;
             }
@@ -467,7 +485,7 @@ try {
                 const res = await fetch('https://restrogrow.com/sujay/api.php?action=processAI', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt, restaurant_id: restaurantId })
+                    body: JSON.stringify({ prompt, restaurant_id: selectedRestaurant })
                 });
                 const data = await res.json();
                 
@@ -477,7 +495,7 @@ try {
                         const approved = confirm(`AI wants to:\n\n${data.plan}\n\nApprove to execute?`);
                         if (approved) {
                             addToLog('Approved! Executing...', 'info');
-                            await executeAIPlan(data.plan, restaurantId);
+                            await executeAIPlan(data.plan, selectedRestaurant);
                         } else {
                             addToLog('Cancelled by user', 'warning');
                         }
@@ -532,7 +550,7 @@ try {
         }
 
         async function loadAreas() {
-            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             try {
                 const res = await fetch(`https://restrogrow.com/sujay/api.php?action=getAreas&restaurant_id=${selectedRestaurant}`);
                 const data = await res.json();
@@ -551,7 +569,7 @@ try {
         }
 
         async function loadMenus() {
-            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             try {
                 const res = await fetch(`https://restrogrow.com/sujay/api.php?action=getMenus&restaurant_id=${selectedRestaurant}`);
                 const data = await res.json();
@@ -574,15 +592,24 @@ try {
             const restaurantSelect = document.getElementById('restaurantSelect');
             if (restaurantSelect) {
                 restaurantSelect.addEventListener('change', () => {
-                    loadAreas();
-                    loadMenus();
-                    refreshStatus();
+                    const selectedId = restaurantSelect.value;
+                    if (selectedId) {
+                        // Save to localStorage
+                        localStorage.setItem('selectedRestaurantId', selectedId);
+                        // Update global variable
+                        window.restaurantId = selectedId;
+                        // Reload data
+                        loadAreas();
+                        loadMenus();
+                        refreshStatus();
+                        addToLog(`Restaurant changed to ID: ${selectedId}`, 'info');
+                    }
                 });
             }
         });
 
         async function quickAddMenu() {
-            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             if (!selectedRestaurant) {
                 addToLog('Please select a restaurant first', 'error');
                 return;
@@ -609,7 +636,7 @@ try {
         }
 
         async function quickAddArea() {
-            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             if (!selectedRestaurant) {
                 addToLog('Please select a restaurant first', 'error');
                 return;
@@ -636,7 +663,7 @@ try {
         }
 
         async function quickAddTable() {
-            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             if (!selectedRestaurant) {
                 addToLog('Please select a restaurant first', 'error');
                 return;
@@ -663,7 +690,7 @@ try {
         }
 
         async function quickAddMenuItem() {
-            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             if (!selectedRestaurant) {
                 addToLog('Please select a restaurant first', 'error');
                 return;
@@ -693,7 +720,7 @@ try {
             const btn = document.getElementById('demoBtn');
             const loading = document.getElementById('demoLoading');
             const alert = document.getElementById('demoAlert');
-            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || restaurantId;
+            const selectedRestaurant = document.getElementById('restaurantSelect')?.value || localStorage.getItem('selectedRestaurantId') || restaurantId;
             
             if (!selectedRestaurant) {
                 addToLog('Please select a restaurant first', 'error');
