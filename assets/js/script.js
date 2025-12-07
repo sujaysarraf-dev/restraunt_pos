@@ -5666,7 +5666,22 @@ document.addEventListener("DOMContentLoaded", () => {
           body: formData
         });
         
-        const result = await response.json();
+        // Check if response is ok
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Server error response:', errorText);
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        
+        // Get response text first to check if it's valid JSON
+        const responseText = await response.text();
+        let result;
+        try {
+          result = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Invalid JSON response:', responseText);
+          throw new Error('Invalid response from server. Please check server logs.');
+        }
         
         if (result.success) {
           const showMsg = typeof showMessage !== 'undefined' ? showMessage : (window.showNotification || alert);

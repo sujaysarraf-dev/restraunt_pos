@@ -4,14 +4,14 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-// Include secure session configuration
-require_once __DIR__ . '/../config/session_config.php';
-startSecureSession();
-
 // Ensure no output before headers
 if (ob_get_level()) {
     ob_clean();
 }
+
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -50,13 +50,21 @@ try {
     }
 } catch (PDOException $e) {
     error_log("PDO Error in pos_operations.php: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
+    if (ob_get_level()) {
+        ob_clean();
+    }
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.', 'error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit();
 } catch (Exception $e) {
     error_log("Error in pos_operations.php: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
+    if (ob_get_level()) {
+        ob_clean();
+    }
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -185,6 +193,11 @@ function handleCreateKOT($conn, $restaurant_id) {
     } catch (Exception $e) {
         // Rollback transaction on error
         $conn->rollBack();
+        error_log("Error in handleCreateKOT: " . $e->getMessage());
+        error_log("Stack trace: " . $e->getTraceAsString());
+        if (ob_get_level()) {
+            ob_clean();
+        }
         echo json_encode(['success' => false, 'message' => 'Error creating KOT: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     }
 }
@@ -258,6 +271,11 @@ function handleHoldOrder($conn, $restaurant_id) {
     } catch (Exception $e) {
         // Rollback transaction on error
         $conn->rollBack();
+        error_log("Error in handleHoldOrder: " . $e->getMessage());
+        error_log("Stack trace: " . $e->getTraceAsString());
+        if (ob_get_level()) {
+            ob_clean();
+        }
         echo json_encode(['success' => false, 'message' => 'Error holding order: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     }
 }
