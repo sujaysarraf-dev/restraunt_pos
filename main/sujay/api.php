@@ -693,9 +693,12 @@ try {
                 throw new Exception('Invalid restaurant_id: ' . $restaurant_id);
             }
             
+            // Get restaurant code
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            
             // Get a random menu or create one if none exists
             $menuStmt = $pdo->prepare("SELECT id FROM menu WHERE restaurant_id = ? LIMIT 1");
-            $menuStmt->execute([$restaurant_id]);
+            $menuStmt->execute([$restaurantCode]);
             $menu = $menuStmt->fetch(PDO::FETCH_ASSOC);
             
             if (!$menu) {
@@ -709,13 +712,13 @@ try {
             
             // Get next item number
             $countStmt = $pdo->prepare("SELECT COUNT(*) FROM menu_items WHERE restaurant_id = ?");
-            $countStmt->execute([$restaurant_id]);
+            $countStmt->execute([$restaurantCode]);
             $count = $countStmt->fetchColumn();
             $itemName = 'Item ' . ($count + 1);
             
             // Check if exists, increment if needed
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu_items WHERE item_name_en = ? AND restaurant_id = ?");
-            $checkStmt->execute([$itemName, $restaurant_id]);
+            $checkStmt->execute([$itemName, $restaurantCode]);
             $exists = $checkStmt->fetchColumn();
             
             if ($exists > 0) {
