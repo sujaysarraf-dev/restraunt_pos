@@ -244,7 +244,7 @@ try {
     <meta http-equiv="Expires" content="0">
     <meta name="restaurant-id" content="<?php echo htmlspecialchars($restaurant_id, ENT_QUOTES, 'UTF-8'); ?>">
     <meta name="restaurant-slug" content="<?php echo htmlspecialchars($restaurant_slug, ENT_QUOTES, 'UTF-8'); ?>">
-    <title><?php echo htmlspecialchars($restaurant_name, ENT_QUOTES, 'UTF-8'); ?> - Order Online</title>
+    <title>RestroGrow POS - Order Online</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
@@ -348,7 +348,7 @@ try {
     <!-- Hero Section -->
     <section class="hero" id="home">
         <div class="hero-content">
-            <h1 class="hero-title">Delicious Food<br>Delivered Fresh</h1>
+            <h1 class="hero-title">RestroGrow POS<br>Restaurant Management System</h1>
             <p class="hero-subtitle">Order your favorite meals online and enjoy fast delivery</p>
             <div style="position: relative; max-width: 600px; margin: 0 auto;">
                 <div class="hero-search">
