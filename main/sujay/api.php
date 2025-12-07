@@ -999,6 +999,7 @@ try {
                         $errors[] = $e->getMessage();
                     }
                 }
+                    }
                 }
                 
                 $message = $usedSimpleParser 
