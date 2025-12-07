@@ -494,6 +494,9 @@ try {
                 return;
             }
             
+            // Show helpful message if API key error
+            addToLog('Processing AI request...', 'info');
+            
             const btn = document.getElementById('aiProcessBtn');
             const loading = document.getElementById('aiLoading');
             const alert = document.getElementById('aiAlert');

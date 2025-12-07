@@ -536,7 +536,7 @@ try {
                 
                 // Provide helpful error messages
                 if ($errorCode == 401) {
-                    throw new Exception('AI API Authentication Error: The API key is invalid or expired. Please check the OpenRouter API key configuration.');
+                    throw new Exception('AI API Authentication Error: The OpenRouter API key is invalid or expired. Please update the API key in main/sujay/api.php. Get a new key from https://openrouter.ai');
                 } elseif ($errorCode == 429) {
                     throw new Exception('AI API Rate Limit: Too many requests. Please try again later.');
                 } else {
