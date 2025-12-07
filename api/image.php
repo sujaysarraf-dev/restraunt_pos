@@ -319,12 +319,15 @@ $isHostinger = (
 $possiblePaths = [];
 if ($isHostinger) {
     // Hostinger-specific paths (usually public_html is document root)
+    // Based on diagnostic: uploads is at /home/u509616587/domains/restrogrow.com/public_html/uploads
     $possiblePaths = [
-        $docRoot . '/' . $normalizedPath,  // From document root (most common on Hostinger)
-        $rootDir . '/' . $normalizedPath,  // From project root
-        $scriptDir . '/../' . $normalizedPath, // Relative from api/
+        $docRoot . '/' . $normalizedPath,  // From document root (most common on Hostinger) - /public_html/uploads/...
+        $rootDir . '/public_html/' . $normalizedPath,  // From project root + public_html
+        $rootDir . '/' . $normalizedPath,  // From project root (if uploads is at root level)
+        $scriptDir . '/../' . $normalizedPath, // Relative from api/ (goes to root, then uploads)
         dirname($docRoot) . '/' . $normalizedPath, // One level up from doc root
         '/home/' . get_current_user() . '/public_html/' . $normalizedPath, // Absolute Hostinger path
+        $docRoot . '/../' . $normalizedPath, // One level up from public_html
     ];
 } else {
     // Local development paths
