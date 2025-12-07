@@ -428,6 +428,7 @@ function handleCompleteKOT() {
         throw $e;
     }
 }
+}
 
 /**
  * Generate unique KOT number with collision check
