@@ -4,6 +4,24 @@
  * Configure SMTP settings here
  */
 
+// Development Mode Configuration
+// When DEVELOPMENT_MODE is true, emails will only be sent on localhost
+// On production servers, emails will be logged instead of sent
+define('DEVELOPMENT_MODE', true); // Set to false to send emails on production
+
+// Detect if we're on localhost
+function isLocalhost() {
+    $host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
+    return (
+        $host === 'localhost' ||
+        $host === '127.0.0.1' ||
+        strpos($host, 'localhost:') === 0 ||
+        strpos($host, '127.0.0.1:') === 0 ||
+        strpos($host, '.local') !== false ||
+        strpos($host, '192.168.') === 0
+    );
+}
+
 // SMTP Configuration
 define('SMTP_ENABLED', true); // Set to false to use PHP mail() function
 define('SMTP_HOST', 'smtp.gmail.com');

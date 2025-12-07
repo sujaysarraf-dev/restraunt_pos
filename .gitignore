@@ -28,6 +28,10 @@ Thumbs.db
 uploads/*
 !uploads/.gitkeep
 
+# Logs
+logs/*
+!logs/.gitkeep
+
 # Temporary files
 tmp/*
 !tmp/.gitkeep
