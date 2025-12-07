@@ -751,12 +751,35 @@ try {
             $types = ['Veg', 'Non-Veg'];
             $type = $types[array_rand($types)];
             
+            // Load default image if available
+            $imageData = null;
+            $imageMimeType = null;
+            $itemImagePath = null;
+            
+            // Try multiple possible paths for the default image
+            $possibleImagePaths = [
+                __DIR__ . '/../../assets/images/default-menu-item.jpg',
+                __DIR__ . '/../../../assets/images/default-menu-item.jpg',
+                dirname(__DIR__, 2) . '/assets/images/default-menu-item.jpg'
+            ];
+            
+            foreach ($possibleImagePaths as $imagePath) {
+                if (file_exists($imagePath)) {
+                    $imageData = file_get_contents($imagePath);
+                    if ($imageData !== false) {
+                        $imageMimeType = 'image/jpeg';
+                        $itemImagePath = 'db:' . uniqid(); // Reference ID for database storage
+                        break;
+                    }
+                }
+            }
+            
             $insertStmt = $pdo->prepare("
                 INSERT INTO menu_items 
-                (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, created_at, updated_at) 
-                VALUES (?, ?, ?, 'Delicious item', 'General', ?, 15, 1, ?, 0, NULL, NOW(), NOW())
+                (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, image_data, image_mime_type, created_at, updated_at) 
+                VALUES (?, ?, ?, 'Delicious item', 'General', ?, 15, 1, ?, 0, ?, ?, ?, NOW(), NOW())
             ");
-            $insertStmt->execute([$restaurantCode, $menuId, $itemName, $type, $price]);
+            $insertStmt->execute([$restaurantCode, $menuId, $itemName, $type, $price, $itemImagePath, $imageData, $imageMimeType]);
             
             echo json_encode([
                 'success' => true,
