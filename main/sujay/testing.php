@@ -289,6 +289,14 @@ try {
             <button class="btn btn-primary" onclick="processAIPrompt()" id="aiProcessBtn" style="background: white; color: #667eea; margin-top: 0.5rem;">🚀 Process Prompt</button>
             <div class="loading" id="aiLoading" style="color: white;">Processing your request...</div>
             <div class="alert" id="aiAlert"></div>
+            
+            <div class="form-group" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.2);">
+                <label for="aiOutput" style="color: white; font-weight: 600;">🤖 AI Response & Plan</label>
+                <textarea id="aiOutput" rows="8" readonly style="width: 100%; padding: 0.75rem; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(0,0,0,0.2); color: white; font-size: 0.875rem; font-family: 'Courier New', monospace; resize: vertical;" placeholder="AI response will appear here..."></textarea>
+                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-top: 0.5rem;">
+                    This shows what the AI understood and the plan it generated.
+                </div>
+            </div>
         </div>
 
         <div class="form-card" style="margin-bottom: 2rem;">
