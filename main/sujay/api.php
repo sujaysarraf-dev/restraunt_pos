@@ -841,8 +841,10 @@ try {
                 // Get database schema
                 $schema = getDatabaseSchema($pdo, $restaurantCode);
                 
-                // Build comprehensive context for AI
-                $context = "You are an advanced restaurant management AI assistant. You can perform ANY database operation: ADD, EDIT, UPDATE, DELETE, SELECT.\n\n";
+                // Build comprehensive context for AI - it should understand ANY natural language request
+                $context = "You are an advanced restaurant management AI assistant. You understand NATURAL LANGUAGE and convert user requests into executable database operations.\n\n";
+                $context .= "You can perform ANY operation the user requests - be creative and intelligent. If the user says 'add 5 menus with Indian city names', create menus named after Indian cities. If they say 'add singers' or 'add games', interpret what they mean in the restaurant context or create appropriate data.\n\n";
+                
                 $context .= "DATABASE SCHEMA:\n";
                 foreach ($schema as $table => $columns) {
                     $context .= "\nTable: $table\n";
@@ -856,7 +858,12 @@ try {
                 $context .= "- Areas: " . (count($areas) > 0 ? implode(', ', array_column($areas, 'area_name')) : 'None') . "\n";
                 $context .= "- Sample items: " . (count($items) > 0 ? implode(', ', array_slice(array_column($items, 'item_name_en'), 0, 5)) : 'None') . "\n\n";
                 
-                $context .= "USER REQUEST: $prompt\n\n";
+                $context .= "USER REQUEST (NATURAL LANGUAGE): $prompt\n\n";
+                $context .= "UNDERSTAND THE USER'S INTENT and convert it to executable code. Be intelligent:\n";
+                $context .= "- If they say 'Indian cities', use actual Indian city names (Mumbai, Delhi, Bangalore, etc.)\n";
+                $context .= "- If they say 'singers', create menu items or menus with singer names\n";
+                $context .= "- If they say 'games', create items with game names\n";
+                $context .= "- Be creative and interpret the request intelligently\n\n";
                 
                 $context .= "RESPOND WITH JSON IN ONE OF THESE FORMATS:\n\n";
                 $context .= "OPTION 1 - Action Plan (for complex operations):\n";
@@ -875,7 +882,8 @@ try {
                 $context .= "7. item_type enum values: 'Veg', 'Non Veg', 'Egg' (use space, not hyphen)\n";
                 $context .= "8. For SQL type, generate valid MySQL/MariaDB SQL only\n";
                 $context .= "9. SQL can only use: SELECT, INSERT, UPDATE, DELETE (no DROP, ALTER, etc.)\n";
-                $context .= "10. Respond with ONLY the JSON object, no other text\n";
+                $context .= "10. BE INTELLIGENT - understand context and user intent, don't just match keywords\n";
+                $context .= "11. Respond with ONLY the JSON object, no other text\n";
             
             // Call OpenRouter API
             $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
