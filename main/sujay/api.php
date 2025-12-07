@@ -551,131 +551,262 @@ try {
                 throw new Exception('Failed to get restaurant code: ' . $e->getMessage());
             }
             
-            // Get current state
-            $menusStmt = $pdo->prepare("SELECT id, menu_name FROM menu WHERE restaurant_id = ?");
-            $menusStmt->execute([$restaurantCode]);
-            $menus = $menusStmt->fetchAll(PDO::FETCH_ASSOC);
+            // Try simple command parsing first (works without AI API)
+            $plan = parseSimpleCommand($prompt);
+            $usedSimpleParser = false;
             
-            $areasStmt = $pdo->prepare("SELECT id, area_name FROM areas WHERE restaurant_id = ?");
-            $areasStmt->execute([$restaurantCode]);
-            $areas = $areasStmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            $itemsStmt = $pdo->prepare("SELECT item_name_en, item_category FROM menu_items WHERE restaurant_id = ? LIMIT 10");
-            $itemsStmt->execute([$restaurantCode]);
-            $items = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Build context for AI
-            $context = "You are a restaurant management assistant. Read the user's request and create a JSON plan to execute it.\n\n";
-            $context .= "Current restaurant state:\n";
-            $context .= "- Menus: " . (count($menus) > 0 ? implode(', ', array_column($menus, 'menu_name')) : 'None') . "\n";
-            $context .= "- Areas: " . (count($areas) > 0 ? implode(', ', array_column($areas, 'area_name')) : 'None') . "\n";
-            $context .= "- Sample items: " . (count($items) > 0 ? implode(', ', array_slice(array_column($items, 'item_name_en'), 0, 5)) : 'None') . "\n\n";
-            $context .= "User request: $prompt\n\n";
-            $context .= "Analyze the request and respond with ONLY valid JSON in this exact format:\n";
-            $context .= '{"action": "add_items|add_menu|add_area|add_table", "items": [{"name": "...", "description": "...", "category": "...", "type": "Veg|Non Veg", "price": 0.00, "menu": "menu_name", "area": "area_name", "table": "table_number", "capacity": 4}], "plan": "Brief description of what will be created"}' . "\n\n";
-            $context .= "Rules:\n";
-            $context .= "- For areas: use action 'add_area', items should have 'name' field\n";
-            $context .= "- For menus: use action 'add_menu', items should have 'name' or 'menu' field\n";
-            $context .= "- For menu items: use action 'add_items', items need 'name', 'category', 'type' (Veg or Non Veg), 'price', and 'menu' (menu name)\n";
-            $context .= "- For tables: use action 'add_table', items need 'table', 'area' (area name), and optional 'capacity'\n";
-            $context .= "- item_type must be exactly 'Veg' or 'Non Veg' (with space, not hyphen)\n";
-            $context .= "- Respond with ONLY the JSON object, no other text";
-            
-            // Call OpenRouter API
-            $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_HTTPHEADER => [
-                    'Authorization: Bearer ' . OPENROUTER_API_KEY,
-                    'Content-Type: application/json',
-                    'HTTP-Referer: https://restrogrow.com',
-                    'X-Title: RestroGrow Testing',
-                    'User-Agent: RestroGrow/1.0'
-                ],
-                CURLOPT_POSTFIELDS => json_encode([
-                    'model' => OPENROUTER_MODEL,
-                    'messages' => [
-                        ['role' => 'system', 'content' => 'You are a helpful restaurant management assistant. Always respond with valid JSON only. Do not include any text outside the JSON.'],
-                        ['role' => 'user', 'content' => $context]
+            // If simple parsing didn't work, try AI API
+            if (!$plan) {
+                // Get current state
+                $menusStmt = $pdo->prepare("SELECT id, menu_name FROM menu WHERE restaurant_id = ?");
+                $menusStmt->execute([$restaurantCode]);
+                $menus = $menusStmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                $areasStmt = $pdo->prepare("SELECT id, area_name FROM areas WHERE restaurant_id = ?");
+                $areasStmt->execute([$restaurantCode]);
+                $areas = $areasStmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                $itemsStmt = $pdo->prepare("SELECT item_name_en, item_category FROM menu_items WHERE restaurant_id = ? LIMIT 10");
+                $itemsStmt->execute([$restaurantCode]);
+                $items = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                // Build context for AI
+                $context = "You are a restaurant management assistant. Read the user's request and create a JSON plan to execute it.\n\n";
+                $context .= "Current restaurant state:\n";
+                $context .= "- Menus: " . (count($menus) > 0 ? implode(', ', array_column($menus, 'menu_name')) : 'None') . "\n";
+                $context .= "- Areas: " . (count($areas) > 0 ? implode(', ', array_column($areas, 'area_name')) : 'None') . "\n";
+                $context .= "- Sample items: " . (count($items) > 0 ? implode(', ', array_slice(array_column($items, 'item_name_en'), 0, 5)) : 'None') . "\n\n";
+                $context .= "User request: $prompt\n\n";
+                $context .= "Analyze the request and respond with ONLY valid JSON in this exact format:\n";
+                $context .= '{"action": "add_items|add_menu|add_area|add_table", "items": [{"name": "...", "description": "...", "category": "...", "type": "Veg|Non Veg", "price": 0.00, "menu": "menu_name", "area": "area_name", "table": "table_number", "capacity": 4}], "plan": "Brief description of what will be created"}' . "\n\n";
+                $context .= "Rules:\n";
+                $context .= "- For areas: use action 'add_area', items should have 'name' field\n";
+                $context .= "- For menus: use action 'add_menu', items should have 'name' or 'menu' field\n";
+                $context .= "- For menu items: use action 'add_items', items need 'name', 'category', 'type' (Veg or Non Veg), 'price', and 'menu' (menu name)\n";
+                $context .= "- For tables: use action 'add_table', items need 'table', 'area' (area name), and optional 'capacity'\n";
+                $context .= "- item_type must be exactly 'Veg' or 'Non Veg' (with space, not hyphen)\n";
+                $context .= "- Respond with ONLY the JSON object, no other text";
+                
+                // Call OpenRouter API
+                $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_POST => true,
+                    CURLOPT_HTTPHEADER => [
+                        'Authorization: Bearer ' . OPENROUTER_API_KEY,
+                        'Content-Type: application/json',
+                        'HTTP-Referer: https://restrogrow.com',
+                        'X-Title: RestroGrow Testing',
+                        'User-Agent: RestroGrow/1.0'
                     ],
-                    'temperature' => 0.7,
-                    'max_tokens' => 2000
-                ])
-            ]);
-            
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);
-            curl_close($ch);
-            
-            if ($httpCode !== 200) {
-                $errorMsg = 'AI service error (HTTP ' . $httpCode . ')';
-                if ($curlError) {
-                    $errorMsg .= ': ' . $curlError;
-                }
-                if ($response) {
-                    $errorData = json_decode($response, true);
-                    if (isset($errorData['error'])) {
-                        $errorMsg .= ': ' . ($errorData['error']['message'] ?? 'Unknown error');
-                        if (isset($errorData['error']['code'])) {
-                            $errorMsg .= ' (Code: ' . $errorData['error']['code'] . ')';
+                    CURLOPT_POSTFIELDS => json_encode([
+                        'model' => OPENROUTER_MODEL,
+                        'messages' => [
+                            ['role' => 'system', 'content' => 'You are a helpful restaurant management assistant. Always respond with valid JSON only. Do not include any text outside the JSON.'],
+                            ['role' => 'user', 'content' => $context]
+                        ],
+                        'temperature' => 0.7,
+                        'max_tokens' => 2000
+                    ])
+                ]);
+                
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $curlError = curl_error($ch);
+                curl_close($ch);
+                
+                if ($httpCode !== 200) {
+                    // If AI API fails, try simple parsing as fallback
+                    $plan = parseSimpleCommand($prompt);
+                    if (!$plan) {
+                        $errorMsg = 'AI service error (HTTP ' . $httpCode . ')';
+                        if ($curlError) {
+                            $errorMsg .= ': ' . $curlError;
+                        }
+                        if ($response) {
+                            $errorData = json_decode($response, true);
+                            if (isset($errorData['error'])) {
+                                $errorMsg .= ': ' . ($errorData['error']['message'] ?? 'Unknown error');
+                                if (isset($errorData['error']['code'])) {
+                                    $errorMsg .= ' (Code: ' . $errorData['error']['code'] . ')';
+                                }
+                            } else {
+                                $errorMsg .= ': ' . substr($response, 0, 200);
+                            }
+                        }
+                        throw new Exception($errorMsg . '. Try using simple commands like "add 5 menus" or "add 3 areas".');
+                    } else {
+                        $usedSimpleParser = true;
+                    }
+                } else {
+                    $aiResponse = json_decode($response, true);
+                    
+                    if (isset($aiResponse['error'])) {
+                        $errorCode = $aiResponse['error']['code'] ?? 'Unknown';
+                        $errorMessage = $aiResponse['error']['message'] ?? 'Unknown error';
+                        
+                        // If API key error, try simple parsing
+                        if ($errorCode == 401) {
+                            $plan = parseSimpleCommand($prompt);
+                            if (!$plan) {
+                                throw new Exception('AI API Authentication Error: The OpenRouter API key is invalid or expired. Please update the API key in main/sujay/api.php. Get a new key from https://openrouter.ai. For now, try simple commands like "add 5 menus" or "add 3 areas".');
+                            } else {
+                                $usedSimpleParser = true;
+                            }
+                        } elseif ($errorCode == 429) {
+                            throw new Exception('AI API Rate Limit: Too many requests. Please try again later.');
+                        } else {
+                            throw new Exception('AI API Error (' . $errorCode . '): ' . $errorMessage);
                         }
                     } else {
-                        $errorMsg .= ': ' . substr($response, 0, 200);
+                        $aiContent = $aiResponse['choices'][0]['message']['content'] ?? '';
+                        
+                        if (empty($aiContent)) {
+                            // Try simple parsing as fallback
+                            $plan = parseSimpleCommand($prompt);
+                            if (!$plan) {
+                                throw new Exception('Empty response from AI. Full response: ' . substr($response, 0, 500));
+                            } else {
+                                $usedSimpleParser = true;
+                            }
+                        } else {
+                            // Extract JSON from response (handle markdown code blocks)
+                            if (preg_match('/```json\s*(.*?)\s*```/s', $aiContent, $matches)) {
+                                $aiContent = $matches[1];
+                            } elseif (preg_match('/```\s*(.*?)\s*```/s', $aiContent, $matches)) {
+                                $aiContent = $matches[1];
+                            }
+                            
+                            // Try to find JSON object in the response
+                            if (preg_match('/\{.*\}/s', $aiContent, $jsonMatch)) {
+                                $aiContent = $jsonMatch[0];
+                            }
+                            
+                            $plan = json_decode(trim($aiContent), true);
+                            
+                            if (!$plan || json_last_error() !== JSON_ERROR_NONE) {
+                                // Try simple parsing as fallback
+                                $plan = parseSimpleCommand($prompt);
+                                if (!$plan) {
+                                    throw new Exception('Failed to parse AI response. JSON Error: ' . json_last_error_msg() . '. Raw: ' . substr($aiContent, 0, 300));
+                                } else {
+                                    $usedSimpleParser = true;
+                                }
+                            }
+                        }
                     }
                 }
-                throw new Exception($errorMsg);
+            } else {
+                $usedSimpleParser = true;
             }
             
-            $aiResponse = json_decode($response, true);
-            
-            if (isset($aiResponse['error'])) {
-                $errorCode = $aiResponse['error']['code'] ?? 'Unknown';
-                $errorMessage = $aiResponse['error']['message'] ?? 'Unknown error';
+            // Execute the plan directly
+            if ($plan) {
+                // Use executeAIPlan logic to execute the plan
+                $action = $plan['action'] ?? '';
+                $items = $plan['items'] ?? [];
+                $created = [];
+                $errors = [];
                 
-                // Provide helpful error messages
-                if ($errorCode == 401) {
-                    throw new Exception('AI API Authentication Error: The OpenRouter API key is invalid or expired. Please update the API key in main/sujay/api.php. Get a new key from https://openrouter.ai');
-                } elseif ($errorCode == 429) {
-                    throw new Exception('AI API Rate Limit: Too many requests. Please try again later.');
-                } else {
-                    throw new Exception('AI API Error (' . $errorCode . '): ' . $errorMessage);
+                foreach ($items as $item) {
+                    try {
+                        if ($action === 'add_menu') {
+                            $menuName = $item['name'] ?? $item['menu'] ?? 'Menu';
+                            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu WHERE menu_name = ? AND restaurant_id = ?");
+                            $checkStmt->execute([$menuName, $restaurantCode]);
+                            if ($checkStmt->fetchColumn() == 0) {
+                                $insertStmt = $pdo->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
+                                $insertStmt->execute([$restaurantCode, $menuName]);
+                                $created[] = "Menu: $menuName";
+                            }
+                        } elseif ($action === 'add_area') {
+                            $areaName = $item['name'] ?? 'Area';
+                            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM areas WHERE area_name = ? AND restaurant_id = ?");
+                            $checkStmt->execute([$areaName, $restaurantCode]);
+                            if ($checkStmt->fetchColumn() == 0) {
+                                $insertStmt = $pdo->prepare("INSERT INTO areas (restaurant_id, area_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
+                                $insertStmt->execute([$restaurantCode, $areaName]);
+                                $created[] = "Area: $areaName";
+                            }
+                        } elseif ($action === 'add_table') {
+                            $tableNumber = $item['table'] ?? 'T1';
+                            $areaName = $item['area'] ?? 'Area 1';
+                            $capacity = $item['capacity'] ?? 4;
+                            
+                            // Get area ID
+                            $areaStmt = $pdo->prepare("SELECT id FROM areas WHERE area_name = ? AND restaurant_id = ? LIMIT 1");
+                            $areaStmt->execute([$areaName, $restaurantCode]);
+                            $area = $areaStmt->fetch(PDO::FETCH_ASSOC);
+                            if ($area) {
+                                $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM tables WHERE table_number = ? AND area_id = ?");
+                                $checkStmt->execute([$tableNumber, $area['id']]);
+                                if ($checkStmt->fetchColumn() == 0) {
+                                    $insertStmt = $pdo->prepare("INSERT INTO tables (restaurant_id, area_id, table_number, capacity, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())");
+                                    $insertStmt->execute([$restaurantCode, $area['id'], $tableNumber, $capacity]);
+                                    $created[] = "Table: $tableNumber";
+                                }
+                            }
+                        } elseif ($action === 'add_items') {
+                            $itemName = $item['name'] ?? 'Item';
+                            $description = $item['description'] ?? 'Delicious item';
+                            $category = $item['category'] ?? 'General';
+                            $type = $item['type'] ?? 'Veg';
+                            $price = floatval($item['price'] ?? 100);
+                            $menuName = $item['menu'] ?? 'Menu 1';
+                            
+                            // Normalize type
+                            if (stripos($type, 'non') !== false && stripos($type, 'veg') !== false) {
+                                $type = 'Non Veg';
+                            } else {
+                                $type = 'Veg';
+                            }
+                            
+                            // Get menu ID
+                            $menuStmt = $pdo->prepare("SELECT id FROM menu WHERE menu_name = ? AND restaurant_id = ? LIMIT 1");
+                            $menuStmt->execute([$menuName, $restaurantCode]);
+                            $menu = $menuStmt->fetch(PDO::FETCH_ASSOC);
+                            if ($menu) {
+                                $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu_items WHERE item_name_en = ? AND restaurant_id = ?");
+                                $checkStmt->execute([$itemName, $restaurantCode]);
+                                if ($checkStmt->fetchColumn() == 0) {
+                                    // Load default image if available
+                                    $imageData = null;
+                                    $imageMimeType = null;
+                                    $imagePath = __DIR__ . '/../../assets/images/default-menu-item.jpg';
+                                    if (file_exists($imagePath)) {
+                                        $imageData = file_get_contents($imagePath);
+                                        $imageMimeType = 'image/jpeg';
+                                    }
+                                    
+                                    $insertStmt = $pdo->prepare("
+                                        INSERT INTO menu_items 
+                                        (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, image_data, image_mime_type, created_at, updated_at) 
+                                        VALUES (?, ?, ?, ?, ?, ?, 15, 1, ?, 0, NULL, ?, ?, NOW(), NOW())
+                                    ");
+                                    $insertStmt->execute([$restaurantCode, $menu['id'], $itemName, $description, $category, $type, $price, $imageData, $imageMimeType]);
+                                    $created[] = "Menu Item: $itemName";
+                                }
+                            }
+                        }
+                    } catch (Exception $e) {
+                        $errors[] = $e->getMessage();
+                    }
                 }
+                
+                $message = $usedSimpleParser 
+                    ? 'Command executed using simple parser. ' . (count($created) > 0 ? count($created) . ' item(s) created.' : 'No new items created.')
+                    : ($plan['plan'] ?? 'Action executed successfully');
+                
+                echo json_encode([
+                    'success' => true,
+                    'message' => $message,
+                    'created' => $created,
+                    'errors' => $errors,
+                    'rawPlan' => $plan
+                ], JSON_UNESCAPED_UNICODE);
+            } else {
+                throw new Exception('Could not parse command. Try simple commands like "add 5 menus" or "add 3 areas".');
             }
-            
-            $aiContent = $aiResponse['choices'][0]['message']['content'] ?? '';
-            
-            if (empty($aiContent)) {
-                throw new Exception('Empty response from AI. Full response: ' . substr($response, 0, 500));
-            }
-            
-            // Extract JSON from response (handle markdown code blocks)
-            if (preg_match('/```json\s*(.*?)\s*```/s', $aiContent, $matches)) {
-                $aiContent = $matches[1];
-            } elseif (preg_match('/```\s*(.*?)\s*```/s', $aiContent, $matches)) {
-                $aiContent = $matches[1];
-            }
-            
-            // Try to find JSON object in the response
-            if (preg_match('/\{.*\}/s', $aiContent, $jsonMatch)) {
-                $aiContent = $jsonMatch[0];
-            }
-            
-            $plan = json_decode(trim($aiContent), true);
-            
-            if (!$plan || json_last_error() !== JSON_ERROR_NONE) {
-                throw new Exception('Failed to parse AI response. JSON Error: ' . json_last_error_msg() . '. Raw: ' . substr($aiContent, 0, 300));
-            }
-            
-            echo json_encode([
-                'success' => true,
-                'requiresApproval' => true,
-                'plan' => $plan['plan'] ?? 'Execute the requested action',
-                'action' => $plan['action'] ?? '',
-                'items' => $plan['items'] ?? [],
-                'rawPlan' => $plan
-            ], JSON_UNESCAPED_UNICODE);
             break;
             
         case 'quickAddMenu':
