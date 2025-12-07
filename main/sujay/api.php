@@ -851,13 +851,19 @@ try {
                             (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, created_at, updated_at) 
                             VALUES (?, ?, ?, ?, ?, ?, 15, 1, ?, 0, NULL, NOW(), NOW())
                         ");
+                        // Normalize item_type: convert 'Non-Veg' to 'Non Veg' to match database enum
+                        $itemType = $item['type'] ?? 'Veg';
+                        if ($itemType === 'Non-Veg') {
+                            $itemType = 'Non Veg';
+                        }
+                        
                         $insertItem->execute([
                             $restaurantCode,
                             $menuId,
                             $item['name'] ?? 'Untitled Item',
                             $item['description'] ?? '',
                             $item['category'] ?? 'General',
-                            $item['type'] ?? 'Veg',
+                            $itemType,
                             (float)($item['price'] ?? 0)
                         ]);
                         $created[] = "Menu Item: " . ($item['name'] ?? 'Untitled');
