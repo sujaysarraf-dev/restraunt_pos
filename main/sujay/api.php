@@ -37,6 +37,17 @@ if (!empty($jsonData['restaurant_id'])) {
     $restaurant_id = (int)$_GET['restaurant_id'];
 }
 
+// Helper function to convert numeric restaurant ID to restaurant code (RES005)
+function getRestaurantCode($pdo, $restaurant_id) {
+    if (!$restaurant_id || !is_numeric($restaurant_id)) {
+        return $restaurant_id; // Return as-is if not numeric
+    }
+    $codeStmt = $pdo->prepare("SELECT restaurant_id FROM users WHERE id = ?");
+    $codeStmt->execute([$restaurant_id]);
+    $codeResult = $codeStmt->fetch(PDO::FETCH_ASSOC);
+    return $codeResult ? $codeResult['restaurant_id'] : $restaurant_id;
+}
+
 // Only default for actions that don't require restaurant_id
 // For actions that need restaurant_id, we'll validate it in each case
 
@@ -55,6 +66,7 @@ try {
             break;
             
         case 'getTables':
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
             $stmt = $pdo->prepare("
                 SELECT t.id, t.table_number, t.capacity, a.area_name 
                 FROM tables t 
@@ -62,7 +74,7 @@ try {
                 WHERE t.restaurant_id = ? 
                 ORDER BY t.table_number ASC
             ");
-            $stmt->execute([$restaurant_id]);
+            $stmt->execute([$restaurantCode]);
             $tables = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             echo json_encode([
@@ -73,13 +85,14 @@ try {
             break;
             
         case 'getMenuItems':
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
             $stmt = $pdo->prepare("
                 SELECT id, item_name_en, item_category, item_type, base_price 
                 FROM menu_items 
                 WHERE restaurant_id = ? 
                 ORDER BY item_name_en ASC
             ");
-            $stmt->execute([$restaurant_id]);
+            $stmt->execute([$restaurantCode]);
             $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             echo json_encode([
@@ -118,6 +131,7 @@ try {
             break;
             
         case 'getAreas':
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
             $stmt = $pdo->prepare("
                 SELECT a.id, a.area_name, a.created_at, a.updated_at, 
                        COUNT(t.id) as no_of_tables 
@@ -127,7 +141,7 @@ try {
                 GROUP BY a.id, a.area_name, a.created_at, a.updated_at
                 ORDER BY a.sort_order ASC, a.created_at DESC
             ");
-            $stmt->execute([$restaurant_id]);
+            $stmt->execute([$restaurantCode]);
             $areas = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             echo json_encode([
@@ -138,6 +152,7 @@ try {
             break;
             
         case 'addMenu':
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
             $menuName = $_POST['menuName'] ?? '';
             if (empty($menuName)) {
                 throw new Exception('Menu name is required');
@@ -145,13 +160,13 @@ try {
             
             // Check if menu name already exists
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu WHERE menu_name = ? AND restaurant_id = ?");
-            $checkStmt->execute([$menuName, $restaurant_id]);
+            $checkStmt->execute([$menuName, $restaurantCode]);
             if ($checkStmt->fetchColumn() > 0) {
                 throw new Exception('Menu name already exists');
             }
             
             $insertStmt = $pdo->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
-            $insertStmt->execute([$restaurant_id, $menuName]);
+            $insertStmt->execute([$restaurantCode, $menuName]);
             
             echo json_encode([
                 'success' => true,
@@ -161,6 +176,7 @@ try {
             break;
             
         case 'addArea':
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
             $areaName = $_POST['areaName'] ?? '';
             if (empty($areaName)) {
                 throw new Exception('Area name is required');
@@ -168,13 +184,13 @@ try {
             
             // Check if area name already exists
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM areas WHERE area_name = ? AND restaurant_id = ?");
-            $checkStmt->execute([$areaName, $restaurant_id]);
+            $checkStmt->execute([$areaName, $restaurantCode]);
             if ($checkStmt->fetchColumn() > 0) {
                 throw new Exception('Area name already exists');
             }
             
             $insertStmt = $pdo->prepare("INSERT INTO areas (restaurant_id, area_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
-            $insertStmt->execute([$restaurant_id, $areaName]);
+            $insertStmt->execute([$restaurantCode, $areaName]);
             
             echo json_encode([
                 'success' => true,
@@ -184,6 +200,7 @@ try {
             break;
             
         case 'addTable':
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
             $tableNumber = $_POST['tableNumber'] ?? '';
             $capacity = (int)($_POST['capacity'] ?? 4);
             $areaId = (int)($_POST['chooseArea'] ?? 0);
@@ -200,7 +217,7 @@ try {
             
             // Verify area belongs to restaurant
             $areaCheck = $pdo->prepare("SELECT id FROM areas WHERE id = ? AND restaurant_id = ?");
-            $areaCheck->execute([$areaId, $restaurant_id]);
+            $areaCheck->execute([$areaId, $restaurantCode]);
             if (!$areaCheck->fetch()) {
                 throw new Exception('Invalid area selection');
             }
@@ -213,7 +230,7 @@ try {
             }
             
             $insertStmt = $pdo->prepare("INSERT INTO tables (restaurant_id, area_id, table_number, capacity, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())");
-            $insertStmt->execute([$restaurant_id, $areaId, $tableNumber, $capacity]);
+            $insertStmt->execute([$restaurantCode, $areaId, $tableNumber, $capacity]);
             
             echo json_encode([
                 'success' => true,
@@ -223,6 +240,7 @@ try {
             break;
             
         case 'addMenuItem':
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
             $menuId = (int)($_POST['chooseMenu'] ?? 0);
             $itemNameEn = $_POST['itemNameEn'] ?? '';
             $itemDescriptionEn = $_POST['itemDescriptionEn'] ?? '';
@@ -241,7 +259,7 @@ try {
             
             // Verify menu belongs to restaurant
             $menuCheck = $pdo->prepare("SELECT id FROM menu WHERE id = ? AND restaurant_id = ?");
-            $menuCheck->execute([$menuId, $restaurant_id]);
+            $menuCheck->execute([$menuId, $restaurantCode]);
             if (!$menuCheck->fetch()) {
                 throw new Exception('Invalid menu selection');
             }
@@ -263,7 +281,7 @@ try {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NOW(), NOW())
             ");
             $insertStmt->execute([
-                $restaurant_id, $menuId, $itemNameEn, $itemDescriptionEn, $itemCategory, 
+                $restaurantCode, $menuId, $itemNameEn, $itemDescriptionEn, $itemCategory, 
                 $itemType, $preparationTime, $isAvailable, $basePrice
             ]);
             
@@ -279,6 +297,9 @@ try {
             if (!$restaurant_id || $restaurant_id <= 0) {
                 throw new Exception('Invalid restaurant_id: ' . $restaurant_id . '. Please select a restaurant.');
             }
+            
+            // Get restaurant code
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
             
             // Generate random demo data
             $demoMenus = ['Breakfast Menu', 'Lunch Menu', 'Dinner Menu', 'Desserts', 'Beverages'];
@@ -297,10 +318,10 @@ try {
             foreach ($demoMenus as $menuName) {
                 try {
                     $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu WHERE menu_name = ? AND restaurant_id = ?");
-                    $checkStmt->execute([$menuName, $restaurant_id]);
+                    $checkStmt->execute([$menuName, $restaurantCode]);
                     if ($checkStmt->fetchColumn() == 0) {
                         $insertStmt = $pdo->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
-                        $insertStmt->execute([$restaurant_id, $menuName]);
+                        $insertStmt->execute([$restaurantCode, $menuName]);
                         $created[] = "Menu: $menuName";
                     }
                 } catch (Exception $e) {
@@ -313,16 +334,16 @@ try {
             foreach ($demoAreas as $areaName) {
                 try {
                     $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM areas WHERE area_name = ? AND restaurant_id = ?");
-                    $checkStmt->execute([$areaName, $restaurant_id]);
+                    $checkStmt->execute([$areaName, $restaurantCode]);
                     if ($checkStmt->fetchColumn() == 0) {
                         $insertStmt = $pdo->prepare("INSERT INTO areas (restaurant_id, area_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
-                        $insertStmt->execute([$restaurant_id, $areaName]);
+                        $insertStmt->execute([$restaurantCode, $areaName]);
                         $areaIds[] = $pdo->lastInsertId();
                         $created[] = "Area: $areaName";
                     } else {
                         // Get existing area ID
                         $getStmt = $pdo->prepare("SELECT id FROM areas WHERE area_name = ? AND restaurant_id = ? LIMIT 1");
-                        $getStmt->execute([$areaName, $restaurant_id]);
+                        $getStmt->execute([$areaName, $restaurantCode]);
                         $area = $getStmt->fetch(PDO::FETCH_ASSOC);
                         if ($area) $areaIds[] = $area['id'];
                     }
@@ -355,7 +376,7 @@ try {
             // Create demo menu items
             $menuIds = [];
             $menuStmt = $pdo->prepare("SELECT id FROM menu WHERE restaurant_id = ?");
-            $menuStmt->execute([$restaurant_id]);
+            $menuStmt->execute([$restaurantCode]);
             while ($menu = $menuStmt->fetch(PDO::FETCH_ASSOC)) {
                 $menuIds[] = $menu['id'];
             }
@@ -367,7 +388,7 @@ try {
                         list($name, $desc, $cat, $type, $price) = $item;
                         
                         $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM menu_items WHERE item_name_en = ? AND restaurant_id = ?");
-                        $checkStmt->execute([$name, $restaurant_id]);
+                        $checkStmt->execute([$name, $restaurantCode]);
                         if ($checkStmt->fetchColumn() == 0) {
                             // Ensure columns exist
                             try {
@@ -583,24 +604,18 @@ try {
                 throw new Exception('Invalid restaurant_id: ' . $restaurant_id);
             }
             
-            // Verify restaurant exists and get numeric ID
-            $verifyStmt = $pdo->prepare("SELECT id FROM users WHERE id = ?");
-            $verifyStmt->execute([$restaurant_id]);
-            $restaurant = $verifyStmt->fetch(PDO::FETCH_ASSOC);
-            if (!$restaurant) {
-                throw new Exception('Restaurant with ID ' . $restaurant_id . ' not found');
-            }
-            $numericRestaurantId = (int)$restaurant['id'];
+            // Get restaurant code
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
             
-            // Get next area number - use numeric ID
+            // Get next area number - use restaurant code
             $countStmt = $pdo->prepare("SELECT COUNT(*) FROM areas WHERE restaurant_id = ?");
-            $countStmt->execute([$numericRestaurantId]);
+            $countStmt->execute([$restaurantCode]);
             $count = $countStmt->fetchColumn();
             $areaName = 'Area ' . ($count + 1);
             
             // Check if exists, increment if needed
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM areas WHERE area_name = ? AND restaurant_id = ?");
-            $checkStmt->execute([$areaName, $restaurant_id]);
+            $checkStmt->execute([$areaName, $restaurantCode]);
             $exists = $checkStmt->fetchColumn();
             
             if ($exists > 0) {
@@ -608,7 +623,7 @@ try {
             }
             
             $insertStmt = $pdo->prepare("INSERT INTO areas (restaurant_id, area_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
-            $insertStmt->execute([$restaurant_id, $areaName]);
+            $insertStmt->execute([$restaurantCode, $areaName]);
             
             echo json_encode([
                 'success' => true,
@@ -624,15 +639,18 @@ try {
                 throw new Exception('Invalid restaurant_id: ' . $restaurant_id);
             }
             
+            // Get restaurant code
+            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            
             // Get a random area or create one if none exists
             $areaStmt = $pdo->prepare("SELECT id FROM areas WHERE restaurant_id = ? LIMIT 1");
-            $areaStmt->execute([$restaurant_id]);
+            $areaStmt->execute([$restaurantCode]);
             $area = $areaStmt->fetch(PDO::FETCH_ASSOC);
             
             if (!$area) {
                 // Create an area first
                 $insertArea = $pdo->prepare("INSERT INTO areas (restaurant_id, area_name, created_at, updated_at) VALUES (?, 'Area 1', NOW(), NOW())");
-                $insertArea->execute([$restaurant_id]);
+                $insertArea->execute([$restaurantCode]);
                 $areaId = $pdo->lastInsertId();
             } else {
                 $areaId = $area['id'];
@@ -655,7 +673,7 @@ try {
             
             $capacity = rand(2, 8); // Random capacity between 2-8
             $insertStmt = $pdo->prepare("INSERT INTO tables (restaurant_id, area_id, table_number, capacity, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())");
-            $insertStmt->execute([$restaurant_id, $areaId, $tableNumber, $capacity]);
+            $insertStmt->execute([$restaurantCode, $areaId, $tableNumber, $capacity]);
             
             echo json_encode([
                 'success' => true,
@@ -721,7 +739,7 @@ try {
                 (restaurant_id, menu_id, item_name_en, item_description_en, item_category, item_type, preparation_time, is_available, base_price, has_variations, item_image, created_at, updated_at) 
                 VALUES (?, ?, ?, 'Delicious item', 'General', ?, 15, 1, ?, 0, NULL, NOW(), NOW())
             ");
-            $insertStmt->execute([$restaurant_id, $menuId, $itemName, $type, $price]);
+            $insertStmt->execute([$restaurantCode, $menuId, $itemName, $type, $price]);
             
             echo json_encode([
                 'success' => true,
