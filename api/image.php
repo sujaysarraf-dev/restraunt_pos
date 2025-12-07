@@ -354,14 +354,44 @@ foreach ($possiblePaths as $path) {
 
 // Check if file exists
 if (!$fullPath || !file_exists($fullPath)) {
-    // Before returning 404, try one more time to check database for BLOB data
+    // Before returning 404, try comprehensive database check for BLOB data
     // This handles cases where file doesn't exist but BLOB might
-    if (!empty($imagePath) && strpos($imagePath, 'http') !== 0) {
+    if (!empty($imagePath) && strpos($imagePath, 'http') !== 0 && empty($imageType)) {
         try {
-            // Try to find BLOB by any matching criteria
-            $finalStmt = $pdo->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE (item_image = ? OR item_image LIKE ?) AND image_data IS NOT NULL LIMIT 1");
-            $finalStmt->execute([$imagePath, '%' . basename($imagePath) . '%']);
+            $filename = basename($imagePath);
+            $filename = preg_replace('/[?#].*$/', '', $filename); // Remove query strings
+            
+            // Comprehensive BLOB search - try multiple strategies
+            $finalStmt = $pdo->prepare("
+                SELECT image_data, image_mime_type 
+                FROM menu_items 
+                WHERE image_data IS NOT NULL 
+                AND (
+                    item_image = ? 
+                    OR item_image LIKE ? 
+                    OR item_image LIKE ?
+                    OR item_image LIKE ?
+                )
+                LIMIT 1
+            ");
+            $finalStmt->execute([
+                $imagePath,
+                '%' . $filename,
+                '%/' . $filename . '%',
+                'uploads/%' . $filename . '%'
+            ]);
             $finalItem = $finalStmt->fetch(PDO::FETCH_ASSOC);
+            
+            // If still not found, try identifier matching
+            if (!$finalItem || empty($finalItem['image_data'])) {
+                preg_match('/([a-f0-9]{10,})/i', $imagePath, $matches);
+                if (!empty($matches[1])) {
+                    $identifier = $matches[1];
+                    $finalStmt2 = $pdo->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ?) AND image_data IS NOT NULL LIMIT 1");
+                    $finalStmt2->execute(['%' . $identifier . '%', 'db:' . $identifier]);
+                    $finalItem = $finalStmt2->fetch(PDO::FETCH_ASSOC);
+                }
+            }
             
             if ($finalItem && !empty($finalItem['image_data'])) {
                 ob_end_clean();
