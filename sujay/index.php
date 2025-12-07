@@ -490,6 +490,18 @@ $connectionStats = getConnectionStats();
                     <div class="card-title">Database Performance Test</div>
                     <div class="card-description">Test database speed, query performance, indexes, buffer pool, and connection status.</div>
                 </a>
+
+                <a href="https://restrogrow.com/admin/run_indexes_both_dbs.php" class="card">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">Run Database Indexes</div>
+                    <div class="card-description">Add critical database indexes to improve query performance on both production and localhost.</div>
+                </a>
+
+                <a href="https://restrogrow.com/admin/run_password_reset_table_both_dbs.php" class="card">
+                    <div class="card-icon">🔐</div>
+                    <div class="card-title">Password Reset Tokens Migration</div>
+                    <div class="card-description">Create password_reset_tokens table and add idx_created_at index on both production and localhost databases.</div>
+                </a>
             </div>
         </div>
 

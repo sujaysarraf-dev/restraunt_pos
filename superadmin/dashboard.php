@@ -312,6 +312,27 @@ require_superadmin();
             <button class="btn btn-primary" id="saveSettings">Save Settings</button>
           </div>
         </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Database Tools</div>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;">
+              <a href="../admin/run_indexes_both_dbs.php" target="_blank" class="btn btn-outline" style="text-decoration:none;display:block;text-align:center;">
+                <span class="material-symbols-rounded" style="vertical-align:middle;margin-right:8px;">speed</span>
+                Run Database Indexes
+              </a>
+              <a href="../admin/run_password_reset_table_both_dbs.php" target="_blank" class="btn btn-outline" style="text-decoration:none;display:block;text-align:center;">
+                <span class="material-symbols-rounded" style="vertical-align:middle;margin-right:8px;">lock_reset</span>
+                Password Reset Tokens Migration
+              </a>
+              <a href="../admin/db_test.php" target="_blank" class="btn btn-outline" style="text-decoration:none;display:block;text-align:center;">
+                <span class="material-symbols-rounded" style="vertical-align:middle;margin-right:8px;">monitoring</span>
+                Database Performance Test
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
