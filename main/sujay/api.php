@@ -300,8 +300,27 @@ function parseSimpleCommand($prompt) {
             $items = [];
             
             if (in_array($type, ['menu', 'menus'])) {
-                for ($i = 1; $i <= $count; $i++) {
-                    $items[] = ['name' => "Menu $i"];
+                // Check if prompt mentions city names or Indian cities
+                $cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow', 'Surat', 'Kanpur', 'Nagpur', 'Indore', 'Thane', 'Bhopal', 'Visakhapatnam', 'Patna', 'Vadodara', 'Ghaziabad'];
+                $indianCuisines = ['North Indian', 'South Indian', 'Gujarati', 'Punjabi', 'Bengali', 'Rajasthani', 'Maharashtrian', 'Tamil', 'Telugu', 'Kerala'];
+                
+                if (preg_match('/(city|cities|indian|cuisine)/i', $promptLower)) {
+                    // Use city names or cuisine names
+                    $useCities = stripos($promptLower, 'city') !== false || stripos($promptLower, 'cities') !== false;
+                    $nameList = $useCities ? $cities : $indianCuisines;
+                    
+                    for ($i = 0; $i < $count && $i < count($nameList); $i++) {
+                        $items[] = ['name' => $nameList[$i] . ' Menu'];
+                    }
+                    // If more items needed, add numbered menus
+                    for ($i = count($nameList); $i < $count; $i++) {
+                        $items[] = ['name' => "Menu " . ($i + 1)];
+                    }
+                } else {
+                    // Default: numbered menus
+                    for ($i = 1; $i <= $count; $i++) {
+                        $items[] = ['name' => "Menu $i"];
+                    }
                 }
                 $plan = [
                     'action' => 'add_menu',
