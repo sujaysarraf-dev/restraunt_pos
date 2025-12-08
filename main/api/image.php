@@ -19,6 +19,20 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit('Database connection not available');
 }
 
+// Get connection using getConnection() for lazy connection support
+if (function_exists('getConnection')) {
+    $conn = getConnection();
+} else {
+    // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+    global $pdo;
+    $conn = $pdo ?? null;
+    if (!$conn) {
+        http_response_code(500);
+        header('Content-Type: text/plain');
+        exit('Database connection not available');
+    }
+}
+
 $imagePath = $_GET['path'] ?? '';
 $imageType = $_GET['type'] ?? ''; // 'logo', 'item', 'banner', or 'business_qr'
 $imageId = $_GET['id'] ?? '';
@@ -29,7 +43,7 @@ $imageId = $_GET['id'] ?? '';
 if (!empty($imagePath) && strpos($imagePath, 'http') !== 0 && empty($imageType)) {
     try {
         // Strategy 1: Exact path match (works for both db: and file paths)
-        $stmt = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
+        $stmt = $conn->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
         $stmt->execute([$imagePath]);
         $item = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -45,7 +59,7 @@ if (!empty($imagePath) && strpos($imagePath, 'http') !== 0 && empty($imageType))
         // Strategy 2: For db: paths, extract identifier and try direct match
         if (strpos($imagePath, 'db:') === 0) {
             $dbId = substr($imagePath, 3); // Remove 'db:' prefix
-            $stmt2 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
+            $stmt2 = $conn->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
             $stmt2->execute([$imagePath]); // Try full path again
             $item = $stmt2->fetch(PDO::FETCH_ASSOC);
             
@@ -64,7 +78,7 @@ if (!empty($imagePath) && strpos($imagePath, 'http') !== 0 && empty($imageType))
             $filename = basename($imagePath);
             // Remove query strings or fragments from filename
             $filename = preg_replace('/[?#].*$/', '', $filename);
-            $stmt3 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ? OR item_image = ?) AND image_data IS NOT NULL LIMIT 1");
+            $stmt3 = $conn->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ? OR item_image = ?) AND image_data IS NOT NULL LIMIT 1");
             $stmt3->execute(['%' . $filename, '%/' . $filename . '%', $imagePath]);
             $item = $stmt3->fetch(PDO::FETCH_ASSOC);
         }
@@ -75,7 +89,7 @@ if (!empty($imagePath) && strpos($imagePath, 'http') !== 0 && empty($imageType))
             preg_match('/([a-f0-9]{10,})/i', $imagePath, $matches);
             if (!empty($matches[1])) {
                 $identifier = $matches[1];
-                $stmt4 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ?) AND image_data IS NOT NULL LIMIT 1");
+                $stmt4 = $conn->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ?) AND image_data IS NOT NULL LIMIT 1");
                 $stmt4->execute(['%' . $identifier . '%', 'db:' . $identifier]);
                 $item = $stmt4->fetch(PDO::FETCH_ASSOC);
             }
@@ -104,7 +118,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
         if ($imageType === 'logo' && !empty($imageId)) {
             // Get restaurant logo
             try {
-                $stmt = $pdo->prepare("SELECT logo_data, logo_mime_type, restaurant_logo FROM users WHERE id = ? LIMIT 1");
+                $stmt = $conn->prepare("SELECT logo_data, logo_mime_type, restaurant_logo FROM users WHERE id = ? LIMIT 1");
                 $stmt->execute([$imageId]);
                 $logo = $stmt->fetch(PDO::FETCH_ASSOC);
                 
@@ -130,7 +144,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
                 if (strpos($e->getMessage(), 'logo_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
                     error_log("Logo data column not found, trying file-based: " . $e->getMessage());
                     try {
-                        $stmt = $pdo->prepare("SELECT restaurant_logo FROM users WHERE id = ? LIMIT 1");
+                        $stmt = $conn->prepare("SELECT restaurant_logo FROM users WHERE id = ? LIMIT 1");
                         $stmt->execute([$imageId]);
                         $logoRow = $stmt->fetch(PDO::FETCH_ASSOC);
                         if ($logoRow && !empty($logoRow['restaurant_logo']) && strpos($logoRow['restaurant_logo'], 'db:') !== 0) {
@@ -153,7 +167,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
         } elseif ($imageType === 'banner' && !empty($imageId)) {
             // Get website banner
             try {
-                $stmt = $pdo->prepare("SELECT banner_data, banner_mime_type FROM website_banners WHERE id = ? LIMIT 1");
+                $stmt = $conn->prepare("SELECT banner_data, banner_mime_type FROM website_banners WHERE id = ? LIMIT 1");
                 $stmt->execute([$imageId]);
                 $banner = $stmt->fetch(PDO::FETCH_ASSOC);
                 
@@ -183,7 +197,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
                 if (strpos($e->getMessage(), 'banner_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
                     error_log("Banner data column not found, trying file-based: " . $e->getMessage());
                     try {
-                        $stmt = $pdo->prepare("SELECT banner_path FROM website_banners WHERE id = ? LIMIT 1");
+                        $stmt = $conn->prepare("SELECT banner_path FROM website_banners WHERE id = ? LIMIT 1");
                         $stmt->execute([$imageId]);
                         $bannerPath = $stmt->fetch(PDO::FETCH_ASSOC);
                         if ($bannerPath && !empty($bannerPath['banner_path']) && strpos($bannerPath['banner_path'], 'db:') !== 0) {
@@ -206,7 +220,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
         } elseif ($imageType === 'business_qr' && !empty($imageId)) {
             // Get business QR code from users table
             try {
-                $stmt = $pdo->prepare("SELECT business_qr_code_data, business_qr_code_mime_type FROM users WHERE id = ? LIMIT 1");
+                $stmt = $conn->prepare("SELECT business_qr_code_data, business_qr_code_mime_type FROM users WHERE id = ? LIMIT 1");
                 $stmt->execute([$imageId]);
                 $qr = $stmt->fetch(PDO::FETCH_ASSOC);
                 
@@ -236,7 +250,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
             $dbId = str_replace('db:', '', $imagePath);
             
             // Try to find menu item by item_image reference
-            $stmt = $pdo->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE item_image = ? LIMIT 1");
+            $stmt = $conn->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE item_image = ? LIMIT 1");
             $stmt->execute([$imagePath]);
             $item = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -252,7 +266,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
             // Old file-based image path - check if it exists in database as image_data first
             // This handles cases where old images might have been migrated to database
             try {
-                $stmt = $pdo->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
+                $stmt = $conn->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
                 $stmt->execute([$imagePath]);
                 $item = $stmt->fetch(PDO::FETCH_ASSOC);
                 
@@ -393,7 +407,7 @@ if (!$fullPath || !file_exists($fullPath)) {
             $filename = preg_replace('/[?#].*$/', '', $filename); // Remove query strings
             
             // Comprehensive BLOB search - try multiple strategies
-            $finalStmt = $pdo->prepare("
+            $finalStmt = $conn->prepare("
                 SELECT image_data, image_mime_type 
                 FROM menu_items 
                 WHERE image_data IS NOT NULL 
@@ -418,7 +432,7 @@ if (!$fullPath || !file_exists($fullPath)) {
                 preg_match('/([a-f0-9]{10,})/i', $imagePath, $matches);
                 if (!empty($matches[1])) {
                     $identifier = $matches[1];
-                    $finalStmt2 = $pdo->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ?) AND image_data IS NOT NULL LIMIT 1");
+                    $finalStmt2 = $conn->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image LIKE ?) AND image_data IS NOT NULL LIMIT 1");
                     $finalStmt2->execute(['%' . $identifier . '%', 'db:' . $identifier]);
                     $finalItem = $finalStmt2->fetch(PDO::FETCH_ASSOC);
                 }

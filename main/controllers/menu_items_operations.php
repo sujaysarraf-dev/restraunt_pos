@@ -353,10 +353,10 @@ function handleFileUpload($file, $uploadDir) {
     try {
         // Ensure image_data and image_mime_type columns exist
         try {
-            $checkCol = $pdo->query("SHOW COLUMNS FROM menu_items LIKE 'image_data'");
+            $checkCol = $conn->query("SHOW COLUMNS FROM menu_items LIKE 'image_data'");
             if ($checkCol->rowCount() == 0) {
-                $pdo->exec("ALTER TABLE menu_items ADD COLUMN image_data LONGBLOB NULL AFTER item_image");
-                $pdo->exec("ALTER TABLE menu_items ADD COLUMN image_mime_type VARCHAR(50) NULL AFTER image_data");
+                $conn->exec("ALTER TABLE menu_items ADD COLUMN image_data LONGBLOB NULL AFTER item_image");
+                $conn->exec("ALTER TABLE menu_items ADD COLUMN image_mime_type VARCHAR(50) NULL AFTER image_data");
             }
         } catch (PDOException $e) {
             // Columns might already exist, continue
