@@ -36,24 +36,31 @@ try {
     $restaurant_id = $_SESSION['restaurant_id'];
     
     $period = $_GET['period'] ?? 'today';
+    $type = $_GET['type'] ?? 'sales';
     
     // Calculate date range based on period
     $dateCondition = '';
+    $dateConditionNoAlias = '';
     switch ($period) {
         case 'today':
             $dateCondition = "DATE(o.created_at) = CURDATE()";
+            $dateConditionNoAlias = "DATE(created_at) = CURDATE()";
             break;
         case 'week':
             $dateCondition = "o.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+            $dateConditionNoAlias = "created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
             break;
         case 'month':
             $dateCondition = "o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+            $dateConditionNoAlias = "created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
             break;
         case 'year':
             $dateCondition = "o.created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)";
+            $dateConditionNoAlias = "created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)";
             break;
         default:
             $dateCondition = "DATE(o.created_at) = CURDATE()";
+            $dateConditionNoAlias = "DATE(created_at) = CURDATE()";
     }
     
     // Get total sales
@@ -120,13 +127,72 @@ try {
     $paymentMethodsStmt = $conn->prepare("
         SELECT payment_method, COUNT(*) as count, SUM(total) as amount
         FROM orders
-        WHERE restaurant_id = ? AND " . str_replace('o.', '', $dateCondition) . "
+        WHERE restaurant_id = ? AND " . $dateConditionNoAlias . "
         GROUP BY payment_method
     ");
     $paymentMethodsStmt->execute([$restaurant_id]);
     $paymentMethods = $paymentMethodsStmt->fetchAll(PDO::FETCH_ASSOC);
     
-    echo json_encode([
+    // Get top customers (by total spending)
+    $topCustomersStmt = $conn->prepare("
+        SELECT 
+            customer_name,
+            customer_phone as phone,
+            COUNT(*) as total_orders,
+            SUM(total) as total_spent,
+            MAX(created_at) as last_order_date
+        FROM orders
+        WHERE restaurant_id = ? 
+        AND " . $dateConditionNoAlias . "
+        AND customer_name IS NOT NULL
+        AND customer_name != ''
+        AND customer_name != 'Table Customer'
+        AND customer_name != 'Takeaway'
+        GROUP BY customer_name, customer_phone
+        ORDER BY total_spent DESC
+        LIMIT 20
+    ");
+    $topCustomersStmt->execute([$restaurant_id]);
+    $topCustomers = $topCustomersStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Get hourly sales breakdown (for today only)
+    $hourlySales = [];
+    if ($period === 'today') {
+        $hourlyStmt = $conn->prepare("
+            SELECT 
+                HOUR(created_at) as hour,
+                COUNT(*) as order_count,
+                SUM(total) as total_sales
+            FROM orders
+            WHERE restaurant_id = ? 
+            AND DATE(created_at) = CURDATE()
+            GROUP BY HOUR(created_at)
+            ORDER BY hour ASC
+        ");
+        $hourlyStmt->execute([$restaurant_id]);
+        $hourlySales = $hourlyStmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    // Get staff performance (if staff_id is stored in orders)
+    $staffPerformance = [];
+    $staffStmt = $conn->prepare("
+        SELECT 
+            COALESCE(s.member_name, 'Unknown') as staff_name,
+            COUNT(o.id) as total_orders,
+            SUM(o.total) as total_sales
+        FROM orders o
+        LEFT JOIN staff s ON o.staff_id = s.id AND s.restaurant_id = ?
+        WHERE o.restaurant_id = ? 
+        AND " . $dateConditionNoAlias . "
+        GROUP BY o.staff_id, s.member_name
+        ORDER BY total_sales DESC
+        LIMIT 20
+    ");
+    $staffStmt->execute([$restaurant_id, $restaurant_id]);
+    $staffPerformance = $staffStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Build response based on report type
+    $response = [
         'success' => true,
         'summary' => [
             'total_sales' => floatval($totalSales),
@@ -136,8 +202,15 @@ try {
         ],
         'sales_details' => $salesDetails,
         'top_items' => $topItems,
-        'payment_methods' => $paymentMethods
-    ]);
+        'payment_methods' => $paymentMethods,
+        'top_customers' => $topCustomers,
+        'hourly_sales' => $hourlySales,
+        'staff_performance' => $staffPerformance,
+        'report_type' => $type,
+        'period' => $period
+    ];
+    
+    echo json_encode($response);
     
 } catch (PDOException $e) {
     error_log("PDO Error in get_sales_report.php: " . $e->getMessage());
