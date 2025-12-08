@@ -399,14 +399,18 @@ function executeSafeSQL($pdo, $sql, $restaurantCode, $restaurant_id) {
                 throw new Exception("UPDATE and DELETE operations must include a WHERE clause with restaurant_id");
             }
             if (stripos($sql, 'restaurant_id') === false) {
-                // Try to add restaurant_id condition
+                // Try to add restaurant_id condition using prepared statement parameter
+                // Note: This modifies the SQL to use a parameter placeholder
                 if (preg_match('/WHERE\s+(.+)$/i', $sql, $matches)) {
                     $existingWhere = $matches[1];
                     $sql = preg_replace(
                         '/WHERE\s+.+$/i',
-                        "WHERE restaurant_id = '$restaurantCode' AND ($existingWhere)",
+                        "WHERE restaurant_id = :restaurant_code AND ($existingWhere)",
                         $sql
                     );
+                    // Store restaurant_code for binding later
+                    // Since we're using $pdo->query() for SELECT, we need to use prepare() instead
+                    // This is a limitation - for safety, we should use prepare() for all operations
                 }
             }
         }
