@@ -6781,52 +6781,9 @@ async function loadRestaurantInfo() {
 }
 
 async function initiateRenewal() {
-  try {
-    const renewButton = document.getElementById('renewButton');
-    if (renewButton) {
-      renewButton.disabled = true;
-      renewButton.innerHTML = '<span style="font-size:1.2rem;">⏳</span> Processing...';
-    }
-    
-    const amount = 999; // Monthly subscription amount
-    
-    const formData = new URLSearchParams();
-    formData.append('amount', amount);
-    formData.append('subscription_type', 'monthly');
-    
-    const response = await fetch('../api/phonepe_payment.php', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData.toString()
-    });
-    
-    const result = await response.json();
-    
-    if (result.success && result.payment_url) {
-      // Mark that we're processing payment (only for real PhonePe, not demo)
-      if (!result.demo_mode) {
-        sessionStorage.setItem('payment_processing', 'true');
-      }
-      // Redirect to payment page (PhonePe or Demo)
-      window.location.href = result.payment_url;
-    } else {
-      showNotification(result.message || 'Error initiating payment. Please try again.', 'error');
-      if (renewButton) {
-        renewButton.disabled = false;
-        renewButton.innerHTML = `<span style="font-size:1.2rem;">💳</span> Renew Now (${formatCurrency(999)})`;
-      }
-    }
-  } catch (error) {
-    console.error('Error initiating renewal:', error);
-    showNotification('Network error. Please try again.', 'error');
-    const renewButton = document.getElementById('renewButton');
-    if (renewButton) {
-      renewButton.disabled = false;
-      renewButton.innerHTML = `<span style="font-size:1.2rem;">💳</span> Renew Now (${formatCurrency(999)})`;
-    }
-  }
+  // Payment API is disabled - show contact message instead
+  showNotification('Payment integration is currently unavailable. Please contact us to renew your subscription.', 'info');
+  return;
 }
 
 // Make function globally available
@@ -9133,6 +9090,21 @@ async function loadReports() {
     // Store data for export
     window.currentReportData = data;
     
+    // Update report table title based on type
+    const reportTableTitle = document.getElementById('reportTableTitle');
+    const reportType = data.report_type || 'sales';
+    if (reportTableTitle) {
+      const titles = {
+        'sales': 'Sales Details',
+        'customers': 'Top Customers',
+        'items': 'Top Items Report',
+        'payment': 'Payment Methods Report',
+        'hourly': 'Hourly Sales Report',
+        'staff': 'Staff Performance Report'
+      };
+      reportTableTitle.textContent = titles[reportType] || 'Report Details';
+    }
+    
     // Update summary cards (use the elements we already got)
     if (totalSalesEl) {
       totalSalesEl.textContent = formatCurrencyNoDecimals(data.summary?.total_sales || 0);
@@ -9147,21 +9119,112 @@ async function loadReports() {
       totalCustomersEl.textContent = data.summary?.total_customers || 0;
     }
     
-    // Update sales table (use the element we already got)
+    // Update sales table based on report type
     if (salesTable) {
-      if (data.sales_details && data.sales_details.length > 0) {
-        salesTable.innerHTML = data.sales_details.map(order => `
-          <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 1rem;">${new Date(order.created_at).toLocaleDateString('en-IN')}</td>
-            <td style="padding: 1rem; font-weight: 600;">${order.order_number}</td>
-            <td style="padding: 1rem;">${order.customer_name}</td>
-            <td style="padding: 1rem;">${order.item_count}</td>
-            <td style="padding: 1rem;"><span style="background: #e5f3ff; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">${order.payment_method}</span></td>
-            <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--primary-red);">${formatCurrencyNoDecimals(order.total)}</td>
-          </tr>
-        `).join('');
+      const reportType = data.report_type || 'sales';
+      const tableHeader = salesTable.parentElement.querySelector('thead');
+      
+      if (reportType === 'customers') {
+        // Customer Report
+        if (tableHeader) {
+          tableHeader.innerHTML = `
+            <tr style="background: var(--light-gray);">
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Customer Name</th>
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Phone</th>
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Total Orders</th>
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Last Order</th>
+              <th style="padding: 1rem; text-align: right; font-weight: 600;">Total Spent</th>
+            </tr>
+          `;
+        }
+        if (data.top_customers && data.top_customers.length > 0) {
+          salesTable.innerHTML = data.top_customers.map(customer => `
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 1rem; font-weight: 600;">${customer.customer_name || 'N/A'}</td>
+              <td style="padding: 1rem;">${customer.phone || '-'}</td>
+              <td style="padding: 1rem;">${customer.total_orders}</td>
+              <td style="padding: 1rem;">${customer.last_order_date ? new Date(customer.last_order_date).toLocaleDateString('en-IN') : '-'}</td>
+              <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--primary-red);">${formatCurrencyNoDecimals(customer.total_spent)}</td>
+            </tr>
+          `).join('');
+        } else {
+          salesTable.innerHTML = '<tr><td colspan="5" style="padding: 2rem; text-align: center; color: #666;">No customer data found</td></tr>';
+        }
+      } else if (reportType === 'hourly') {
+        // Hourly Sales Report
+        if (tableHeader) {
+          tableHeader.innerHTML = `
+            <tr style="background: var(--light-gray);">
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Hour</th>
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Orders</th>
+              <th style="padding: 1rem; text-align: right; font-weight: 600;">Sales</th>
+            </tr>
+          `;
+        }
+        if (data.hourly_sales && data.hourly_sales.length > 0) {
+          salesTable.innerHTML = data.hourly_sales.map(hour => {
+            const hourLabel = hour.hour < 12 ? `${hour.hour}:00 AM` : hour.hour === 12 ? '12:00 PM' : `${hour.hour - 12}:00 PM`;
+            return `
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 1rem; font-weight: 600;">${hourLabel}</td>
+                <td style="padding: 1rem;">${hour.order_count}</td>
+                <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--primary-red);">${formatCurrencyNoDecimals(hour.total_sales)}</td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          salesTable.innerHTML = '<tr><td colspan="3" style="padding: 2rem; text-align: center; color: #666;">Hourly data only available for today. Please select "Today" period.</td></tr>';
+        }
+      } else if (reportType === 'staff') {
+        // Staff Performance Report
+        if (tableHeader) {
+          tableHeader.innerHTML = `
+            <tr style="background: var(--light-gray);">
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Staff Name</th>
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Total Orders</th>
+              <th style="padding: 1rem; text-align: right; font-weight: 600;">Total Sales</th>
+            </tr>
+          `;
+        }
+        if (data.staff_performance && data.staff_performance.length > 0) {
+          salesTable.innerHTML = data.staff_performance.map(staff => `
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 1rem; font-weight: 600;">${staff.staff_name || 'Unknown'}</td>
+              <td style="padding: 1rem;">${staff.total_orders}</td>
+              <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--primary-red);">${formatCurrencyNoDecimals(staff.total_sales)}</td>
+            </tr>
+          `).join('');
+        } else {
+          salesTable.innerHTML = '<tr><td colspan="3" style="padding: 2rem; text-align: center; color: #666;">No staff performance data found</td></tr>';
+        }
       } else {
-        salesTable.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: #666;">No sales data found</td></tr>';
+        // Default Sales Report
+        if (tableHeader) {
+          tableHeader.innerHTML = `
+            <tr style="background: var(--light-gray);">
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Date</th>
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Order #</th>
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Customer</th>
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Items</th>
+              <th style="padding: 1rem; text-align: left; font-weight: 600;">Payment</th>
+              <th style="padding: 1rem; text-align: right; font-weight: 600;">Amount</th>
+            </tr>
+          `;
+        }
+        if (data.sales_details && data.sales_details.length > 0) {
+          salesTable.innerHTML = data.sales_details.map(order => `
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 1rem;">${new Date(order.created_at).toLocaleDateString('en-IN')}</td>
+              <td style="padding: 1rem; font-weight: 600;">${order.order_number}</td>
+              <td style="padding: 1rem;">${order.customer_name}</td>
+              <td style="padding: 1rem;">${order.item_count}</td>
+              <td style="padding: 1rem;"><span style="background: #e5f3ff; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">${order.payment_method}</span></td>
+              <td style="padding: 1rem; text-align: right; font-weight: 600; color: var(--primary-red);">${formatCurrencyNoDecimals(order.total)}</td>
+            </tr>
+          `).join('');
+        } else {
+          salesTable.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: #666;">No sales data found</td></tr>';
+        }
       }
     }
     

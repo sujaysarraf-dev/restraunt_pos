@@ -841,8 +841,11 @@ try {
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Report Type</label>
             <select id="reportType" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem;">
               <option value="sales">Sales Report</option>
-              <option value="orders">Orders</option>
-              <option value="items">Top Items</option>
+              <option value="customers">Customer Report</option>
+              <option value="items">Top Items Report</option>
+              <option value="payment">Payment Methods Report</option>
+              <option value="hourly">Hourly Sales Report</option>
+              <option value="staff">Staff Performance Report</option>
             </select>
           </div>
           <div style="display: flex; align-items: flex-end;">
@@ -2351,15 +2354,15 @@ try {
     <div style="background:#fff;border-radius:16px;padding:2rem;max-width:500px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);margin:1rem;">
       <div style="font-size:4rem;margin-bottom:1rem;">⚠️</div>
       <h2 style="margin:0 0 1rem;color:#111827;font-size:1.5rem;">Subscription Required</h2>
-      <p style="color:#6b7280;margin:0 0 1.5rem;line-height:1.6;">Your trial has expired or account is disabled. Please renew your subscription to continue using the service.</p>
+      <p style="color:#6b7280;margin:0 0 1.5rem;line-height:1.6;">Your trial has expired or account is disabled. You cannot use the service at this time.</p>
+      <div style="background:#f3f4f6;border-radius:12px;padding:1.5rem;margin:1.5rem 0;border-left:4px solid #dc2626;">
+        <p style="color:#111827;font-weight:600;margin:0 0 0.5rem;font-size:1rem;">To renew your subscription, please contact us:</p>
+        <p style="color:#6b7280;margin:0;line-height:1.6;font-size:0.95rem;">We'll help you activate your subscription and continue using the service.</p>
+      </div>
       <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-        <button id="renewButton" onclick="initiateRenewal()" style="padding:12px 24px;background:#10b981;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;transition:opacity 0.2s;display:flex;align-items:center;gap:8px;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-          <span style="font-size:1.2rem;">💳</span>
-          Renew Now (<span id="renewalAmount"><?php echo htmlspecialchars($currency_symbol); ?>999</span>)
-        </button>
         <button onclick="document.getElementById('renewalModal').style.display='none';" style="padding:12px 24px;background:#6b7280;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Close</button>
       </div>
-      <p style="color:#9ca3af;font-size:0.875rem;margin-top:1rem;margin-bottom:0;">1 month subscription - Auto-renewable</p>
+      <p style="color:#9ca3af;font-size:0.875rem;margin-top:1rem;margin-bottom:0;">Payment integration will be available soon</p>
     </div>
   </div>
 
