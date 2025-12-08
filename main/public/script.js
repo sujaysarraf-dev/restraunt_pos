@@ -3929,9 +3929,12 @@ document.addEventListener("DOMContentLoaded", () => {
             <div style="margin-bottom: 1rem;">
               <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500;">Phone Number <span style="color: red;">*</span></label>
               <input type="tel" id="takeawayCustomerPhone" required placeholder="Enter phone number" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
-              <div id="returningCustomerMsg" style="margin-top: 0.5rem; padding: 0.5rem; background: #dbeafe; color: #1e40af; border-radius: 4px; font-size: 0.875rem; display: none;">
-                <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1rem;">info</span>
-                Returning customer found! Details auto-filled.
+              <div id="returningCustomerMsg" style="margin-top: 0.5rem; padding: 0.75rem; background: #dbeafe; color: #1e40af; border-radius: 6px; font-size: 0.875rem; display: none;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                  <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1.2rem;">verified_user</span>
+                  <strong>Returning Customer Found!</strong>
+                </div>
+                <div id="customerStats" style="font-size: 0.8rem; color: #1e3a8a; margin-top: 0.5rem;"></div>
               </div>
             </div>
             <div style="margin-bottom: 1rem;">
@@ -3990,11 +3993,43 @@ document.addEventListener("DOMContentLoaded", () => {
                   document.getElementById('takeawayCustomerEmail').value = result.customer.email || '';
                   document.getElementById('takeawayCustomerAddress').value = result.customer.address || '';
                   
-                  // Show returning customer message
-                  document.getElementById('returningCustomerMsg').style.display = 'block';
-                  setTimeout(() => {
-                    document.getElementById('returningCustomerMsg').style.display = 'none';
-                  }, 5000);
+                  // Show returning customer message with stats
+                  const msgDiv = document.getElementById('returningCustomerMsg');
+                  const statsDiv = document.getElementById('customerStats');
+                  if (msgDiv) {
+                    msgDiv.style.display = 'block';
+                    
+                    // Show customer statistics
+                    if (statsDiv && result.customer) {
+                      const stats = [];
+                      if (result.customer.total_visits) {
+                        stats.push(`📊 ${result.customer.total_visits} visit${result.customer.total_visits > 1 ? 's' : ''}`);
+                      }
+                      if (result.customer.total_spent) {
+                        const currency = window.globalCurrencySymbol || '₹';
+                        stats.push(`💰 ${currency}${parseFloat(result.customer.total_spent).toFixed(2)} total spent`);
+                      }
+                      if (result.customer.last_visit) {
+                        const lastVisit = new Date(result.customer.last_visit);
+                        const daysAgo = Math.floor((new Date() - lastVisit) / (1000 * 60 * 60 * 24));
+                        if (daysAgo === 0) {
+                          stats.push('🕐 Last visit: Today');
+                        } else if (daysAgo === 1) {
+                          stats.push('🕐 Last visit: Yesterday');
+                        } else if (daysAgo < 30) {
+                          stats.push(`🕐 Last visit: ${daysAgo} days ago`);
+                        } else {
+                          stats.push(`🕐 Last visit: ${lastVisit.toLocaleDateString()}`);
+                        }
+                      }
+                      
+                      if (stats.length > 0) {
+                        statsDiv.innerHTML = stats.join(' • ');
+                      } else {
+                        statsDiv.innerHTML = '';
+                      }
+                    }
+                  }
                 }
               }
             } catch (error) {
