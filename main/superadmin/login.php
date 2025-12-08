@@ -2,6 +2,14 @@
 // Include secure session configuration
 require_once __DIR__ . '/../config/session_config.php';
 startSecureSession();
+
+// Check if superadmin is already logged in
+if (isSessionValid() && isset($_SESSION['superadmin_id']) && isset($_SESSION['superadmin_username'])) {
+    // Superadmin is already logged in, redirect to dashboard
+    header('Location: dashboard.php');
+    exit();
+}
+
 require_once __DIR__ . '/../db_connection.php';
 
 $error = '';

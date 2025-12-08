@@ -1,3 +1,34 @@
+<?php
+// Include secure session configuration
+require_once __DIR__ . '/../config/session_config.php';
+startSecureSession();
+
+// Check if user is already logged in and session is valid
+if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_id'])) && isset($_SESSION['username']) && isset($_SESSION['restaurant_id'])) {
+    // User is already logged in, redirect to appropriate dashboard
+    if (isset($_SESSION['staff_id']) && isset($_SESSION['role'])) {
+        $role = $_SESSION['role'];
+        switch ($role) {
+            case 'Waiter':
+                header('Location: ../views/waiter_dashboard.php');
+                exit();
+            case 'Chef':
+                header('Location: ../views/chef_dashboard.php');
+                exit();
+            case 'Manager':
+                header('Location: ../views/manager_dashboard.php');
+                exit();
+            default:
+                header('Location: ../views/dashboard.php');
+                exit();
+        }
+    } else {
+        // Admin user
+        header('Location: ../views/dashboard.php');
+        exit();
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
