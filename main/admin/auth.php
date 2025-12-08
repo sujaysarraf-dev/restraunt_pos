@@ -141,7 +141,16 @@ try {
 // Don't flush output buffer here - let each function handle it
 
 function handleLogin() {
-    global $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $pdo = getConnection();
+    } else {
+        // Fallback to global $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     $username = isset($_POST['username']) ? trim($_POST['username']) : '';
     $password = isset($_POST['password']) ? $_POST['password'] : '';
@@ -277,7 +286,16 @@ function handleLogin() {
 }
 
 function handleSignup() {
-    global $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $pdo = getConnection();
+    } else {
+        // Fallback to global $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     $username = isset($_POST['username']) ? trim($_POST['username']) : '';
     $password = isset($_POST['password']) ? $_POST['password'] : '';
@@ -347,7 +365,16 @@ function handleLogout() {
 }
 
 function generateRestaurantId() {
-    global $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $pdo = getConnection();
+    } else {
+        // Fallback to global $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     // Get the highest existing restaurant ID
     $stmt = $pdo->prepare("SELECT restaurant_id FROM users ORDER BY restaurant_id DESC LIMIT 1");
@@ -367,7 +394,16 @@ function generateRestaurantId() {
 }
 
 function handleUpdateProfile() {
-    global $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $pdo = getConnection();
+    } else {
+        // Fallback to global $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     // Check if user is logged in
     if (!isset($_SESSION['user_id'])) {
@@ -438,7 +474,16 @@ function handleUpdateProfile() {
 }
 
 function handleChangePassword() {
-    global $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $pdo = getConnection();
+    } else {
+        // Fallback to global $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     // Check if user is logged in
     if (!isset($_SESSION['user_id'])) {
@@ -507,7 +552,16 @@ function handleChangePassword() {
 }
 
 function handleUpdateRestaurantSettings() {
-    global $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $pdo = getConnection();
+    } else {
+        // Fallback to global $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     // Check if user is logged in
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
@@ -589,7 +643,16 @@ function handleUpdateRestaurantSettings() {
 }
 
 function handleUpdateSystemSettings() {
-    global $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $pdo = getConnection();
+    } else {
+        // Fallback to global $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     // Check if user is logged in
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
@@ -652,7 +715,16 @@ function handleUpdateSystemSettings() {
 }
 
 function handleUploadRestaurantLogo() {
-    global $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $pdo = getConnection();
+    } else {
+        // Fallback to global $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     // Check if user is logged in
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['restaurant_id'])) {
@@ -778,7 +850,16 @@ function handleUploadRestaurantLogo() {
 }
 
 function handleUploadBusinessQR() {
-    global $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $pdo = getConnection();
+    } else {
+        // Fallback to global $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     if (!isset($_FILES['business_qr']) || $_FILES['business_qr']['error'] !== UPLOAD_ERR_OK) {
         throw new Exception('No QR code file uploaded');
@@ -850,7 +931,16 @@ function handleUploadBusinessQR() {
 }
 
 function handleRemoveBusinessQR() {
-    global $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $pdo = getConnection();
+    } else {
+        // Fallback to global $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     $userId = $_SESSION['user_id'];
     
@@ -872,7 +962,16 @@ function handleRemoveBusinessQR() {
 }
 
 function handleForgotPassword() {
-    global $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $pdo = getConnection();
+    } else {
+        // Fallback to global $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     $email = isset($_POST['email']) ? trim($_POST['email']) : '';
     
@@ -1122,7 +1221,16 @@ function handleForgotPassword() {
 }
 
 function handleResetPassword() {
-    global $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $pdo = getConnection();
+    } else {
+        // Fallback to global $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     $token = isset($_POST['token']) ? trim($_POST['token']) : '';
     $newPassword = isset($_POST['newPassword']) ? $_POST['newPassword'] : '';
