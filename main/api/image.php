@@ -179,7 +179,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
                     exit();
                 } else {
                     // Banner not found in database, try file-based fallback
-                    $stmt = $pdo->prepare("SELECT banner_path FROM website_banners WHERE id = ? LIMIT 1");
+                    $stmt = $conn->prepare("SELECT banner_path FROM website_banners WHERE id = ? LIMIT 1");
                     $stmt->execute([$imageId]);
                     $bannerPath = $stmt->fetch(PDO::FETCH_ASSOC);
                     if ($bannerPath && !empty($bannerPath['banner_path']) && strpos($bannerPath['banner_path'], 'db:') !== 0) {
