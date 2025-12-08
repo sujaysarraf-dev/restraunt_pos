@@ -208,13 +208,52 @@ function createDatabaseConnection() {
 if (!function_exists('checkConnectionHealth')) {
     function checkConnectionHealth($conn) {
         try {
-            // Use buffered query for health check
+            // Use lightweight ping query for health check (faster than SELECT 1)
             $stmt = $conn->query("SELECT 1");
             $result = $stmt->fetchAll();
-            $stmt = null;  // Free statement
+            $stmt = null;  // Free statement immediately
             return !empty($result);
         } catch (Exception $e) {
             return false;
+        }
+    }
+}
+
+// Helper function to execute queries with automatic retry on connection errors
+if (!function_exists('executeQuery')) {
+    function executeQuery($callback, $max_retries = 1) {
+        global $pdo;
+        
+        for ($attempt = 0; $attempt <= $max_retries; $attempt++) {
+            try {
+                // Ensure connection is available
+                if (!isset($pdo) || !($pdo instanceof PDO)) {
+                    $pdo = getConnection();
+                }
+                
+                // Execute the callback with the connection
+                return $callback($pdo);
+                
+            } catch (PDOException $e) {
+                $error_code = $e->getCode();
+                $error_message = $e->getMessage();
+                
+                // Check if it's a connection-related error that we should retry
+                if (($error_code == 2006 || $error_code == 2013 || // MySQL server has gone away
+                     strpos($error_message, 'server has gone away') !== false ||
+                     strpos($error_message, 'Lost connection') !== false) && 
+                    $attempt < $max_retries) {
+                    
+                    // Connection lost, recreate it
+                    $pdo = null;
+                    error_log("Connection lost, recreating (attempt " . ($attempt + 1) . "/" . ($max_retries + 1) . ")");
+                    usleep(100000); // Wait 100ms before retry
+                    continue;
+                }
+                
+                // Not a retryable error or max retries reached
+                throw $e;
+            }
         }
     }
 }
@@ -282,14 +321,20 @@ if (!function_exists('getConnection')) {
             throw new Exception('Database connection not initialized');
         }
         
-        // Quick health check (only if connection seems stale)
+        // Quick health check (only if connection seems stale or old)
         static $last_check = 0;
         $now = time();
-        if ($now - $last_check > 5) {  // Check every 5 seconds max
+        $connection_age = isset($GLOBALS['db_connection_created']) ? ($now - $GLOBALS['db_connection_created']) : 0;
+        
+        // Check health if:
+        // 1. More than 5 seconds since last check, OR
+        // 2. Connection is older than 60 seconds (prevent stale connections)
+        if (($now - $last_check > 5) || ($connection_age > 60)) {
             try {
                 if (!checkConnectionHealth($pdo)) {
                     // Connection is dead, recreate it
                     $pdo = null;
+                    unset($GLOBALS['db_connection_created']);
                     createDatabaseConnection();
                     if (!isset($pdo) || !($pdo instanceof PDO)) {
                         throw new Exception('Database connection is not healthy');
@@ -298,6 +343,7 @@ if (!function_exists('getConnection')) {
             } catch (Exception $e) {
                 // Health check failed - try to recreate connection
                 $pdo = null;
+                unset($GLOBALS['db_connection_created']);
                 try {
                     createDatabaseConnection();
                 } catch (Exception $e2) {
@@ -314,12 +360,63 @@ if (!function_exists('getConnection')) {
 // Connection statistics function
 if (!function_exists('getConnectionStats')) {
     function getConnectionStats() {
-        return $GLOBALS['db_connection_stats'] ?? [
+        $stats = $GLOBALS['db_connection_stats'] ?? [
             'attempts' => 0,
             'success' => 0,
             'failures' => 0,
             'retries' => 0,
         ];
+        
+        // Add connection age if available
+        if (isset($GLOBALS['db_connection_created'])) {
+            $stats['connection_age'] = time() - $GLOBALS['db_connection_created'];
+        }
+        
+        // Calculate success rate
+        if ($stats['attempts'] > 0) {
+            $stats['success_rate'] = round(($stats['success'] / $stats['attempts']) * 100, 2);
+        } else {
+            $stats['success_rate'] = 0;
+        }
+        
+        return $stats;
+    }
+}
+
+// Helper function to get prepared statement with automatic caching hint
+if (!function_exists('prepareStatement')) {
+    function prepareStatement($sql, $options = []) {
+        $conn = getConnection();
+        
+        // Add performance hints for prepared statements
+        $stmt = $conn->prepare($sql, $options);
+        
+        return $stmt;
+    }
+}
+
+// Helper function for safe query execution with automatic cleanup
+if (!function_exists('safeQuery')) {
+    function safeQuery($sql, $params = [], $fetchMode = PDO::FETCH_ASSOC) {
+        return executeQuery(function($conn) use ($sql, $params, $fetchMode) {
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll($fetchMode);
+        });
+    }
+}
+
+// Helper function for safe execute (INSERT/UPDATE/DELETE)
+if (!function_exists('safeExecute')) {
+    function safeExecute($sql, $params = []) {
+        return executeQuery(function($conn) use ($sql, $params) {
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($params);
+            return [
+                'rowCount' => $stmt->rowCount(),
+                'lastInsertId' => $conn->lastInsertId()
+            ];
+        });
     }
 }
 
