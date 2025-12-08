@@ -416,10 +416,23 @@ function executeSafeSQL($pdo, $sql, $restaurantCode, $restaurant_id) {
         }
     }
     
-    // Execute the query
+    // Execute the query using prepared statements for safety
     try {
+        // Check if SQL contains :restaurant_code parameter (from our modification above)
+        $usePrepared = (stripos($sql, ':restaurant_code') !== false);
+        
         if ($operation === 'SELECT') {
-            $stmt = $pdo->query($sql);
+            if ($usePrepared) {
+                // Use prepared statement for safety
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([':restaurant_code' => $restaurantCode]);
+            } else {
+                // Validate restaurantCode is safe (alphanumeric and underscore only)
+                if (!preg_match('/^[A-Z0-9_]+$/i', $restaurantCode)) {
+                    throw new Exception("Invalid restaurant code format");
+                }
+                $stmt = $pdo->query($sql);
+            }
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
             return [
                 'success' => true,
@@ -429,7 +442,11 @@ function executeSafeSQL($pdo, $sql, $restaurantCode, $restaurant_id) {
             ];
         } else {
             $stmt = $pdo->prepare($sql);
-            $stmt->execute();
+            if ($usePrepared) {
+                $stmt->execute([':restaurant_code' => $restaurantCode]);
+            } else {
+                $stmt->execute();
+            }
             $rowsAffected = $stmt->rowCount();
             return [
                 'success' => true,
