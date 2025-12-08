@@ -5974,7 +5974,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }, 500);
         });
       }, 50);
-      }, 50);
     });
   }
 
