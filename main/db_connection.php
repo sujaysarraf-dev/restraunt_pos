@@ -137,23 +137,37 @@ function createDatabaseConnection() {
             $pdo->exec("SET SESSION wait_timeout = 30");  // 30 seconds for non-persistent connections (frees quickly)
             $pdo->exec("SET SESSION interactive_timeout = 30");
             
-            // Automatically expire trials that have passed their end date
+            // Performance optimizations
+            $pdo->exec("SET SESSION query_cache_type = OFF");  // Disable query cache (let MySQL handle it)
+            $pdo->exec("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'");
+            
+            // Optimize for high concurrency (only set if supported)
+            try {
+                $pdo->exec("SET SESSION net_read_timeout = 30");  // Network read timeout
+                $pdo->exec("SET SESSION net_write_timeout = 30");  // Network write timeout
+            } catch (PDOException $e) {
+                // Ignore if not supported
+            }
+            
+            // Automatically expire trials that have passed their end date (run once per connection)
             try {
                 $pdo->exec("UPDATE users SET subscription_status = 'expired', is_active = 0 
                            WHERE subscription_status = 'trial' 
                            AND trial_end_date IS NOT NULL 
-                           AND trial_end_date < CURRENT_DATE()");
+                           AND trial_end_date < CURRENT_DATE()
+                           LIMIT 100");  // Limit to prevent long-running queries
             } catch (PDOException $e) {
                 // Silently fail if columns don't exist or other error
                 error_log("Error auto-expiring trials: " . $e->getMessage());
             }
-            $pdo->exec("SET SESSION query_cache_type = OFF");  // Disable query cache (let MySQL handle it)
-            $pdo->exec("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'");
             
             // Clear any previous transaction state
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
+            
+            // Track connection creation time for monitoring
+            $GLOBALS['db_connection_created'] = time();
             
             // Success - break out of retry loop
             $GLOBALS['db_connection_stats']['success']++;
