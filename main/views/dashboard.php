@@ -2232,13 +2232,13 @@ try {
           </div>
           <div class="form-group">
             <label for="customerName">Customer Name: <span style="color: red;">*</span></label>
-            <input type="text" id="customerName" name="customerName" required placeholder="Enter customer name">
+            <input type="text" id="customerName" name="customerName" required placeholder="Enter customer name" autocomplete="off">
             <span class="field-error" id="customerNameError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label for="phone">Phone: <span style="color: red;">*</span></label>
-              <input type="tel" id="phone" name="phone" required placeholder="Enter phone number">
+              <input type="tel" id="phone" name="phone" required placeholder="Enter phone number" autocomplete="off">
               <span class="field-error" id="phoneError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
             </div>
             <div class="form-group">
@@ -2275,11 +2275,11 @@ try {
           <input type="hidden" id="customerId" name="customerId" value="">
           <div class="form-group">
             <label for="customerNameInput">Customer Name:</label>
-            <input type="text" id="customerNameInput" name="customerName" required placeholder="Enter customer name">
+            <input type="text" id="customerNameInput" name="customerName" required placeholder="Enter customer name" autocomplete="off">
           </div>
           <div class="form-group">
             <label for="customerPhoneInput">Phone:</label>
-            <input type="tel" id="customerPhoneInput" name="phone" required placeholder="Enter phone number">
+            <input type="tel" id="customerPhoneInput" name="phone" required placeholder="Enter phone number" autocomplete="off">
           </div>
           <div class="form-group">
             <label for="customerEmailInput">Email Address:</label>
