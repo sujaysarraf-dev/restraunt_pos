@@ -5,11 +5,11 @@
  * Auto-detects environment (local vs Hostinger server)
  * 
  * Features:
- * - Connection pooling and reuse
- * - Automatic connection cleanup
- * - Error handling and retry logic
- * - Query result caching
+ * - Non-persistent connections (prevents connection leaks)
+ * - Automatic connection cleanup and closure
+ * - Error handling and retry logic with progressive backoff
  * - Connection health checks
+ * - Optimized timeouts for high concurrency
  * - Optimized for 200+ concurrent users
  */
 
@@ -21,6 +21,9 @@ if (isset($pdo) && $pdo instanceof PDO) {
 if (function_exists('getConnection')) {
     return;
 }
+
+// Lazy connection flag - only connect when actually needed
+$GLOBALS['db_lazy_connect'] = true;
 
 // Error handling - log errors but don't display (prevents HTML in JSON responses)
 error_reporting(E_ALL);
@@ -60,15 +63,15 @@ $password = 'Sujaysarraf@5569';
 // Add connection timeout in DSN for remote connections
 $timeout = $is_hostinger_server ? 2 : 10; // Longer timeout for remote connections
 $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
-// Enable persistent connections for connection pooling/reuse
-// This allows multiple tabs/requests to share the same database connection
-// PHP-FPM will manage connection reuse automatically
+// Use NON-persistent connections to prevent connection accumulation on Hostinger
+// This ensures connections are properly closed after each request
+// Prevents hitting the 500 connections/hour limit
 $options = [
-    PDO::ATTR_PERSISTENT => true,  // Persistent connections for connection pooling (reduces connection count)
+    PDO::ATTR_PERSISTENT => false,  // NON-persistent connections (prevents connection leaks)
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES => false,  // Use native prepared statements (faster, more secure)
-    PDO::ATTR_TIMEOUT => $timeout,  // Longer timeout for remote connections
+    PDO::ATTR_TIMEOUT => $timeout,  // Connection timeout
     PDO::ATTR_STRINGIFY_FETCHES => false,  // Keep numeric types as numbers (faster)
     PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,  // Use buffered queries (REQUIRED to prevent unbuffered query errors)
     PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
@@ -88,7 +91,29 @@ if (!isset($GLOBALS['db_connection_stats'])) {
     ];
 }
 
-try {
+// Lazy connection - only create connection when getConnection() is called
+// This prevents unnecessary connections for requests that don't need DB access
+$pdo = null;
+$last_error = null;
+$connection_attempt = 0;
+
+// Function to actually create the connection (called lazily)
+function createDatabaseConnection() {
+    global $pdo, $last_error, $connection_attempt, $dsn, $username, $password, $options, $max_retries, $retry_delays, $is_hostinger_server;
+    
+    // If connection already exists and is valid, return it
+    if (isset($pdo) && $pdo instanceof PDO) {
+        try {
+            $stmt = $pdo->query("SELECT 1");
+            $stmt->fetchAll();
+            $stmt = null;
+            return $pdo;
+        } catch (Exception $e) {
+            // Connection is dead, recreate it
+            $pdo = null;
+        }
+    }
+    
     $pdo = null;
     $last_error = null;
     $connection_attempt = 0;
@@ -107,10 +132,10 @@ try {
             $stmt->fetchAll();  // Fetch all results to clear
             $stmt = null;  // Free statement
             
-            // Set optimized session variables for better performance (one at a time, fetch results)
-            // For persistent connections, use longer timeouts to allow connection reuse
-            $pdo->exec("SET SESSION wait_timeout = 300");  // 5 minutes for persistent connections (allows reuse)
-            $pdo->exec("SET SESSION interactive_timeout = 300");
+            // Set optimized session variables for better performance
+            // For non-persistent connections, use shorter timeouts to free connections quickly
+            $pdo->exec("SET SESSION wait_timeout = 30");  // 30 seconds for non-persistent connections (frees quickly)
+            $pdo->exec("SET SESSION interactive_timeout = 30");
             
             // Automatically expire trials that have passed their end date
             try {
@@ -123,10 +148,9 @@ try {
                 error_log("Error auto-expiring trials: " . $e->getMessage());
             }
             $pdo->exec("SET SESSION query_cache_type = OFF");  // Disable query cache (let MySQL handle it)
-            // Note: max_execution_time is not available in all MySQL versions, removed
             $pdo->exec("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'");
             
-            // Clear any previous transaction state (important for persistent connections)
+            // Clear any previous transaction state
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
@@ -136,7 +160,7 @@ try {
             if ($attempt > 1) {
                 $GLOBALS['db_connection_stats']['retries']++;
             }
-            break;
+            return $pdo; // Return connection
             
         } catch (PDOException $e) {
             $last_error = $e;
@@ -167,7 +191,7 @@ try {
                 }
             } else {
                 // Other errors - don't retry
-                throw $e;
+                break;
             }
         }
     }
@@ -177,124 +201,157 @@ try {
         throw $last_error ?? new Exception('Failed to establish database connection after ' . $max_retries . ' attempts');
     }
     
-    // Connection health check function (ensures buffered query)
-    if (!function_exists('checkConnectionHealth')) {
-        function checkConnectionHealth($conn) {
-            try {
-                // Use buffered query for health check
-                $stmt = $conn->query("SELECT 1");
-                $result = $stmt->fetchAll();
-                $stmt = null;  // Free statement
-                return !empty($result);
-            } catch (Exception $e) {
-                return false;
-            }
+    return $pdo;
+}
+
+// Connection health check function (ensures buffered query)
+if (!function_exists('checkConnectionHealth')) {
+    function checkConnectionHealth($conn) {
+        try {
+            // Use buffered query for health check
+            $stmt = $conn->query("SELECT 1");
+            $result = $stmt->fetchAll();
+            $stmt = null;  // Free statement
+            return !empty($result);
+        } catch (Exception $e) {
+            return false;
         }
     }
-    
-    // For persistent connections, we don't close them - they're reused
-    // But we do cleanup any open transactions
+}
+
+// Optimized getConnection function with lazy connection and health check
+if (!function_exists('getConnection')) {
+    function getConnection() {
+        global $pdo, $GLOBALS, $is_hostinger_server, $host, $dbname, $connection_attempt, $max_retries;
+        
+        // Lazy connection - only create when actually needed
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            try {
+                createDatabaseConnection();
+            } catch (Exception $e) {
+                // Handle connection errors
+                $error_code = $e->getCode();
+                $error_message = $e->getMessage();
+                
+                // Check if it's a connection limit error
+                if (strpos($error_message, 'max_connections') !== false || 
+                    strpos($error_message, 'Too many connections') !== false ||
+                    $error_code == 1226) {
+                    error_log("Database connection limit exceeded");
+                    $error_msg = "Database temporarily unavailable due to high traffic. Please try again in a moment.";
+                    $http_code = 503;  // Service Unavailable
+                } elseif (strpos($error_message, 'Connection refused') !== false ||
+                          strpos($error_message, 'Connection timed out') !== false ||
+                          strpos($error_message, 'did not properly respond') !== false ||
+                          $error_code == 2002 || $error_code == 2006) {
+                    error_log("Database connection network/timeout error: " . $error_message);
+                    if (!$is_hostinger_server) {
+                        $error_msg = "Cannot connect to remote database. Remote access may be disabled or network is slow. Please check your connection or use the production server.";
+                    } else {
+                        $error_msg = "Database connection timeout. Please try again.";
+                    }
+                    $http_code = 503;
+                } else {
+                    $error_msg = "Database Error: " . $error_message;
+                    $http_code = 500;  // Internal Server Error
+                }
+                
+                $stats = getConnectionStats();
+                $attempts = $stats['attempts'] ?? 0;
+                error_log("DB Connection Error: " . $error_msg . " (Attempts: $attempts)");
+                
+                if (!headers_sent()) {
+                    header('Content-Type: application/json; charset=UTF-8');
+                    http_response_code($http_code);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => $error_msg,
+                        'host' => $host,
+                        'database' => $dbname,
+                        'environment' => $is_hostinger_server ? 'hostinger' : 'local',
+                        'attempts' => $attempts
+                    ], JSON_UNESCAPED_UNICODE);
+                    exit();
+                } else {
+                    die($error_msg);
+                }
+            }
+        }
+        
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not initialized');
+        }
+        
+        // Quick health check (only if connection seems stale)
+        static $last_check = 0;
+        $now = time();
+        if ($now - $last_check > 5) {  // Check every 5 seconds max
+            try {
+                if (!checkConnectionHealth($pdo)) {
+                    // Connection is dead, recreate it
+                    $pdo = null;
+                    createDatabaseConnection();
+                    if (!isset($pdo) || !($pdo instanceof PDO)) {
+                        throw new Exception('Database connection is not healthy');
+                    }
+                }
+            } catch (Exception $e) {
+                // Health check failed - try to recreate connection
+                $pdo = null;
+                try {
+                    createDatabaseConnection();
+                } catch (Exception $e2) {
+                    throw new Exception('Database connection failed: ' . $e2->getMessage());
+                }
+            }
+            $last_check = $now;
+        }
+        
+        return $pdo;
+    }
+}
+
+// Connection statistics function
+if (!function_exists('getConnectionStats')) {
+    function getConnectionStats() {
+        return $GLOBALS['db_connection_stats'] ?? [
+            'attempts' => 0,
+            'success' => 0,
+            'failures' => 0,
+            'retries' => 0,
+        ];
+    }
+}
+
+// Only create connection immediately if lazy connection is disabled
+// Otherwise, connection will be created on first getConnection() call
+if (!($GLOBALS['db_lazy_connect'] ?? true)) {
+    try {
+        $pdo = createDatabaseConnection();
+    } catch (Exception $e) {
+        // Error will be handled when getConnection() is called
+        error_log("Initial connection attempt failed: " . $e->getMessage());
+    }
+}
+
+// If connection was created, set up shutdown function
+if (isset($pdo) && $pdo instanceof PDO) {
+    // For non-persistent connections, we close them properly to prevent connection leaks
+    // This ensures connections are freed immediately after each request
     register_shutdown_function(function() use (&$pdo) {
         if (isset($pdo) && $pdo instanceof PDO) {
             try {
-                // Close any open transactions (important for persistent connections)
+                // Close any open transactions
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
                 }
+                // Explicitly close the connection for non-persistent connections
+                $pdo = null;
             } catch (Exception $e) {
-                // Ignore errors during cleanup
+                // Ignore errors during cleanup, but still try to close
+                $pdo = null;
             }
-            // Don't set $pdo = null for persistent connections - let PHP-FPM reuse it
-            // PHP-FPM will manage the connection pool automatically
         }
     });
-    
-    // Optimized getConnection function with health check and result set cleanup
-    if (!function_exists('getConnection')) {
-        function getConnection() {
-            global $pdo;
-            if (!isset($pdo) || !($pdo instanceof PDO)) {
-                throw new Exception('Database connection not initialized');
-            }
-            
-            // Note: nextRowset() is a PDOStatement method, not PDO method
-            // We can't clear result sets here, but buffered queries handle this automatically
-            
-            // Quick health check (only if connection seems stale)
-            static $last_check = 0;
-            $now = time();
-            if ($now - $last_check > 5) {  // Check every 5 seconds max
-                try {
-                    if (!checkConnectionHealth($pdo)) {
-                        throw new Exception('Database connection is not healthy');
-                    }
-                } catch (Exception $e) {
-                    // Health check failed - connection is not usable
-                    throw $e;
-                }
-                $last_check = $now;
-            }
-            
-            return $pdo;
-        }
-    }
-    
-    // Connection statistics function
-    if (!function_exists('getConnectionStats')) {
-        function getConnectionStats() {
-            return $GLOBALS['db_connection_stats'] ?? [
-                'attempts' => 0,
-                'success' => 0,
-                'failures' => 0,
-                'retries' => 0,
-            ];
-        }
-    }
-    
-} catch (PDOException $e) {
-    // Handle max_connections error specifically
-    $error_code = $e->getCode();
-    $error_message = $e->getMessage();
-    
-    // Check if it's a connection limit error
-    if (strpos($error_message, 'max_connections') !== false || 
-        strpos($error_message, 'Too many connections') !== false ||
-        $error_code == 1226) {
-        error_log("Database connection limit exceeded after $connection_attempt attempts");
-        $error_msg = "Database temporarily unavailable due to high traffic. Please try again in a moment.";
-        $http_code = 503;  // Service Unavailable
-    } elseif (strpos($error_message, 'Connection refused') !== false ||
-              strpos($error_message, 'Connection timed out') !== false ||
-              strpos($error_message, 'did not properly respond') !== false ||
-              $error_code == 2002 || $error_code == 2006) {
-        error_log("Database connection network/timeout error: " . $error_message);
-        if (!$is_hostinger_server) {
-            $error_msg = "Cannot connect to remote database. Remote access may be disabled or network is slow. Please check your connection or use the production server.";
-        } else {
-            $error_msg = "Database connection timeout. Please try again.";
-        }
-        $http_code = 503;
-    } else {
-        $error_msg = "Database Error: " . $error_message;
-        $http_code = 500;  // Internal Server Error
-    }
-    
-    error_log("DB Connection Error: " . $error_msg . " (Attempt: $connection_attempt/$max_retries)");
-    
-    if (!headers_sent()) {
-        header('Content-Type: application/json; charset=UTF-8');
-        http_response_code($http_code);
-        echo json_encode([
-            'success' => false,
-            'message' => $error_msg,
-            'host' => $host,
-            'database' => $dbname,
-            'environment' => $is_hostinger_server ? 'hostinger' : 'local',
-            'attempts' => $connection_attempt
-        ], JSON_UNESCAPED_UNICODE);
-        exit();
-    } else {
-        die($error_msg);
-    }
 }
 ?>

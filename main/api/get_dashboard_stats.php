@@ -24,6 +24,7 @@ requirePermission(PERMISSION_VIEW_DASHBOARD);
 // Include database connection
 if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
+require_once __DIR__ . '/../config/db_cache.php';
 } else {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Database connection file not found']);

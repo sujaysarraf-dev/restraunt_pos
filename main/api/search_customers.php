@@ -20,7 +20,7 @@ header('Content-Type: application/json');
 
 // Require permission to manage customers
 try {
-    requirePermission(PERMISSION_MANAGE_CUSTOMERS);
+requirePermission(PERMISSION_MANAGE_CUSTOMERS);
 } catch (Exception $e) {
     error_log("Permission error in search_customers.php: " . $e->getMessage());
     http_response_code(403);
@@ -67,7 +67,7 @@ if (empty($query) || strlen($query) < 1) {
 try {
     // Get database connection
     if (isset($pdo) && $pdo instanceof PDO) {
-        $conn = $pdo;
+    $conn = $pdo;
     } else if (function_exists('getConnection')) {
         $conn = getConnection();
     } else {
@@ -136,11 +136,11 @@ try {
             if ($normalizedPhone) {
                 if (!isset($phoneMap[$normalizedPhone])) {
                     $phoneMap[$normalizedPhone] = $oc;
-                } else {
-                    // Update with more complete data
+            } else {
+                // Update with more complete data
                     if (empty($phoneMap[$normalizedPhone]['email']) && !empty($oc['email'])) {
                         $phoneMap[$normalizedPhone]['email'] = $oc['email'];
-                    }
+                }
                     if (empty($phoneMap[$normalizedPhone]['address']) && !empty($oc['address'])) {
                         $phoneMap[$normalizedPhone]['address'] = $oc['address'];
                     }
