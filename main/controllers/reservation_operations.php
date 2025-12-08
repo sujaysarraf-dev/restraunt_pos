@@ -234,16 +234,22 @@ try {
             $customerName = sanitizeString($nameValidation['value']);
         }
         
-        // Validate phone number - must be exactly 10 digits
-        $phoneDigits = preg_replace('/\D/', '', $phone); // Remove all non-digit characters
-        if (empty($phoneDigits)) {
-            $validationErrors[] = 'Phone number is required';
-            $fieldErrors['phone'] = 'Phone number is required';
-        } elseif (strlen($phoneDigits) !== 10) {
-            $validationErrors[] = 'Phone number must be exactly 10 digits';
-            $fieldErrors['phone'] = 'Phone number must be exactly 10 digits. Please enter a valid 10-digit phone number.';
+        // Validate phone number - optional, but if provided must be exactly 10 digits
+        if (!empty($phone)) {
+            $phoneDigits = preg_replace('/\D/', '', $phone); // Remove all non-digit characters
+            if (empty($phoneDigits)) {
+                // Phone was provided but contains no digits
+                $validationErrors[] = 'Phone number must contain at least 10 digits';
+                $fieldErrors['phone'] = 'Phone number must contain at least 10 digits. Please enter a valid 10-digit phone number.';
+            } elseif (strlen($phoneDigits) !== 10) {
+                $validationErrors[] = 'Phone number must be exactly 10 digits';
+                $fieldErrors['phone'] = 'Phone number must be exactly 10 digits. Please enter a valid 10-digit phone number.';
+            } else {
+                $phone = $phoneDigits; // Use cleaned phone number
+            }
         } else {
-            $phone = $phoneDigits; // Use cleaned phone number
+            // Phone is optional, set to empty string
+            $phone = '';
         }
         
         // Validate email if provided

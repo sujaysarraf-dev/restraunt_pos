@@ -2237,8 +2237,8 @@ try {
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="phone">Phone: <span style="color: red;">*</span></label>
-              <input type="tel" id="phone" name="phone" required placeholder="Enter phone number" autocomplete="off">
+              <label for="phone">Phone:</label>
+              <input type="tel" id="phone" name="phone" placeholder="Enter phone number (optional)" autocomplete="off">
               <span class="field-error" id="phoneError" style="display: none; color: #c33; font-size: 0.875rem; margin-top: 0.25rem;"></span>
             </div>
             <div class="form-group">
@@ -2279,7 +2279,7 @@ try {
           </div>
           <div class="form-group">
             <label for="customerPhoneInput">Phone:</label>
-            <input type="tel" id="customerPhoneInput" name="phone" required placeholder="Enter phone number" autocomplete="off">
+            <input type="tel" id="customerPhoneInput" name="phone" placeholder="Enter phone number (optional)" autocomplete="off">
           </div>
           <div class="form-group">
             <label for="customerEmailInput">Email Address:</label>

@@ -3061,7 +3061,8 @@ document.addEventListener("DOMContentLoaded", () => {
       phoneInput.addEventListener('blur', function(e) {
         const phone = e.target.value.trim();
         if (phone === '') {
-          showFieldError('phone', 'Phone number is required');
+          // Phone is optional, clear any errors
+          clearFieldError('phone');
         } else {
           const phoneDigits = phone.replace(/\D/g, '');
           if (phoneDigits.length !== 10) {
@@ -3533,11 +3534,8 @@ document.addEventListener("DOMContentLoaded", () => {
         clearFieldError('customerName');
       }
       
-      // Validate phone number
-      if (!phone || phone.trim() === '') {
-        errors.push("Phone number is required");
-        showFieldError('phone', 'Phone number is required');
-      } else {
+      // Validate phone number (optional - only validate format if provided)
+      if (phone && phone.trim() !== '') {
         // Remove all non-digit characters for validation
         const phoneDigits = phone.replace(/\D/g, '');
         if (phoneDigits.length !== 10) {
@@ -3546,6 +3544,8 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           clearFieldError('phone');
         }
+      } else {
+        clearFieldError('phone');
       }
       
       // Validate email format if provided
@@ -6268,7 +6268,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div style="margin-bottom: 1rem;">
               <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500;">Phone Number <span style="color: red;">*</span></label>
-              <input type="tel" id="takeawayCustomerPhone" required placeholder="Enter phone number" autocomplete="off" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
+              <input type="tel" id="takeawayCustomerPhone" placeholder="Enter phone number (optional)" autocomplete="off" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
               <div id="returningCustomerMsg" style="margin-top: 0.5rem; padding: 0.5rem; background: #dbeafe; color: #1e40af; border-radius: 4px; font-size: 0.875rem; display: none;">
                 <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1rem;">info</span>
                 Returning customer found! Details auto-filled.
