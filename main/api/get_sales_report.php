@@ -64,13 +64,13 @@ try {
     }
     
     // Get total sales
-    $salesStmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales FROM orders WHERE restaurant_id = ? AND " . str_replace('o.', '', $dateCondition));
+    $salesStmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales FROM orders WHERE restaurant_id = ? AND " . $dateConditionNoAlias);
     $salesStmt->execute([$restaurant_id]);
     $sales = $salesStmt->fetch(PDO::FETCH_ASSOC);
     $totalSales = $sales['total_sales'] ?? 0;
     
     // Get total orders
-    $ordersStmt = $conn->prepare("SELECT COUNT(*) as total_orders FROM orders WHERE restaurant_id = ? AND " . str_replace('o.', '', $dateCondition));
+    $ordersStmt = $conn->prepare("SELECT COUNT(*) as total_orders FROM orders WHERE restaurant_id = ? AND " . $dateConditionNoAlias);
     $ordersStmt->execute([$restaurant_id]);
     $orders = $ordersStmt->fetch(PDO::FETCH_ASSOC);
     $totalOrders = $orders['total_orders'] ?? 0;
@@ -90,7 +90,7 @@ try {
     $customersStmt = $conn->prepare("
         SELECT COUNT(DISTINCT customer_name) as total_customers 
         FROM orders 
-        WHERE restaurant_id = ? AND " . str_replace('o.', '', $dateCondition) . "
+        WHERE restaurant_id = ? AND " . $dateConditionNoAlias . "
     ");
     $customersStmt->execute([$restaurant_id]);
     $customers = $customersStmt->fetch(PDO::FETCH_ASSOC);
