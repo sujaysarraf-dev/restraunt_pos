@@ -4365,7 +4365,9 @@ document.addEventListener("DOMContentLoaded", () => {
     inputElement.dataset.autocompleteInitialized = 'true';
     
     // Determine search type based on input field
-    const isPhoneField = inputElement.id === 'customerPhoneInput' || inputElement.id === 'phone';
+    const isPhoneField = inputElement.id === 'customerPhoneInput' || 
+                         inputElement.id === 'phone' || 
+                         inputElement.id === 'takeawayCustomerPhone';
     const searchType = isPhoneField ? 'phone' : 'name';
     
     console.log('Initializing autocomplete for:', inputElement.id, 'searchType:', searchType);
@@ -6318,8 +6320,39 @@ document.addEventListener("DOMContentLoaded", () => {
           console.error('Form not found!');
         }
         
-        // Focus on first input
+        // Initialize autocomplete for takeaway customer fields
         const nameInput = document.getElementById('takeawayCustomerName');
+        const phoneInput = document.getElementById('takeawayCustomerPhone');
+        const emailInput = document.getElementById('takeawayCustomerEmail');
+        const addressInput = document.getElementById('takeawayCustomerAddress');
+        
+        if (nameInput && phoneInput) {
+          console.log('Initializing autocomplete for takeaway modal');
+          
+          // Initialize autocomplete for customer name field
+          initCustomerAutocomplete(nameInput, {
+            nameField: nameInput,
+            phoneField: phoneInput,
+            emailField: emailInput,
+            addressField: addressInput,
+            onSelect: (customer) => {
+              console.log('Customer selected from autocomplete:', customer);
+            }
+          });
+          
+          // Initialize autocomplete for phone field
+          initCustomerAutocomplete(phoneInput, {
+            nameField: nameInput,
+            phoneField: phoneInput,
+            emailField: emailInput,
+            addressField: addressInput,
+            onSelect: (customer) => {
+              console.log('Customer selected from autocomplete:', customer);
+            }
+          });
+        }
+        
+        // Focus on first input
         if (nameInput) {
           nameInput.focus();
         }
