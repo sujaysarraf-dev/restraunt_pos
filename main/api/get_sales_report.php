@@ -47,80 +47,105 @@ try {
     $restaurant_id = $_SESSION['restaurant_id'];
     $period = $_GET['period'] ?? 'today';
     $type = $_GET['type'] ?? 'sales';
+    $startDate = $_GET['start_date'] ?? '';
+    $endDate = $_GET['end_date'] ?? '';
+    $paymentMethod = $_GET['payment_method'] ?? 'all';
+    
+    // Build payment method filter
+    $paymentFilter = '';
+    $paymentFilterParams = [];
+    if ($paymentMethod !== 'all' && $type === 'sales') {
+        $paymentFilter = " AND payment_method = ?";
+        $paymentFilterParams[] = $paymentMethod;
+    }
     
     // Calculate date range based on period
     $dateCondition = '';
     $dateConditionNoAlias = '';
-    switch ($period) {
-        case 'today':
-            $dateCondition = "DATE(o.created_at) = CURDATE()";
-            $dateConditionNoAlias = "DATE(created_at) = CURDATE()";
-            break;
-        case 'week':
-            $dateCondition = "o.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-            $dateConditionNoAlias = "created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-            break;
-        case 'month':
-            $dateCondition = "o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-            $dateConditionNoAlias = "created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-            break;
-        case 'year':
-            $dateCondition = "o.created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)";
-            $dateConditionNoAlias = "created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)";
-            break;
-        default:
-            $dateCondition = "DATE(o.created_at) = CURDATE()";
-            $dateConditionNoAlias = "DATE(created_at) = CURDATE()";
+    $dateParams = [];
+    
+    if ($period === 'custom' && !empty($startDate) && !empty($endDate)) {
+        $dateCondition = "DATE(o.created_at) BETWEEN ? AND ?";
+        $dateConditionNoAlias = "DATE(created_at) BETWEEN ? AND ?";
+        $dateParams = [$startDate, $endDate];
+    } else {
+        switch ($period) {
+            case 'today':
+                $dateCondition = "DATE(o.created_at) = CURDATE()";
+                $dateConditionNoAlias = "DATE(created_at) = CURDATE()";
+                break;
+            case 'week':
+                $dateCondition = "o.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+                $dateConditionNoAlias = "created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+                break;
+            case 'month':
+                $dateCondition = "o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+                $dateConditionNoAlias = "created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+                break;
+            case 'year':
+                $dateCondition = "o.created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)";
+                $dateConditionNoAlias = "created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)";
+                break;
+            default:
+                $dateCondition = "DATE(o.created_at) = CURDATE()";
+                $dateConditionNoAlias = "DATE(created_at) = CURDATE()";
+        }
     }
     
     // Get total sales
-    $salesStmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales FROM orders WHERE restaurant_id = ? AND " . $dateConditionNoAlias);
-    $salesStmt->execute([$restaurant_id]);
+    $salesParams = array_merge([$restaurant_id], $dateParams, $paymentFilterParams);
+    $salesStmt = $conn->prepare("SELECT COALESCE(SUM(total), 0) as total_sales FROM orders WHERE restaurant_id = ? AND " . $dateConditionNoAlias . $paymentFilter);
+    $salesStmt->execute($salesParams);
     $sales = $salesStmt->fetch(PDO::FETCH_ASSOC);
     $totalSales = $sales['total_sales'] ?? 0;
     
     // Get total orders
-    $ordersStmt = $conn->prepare("SELECT COUNT(*) as total_orders FROM orders WHERE restaurant_id = ? AND " . $dateConditionNoAlias);
-    $ordersStmt->execute([$restaurant_id]);
+    $ordersParams = array_merge([$restaurant_id], $dateParams, $paymentFilterParams);
+    $ordersStmt = $conn->prepare("SELECT COUNT(*) as total_orders FROM orders WHERE restaurant_id = ? AND " . $dateConditionNoAlias . $paymentFilter);
+    $ordersStmt->execute($ordersParams);
     $orders = $ordersStmt->fetch(PDO::FETCH_ASSOC);
     $totalOrders = $orders['total_orders'] ?? 0;
     
     // Get total items sold
+    $itemsParams = array_merge([$restaurant_id], $dateParams);
     $itemsStmt = $conn->prepare("
         SELECT COALESCE(SUM(oi.quantity), 0) as total_items 
         FROM order_items oi
         JOIN orders o ON oi.order_id = o.id
         WHERE o.restaurant_id = ? AND " . $dateCondition . "
     ");
-    $itemsStmt->execute([$restaurant_id]);
+    $itemsStmt->execute($itemsParams);
     $items = $itemsStmt->fetch(PDO::FETCH_ASSOC);
     $totalItems = $items['total_items'] ?? 0;
     
     // Get total customers
+    $customersParams = array_merge([$restaurant_id], $dateParams, $paymentFilterParams);
     $customersStmt = $conn->prepare("
         SELECT COUNT(DISTINCT customer_name) as total_customers 
         FROM orders 
-        WHERE restaurant_id = ? AND " . $dateConditionNoAlias . "
+        WHERE restaurant_id = ? AND " . $dateConditionNoAlias . $paymentFilter . "
     ");
-    $customersStmt->execute([$restaurant_id]);
+    $customersStmt->execute($customersParams);
     $customers = $customersStmt->fetch(PDO::FETCH_ASSOC);
     $totalCustomers = $customers['total_customers'] ?? 0;
     
     // Get sales details
+    $detailsParams = array_merge([$restaurant_id], $dateParams, $paymentFilterParams);
     $detailsStmt = $conn->prepare("
         SELECT o.id, o.order_number, o.customer_name, o.payment_method, o.total, o.created_at,
                COUNT(oi.id) as item_count
         FROM orders o
         LEFT JOIN order_items oi ON o.id = oi.order_id
-        WHERE o.restaurant_id = ? AND " . $dateCondition . "
+        WHERE o.restaurant_id = ? AND " . $dateCondition . $paymentFilter . "
         GROUP BY o.id
         ORDER BY o.created_at DESC
         LIMIT 100
     ");
-    $detailsStmt->execute([$restaurant_id]);
+    $detailsStmt->execute($detailsParams);
     $salesDetails = $detailsStmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Get top items
+    $topItemsParams = array_merge([$restaurant_id], $dateParams);
     $topItemsStmt = $conn->prepare("
         SELECT oi.item_name, SUM(oi.quantity) as total_quantity, SUM(oi.total_price) as total_revenue
         FROM order_items oi
@@ -130,20 +155,22 @@ try {
         ORDER BY total_quantity DESC
         LIMIT 10
     ");
-    $topItemsStmt->execute([$restaurant_id]);
+    $topItemsStmt->execute($topItemsParams);
     $topItems = $topItemsStmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Get payment methods breakdown
+    $paymentMethodsParams = array_merge([$restaurant_id], $dateParams);
     $paymentMethodsStmt = $conn->prepare("
         SELECT payment_method, COUNT(*) as count, SUM(total) as amount
         FROM orders
         WHERE restaurant_id = ? AND " . $dateConditionNoAlias . "
         GROUP BY payment_method
     ");
-    $paymentMethodsStmt->execute([$restaurant_id]);
+    $paymentMethodsStmt->execute($paymentMethodsParams);
     $paymentMethods = $paymentMethodsStmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Get top customers (by total spending)
+    $topCustomersParams = array_merge([$restaurant_id], $dateParams);
     $topCustomersStmt = $conn->prepare("
         SELECT 
             customer_name,
@@ -162,7 +189,7 @@ try {
         ORDER BY total_spent DESC
         LIMIT 20
     ");
-    $topCustomersStmt->execute([$restaurant_id]);
+    $topCustomersStmt->execute($topCustomersParams);
     $topCustomers = $topCustomersStmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Get hourly sales breakdown (for today only)

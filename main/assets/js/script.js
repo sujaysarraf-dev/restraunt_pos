@@ -9057,8 +9057,28 @@ function setupSettingsForms() {
 // Load Reports Data
 async function loadReports() {
   try {
-    const period = document.getElementById('reportPeriod')?.value || 'today';
+    let period = document.getElementById('reportPeriod')?.value || 'today';
     const reportType = document.getElementById('reportType')?.value || 'sales';
+    
+    // Handle custom date range
+    let startDate = '';
+    let endDate = '';
+    if (period === 'custom') {
+      startDate = document.getElementById('reportStartDate')?.value || '';
+      endDate = document.getElementById('reportEndDate')?.value || '';
+      if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates for custom range.', 'error');
+        return;
+      }
+      if (new Date(startDate) > new Date(endDate)) {
+        showNotification('Start date cannot be after end date.', 'error');
+        return;
+      }
+    }
+    
+    // Get payment method filter
+    const paymentMethod = document.getElementById('filterPaymentMethod')?.value || 'all';
+    
     console.log('Loading reports for period:', period, 'type:', reportType);
     
     // Show loading state
@@ -9078,7 +9098,16 @@ async function loadReports() {
     if (topItemsDiv) topItemsDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;">Loading...</div>';
     if (paymentMethodsDiv) paymentMethodsDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;">Loading...</div>';
     
-    const response = await fetch(`../api/get_sales_report.php?period=${period}&type=${reportType}`);
+    // Build URL with parameters
+    let url = `../api/get_sales_report.php?period=${period}&type=${reportType}`;
+    if (period === 'custom' && startDate && endDate) {
+      url += `&start_date=${startDate}&end_date=${endDate}`;
+    }
+    if (paymentMethod !== 'all' && reportType === 'sales') {
+      url += `&payment_method=${encodeURIComponent(paymentMethod)}`;
+    }
+    
+    const response = await fetch(url);
     
     // Get response text first to check for errors
     const responseText = await response.text();
@@ -9304,42 +9333,96 @@ async function loadReports() {
 // Export Reports to CSV
 function exportReportsToCSV() {
   if (!window.currentReportData) {
-    showSweetAlert('No data to export. Please load reports first.');
+    showNotification('No data to export. Please load reports first.', 'error');
     return;
   }
   
   const data = window.currentReportData;
+  const reportType = data.report_type || 'sales';
+  const period = data.period || 'today';
   let csv = '';
   
+  // Add header with report info
+  csv += `${getReportTypeName(reportType)} - ${getPeriodName(period)}\n`;
+  csv += `Generated on: ${new Date().toLocaleString()}\n\n`;
+  
   // Add summary
-  csv += 'Sales Report Summary\n';
-  csv += `Total Sales,${data.summary.total_sales}\n`;
-  csv += `Total Orders,${data.summary.total_orders}\n`;
-  csv += `Items Sold,${data.summary.total_items}\n`;
-  csv += `Total Customers,${data.summary.total_customers}\n\n`;
+  csv += 'Summary\n';
+  csv += `Total Sales,${formatCurrencyNoDecimals(data.summary?.total_sales || 0)}\n`;
+  csv += `Total Orders,${data.summary?.total_orders || 0}\n`;
+  csv += `Items Sold,${data.summary?.total_items || 0}\n`;
+  csv += `Total Customers,${data.summary?.total_customers || 0}\n\n`;
   
-  // Add sales details
-  csv += 'Order Details\n';
-  csv += 'Order Number,Customer,Items,Payment Method,Amount,Date\n';
-  
-  if (data.sales_details && data.sales_details.length > 0) {
+  // Add report-specific data
+  if (reportType === 'customers' && data.top_customers && data.top_customers.length > 0) {
+    csv += 'Top Customers\n';
+    csv += 'Customer Name,Phone,Total Orders,Last Order Date,Total Spent\n';
+    data.top_customers.forEach(customer => {
+      csv += `"${customer.customer_name || 'N/A'}","${customer.phone || '-'}",${customer.total_orders},"${customer.last_order_date ? new Date(customer.last_order_date).toLocaleDateString() : '-'}",${formatCurrencyNoDecimals(customer.total_spent)}\n`;
+    });
+  } else if (reportType === 'items' && data.top_items && data.top_items.length > 0) {
+    csv += 'Top Items\n';
+    csv += 'Item Name,Quantity Sold,Total Revenue\n';
+    data.top_items.forEach(item => {
+      csv += `"${item.item_name}",${item.total_quantity},${formatCurrencyNoDecimals(item.total_revenue)}\n`;
+    });
+  } else if (reportType === 'payment' && data.payment_methods && data.payment_methods.length > 0) {
+    csv += 'Payment Methods Breakdown\n';
+    csv += 'Payment Method,Order Count,Total Amount\n';
+    data.payment_methods.forEach(method => {
+      csv += `"${method.payment_method}",${method.count},${formatCurrencyNoDecimals(method.amount)}\n`;
+    });
+  } else if (reportType === 'hourly' && data.hourly_sales && data.hourly_sales.length > 0) {
+    csv += 'Hourly Sales\n';
+    csv += 'Hour,Order Count,Total Sales\n';
+    data.hourly_sales.forEach(hour => {
+      const hourLabel = hour.hour < 12 ? `${hour.hour}:00 AM` : hour.hour === 12 ? '12:00 PM' : `${hour.hour - 12}:00 PM`;
+      csv += `"${hourLabel}",${hour.order_count},${formatCurrencyNoDecimals(hour.total_sales)}\n`;
+    });
+  } else if (reportType === 'staff' && data.staff_performance && data.staff_performance.length > 0) {
+    csv += 'Staff Performance\n';
+    csv += 'Staff Name,Total Orders,Total Sales\n';
+    data.staff_performance.forEach(staff => {
+      csv += `"${staff.staff_name || 'Unknown'}",${staff.total_orders},${formatCurrencyNoDecimals(staff.total_sales)}\n`;
+    });
+  } else if (data.sales_details && data.sales_details.length > 0) {
+    // Default: Sales details
+    csv += 'Order Details\n';
+    csv += 'Date,Order Number,Customer,Items,Payment Method,Amount\n';
     data.sales_details.forEach(order => {
-      csv += `"${order.order_number}","${order.customer_name}",${order.item_count},"${order.payment_method}",${order.total},"${new Date(order.created_at).toLocaleDateString()}"\n`;
+      csv += `"${new Date(order.created_at).toLocaleDateString('en-IN')}","${order.order_number}","${order.customer_name || 'N/A'}",${order.item_count || 0},"${order.payment_method || 'N/A'}",${formatCurrencyNoDecimals(order.total)}\n`;
     });
   }
   
   // Download CSV
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', `sales_report_${new Date().toISOString().split('T')[0]}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  
+  const filename = `${reportType}_report_${period}_${new Date().toISOString().split('T')[0]}.csv`;
+  downloadCSV(csv, filename);
   showNotification('Report exported successfully!', 'success');
+}
+
+// Helper function to get report type name
+function getReportTypeName(type) {
+  const names = {
+    'sales': 'Sales Report',
+    'customers': 'Customer Report',
+    'items': 'Top Items Report',
+    'payment': 'Payment Methods Report',
+    'hourly': 'Hourly Sales Report',
+    'staff': 'Staff Performance Report'
+  };
+  return names[type] || 'Report';
+}
+
+// Helper function to get period name
+function getPeriodName(period) {
+  const names = {
+    'today': 'Today',
+    'week': 'This Week',
+    'month': 'This Month',
+    'year': 'This Year',
+    'custom': 'Custom Range'
+  };
+  return names[period] || period;
 }
 
 // Setup reports page listener

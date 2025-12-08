@@ -827,7 +827,7 @@ try {
       </div>
       <div class="page-content">
         <!-- Report Filter Controls -->
-        <div class="report-filters" style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+        <div class="report-filters" style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="flex: 1; min-width: 200px;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Period</label>
             <select id="reportPeriod" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem;">
@@ -835,7 +835,16 @@ try {
               <option value="week">This Week</option>
               <option value="month">This Month</option>
               <option value="year">This Year</option>
+              <option value="custom">Custom Date Range</option>
             </select>
+          </div>
+          <div id="customDateRange" style="display: none; flex: 1; min-width: 200px;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Start Date</label>
+            <input type="date" id="reportStartDate" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem;">
+          </div>
+          <div id="customDateRangeEnd" style="display: none; flex: 1; min-width: 200px;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">End Date</label>
+            <input type="date" id="reportEndDate" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem;">
           </div>
           <div style="flex: 1; min-width: 200px;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Report Type</label>
@@ -848,9 +857,22 @@ try {
               <option value="staff">Staff Performance Report</option>
             </select>
           </div>
-          <div style="display: flex; align-items: flex-end;">
+          <div id="paymentMethodFilter" style="flex: 1; min-width: 200px; display: none;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Payment Method</label>
+            <select id="filterPaymentMethod" style="width: 100%; padding: 0.75rem; border: 2px solid var(--light-gray); border-radius: 8px; font-size: 1rem;">
+              <option value="all">All Methods</option>
+              <option value="Cash">Cash</option>
+              <option value="Card">Card</option>
+              <option value="UPI">UPI</option>
+              <option value="Online">Online</option>
+            </select>
+          </div>
+          <div style="display: flex; align-items: flex-end; gap: 0.5rem;">
             <button onclick="loadReports()" style="padding: 0.75rem 2rem; background: var(--primary-red); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
               <span class="material-symbols-rounded">refresh</span> Refresh
+            </button>
+            <button onclick="exportReportsToCSV()" style="padding: 0.75rem 2rem; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+              <span class="material-symbols-rounded">download</span> Export CSV
             </button>
           </div>
         </div>
