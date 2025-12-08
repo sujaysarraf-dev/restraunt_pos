@@ -9,27 +9,30 @@ require_once __DIR__ . '/../config/session_config.php';
 startSecureSession();
 $restaurant_id = $_GET['restaurant_id'] ?? ($_SESSION['restaurant_id'] ?? 'RES001');
 
-// Ensure $pdo is available
-if (!isset($pdo) && function_exists('getConnection')) {
+// Get connection using getConnection() for lazy connection support
+if (function_exists('getConnection')) {
     try {
-        $pdo = getConnection();
+        $conn = getConnection();
     } catch (Exception $e) {
         error_log("Error getting connection in theme_api.php: " . $e->getMessage());
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Database connection failed']);
         exit;
     }
-}
-
-if (!isset($pdo)) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection not available']);
-    exit;
+} else {
+    // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+    global $pdo;
+    $conn = $pdo ?? null;
+    if (!$conn) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database connection not available']);
+        exit;
+    }
 }
 
 try {
   if ($action === 'get') {
-    $stmt = $pdo->prepare('SELECT primary_red, dark_red, primary_yellow, banner_image FROM website_settings WHERE restaurant_id = :rid');
+    $stmt = $conn->prepare('SELECT primary_red, dark_red, primary_yellow, banner_image FROM website_settings WHERE restaurant_id = :rid');
     $stmt->execute([':rid' => $restaurant_id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) { 
@@ -42,7 +45,7 @@ try {
     }
     
     // Get all banners from website_banners table
-    $bannersStmt = $pdo->prepare('SELECT id, banner_path, display_order FROM website_banners WHERE restaurant_id = :rid ORDER BY display_order ASC, id ASC');
+    $bannersStmt = $conn->prepare('SELECT id, banner_path, display_order FROM website_banners WHERE restaurant_id = :rid ORDER BY display_order ASC, id ASC');
     $bannersStmt->execute([':rid' => $restaurant_id]);
     $banners = $bannersStmt->fetchAll(PDO::FETCH_ASSOC);
     $row['banners'] = $banners ?: [];
@@ -53,7 +56,7 @@ try {
   
   if ($action === 'get_banners' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     // Get banners (exclude binary data from JSON)
-    $bannersStmt = $pdo->prepare('SELECT id, banner_path, display_order FROM website_banners WHERE restaurant_id = :rid ORDER BY display_order ASC, id ASC');
+    $bannersStmt = $conn->prepare('SELECT id, banner_path, display_order FROM website_banners WHERE restaurant_id = :rid ORDER BY display_order ASC, id ASC');
     $bannersStmt->execute([':rid' => $restaurant_id]);
     $banners = $bannersStmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode(['success' => true, 'banners' => $banners ?: []]);
@@ -66,7 +69,7 @@ try {
     $dr = $data['dark_red'] ?? '#DA020E';
     $py = $data['primary_yellow'] ?? '#FFD100';
     $bi = $data['banner_image'] ?? null;
-    $stmt = $pdo->prepare('INSERT INTO website_settings (restaurant_id, primary_red, dark_red, primary_yellow, banner_image) VALUES (:rid,:pr,:dr,:py,:bi)
+    $stmt = $conn->prepare('INSERT INTO website_settings (restaurant_id, primary_red, dark_red, primary_yellow, banner_image) VALUES (:rid,:pr,:dr,:py,:bi)
       ON DUPLICATE KEY UPDATE primary_red=VALUES(primary_red), dark_red=VALUES(dark_red), primary_yellow=VALUES(primary_yellow), banner_image=VALUES(banner_image)');
     $stmt->execute([':rid'=>$restaurant_id, ':pr'=>$pr, ':dr'=>$dr, ':py'=>$py, ':bi'=>$bi]);
     echo json_encode(['success'=>true]);
@@ -75,7 +78,7 @@ try {
 
   if ($action === 'upload_banner' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check if table exists, if not return error asking to run migration
-    $tableCheck = $pdo->query("SHOW TABLES LIKE 'website_banners'")->fetch();
+    $tableCheck = $conn->query("SHOW TABLES LIKE 'website_banners'")->fetch();
     if (!$tableCheck) {
       throw new Exception('Website banners table not found. Please run the migration first.');
     }
@@ -197,17 +200,17 @@ try {
     }
     
     // Get current max display_order
-    $orderStmt = $pdo->prepare('SELECT MAX(display_order) as max_order FROM website_banners WHERE restaurant_id = :rid');
+    $orderStmt = $conn->prepare('SELECT MAX(display_order) as max_order FROM website_banners WHERE restaurant_id = :rid');
     $orderStmt->execute([':rid' => $restaurant_id]);
     $orderResult = $orderStmt->fetch();
     $nextOrder = ($orderResult['max_order'] ?? 0) + 1;
     
     // Ensure banner_data and banner_mime_type columns exist
     try {
-      $checkCol = $pdo->query("SHOW COLUMNS FROM website_banners LIKE 'banner_data'");
+      $checkCol = $conn->query("SHOW COLUMNS FROM website_banners LIKE 'banner_data'");
       if ($checkCol->rowCount() == 0) {
-        $pdo->exec("ALTER TABLE website_banners ADD COLUMN banner_data LONGBLOB NULL AFTER banner_path");
-        $pdo->exec("ALTER TABLE website_banners ADD COLUMN banner_mime_type VARCHAR(50) NULL AFTER banner_data");
+        $conn->exec("ALTER TABLE website_banners ADD COLUMN banner_data LONGBLOB NULL AFTER banner_path");
+        $conn->exec("ALTER TABLE website_banners ADD COLUMN banner_mime_type VARCHAR(50) NULL AFTER banner_data");
       }
     } catch (PDOException $e) {
       // Columns might already exist, continue
@@ -253,7 +256,7 @@ try {
       $bannerPath = 'db:' . uniqid(); // Reference ID for database storage
       
       try {
-        $stmt = $pdo->prepare('INSERT INTO website_banners (restaurant_id, banner_path, banner_data, banner_mime_type, display_order) VALUES (:rid, :path, :data, :mime, :order)');
+        $stmt = $conn->prepare('INSERT INTO website_banners (restaurant_id, banner_path, banner_data, banner_mime_type, display_order) VALUES (:rid, :path, :data, :mime, :order)');
         $stmt->execute([
           ':rid' => $restaurant_id,
           ':path' => $bannerPath,
@@ -262,9 +265,9 @@ try {
           ':order' => $nextOrder++
         ]);
         $uploadedBanners[] = [
-          'id' => $pdo->lastInsertId(),
+          'id' => $conn->lastInsertId(),
           'banner_path' => $bannerPath,
-          'banner_url' => 'image.php?type=banner&id=' . $pdo->lastInsertId()
+          'banner_url' => 'image.php?type=banner&id=' . $conn->lastInsertId()
         ];
       } catch (PDOException $e) {
         // If columns don't exist, fall back to file-based storage
@@ -275,14 +278,14 @@ try {
           
           if (move_uploaded_file($file['tmp_name'], $filepath)) {
             $bannerPath = 'uploads/banners/' . $filename;
-            $stmt = $pdo->prepare('INSERT INTO website_banners (restaurant_id, banner_path, display_order) VALUES (:rid, :path, :order)');
+            $stmt = $conn->prepare('INSERT INTO website_banners (restaurant_id, banner_path, display_order) VALUES (:rid, :path, :order)');
             $stmt->execute([
               ':rid' => $restaurant_id,
               ':path' => $bannerPath,
               ':order' => $nextOrder++
             ]);
             $uploadedBanners[] = [
-              'id' => $pdo->lastInsertId(),
+              'id' => $conn->lastInsertId(),
               'banner_path' => $bannerPath
             ];
           } else {
@@ -318,7 +321,7 @@ try {
     
     if ($bannerId) {
       // Delete from website_banners table
-      $stmt = $pdo->prepare('SELECT banner_path FROM website_banners WHERE id = :id AND restaurant_id = :rid');
+      $stmt = $conn->prepare('SELECT banner_path FROM website_banners WHERE id = :id AND restaurant_id = :rid');
       $stmt->execute([':id' => $bannerId, ':rid' => $restaurant_id]);
       $banner = $stmt->fetch();
       
@@ -328,21 +331,21 @@ try {
       }
       // Banner data in database will be automatically deleted when row is deleted
       
-      $deleteStmt = $pdo->prepare('DELETE FROM website_banners WHERE id = :id AND restaurant_id = :rid');
+      $deleteStmt = $conn->prepare('DELETE FROM website_banners WHERE id = :id AND restaurant_id = :rid');
       $deleteStmt->execute([':id' => $bannerId, ':rid' => $restaurant_id]);
       
       echo json_encode(['success' => true]);
       exit;
     } else {
       // Backward compatibility: delete from website_settings
-      $oldStmt = $pdo->prepare('SELECT banner_image FROM website_settings WHERE restaurant_id = :rid');
+      $oldStmt = $conn->prepare('SELECT banner_image FROM website_settings WHERE restaurant_id = :rid');
       $oldStmt->execute([':rid' => $restaurant_id]);
       $old = $oldStmt->fetch();
       if ($old && $old['banner_image'] && strpos($old['banner_image'], 'db:') !== 0 && file_exists(__DIR__ . '/../' . $old['banner_image'])) {
         @unlink(__DIR__ . '/../' . $old['banner_image']);
       }
       
-      $stmt = $pdo->prepare('UPDATE website_settings SET banner_image = NULL, banner_data = NULL, banner_mime_type = NULL WHERE restaurant_id = :rid');
+      $stmt = $conn->prepare('UPDATE website_settings SET banner_image = NULL, banner_data = NULL, banner_mime_type = NULL WHERE restaurant_id = :rid');
       $stmt->execute([':rid' => $restaurant_id]);
       
       echo json_encode(['success' => true]);
@@ -358,17 +361,17 @@ try {
       throw new Exception('Invalid banner IDs');
     }
     
-    $pdo->beginTransaction();
+    $conn->beginTransaction();
     try {
       foreach ($bannerIds as $order => $bannerId) {
-        $stmt = $pdo->prepare('UPDATE website_banners SET display_order = :order WHERE id = :id AND restaurant_id = :rid');
+        $stmt = $conn->prepare('UPDATE website_banners SET display_order = :order WHERE id = :id AND restaurant_id = :rid');
         $stmt->execute([':order' => $order, ':id' => $bannerId, ':rid' => $restaurant_id]);
       }
-      $pdo->commit();
+      $conn->commit();
       echo json_encode(['success' => true]);
       exit;
     } catch (Exception $e) {
-      $pdo->rollBack();
+      $conn->rollBack();
       throw $e;
     }
   }
