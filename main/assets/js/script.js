@@ -9401,7 +9401,7 @@ function exportReportsToCSV() {
   xml += '<Row><Cell ss:StyleID="Title"><Data ss:Type="String">' + escapeXml(getReportTypeName(reportType)) + '</Data></Cell></Row>\n';
   xml += '<Row><Cell><Data ss:Type="String">Date Range: ' + escapeXml(dateRange) + '</Data></Cell></Row>\n';
   xml += '<Row><Cell><Data ss:Type="String">Generated on: ' + escapeXml(new Date().toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })) + '</Data></Cell></Row>\n';
-  xml += '<Row></Row>'; // Empty row
+  xml += '<Row></Row>\n'; // Empty row
   
   // Add summary
   xml += '<Row><Cell ss:StyleID="Header"><Data ss:Type="String">Summary</Data></Cell></Row>\n';
@@ -9409,7 +9409,7 @@ function exportReportsToCSV() {
   xml += '<Row><Cell><Data ss:Type="String">Total Orders</Data></Cell><Cell><Data ss:Type="Number">' + (data.summary?.total_orders || 0) + '</Data></Cell></Row>\n';
   xml += '<Row><Cell><Data ss:Type="String">Items Sold</Data></Cell><Cell><Data ss:Type="Number">' + (data.summary?.total_items || 0) + '</Data></Cell></Row>\n';
   xml += '<Row><Cell><Data ss:Type="String">Total Customers</Data></Cell><Cell><Data ss:Type="Number">' + (data.summary?.total_customers || 0) + '</Data></Cell></Row>\n';
-  xml += '<Row></Row>'; // Empty row
+  xml += '<Row></Row>\n'; // Empty row
   
   // Add report-specific data
   if (reportType === 'customers' && data.top_customers && data.top_customers.length > 0) {
@@ -9511,13 +9511,14 @@ function exportReportsToCSV() {
     });
   }
   
-  // Add column width settings for auto-sizing
-  xml += '<Column ss:AutoFitWidth="1"/>\n';
-  xml += '<Column ss:AutoFitWidth="1"/>\n';
-  xml += '<Column ss:AutoFitWidth="1"/>\n';
-  xml += '<Column ss:AutoFitWidth="1"/>\n';
-  xml += '<Column ss:AutoFitWidth="1"/>\n';
-  xml += '<Column ss:AutoFitWidth="1"/>\n';
+  // Add column width settings for auto-sizing (must be before closing Table)
+  // Note: Excel will auto-fit columns when opened, but we can set initial widths
+  xml += '<Column ss:Width="80"/>\n';
+  xml += '<Column ss:Width="120"/>\n';
+  xml += '<Column ss:Width="100"/>\n';
+  xml += '<Column ss:Width="100"/>\n';
+  xml += '<Column ss:Width="120"/>\n';
+  xml += '<Column ss:Width="100"/>\n';
   
   xml += '</Table>\n';
   xml += '</Worksheet>\n';
