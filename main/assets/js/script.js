@@ -9392,68 +9392,118 @@ function exportReportsToCSV() {
   
   // Add report-specific data
   if (reportType === 'customers' && data.top_customers && data.top_customers.length > 0) {
-    csv += 'Top Customers\n';
-    csv += 'Customer Name,Phone,Total Orders,Last Order Date,Total Spent\n';
+    xml += '<Row><Cell ss:StyleID="SectionHeader" ss:MergeAcross="4"><Data ss:Type="String">Top Customers</Data></Cell></Row>\n';
+    xml += '<Row>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Customer Name</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Phone</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Orders</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Last Order Date</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Spent</Data></Cell>';
+    xml += '</Row>\n';
     data.top_customers.forEach(customer => {
       const lastOrderDate = customer.last_order_date ? new Date(customer.last_order_date).toLocaleDateString('en-IN') : '-';
-      csv += escapeCsv(customer.customer_name || 'N/A') + ',';
-      csv += escapeCsv(customer.phone || '-') + ',';
-      csv += customer.total_orders + ',';
-      csv += escapeCsv(lastOrderDate) + ',';
-      csv += escapeCsv(formatCurrencyForCsv(customer.total_spent)) + '\n';
+      xml += '<Row>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(customer.customer_name || 'N/A') + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(customer.phone || '-') + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="Number">' + customer.total_orders + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(lastOrderDate) + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(formatCurrencyForExcel(customer.total_spent)) + '</Data></Cell>';
+      xml += '</Row>\n';
     });
   } else if (reportType === 'items' && data.top_items && data.top_items.length > 0) {
-    csv += 'Top Items\n';
-    csv += 'Item Name,Quantity Sold,Total Revenue\n';
+    xml += '<Row><Cell ss:StyleID="SectionHeader" ss:MergeAcross="2"><Data ss:Type="String">Top Items</Data></Cell></Row>\n';
+    xml += '<Row>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Item Name</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Quantity Sold</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Revenue</Data></Cell>';
+    xml += '</Row>\n';
     data.top_items.forEach(item => {
-      csv += escapeCsv(item.item_name) + ',';
-      csv += item.total_quantity + ',';
-      csv += escapeCsv(formatCurrencyForCsv(item.total_revenue)) + '\n';
+      xml += '<Row>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(item.item_name) + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="Number">' + item.total_quantity + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(formatCurrencyForExcel(item.total_revenue)) + '</Data></Cell>';
+      xml += '</Row>\n';
     });
   } else if (reportType === 'payment' && data.payment_methods && data.payment_methods.length > 0) {
-    csv += 'Payment Methods Breakdown\n';
-    csv += 'Payment Method,Order Count,Total Amount\n';
+    xml += '<Row><Cell ss:StyleID="SectionHeader" ss:MergeAcross="2"><Data ss:Type="String">Payment Methods Breakdown</Data></Cell></Row>\n';
+    xml += '<Row>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Payment Method</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Order Count</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Amount</Data></Cell>';
+    xml += '</Row>\n';
     data.payment_methods.forEach(method => {
-      csv += escapeCsv(method.payment_method) + ',';
-      csv += method.count + ',';
-      csv += escapeCsv(formatCurrencyForCsv(method.amount)) + '\n';
+      xml += '<Row>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(method.payment_method) + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="Number">' + method.count + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(formatCurrencyForExcel(method.amount)) + '</Data></Cell>';
+      xml += '</Row>\n';
     });
   } else if (reportType === 'hourly' && data.hourly_sales && data.hourly_sales.length > 0) {
-    csv += 'Hourly Sales\n';
-    csv += 'Hour,Order Count,Total Sales\n';
+    xml += '<Row><Cell ss:StyleID="SectionHeader" ss:MergeAcross="2"><Data ss:Type="String">Hourly Sales</Data></Cell></Row>\n';
+    xml += '<Row>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Hour</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Order Count</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Sales</Data></Cell>';
+    xml += '</Row>\n';
     data.hourly_sales.forEach(hour => {
       const hourLabel = hour.hour < 12 ? `${hour.hour}:00 AM` : hour.hour === 12 ? '12:00 PM' : `${hour.hour - 12}:00 PM`;
-      csv += escapeCsv(hourLabel) + ',';
-      csv += hour.order_count + ',';
-      csv += escapeCsv(formatCurrencyForCsv(hour.total_sales)) + '\n';
+      xml += '<Row>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(hourLabel) + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="Number">' + hour.order_count + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(formatCurrencyForExcel(hour.total_sales)) + '</Data></Cell>';
+      xml += '</Row>\n';
     });
   } else if (reportType === 'staff' && data.staff_performance && data.staff_performance.length > 0) {
-    csv += 'Staff Performance\n';
-    csv += 'Staff Name,Total Orders,Total Sales\n';
+    xml += '<Row><Cell ss:StyleID="SectionHeader" ss:MergeAcross="2"><Data ss:Type="String">Staff Performance</Data></Cell></Row>\n';
+    xml += '<Row>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Staff Name</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Orders</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Sales</Data></Cell>';
+    xml += '</Row>\n';
     data.staff_performance.forEach(staff => {
-      csv += escapeCsv(staff.staff_name || 'Unknown') + ',';
-      csv += staff.total_orders + ',';
-      csv += escapeCsv(formatCurrencyForCsv(staff.total_sales)) + '\n';
+      xml += '<Row>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(staff.staff_name || 'Unknown') + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="Number">' + staff.total_orders + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(formatCurrencyForExcel(staff.total_sales)) + '</Data></Cell>';
+      xml += '</Row>\n';
     });
   } else if (data.sales_details && data.sales_details.length > 0) {
-    csv += 'Order Details\n';
-    csv += 'Date,Order Number,Customer,Items,Payment Method,Amount\n';
+    xml += '<Row><Cell ss:StyleID="SectionHeader" ss:MergeAcross="5"><Data ss:Type="String">Order Details</Data></Cell></Row>\n';
+    xml += '<Row>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Date</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Order Number</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Customer</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Items</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Payment Method</Data></Cell>';
+    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Amount</Data></Cell>';
+    xml += '</Row>\n';
     data.sales_details.forEach(order => {
       const orderDate = new Date(order.created_at).toLocaleDateString('en-IN');
-      csv += escapeCsv(orderDate) + ',';
-      csv += escapeCsv(order.order_number) + ',';
-      csv += escapeCsv(order.customer_name || 'N/A') + ',';
-      csv += (order.item_count || 0) + ',';
-      csv += escapeCsv(order.payment_method || 'N/A') + ',';
-      csv += escapeCsv(formatCurrencyForCsv(order.total)) + '\n';
+      xml += '<Row>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(orderDate) + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(order.order_number) + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(order.customer_name || 'N/A') + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="Number">' + (order.item_count || 0) + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(order.payment_method || 'N/A') + '</Data></Cell>';
+      xml += '<Cell><Data ss:Type="String">' + escapeXml(formatCurrencyForExcel(order.total)) + '</Data></Cell>';
+      xml += '</Row>\n';
     });
   }
   
-  // Download CSV file
-  const filename = `${reportType}_report_${new Date().toISOString().split('T')[0]}.csv`;
+  // Add column width settings for auto-sizing
+  for (let i = 0; i < numColumns; i++) {
+    xml += '<Column ss:AutoFitWidth="1"/>\n';
+  }
+  
+  xml += '</Table>\n';
+  xml += '</Worksheet>\n';
+  xml += '</Workbook>';
+  
+  // Download Excel file
+  const filename = `${reportType}_report_${new Date().toISOString().split('T')[0]}.xls`;
   
   // Create blob with UTF-8 encoding and BOM
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob(['\uFEFF' + xml], { type: 'application/vnd.ms-excel' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
