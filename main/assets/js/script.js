@@ -1791,38 +1791,38 @@ document.addEventListener("DOMContentLoaded", () => {
       cropBtn.parentNode.replaceChild(newCropBtn, cropBtn);
       
       newCropBtn.addEventListener('click', function() {
-        if (!imageCropper) return;
+    if (!imageCropper) return;
         
         // Show loading state
         const originalBtnHTML = newCropBtn.innerHTML;
         newCropBtn.disabled = true;
         newCropBtn.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">hourglass_empty</span> Processing...';
-        
-        const croppedCanvas = imageCropper.getCroppedCanvas({
-          width: 1200,
-          height: 800,
-          imageSmoothingEnabled: true,
-          imageSmoothingQuality: 'high'
-        });
-        
-        if (croppedCanvas) {
-          const croppedDataUrl = croppedCanvas.toDataURL('image/jpeg', 0.9);
-          
-          // Store cropped image as base64
-          document.getElementById('itemImageBase64').value = croppedDataUrl;
+    
+    const croppedCanvas = imageCropper.getCroppedCanvas({
+      width: 1200,
+      height: 800,
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high'
+    });
+    
+    if (croppedCanvas) {
+      const croppedDataUrl = croppedCanvas.toDataURL('image/jpeg', 0.9);
+      
+      // Store cropped image as base64
+      document.getElementById('itemImageBase64').value = croppedDataUrl;
           cropApplied = true; // Mark that crop has been applied
-          
-          // Update preview
-          updateWebsitePreview();
+      
+      // Update preview
+      updateWebsitePreview();
           
           // Show success state on button
           newCropBtn.disabled = false;
           newCropBtn.style.background = '#10b981';
           newCropBtn.style.color = 'white';
           newCropBtn.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">check_circle</span> Crop Applied!';
-          
-          // Show success message
-          showMessage('Image cropped successfully!', 'success');
+      
+      // Show success message
+        showMessage('Image cropped successfully!', 'success');
           
           // Reset button after 3 seconds
           setTimeout(() => {
@@ -1835,8 +1835,8 @@ document.addEventListener("DOMContentLoaded", () => {
           newCropBtn.disabled = false;
           newCropBtn.innerHTML = originalBtnHTML;
           showMessage('Failed to crop image. Please try again.', 'error');
-        }
-      });
+      }
+    });
     }
     
     if (resetBtn) {
@@ -5845,12 +5845,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <div style="margin-bottom: 1rem;">
               <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500;">Phone Number <span style="color: red;">*</span></label>
               <input type="tel" id="takeawayCustomerPhone" required placeholder="Enter phone number" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
-              <div id="returningCustomerMsg" style="margin-top: 0.5rem; padding: 0.75rem; background: #dbeafe; color: #1e40af; border-radius: 6px; font-size: 0.875rem; display: none;">
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                  <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1.2rem;">verified_user</span>
-                  <strong>Returning Customer Found!</strong>
-                </div>
-                <div id="customerStats" style="font-size: 0.8rem; color: #1e3a8a; margin-top: 0.5rem;"></div>
+              <div id="returningCustomerMsg" style="margin-top: 0.5rem; padding: 0.5rem; background: #dbeafe; color: #1e40af; border-radius: 4px; font-size: 0.875rem; display: none;">
+                <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1rem;">info</span>
+                Returning customer found! Details auto-filled.
               </div>
             </div>
             <div style="margin-bottom: 1rem;">
@@ -5960,204 +5957,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.getElementById('takeawayCustomerEmail').value = result.customer.email || '';
                     document.getElementById('takeawayCustomerAddress').value = result.customer.address || '';
                     
-                    // Show returning customer message with stats
+                    // Show returning customer message
                     const msgDiv = document.getElementById('returningCustomerMsg');
-                    const statsDiv = document.getElementById('customerStats');
                     if (msgDiv) {
                       msgDiv.style.display = 'block';
-                      
-                      // Show customer statistics
-                      if (statsDiv && result.customer) {
-                        const stats = [];
-                        if (result.customer.total_visits) {
-                          stats.push(`📊 ${result.customer.total_visits} visit${result.customer.total_visits > 1 ? 's' : ''}`);
-                        }
-                        if (result.customer.total_spent) {
-                          const currency = window.globalCurrencySymbol || '₹';
-                          stats.push(`💰 ${currency}${parseFloat(result.customer.total_spent).toFixed(2)} total spent`);
-                        }
-                        if (result.customer.last_visit) {
-                          const lastVisit = new Date(result.customer.last_visit);
-                          const daysAgo = Math.floor((new Date() - lastVisit) / (1000 * 60 * 60 * 24));
-                          if (daysAgo === 0) {
-                            stats.push('🕐 Last visit: Today');
-                          } else if (daysAgo === 1) {
-                            stats.push('🕐 Last visit: Yesterday');
-                          } else if (daysAgo < 30) {
-                            stats.push(`🕐 Last visit: ${daysAgo} days ago`);
-                          } else {
-                            stats.push(`🕐 Last visit: ${lastVisit.toLocaleDateString()}`);
-                          }
-                        }
-                        
-                        if (stats.length > 0) {
-                          statsDiv.innerHTML = stats.join(' • ');
-                        } else {
-                          statsDiv.innerHTML = '';
-                        }
-                      }
-                    }
-                    
-                    // Handle multiple matches
-                    if (result.multiple_matches && result.matches && result.matches.length > 1) {
-                      console.log('Multiple customer matches found:', result.matches);
-                    }
-                  } else {
-                    // Hide message if customer not found
-                    const msgDiv = document.getElementById('returningCustomerMsg');
-                    if (msgDiv) {
-                      msgDiv.style.display = 'none';
-                    }
-                  }
-                }
-              } catch (error) {
-                console.error('Error checking returning customer:', error);
-              }
-            } else {
-              // Hide message if phone is too short
-              const msgDiv = document.getElementById('returningCustomerMsg');
-              if (msgDiv) {
-                msgDiv.style.display = 'none';
-              }
-            }
-          }, 500);
-        });
-        
-        // Also check when name is entered (for name-based search)
-        const nameInput = document.getElementById('takeawayCustomerName');
-        if (nameInput) {
-          let nameCheckTimeout;
-          nameInput.addEventListener('input', async () => {
-            clearTimeout(nameCheckTimeout);
-            const name = nameInput.value.trim();
-            const phone = phoneInput.value.trim();
-            
-            // Only search by name if phone is empty and name is at least 3 characters
-            if (name.length >= 3 && phone.length < 10) {
-              nameCheckTimeout = setTimeout(async () => {
-                try {
-                  const response = await fetch('../api/get_customer_by_phone.php', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `name=${encodeURIComponent(name)}`
-                  });
-                  
-                  if (response.ok) {
-                    const result = await response.json();
-                    if (result.success && result.customer) {
-                      // Auto-fill customer details
-                      phoneInput.value = result.customer.phone || '';
-                      document.getElementById('takeawayCustomerEmail').value = result.customer.email || '';
-                      document.getElementById('takeawayCustomerAddress').value = result.customer.address || '';
-                      
-                      // Show returning customer message with stats
-                      const msgDiv = document.getElementById('returningCustomerMsg');
-                      const statsDiv = document.getElementById('customerStats');
-                      if (msgDiv) {
-                        msgDiv.style.display = 'block';
-                        
-                        if (statsDiv && result.customer) {
-                          const stats = [];
-                          if (result.customer.total_visits) {
-                            stats.push(`📊 ${result.customer.total_visits} visit${result.customer.total_visits > 1 ? 's' : ''}`);
-                          }
-                          if (result.customer.total_spent) {
-                            const currency = window.globalCurrencySymbol || '₹';
-                            stats.push(`💰 ${currency}${parseFloat(result.customer.total_spent).toFixed(2)} total spent`);
-                          }
-                          if (result.customer.last_visit) {
-                            const lastVisit = new Date(result.customer.last_visit);
-                            const daysAgo = Math.floor((new Date() - lastVisit) / (1000 * 60 * 60 * 24));
-                            if (daysAgo === 0) {
-                              stats.push('🕐 Last visit: Today');
-                            } else if (daysAgo === 1) {
-                              stats.push('🕐 Last visit: Yesterday');
-                            } else if (daysAgo < 30) {
-                              stats.push(`🕐 Last visit: ${daysAgo} days ago`);
-                            } else {
-                              stats.push(`🕐 Last visit: ${lastVisit.toLocaleDateString()}`);
-                            }
-                          }
-                          
-                          if (stats.length > 0) {
-                            statsDiv.innerHTML = stats.join(' • ');
-                          } else {
-                            statsDiv.innerHTML = '';
-                          }
-                        }
-                      }
-                    } else {
-                      const msgDiv = document.getElementById('returningCustomerMsg');
-                      if (msgDiv) {
+                      setTimeout(() => {
                         msgDiv.style.display = 'none';
-                      }
-                    }
-                  }
-                } catch (error) {
-                  console.error('Error checking returning customer by name:', error);
-                }
-              }, 500);
-            }
-          });
-        }
-                
-                if (response.ok) {
-                  const result = await response.json();
-                  if (result.success && result.customer) {
-                    // Auto-fill customer details
-                    document.getElementById('takeawayCustomerName').value = result.customer.customer_name || '';
-                    document.getElementById('takeawayCustomerEmail').value = result.customer.email || '';
-                    document.getElementById('takeawayCustomerAddress').value = result.customer.address || '';
-                    
-                    // Show returning customer message with stats
-                    const msgDiv = document.getElementById('returningCustomerMsg');
-                    const statsDiv = document.getElementById('customerStats');
-                    if (msgDiv) {
-                      msgDiv.style.display = 'block';
-                      
-                      // Show customer statistics
-                      if (statsDiv && result.customer) {
-                        const stats = [];
-                        if (result.customer.total_visits) {
-                          stats.push(`📊 ${result.customer.total_visits} visit${result.customer.total_visits > 1 ? 's' : ''}`);
-                        }
-                        if (result.customer.total_spent) {
-                          const currency = window.globalCurrencySymbol || '₹';
-                          stats.push(`💰 ${currency}${parseFloat(result.customer.total_spent).toFixed(2)} total spent`);
-                        }
-                        if (result.customer.last_visit) {
-                          const lastVisit = new Date(result.customer.last_visit);
-                          const daysAgo = Math.floor((new Date() - lastVisit) / (1000 * 60 * 60 * 24));
-                          if (daysAgo === 0) {
-                            stats.push('🕐 Last visit: Today');
-                          } else if (daysAgo === 1) {
-                            stats.push('🕐 Last visit: Yesterday');
-                          } else if (daysAgo < 30) {
-                            stats.push(`🕐 Last visit: ${daysAgo} days ago`);
-                          } else {
-                            stats.push(`🕐 Last visit: ${lastVisit.toLocaleDateString()}`);
-                          }
-                        }
-                        
-                        if (stats.length > 0) {
-                          statsDiv.innerHTML = stats.join(' • ');
-                        } else {
-                          statsDiv.innerHTML = '';
-                        }
-                      }
-                      
-                      // Don't auto-hide - let user see the info
-                      // setTimeout(() => {
-                      //   msgDiv.style.display = 'none';
-                      // }, 10000);
-                    }
-                    
-                    // Handle multiple matches
-                    if (result.multiple_matches && result.matches && result.matches.length > 1) {
-                      console.log('Multiple customer matches found:', result.matches);
-                      // Could show a dropdown here in the future
+                      }, 5000);
                     }
                   }
                 }
@@ -6170,7 +5976,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 50);
     });
   }
-
+  
   // Process payment function
   async function processPayment() {
     // Support both posCart (admin) and window.posCart (waiter/chef/manager)
