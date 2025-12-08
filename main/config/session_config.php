@@ -22,8 +22,8 @@ if (!headers_sent()) {
 ini_set('default_charset', 'UTF-8');
 mb_internal_encoding('UTF-8');
 
-// Session timeout in seconds (30 minutes default)
-define('SESSION_TIMEOUT', 30 * 60);
+// Session timeout in seconds (60 minutes default - increased from 30 to prevent premature timeouts)
+define('SESSION_TIMEOUT', 60 * 60);
 
 // Configure secure session settings BEFORE session_start()
 ini_set('session.cookie_httponly', 1);
@@ -94,6 +94,7 @@ function validateSessionTimeout() {
 
 /**
  * Check if session is valid (not expired)
+ * Also updates last_activity if session is valid to prevent premature timeout
  * 
  * @return bool True if session is valid
  */
@@ -106,7 +107,14 @@ function isSessionValid() {
         return false;
     }
     
-    return (time() - $_SESSION['last_activity']) <= SESSION_TIMEOUT;
+    $isValid = (time() - $_SESSION['last_activity']) <= SESSION_TIMEOUT;
+    
+    // Update last activity if session is still valid (prevents premature timeout)
+    if ($isValid) {
+        $_SESSION['last_activity'] = time();
+    }
+    
+    return $isValid;
 }
 
 /**
