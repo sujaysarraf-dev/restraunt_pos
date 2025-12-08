@@ -9079,9 +9079,22 @@ async function loadReports() {
     if (paymentMethodsDiv) paymentMethodsDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;">Loading...</div>';
     
     const response = await fetch(`../api/get_sales_report.php?period=${period}&type=${reportType}`);
-    const data = await response.json();
+    
+    // Get response text first to check for errors
+    const responseText = await response.text();
+    console.log('Reports API response:', responseText);
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse JSON response:', parseError);
+      console.error('Response text:', responseText);
+      throw new Error('Invalid response from server');
+    }
     
     if (!data.success) {
+      console.error('Reports API error:', data);
       throw new Error(data.message || 'Failed to load reports');
     }
     

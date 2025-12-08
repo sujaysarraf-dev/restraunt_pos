@@ -185,21 +185,31 @@ try {
     
     // Get staff performance (if staff_id is stored in orders)
     $staffPerformance = [];
-    $staffStmt = $conn->prepare("
-        SELECT 
-            COALESCE(s.member_name, 'Unknown') as staff_name,
-            COUNT(o.id) as total_orders,
-            SUM(o.total) as total_sales
-        FROM orders o
-        LEFT JOIN staff s ON o.staff_id = s.id AND s.restaurant_id = ?
-        WHERE o.restaurant_id = ? 
-        AND " . $dateConditionNoAlias . "
-        GROUP BY o.staff_id, s.member_name
-        ORDER BY total_sales DESC
-        LIMIT 20
-    ");
-    $staffStmt->execute([$restaurant_id, $restaurant_id]);
-    $staffPerformance = $staffStmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        // Check if staff_id column exists in orders table
+        $checkColumn = $conn->query("SHOW COLUMNS FROM orders LIKE 'staff_id'");
+        if ($checkColumn->rowCount() > 0) {
+            $staffStmt = $conn->prepare("
+                SELECT 
+                    COALESCE(s.member_name, 'Unknown') as staff_name,
+                    COUNT(o.id) as total_orders,
+                    SUM(o.total) as total_sales
+                FROM orders o
+                LEFT JOIN staff s ON o.staff_id = s.id AND s.restaurant_id = ?
+                WHERE o.restaurant_id = ? 
+                AND " . $dateConditionNoAlias . "
+                GROUP BY o.staff_id, s.member_name
+                ORDER BY total_sales DESC
+                LIMIT 20
+            ");
+            $staffStmt->execute([$restaurant_id, $restaurant_id]);
+            $staffPerformance = $staffStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+    } catch (Exception $e) {
+        // If staff_id column doesn't exist or query fails, just skip it
+        error_log("Staff performance query skipped: " . $e->getMessage());
+        $staffPerformance = [];
+    }
     
     // Build response based on report type
     $response = [
