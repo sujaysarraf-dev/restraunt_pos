@@ -9357,178 +9357,103 @@ function exportReportsToCSV() {
   // Get currency symbol
   const currencySymbol = globalCurrencySymbol || window.globalCurrencySymbol || '₹';
   
-  // Helper to escape XML
-  const escapeXml = (str) => {
+  // Helper to escape CSV (handle quotes and commas)
+  const escapeCsv = (str) => {
     if (str == null) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
+    const strValue = String(str);
+    // If contains comma, quote, or newline, wrap in quotes and escape quotes
+    if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) {
+      return '"' + strValue.replace(/"/g, '""') + '"';
+    }
+    return strValue;
   };
   
-  // Helper to format currency for Excel (keep as number with symbol)
-  const formatCurrencyForExcel = (amount) => {
-    return parseFloat(amount || 0).toLocaleString('en-IN', {maximumFractionDigits: 0});
+  // Helper to format currency for CSV (keep symbol and number together)
+  const formatCurrencyForCsv = (amount) => {
+    const formatted = parseFloat(amount || 0).toLocaleString('en-IN', {maximumFractionDigits: 0});
+    return currencySymbol + formatted;
   };
   
-  // Start Excel XML
-  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += '<?mso-application progid="Excel.Sheet"?>\n';
-  xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n';
-  xml += ' xmlns:o="urn:schemas-microsoft-com:office:office"\n';
-  xml += ' xmlns:x="urn:schemas-microsoft-com:office:excel"\n';
-  xml += ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"\n';
-  xml += ' xmlns:html="http://www.w3.org/TR/REC-html40">\n';
-  xml += '<DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">\n';
-  xml += '<Title>Report</Title>\n';
-  xml += '<Created>' + new Date().toISOString() + '</Created>\n';
-  xml += '</DocumentProperties>\n';
-  xml += '<Styles>\n';
-  xml += '<Style ss:ID="Header">\n';
-  xml += '<Font ss:Bold="1"/>\n';
-  xml += '<Interior ss:Color="#E0E0E0" ss:Pattern="Solid"/>\n';
-  xml += '</Style>\n';
-  xml += '<Style ss:ID="Title">\n';
-  xml += '<Font ss:Size="14" ss:Bold="1"/>\n';
-  xml += '</Style>\n';
-  xml += '</Styles>\n';
-  xml += '<Worksheet ss:Name="Report">\n';
-  xml += '<Table>\n';
-  
-  // Add header
-  xml += '<Row><Cell ss:StyleID="Title"><Data ss:Type="String">' + escapeXml(getReportTypeName(reportType)) + '</Data></Cell></Row>\n';
-  xml += '<Row><Cell><Data ss:Type="String">Date Range: ' + escapeXml(dateRange) + '</Data></Cell></Row>\n';
-  xml += '<Row><Cell><Data ss:Type="String">Generated on: ' + escapeXml(new Date().toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })) + '</Data></Cell></Row>\n';
-  xml += '<Row></Row>\n'; // Empty row
+  // Start CSV with UTF-8 BOM for proper Unicode support
+  let csv = '\uFEFF'; // UTF-8 BOM
+  // Add header with report info
+  csv += escapeCsv(getReportTypeName(reportType)) + '\n';
+  csv += 'Date Range: ' + escapeCsv(dateRange) + '\n';
+  csv += 'Generated on: ' + escapeCsv(new Date().toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })) + '\n';
+  csv += '\n'; // Empty row
   
   // Add summary
-  xml += '<Row><Cell ss:StyleID="Header"><Data ss:Type="String">Summary</Data></Cell></Row>\n';
-  xml += '<Row><Cell><Data ss:Type="String">Total Sales</Data></Cell><Cell><Data ss:Type="String">' + escapeXml(currencySymbol + formatCurrencyForExcel(data.summary?.total_sales || 0)) + '</Data></Cell></Row>\n';
-  xml += '<Row><Cell><Data ss:Type="String">Total Orders</Data></Cell><Cell><Data ss:Type="Number">' + (data.summary?.total_orders || 0) + '</Data></Cell></Row>\n';
-  xml += '<Row><Cell><Data ss:Type="String">Items Sold</Data></Cell><Cell><Data ss:Type="Number">' + (data.summary?.total_items || 0) + '</Data></Cell></Row>\n';
-  xml += '<Row><Cell><Data ss:Type="String">Total Customers</Data></Cell><Cell><Data ss:Type="Number">' + (data.summary?.total_customers || 0) + '</Data></Cell></Row>\n';
-  xml += '<Row></Row>\n'; // Empty row
+  csv += 'Summary\n';
+  csv += 'Total Sales,' + escapeCsv(formatCurrencyForCsv(data.summary?.total_sales || 0)) + '\n';
+  csv += 'Total Orders,' + (data.summary?.total_orders || 0) + '\n';
+  csv += 'Items Sold,' + (data.summary?.total_items || 0) + '\n';
+  csv += 'Total Customers,' + (data.summary?.total_customers || 0) + '\n';
+  csv += '\n'; // Empty row
   
   // Add report-specific data
   if (reportType === 'customers' && data.top_customers && data.top_customers.length > 0) {
-    xml += '<Row><Cell ss:StyleID="Header"><Data ss:Type="String">Top Customers</Data></Cell></Row>\n';
-    xml += '<Row>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Customer Name</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Phone</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Orders</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Last Order Date</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Spent</Data></Cell>';
-    xml += '</Row>\n';
+    csv += 'Top Customers\n';
+    csv += 'Customer Name,Phone,Total Orders,Last Order Date,Total Spent\n';
     data.top_customers.forEach(customer => {
       const lastOrderDate = customer.last_order_date ? new Date(customer.last_order_date).toLocaleDateString('en-IN') : '-';
-      xml += '<Row>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(customer.customer_name || 'N/A') + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(customer.phone || '-') + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="Number">' + customer.total_orders + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(lastOrderDate) + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(currencySymbol + formatCurrencyForExcel(customer.total_spent)) + '</Data></Cell>';
-      xml += '</Row>\n';
+      csv += escapeCsv(customer.customer_name || 'N/A') + ',';
+      csv += escapeCsv(customer.phone || '-') + ',';
+      csv += customer.total_orders + ',';
+      csv += escapeCsv(lastOrderDate) + ',';
+      csv += escapeCsv(formatCurrencyForCsv(customer.total_spent)) + '\n';
     });
   } else if (reportType === 'items' && data.top_items && data.top_items.length > 0) {
-    xml += '<Row><Cell ss:StyleID="Header"><Data ss:Type="String">Top Items</Data></Cell></Row>\n';
-    xml += '<Row>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Item Name</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Quantity Sold</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Revenue</Data></Cell>';
-    xml += '</Row>\n';
+    csv += 'Top Items\n';
+    csv += 'Item Name,Quantity Sold,Total Revenue\n';
     data.top_items.forEach(item => {
-      xml += '<Row>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(item.item_name) + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="Number">' + item.total_quantity + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(currencySymbol + formatCurrencyForExcel(item.total_revenue)) + '</Data></Cell>';
-      xml += '</Row>\n';
+      csv += escapeCsv(item.item_name) + ',';
+      csv += item.total_quantity + ',';
+      csv += escapeCsv(formatCurrencyForCsv(item.total_revenue)) + '\n';
     });
   } else if (reportType === 'payment' && data.payment_methods && data.payment_methods.length > 0) {
-    xml += '<Row><Cell ss:StyleID="Header"><Data ss:Type="String">Payment Methods Breakdown</Data></Cell></Row>\n';
-    xml += '<Row>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Payment Method</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Order Count</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Amount</Data></Cell>';
-    xml += '</Row>\n';
+    csv += 'Payment Methods Breakdown\n';
+    csv += 'Payment Method,Order Count,Total Amount\n';
     data.payment_methods.forEach(method => {
-      xml += '<Row>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(method.payment_method) + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="Number">' + method.count + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(currencySymbol + formatCurrencyForExcel(method.amount)) + '</Data></Cell>';
-      xml += '</Row>\n';
+      csv += escapeCsv(method.payment_method) + ',';
+      csv += method.count + ',';
+      csv += escapeCsv(formatCurrencyForCsv(method.amount)) + '\n';
     });
   } else if (reportType === 'hourly' && data.hourly_sales && data.hourly_sales.length > 0) {
-    xml += '<Row><Cell ss:StyleID="Header"><Data ss:Type="String">Hourly Sales</Data></Cell></Row>\n';
-    xml += '<Row>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Hour</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Order Count</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Sales</Data></Cell>';
-    xml += '</Row>\n';
+    csv += 'Hourly Sales\n';
+    csv += 'Hour,Order Count,Total Sales\n';
     data.hourly_sales.forEach(hour => {
       const hourLabel = hour.hour < 12 ? `${hour.hour}:00 AM` : hour.hour === 12 ? '12:00 PM' : `${hour.hour - 12}:00 PM`;
-      xml += '<Row>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(hourLabel) + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="Number">' + hour.order_count + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(currencySymbol + formatCurrencyForExcel(hour.total_sales)) + '</Data></Cell>';
-      xml += '</Row>\n';
+      csv += escapeCsv(hourLabel) + ',';
+      csv += hour.order_count + ',';
+      csv += escapeCsv(formatCurrencyForCsv(hour.total_sales)) + '\n';
     });
   } else if (reportType === 'staff' && data.staff_performance && data.staff_performance.length > 0) {
-    xml += '<Row><Cell ss:StyleID="Header"><Data ss:Type="String">Staff Performance</Data></Cell></Row>\n';
-    xml += '<Row>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Staff Name</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Orders</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Total Sales</Data></Cell>';
-    xml += '</Row>\n';
+    csv += 'Staff Performance\n';
+    csv += 'Staff Name,Total Orders,Total Sales\n';
     data.staff_performance.forEach(staff => {
-      xml += '<Row>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(staff.staff_name || 'Unknown') + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="Number">' + staff.total_orders + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(currencySymbol + formatCurrencyForExcel(staff.total_sales)) + '</Data></Cell>';
-      xml += '</Row>\n';
+      csv += escapeCsv(staff.staff_name || 'Unknown') + ',';
+      csv += staff.total_orders + ',';
+      csv += escapeCsv(formatCurrencyForCsv(staff.total_sales)) + '\n';
     });
   } else if (data.sales_details && data.sales_details.length > 0) {
-    xml += '<Row><Cell ss:StyleID="Header"><Data ss:Type="String">Order Details</Data></Cell></Row>\n';
-    xml += '<Row>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Date</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Order Number</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Customer</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Items</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Payment Method</Data></Cell>';
-    xml += '<Cell ss:StyleID="Header"><Data ss:Type="String">Amount</Data></Cell>';
-    xml += '</Row>\n';
+    csv += 'Order Details\n';
+    csv += 'Date,Order Number,Customer,Items,Payment Method,Amount\n';
     data.sales_details.forEach(order => {
       const orderDate = new Date(order.created_at).toLocaleDateString('en-IN');
-      xml += '<Row>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(orderDate) + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(order.order_number) + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(order.customer_name || 'N/A') + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="Number">' + (order.item_count || 0) + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(order.payment_method || 'N/A') + '</Data></Cell>';
-      xml += '<Cell><Data ss:Type="String">' + escapeXml(currencySymbol + formatCurrencyForExcel(order.total)) + '</Data></Cell>';
-      xml += '</Row>\n';
+      csv += escapeCsv(orderDate) + ',';
+      csv += escapeCsv(order.order_number) + ',';
+      csv += escapeCsv(order.customer_name || 'N/A') + ',';
+      csv += (order.item_count || 0) + ',';
+      csv += escapeCsv(order.payment_method || 'N/A') + ',';
+      csv += escapeCsv(formatCurrencyForCsv(order.total)) + '\n';
     });
   }
   
-  // Add column width settings for auto-sizing (must be before closing Table)
-  // Note: Excel will auto-fit columns when opened, but we can set initial widths
-  xml += '<Column ss:Width="80"/>\n';
-  xml += '<Column ss:Width="120"/>\n';
-  xml += '<Column ss:Width="100"/>\n';
-  xml += '<Column ss:Width="100"/>\n';
-  xml += '<Column ss:Width="120"/>\n';
-  xml += '<Column ss:Width="100"/>\n';
-  
-  xml += '</Table>\n';
-  xml += '</Worksheet>\n';
-  xml += '</Workbook>';
-  
-  // Download Excel file
-  const filename = `${reportType}_report_${new Date().toISOString().split('T')[0]}.xls`;
+  // Download CSV file
+  const filename = `${reportType}_report_${new Date().toISOString().split('T')[0]}.csv`;
   
   // Create blob with UTF-8 encoding and BOM
-  const blob = new Blob(['\uFEFF' + xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
