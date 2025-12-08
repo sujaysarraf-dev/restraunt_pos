@@ -19,7 +19,17 @@ require_once __DIR__ . '/../config/authorization_config.php';
 header('Content-Type: application/json');
 
 // Require permission to manage customers
-requirePermission(PERMISSION_MANAGE_CUSTOMERS);
+try {
+    requirePermission(PERMISSION_MANAGE_CUSTOMERS);
+} catch (Exception $e) {
+    error_log("Permission error in search_customers.php: " . $e->getMessage());
+    http_response_code(403);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Permission denied. Please login again.'
+    ]);
+    exit();
+}
 
 // Include database connection
 if (file_exists(__DIR__ . '/../db_connection.php')) {
@@ -27,6 +37,16 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
 } else {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Database connection file not found']);
+    exit();
+}
+
+// Get restaurant_id from session
+if (!isset($_SESSION['restaurant_id'])) {
+    http_response_code(401);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Session expired. Please login again.'
+    ]);
     exit();
 }
 
@@ -45,7 +65,20 @@ if (empty($query) || strlen($query) < 1) {
 }
 
 try {
-    $conn = $pdo;
+    // Get database connection
+    if (isset($pdo) && $pdo instanceof PDO) {
+        $conn = $pdo;
+    } else if (function_exists('getConnection')) {
+        $conn = getConnection();
+    } else {
+        throw new Exception('Database connection not available. $pdo not set and getConnection() not available.');
+    }
+    
+    // Test connection
+    if (!$conn || !($conn instanceof PDO)) {
+        throw new Exception('Invalid database connection object');
+    }
+    
     $customers = [];
     
     if ($type === 'phone') {
@@ -192,19 +225,31 @@ try {
         'customers' => $customers
     ]);
 } catch (PDOException $e) {
-    error_log("PDO Error in search_customers.php: " . $e->getMessage());
+    $errorMsg = $e->getMessage();
+    $errorCode = $e->getCode();
+    error_log("PDO Error in search_customers.php: " . $errorMsg);
+    error_log("PDO Error code: " . $errorCode);
+    error_log("PDO Error trace: " . $e->getTraceAsString());
+    error_log("Query: " . ($query ?? 'N/A') . ", Type: " . ($type ?? 'N/A') . ", Restaurant ID: " . ($restaurant_id ?? 'N/A'));
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Database error occurred. Please try again later.'
+        'message' => 'Database error occurred. Please try again later.',
+        'debug' => [
+            'error_code' => $errorCode,
+            'error_message' => $errorMsg
+        ]
     ]);
     exit();
 } catch (Exception $e) {
-    error_log("Error in search_customers.php: " . $e->getMessage());
+    $errorMsg = $e->getMessage();
+    error_log("Error in search_customers.php: " . $errorMsg);
+    error_log("Error trace: " . $e->getTraceAsString());
+    error_log("Query: " . ($query ?? 'N/A') . ", Type: " . ($type ?? 'N/A') . ", Restaurant ID: " . ($restaurant_id ?? 'N/A'));
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Error: ' . $e->getMessage()
+        'message' => 'Error: ' . $errorMsg
     ]);
     exit();
 }
