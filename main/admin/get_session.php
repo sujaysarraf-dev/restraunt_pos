@@ -132,6 +132,11 @@ try {
         }
     }
     
+    // Get remaining session time
+    $remainingTime = getRemainingSessionTime();
+    $remainingMinutes = floor($remainingTime / 60);
+    $remainingSeconds = $remainingTime % 60;
+    
     // Build response data
     $responseData = [
         'id' => $row['id'] ?? ($_SESSION['user_id'] ?? $_SESSION['staff_id'] ?? null),
@@ -156,7 +161,10 @@ try {
         'trial_end_date' => $row['trial_end_date'] ?? null,
         'renewal_date' => $row['renewal_date'] ?? null,
         'created_at' => $row['created_at'] ?? null,
-        'is_active' => $row['is_active'] ?? 1
+        'is_active' => $row['is_active'] ?? 1,
+        'session_remaining_time' => $remainingTime,
+        'session_remaining_minutes' => $remainingMinutes,
+        'session_remaining_seconds' => $remainingSeconds
     ];
     
     echo json_encode([

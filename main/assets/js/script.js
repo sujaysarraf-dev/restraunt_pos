@@ -365,6 +365,24 @@ function startSessionCheck() {
       
       const data = await response.json();
       
+      // Log remaining session time if available
+      if (data.success && data.data && data.data.session_remaining_time !== undefined) {
+        const remaining = data.data.session_remaining_time;
+        const minutes = Math.floor(remaining / 60);
+        const seconds = remaining % 60;
+        const timeString = `${minutes}m ${seconds}s`;
+        
+        // Color code based on remaining time
+        let color = '#10b981'; // green
+        if (remaining < 300) { // Less than 5 minutes
+          color = '#ef4444'; // red
+        } else if (remaining < 600) { // Less than 10 minutes
+          color = '#f59e0b'; // orange
+        }
+        
+        console.log(`%c⏱️ Session Time Remaining: ${timeString}`, `color: ${color}; font-weight: bold; font-size: 12px;`);
+      }
+      
       // Check if session is expired
       if (!data.success || response.status === 401 || 
           (data.message && (
@@ -382,6 +400,9 @@ function startSessionCheck() {
   };
   
   sessionCheckInterval = setInterval(performSessionCheck, 30000); // Check every 30 seconds
+  
+  // Perform initial check immediately
+  performSessionCheck();
   
   // Pause session check when page is hidden, resume when visible
   if (!window.sessionVisibilityHandler) {
