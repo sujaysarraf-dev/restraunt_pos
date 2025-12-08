@@ -87,7 +87,7 @@ try {
             $query .= " ORDER BY mi.sort_order, mi.item_name_en";
             
             try {
-                $stmt = $pdo->prepare($query);
+                $stmt = $conn->prepare($query);
                 $stmt->execute($params);
                 $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
@@ -211,7 +211,7 @@ try {
                 
                 // Clean up any binary data and load variations
                 try {
-                    $checkTable = $pdo->query("SHOW TABLES LIKE 'menu_item_variations'");
+                    $checkTable = $conn->query("SHOW TABLES LIKE 'menu_item_variations'");
                     $hasVariationsTable = $checkTable->rowCount() > 0;
                 } catch (PDOException $e) {
                     $hasVariationsTable = false;
@@ -225,7 +225,7 @@ try {
                     // Load variations
                     if ($hasVariationsTable) {
                         try {
-                            $variationsStmt = $pdo->prepare("
+                            $variationsStmt = $conn->prepare("
                                 SELECT id, variation_name, price, sort_order, is_available 
                                 FROM menu_item_variations 
                                 WHERE menu_item_id = ? AND is_available = TRUE 
@@ -273,7 +273,7 @@ try {
             }
             
             // First, find customer by phone number
-            $customerStmt = $pdo->prepare("SELECT customer_name FROM customers WHERE phone = :phone AND restaurant_id = :rid LIMIT 1");
+            $customerStmt = $conn->prepare("SELECT customer_name FROM customers WHERE phone = :phone AND restaurant_id = :rid LIMIT 1");
             $customerStmt->execute([':phone' => $phone, ':rid' => $restaurantId]);
             $customer = $customerStmt->fetch(PDO::FETCH_ASSOC);
             
@@ -284,7 +284,7 @@ try {
             }
             
             // Get orders for this customer name
-            $stmt = $pdo->prepare("SELECT o.*, 
+            $stmt = $conn->prepare("SELECT o.*, 
                                    (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) as item_count
                                    FROM orders o 
                                    WHERE o.customer_name = :customer_name AND o.restaurant_id = :rid 
@@ -294,7 +294,7 @@ try {
             
             // Get order items for each order
             foreach ($orders as &$order) {
-                $itemsStmt = $pdo->prepare("SELECT item_name, quantity, unit_price, total_price 
+                $itemsStmt = $conn->prepare("SELECT item_name, quantity, unit_price, total_price 
                                            FROM order_items 
                                            WHERE order_id = :order_id");
                 $itemsStmt->execute([':order_id' => $order['id']]);
