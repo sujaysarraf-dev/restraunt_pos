@@ -25,7 +25,16 @@ if (!$currency_symbol) {
             require_once __DIR__ . '/../db_connection.php';
             
             // Get connection from db_connection.php
-            $conn = $pdo;
+            // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $conn = getConnection();
+    } else {
+        // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+        $conn = $pdo ?? null;
+        if (!$conn) {
+            throw new Exception('Database connection not available');
+        }
+    }
             
             $currencyStmt = $conn->prepare("SELECT currency_symbol FROM users WHERE restaurant_id = ? LIMIT 1");
             $currencyStmt->execute([$restaurant_id]);

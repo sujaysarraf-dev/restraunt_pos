@@ -60,8 +60,17 @@ try {
 
 if (!function_exists('handleCreateKOT')) {
 function handleCreateKOT() {
-    global $pdo;
-    $conn = $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $conn = getConnection();
+    } else {
+        // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        $conn = $pdo ?? null;
+        if (!$conn) {
+            throw new Exception('Database connection not available');
+        }
+    }
     $restaurant_id = $_SESSION['restaurant_id'];
     $table_id = $_POST['tableId'] ?? null;
     $order_type = $_POST['orderType'] ?? 'Dine-in';
@@ -140,8 +149,17 @@ function handleCreateKOT() {
 
 if (!function_exists('handleUpdateKOTStatus')) {
 function handleUpdateKOTStatus() {
-    global $pdo;
-    $conn = $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $conn = getConnection();
+    } else {
+        // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        $conn = $pdo ?? null;
+        if (!$conn) {
+            throw new Exception('Database connection not available');
+        }
+    }
     $kot_id = intval($_POST['kotId']);
     $status = $_POST['status'];
     $restaurant_id = $_SESSION['restaurant_id'] ?? $_GET['restaurant_id'] ?? null;
@@ -352,8 +370,17 @@ function handleUpdateKOTStatus() {
 
 if (!function_exists('handleCompleteKOT')) {
 function handleCompleteKOT() {
-    global $pdo;
-    $conn = $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $conn = getConnection();
+    } else {
+        // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        $conn = $pdo ?? null;
+        if (!$conn) {
+            throw new Exception('Database connection not available');
+        }
+    }
     $kot_id = intval($_POST['kotId']);
     $restaurant_id = $_SESSION['restaurant_id'] ?? $_GET['restaurant_id'] ?? null;
     

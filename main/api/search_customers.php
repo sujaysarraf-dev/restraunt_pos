@@ -65,11 +65,11 @@ if (empty($query) || strlen($query) < 1) {
 }
 
 try {
-    // Get database connection
-    if (isset($pdo) && $pdo instanceof PDO) {
-    $conn = $pdo;
-    } else if (function_exists('getConnection')) {
+    // Get database connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
         $conn = getConnection();
+    } else if (isset($pdo) && $pdo instanceof PDO) {
+        $conn = $pdo;
     } else {
         throw new Exception('Database connection not available. $pdo not set and getConnection() not available.');
     }

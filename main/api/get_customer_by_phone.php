@@ -39,7 +39,16 @@ if (empty($phone)) {
 }
 
 try {
-    $conn = $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $conn = getConnection();
+    } else {
+        // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+        $conn = $pdo ?? null;
+        if (!$conn) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     // First check customers table
     $stmt = $conn->prepare("SELECT * FROM customers WHERE restaurant_id = ? AND phone = ? LIMIT 1");
