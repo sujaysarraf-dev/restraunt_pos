@@ -397,6 +397,22 @@ if (!function_exists('getConnectionStats')) {
     }
 }
 
+// Helper function to get database connection (backward compatibility)
+// Use this instead of direct $pdo access for lazy connection support
+if (!function_exists('getDBConnection')) {
+    function getDBConnection() {
+        if (function_exists('getConnection')) {
+            return getConnection();
+        }
+        // Fallback to global $pdo if getConnection() doesn't exist
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof PDO)) {
+            throw new Exception('Database connection not available');
+        }
+        return $pdo;
+    }
+}
+
 // Helper function to get prepared statement with automatic caching hint
 if (!function_exists('prepareStatement')) {
     function prepareStatement($sql, $options = []) {
