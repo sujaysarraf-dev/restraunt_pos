@@ -79,9 +79,17 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit();
 }
 
-// Get connection
+// Get connection using getConnection() for lazy connection support
 try {
-    $conn = $pdo;
+    if (function_exists('getConnection')) {
+        $conn = getConnection();
+    } else {
+        // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+        $conn = $pdo ?? null;
+        if (!$conn) {
+            throw new Exception('Database connection not available');
+        }
+    }
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
