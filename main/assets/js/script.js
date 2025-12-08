@@ -9092,7 +9092,7 @@ async function loadReports() {
     
     // Update report table title based on type
     const reportTableTitle = document.getElementById('reportTableTitle');
-    const reportType = data.report_type || 'sales';
+    const currentReportType = data.report_type || 'sales';
     if (reportTableTitle) {
       const titles = {
         'sales': 'Sales Details',
@@ -9102,7 +9102,7 @@ async function loadReports() {
         'hourly': 'Hourly Sales Report',
         'staff': 'Staff Performance Report'
       };
-      reportTableTitle.textContent = titles[reportType] || 'Report Details';
+      reportTableTitle.textContent = titles[currentReportType] || 'Report Details';
     }
     
     // Update summary cards (use the elements we already got)
@@ -9121,10 +9121,10 @@ async function loadReports() {
     
     // Update sales table based on report type
     if (salesTable) {
-      const reportType = data.report_type || 'sales';
+      const tableReportType = data.report_type || 'sales';
       const tableHeader = salesTable.parentElement.querySelector('thead');
       
-      if (reportType === 'customers') {
+      if (tableReportType === 'customers') {
         // Customer Report
         if (tableHeader) {
           tableHeader.innerHTML = `
@@ -9150,7 +9150,7 @@ async function loadReports() {
         } else {
           salesTable.innerHTML = '<tr><td colspan="5" style="padding: 2rem; text-align: center; color: #666;">No customer data found</td></tr>';
         }
-      } else if (reportType === 'hourly') {
+      } else if (tableReportType === 'hourly') {
         // Hourly Sales Report
         if (tableHeader) {
           tableHeader.innerHTML = `
@@ -9175,7 +9175,7 @@ async function loadReports() {
         } else {
           salesTable.innerHTML = '<tr><td colspan="3" style="padding: 2rem; text-align: center; color: #666;">Hourly data only available for today. Please select "Today" period.</td></tr>';
         }
-      } else if (reportType === 'staff') {
+      } else if (tableReportType === 'staff') {
         // Staff Performance Report
         if (tableHeader) {
           tableHeader.innerHTML = `

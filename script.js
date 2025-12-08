@@ -98,32 +98,44 @@ window.addEventListener('scroll', () => {
 const contactForm = document.getElementById('contactForm');
 
 if (contactForm) {
-    contactForm.addEventListener('submit', (e) => {
+    contactForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         // Get form data
         const formData = new FormData(contactForm);
-        const data = Object.fromEntries(formData);
+        const submitButton = contactForm.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton ? submitButton.textContent : 'Send Message';
         
-        // Here you would normally send this to your server
-        // For now, we'll just show a success message
-        showFrontendAlert('Thank you for your interest! We will contact you soon.');
-        contactForm.reset();
+        // Disable button and show loading
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Sending...';
+        }
         
-        // In production, you would do something like:
-        // fetch('/api/contact', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(data)
-        // })
-        // .then(response => response.json())
-        // .then(data => {
-        //     showFrontendAlert('Message sent successfully!');
-        //     contactForm.reset();
-        // })
-        // .catch(error => {
-        //     showFrontendAlert('Error sending message. Please try again.');
-        // });
+        try {
+            const response = await fetch('main/api/submit_contact.php', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showFrontendAlert(result.message || 'Thank you for your interest! We will contact you soon.');
+                contactForm.reset();
+            } else {
+                showFrontendAlert(result.message || 'Error sending message. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error submitting contact form:', error);
+            showFrontendAlert('Error sending message. Please try again.');
+        } finally {
+            // Re-enable button
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
+            }
+        }
     });
 }
 
