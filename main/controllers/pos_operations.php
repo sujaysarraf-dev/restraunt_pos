@@ -244,8 +244,15 @@ function handleCreateKOT($conn, $restaurant_id) {
         
         if ($orderType !== 'Takeaway') {
             // For Dine-in orders: Only create KOT, order will be created when KOT is marked as Ready
-            $stmt = $conn->prepare("INSERT INTO kot (restaurant_id, kot_number, table_id, order_type, customer_name, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$restaurant_id, $kotNumber, $tableIdParam, $orderType, $customerName, $subtotal, $tax, $total, $notes]);
+            // Check if customer columns exist in kot table
+            $checkKotCols = $conn->query("SHOW COLUMNS FROM kot LIKE 'customer_phone'");
+            if ($checkKotCols->rowCount() > 0) {
+                $stmt = $conn->prepare("INSERT INTO kot (restaurant_id, kot_number, table_id, order_type, customer_name, customer_phone, customer_email, customer_address, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$restaurant_id, $kotNumber, $tableIdParam, $orderType, $customerName, $customerPhone, $customerEmail, $customerAddress, $subtotal, $tax, $total, $notes]);
+            } else {
+                $stmt = $conn->prepare("INSERT INTO kot (restaurant_id, kot_number, table_id, order_type, customer_name, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$restaurant_id, $kotNumber, $tableIdParam, $orderType, $customerName, $subtotal, $tax, $total, $notes]);
+            }
             $kotId = $conn->lastInsertId();
             $itemStmt = $conn->prepare("INSERT INTO kot_items (kot_id, menu_item_id, item_name, quantity, unit_price, total_price) VALUES (?, ?, ?, ?, ?, ?)");
             foreach ($cartItems as $item) {

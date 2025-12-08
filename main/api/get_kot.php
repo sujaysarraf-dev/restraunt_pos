@@ -38,14 +38,20 @@ try {
         throw new Exception('Restaurant ID is required');
     }
     
+    // Check if customer columns exist in kot table
+    $checkCols = $conn->query("SHOW COLUMNS FROM kot LIKE 'customer_phone'");
+    $hasCustomerCols = $checkCols->rowCount() > 0;
+    
     // Get KOT orders (not completed)
+    $customerFields = $hasCustomerCols ? ', k.customer_phone, k.customer_email, k.customer_address' : '';
     $sql = "SELECT 
                 k.id,
                 k.kot_number,
                 k.table_id,
                 k.kot_status,
                 k.order_type,
-                k.customer_name,
+                k.customer_name
+                $customerFields,
                 k.created_at,
                 k.subtotal,
                 k.tax,

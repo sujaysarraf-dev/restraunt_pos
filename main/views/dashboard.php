@@ -1802,7 +1802,7 @@ try {
             </thead>
             <tbody id="customerList">
               <tr>
-                <td colspan="7" class="loading">Loading customers...</td>
+                <td colspan="8" class="loading">Loading customers...</td>
               </tr>
             </tbody>
           </table>

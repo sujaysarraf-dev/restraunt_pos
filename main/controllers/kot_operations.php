@@ -79,13 +79,40 @@ function handleCreateKOT() {
     
     $kot_number = generateKOTNumber($conn, $restaurant_id);
     
+    // Get customer details if provided
+    $customer_phone = $_POST['customerPhone'] ?? '';
+    $customer_email = $_POST['customerEmail'] ?? '';
+    $customer_address = $_POST['customerAddress'] ?? '';
+    
+    // Ensure customer columns exist in kot table
+    try {
+        $checkKotCols = $conn->query("SHOW COLUMNS FROM kot LIKE 'customer_phone'");
+        if ($checkKotCols->rowCount() == 0) {
+            $conn->exec("ALTER TABLE kot ADD COLUMN customer_phone VARCHAR(20) NULL AFTER customer_name");
+            $conn->exec("ALTER TABLE kot ADD COLUMN customer_email VARCHAR(100) NULL AFTER customer_phone");
+            $conn->exec("ALTER TABLE kot ADD COLUMN customer_address TEXT NULL AFTER customer_email");
+        }
+    } catch (PDOException $e) {
+        // Columns might already exist or error occurred, continue anyway
+        error_log("Error checking/adding customer columns in kot: " . $e->getMessage());
+    }
+    
     try {
         $conn->beginTransaction();
         
-        // Insert KOT
-        $kot_sql = "INSERT INTO kot (restaurant_id, kot_number, table_id, order_type, customer_name, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $kot_stmt = $conn->prepare($kot_sql);
-        $kot_stmt->execute([$restaurant_id, $kot_number, $table_id, $order_type, $customer_name, $subtotal, $tax, $total, $notes]);
+        // Check if customer columns exist
+        $checkKotCols = $conn->query("SHOW COLUMNS FROM kot LIKE 'customer_phone'");
+        if ($checkKotCols->rowCount() > 0) {
+            // Insert KOT with customer details
+            $kot_sql = "INSERT INTO kot (restaurant_id, kot_number, table_id, order_type, customer_name, customer_phone, customer_email, customer_address, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $kot_stmt = $conn->prepare($kot_sql);
+            $kot_stmt->execute([$restaurant_id, $kot_number, $table_id, $order_type, $customer_name, $customer_phone, $customer_email, $customer_address, $subtotal, $tax, $total, $notes]);
+        } else {
+            // Insert KOT without customer details (fallback)
+            $kot_sql = "INSERT INTO kot (restaurant_id, kot_number, table_id, order_type, customer_name, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $kot_stmt = $conn->prepare($kot_sql);
+            $kot_stmt->execute([$restaurant_id, $kot_number, $table_id, $order_type, $customer_name, $subtotal, $tax, $total, $notes]);
+        }
         $kot_id = $conn->lastInsertId();
         
         // Insert KOT items
@@ -134,13 +161,15 @@ function handleUpdateKOTStatus() {
     }
     
     if (!$restaurant_id) {
-        echo json_encode(['success' => false, 'message' => 'Restaurant ID not found']);
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Restaurant ID not found'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
     $valid_statuses = ['Pending', 'Preparing', 'Ready', 'Completed', 'Cancelled'];
     if (!in_array($status, $valid_statuses)) {
-        echo json_encode(['success' => false, 'message' => 'Invalid status']);
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid status'], JSON_UNESCAPED_UNICODE);
         return;
     }
     
@@ -152,11 +181,22 @@ function handleUpdateKOTStatus() {
         $lock_sql = "SELECT * FROM kot WHERE id = ? AND restaurant_id = ? FOR UPDATE";
         $lock_stmt = $conn->prepare($lock_sql);
         $lock_stmt->execute([$kot_id, $restaurant_id]);
-        $kot = $lock_stmt->fetch();
+        $kot = $lock_stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Check if customer columns exist in kot table
+        $hasCustomerCols = false;
+        try {
+            $checkKotCols = $conn->query("SHOW COLUMNS FROM kot LIKE 'customer_phone'");
+            $hasCustomerCols = $checkKotCols && $checkKotCols->rowCount() > 0;
+        } catch (Exception $e) {
+            // Columns don't exist, continue without them
+            $hasCustomerCols = false;
+        }
         
         if (!$kot) {
             $conn->rollBack();
-            echo json_encode(['success' => false, 'message' => 'KOT not found']);
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'KOT not found'], JSON_UNESCAPED_UNICODE);
             return;
         }
         
@@ -187,7 +227,7 @@ function handleUpdateKOTStatus() {
                     'success' => true,
                     'message' => 'KOT status updated. Order already exists.',
                     'order_id' => $existing_order['id']
-                ]);
+                ], JSON_UNESCAPED_UNICODE);
                 return;
             }
         }
@@ -227,9 +267,37 @@ function handleUpdateKOTStatus() {
                     $order_notes = "[KOT: " . $kot['kot_number'] . "]";
                 }
                 
-                $order_sql = "INSERT INTO orders (restaurant_id, table_id, order_number, customer_name, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, 'Cash', 'Paid', 'Ready', ?, ?, ?, ?)";
-                $order_stmt = $conn->prepare($order_sql);
-                $order_stmt->execute([$restaurant_id, $kot['table_id'], $order_number, $kot['customer_name'], $kot['order_type'], $kot['subtotal'], $kot['tax'], $kot['total'], $order_notes]);
+                // Check if customer columns exist in orders table
+                $hasOrderCustomerCols = false;
+                try {
+                    $checkOrderCols = $conn->query("SHOW COLUMNS FROM orders LIKE 'customer_phone'");
+                    $hasOrderCustomerCols = $checkOrderCols && $checkOrderCols->rowCount() > 0;
+                } catch (Exception $e) {
+                    $hasOrderCustomerCols = false;
+                }
+                
+                if ($hasOrderCustomerCols && $hasCustomerCols) {
+                    $order_sql = "INSERT INTO orders (restaurant_id, table_id, order_number, customer_name, customer_phone, customer_email, customer_address, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Cash', 'Paid', 'Ready', ?, ?, ?, ?)";
+                    $order_stmt = $conn->prepare($order_sql);
+                    $order_stmt->execute([
+                        $restaurant_id, 
+                        $kot['table_id'], 
+                        $order_number, 
+                        $kot['customer_name'] ?? '', 
+                        $kot['customer_phone'] ?? '',
+                        $kot['customer_email'] ?? '',
+                        $kot['customer_address'] ?? '',
+                        $kot['order_type'], 
+                        $kot['subtotal'], 
+                        $kot['tax'], 
+                        $kot['total'], 
+                        $order_notes
+                    ]);
+                } else {
+                    $order_sql = "INSERT INTO orders (restaurant_id, table_id, order_number, customer_name, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, 'Cash', 'Paid', 'Ready', ?, ?, ?, ?)";
+                    $order_stmt = $conn->prepare($order_sql);
+                    $order_stmt->execute([$restaurant_id, $kot['table_id'], $order_number, $kot['customer_name'] ?? '', $kot['order_type'], $kot['subtotal'], $kot['tax'], $kot['total'], $order_notes]);
+                }
                 $order_id = $conn->lastInsertId();
                 
                 // Get KOT items and create order items
@@ -256,17 +324,28 @@ function handleUpdateKOTStatus() {
                     'message' => 'KOT marked as Ready and order created successfully',
                     'order_id' => $order_id,
                     'order_number' => $order_number
-                ]);
+                ], JSON_UNESCAPED_UNICODE);
                 return;
             }
         }
         
         $conn->commit();
-        echo json_encode(['success' => true, 'message' => 'KOT status updated successfully']);
+        echo json_encode(['success' => true, 'message' => 'KOT status updated successfully'], JSON_UNESCAPED_UNICODE);
         
+    } catch (PDOException $e) {
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        error_log("PDO Error in handleUpdateKOTStatus: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database error occurred. Please try again later.'], JSON_UNESCAPED_UNICODE);
     } catch (Exception $e) {
-        $conn->rollBack();
-        echo json_encode(['success' => false, 'message' => 'Error updating KOT status: ' . $e->getMessage()]);
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        error_log("Error in handleUpdateKOTStatus: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Error updating KOT status: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     }
 }
 }
@@ -387,9 +466,37 @@ function handleCompleteKOT() {
                 }
                 
                 // Create order from KOT with status "Ready" so waiters can deliver it
-                $order_sql = "INSERT INTO orders (restaurant_id, table_id, order_number, customer_name, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, 'Cash', 'Paid', 'Ready', ?, ?, ?, ?)";
-                $order_stmt = $conn->prepare($order_sql);
-                $order_stmt->execute([$restaurant_id, $kot['table_id'], $order_number, $kot['customer_name'], $kot['order_type'], $kot['subtotal'], $kot['tax'], $kot['total'], $order_notes]);
+                // Check if customer columns exist in orders table
+                $hasOrderCustomerCols = false;
+                try {
+                    $checkOrderCols = $conn->query("SHOW COLUMNS FROM orders LIKE 'customer_phone'");
+                    $hasOrderCustomerCols = $checkOrderCols && $checkOrderCols->rowCount() > 0;
+                } catch (Exception $e) {
+                    $hasOrderCustomerCols = false;
+                }
+                
+                if ($hasOrderCustomerCols && $hasCustomerCols) {
+                    $order_sql = "INSERT INTO orders (restaurant_id, table_id, order_number, customer_name, customer_phone, customer_email, customer_address, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Cash', 'Paid', 'Ready', ?, ?, ?, ?)";
+                    $order_stmt = $conn->prepare($order_sql);
+                    $order_stmt->execute([
+                        $restaurant_id, 
+                        $kot['table_id'], 
+                        $order_number, 
+                        $kot['customer_name'] ?? '', 
+                        $kot['customer_phone'] ?? '',
+                        $kot['customer_email'] ?? '',
+                        $kot['customer_address'] ?? '',
+                        $kot['order_type'], 
+                        $kot['subtotal'], 
+                        $kot['tax'], 
+                        $kot['total'], 
+                        $order_notes
+                    ]);
+                } else {
+                    $order_sql = "INSERT INTO orders (restaurant_id, table_id, order_number, customer_name, order_type, payment_method, payment_status, order_status, subtotal, tax, total, notes) VALUES (?, ?, ?, ?, ?, 'Cash', 'Paid', 'Ready', ?, ?, ?, ?)";
+                    $order_stmt = $conn->prepare($order_sql);
+                    $order_stmt->execute([$restaurant_id, $kot['table_id'], $order_number, $kot['customer_name'] ?? '', $kot['order_type'], $kot['subtotal'], $kot['tax'], $kot['total'], $order_notes]);
+                }
                 $order_id = $conn->lastInsertId();
                 
                 // Get KOT items and create order items

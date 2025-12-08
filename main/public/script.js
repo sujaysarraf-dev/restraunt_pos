@@ -2985,9 +2985,10 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="avatar-small">${initials(customer.customer_name)}</div>
           </td>
           <td>${escapeHtml(customer.customer_name)}</td>
-          <td>${customer.phone}</td>
+          <td>${customer.phone || '-'}</td>
           <td>${escapeHtml(customer.email || '-')}</td>
-          <td>${customer.total_visits}</td>
+          <td>${escapeHtml(customer.address || '-')}</td>
+          <td>${customer.total_visits || 0}</td>
           <td>${totalSpent}</td>
           <td class="action-cell">
             <button class="btn-action-small edit-btn" onclick="editCustomer(${customer.id}, '${escapeHtml(customer.customer_name)}', '${customer.phone}', '${escapeHtml(customer.email || '')}')">
@@ -3899,14 +3900,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   
-  // Show customer details modal for takeaway orders
-  function showTakeawayCustomerModal() {
+  // Show customer details modal for all orders (takeaway and dine-in)
+  function showTakeawayCustomerModal(isTakeaway = true) {
     return new Promise((resolve, reject) => {
       // Remove existing modal if it exists
       const existingModal = document.getElementById('takeawayCustomerModal');
       if (existingModal) {
         existingModal.remove();
       }
+      
+      const orderType = isTakeaway ? 'Takeaway' : 'Dine-in';
       
       // Create modal
       const modal = document.createElement('div');
@@ -3915,7 +3918,7 @@ document.addEventListener("DOMContentLoaded", () => {
       modal.innerHTML = `
         <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h2 style="margin: 0; color: #1f2937; font-size: 1.5rem;">Customer Details</h2>
+            <h2 style="margin: 0; color: #1f2937; font-size: 1.5rem;">Customer Details (${orderType})</h2>
             <button id="closeTakeawayModal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">&times;</button>
           </div>
           <form id="takeawayCustomerForm">
@@ -3926,6 +3929,10 @@ document.addEventListener("DOMContentLoaded", () => {
             <div style="margin-bottom: 1rem;">
               <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500;">Phone Number <span style="color: red;">*</span></label>
               <input type="tel" id="takeawayCustomerPhone" required placeholder="Enter phone number" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
+              <div id="returningCustomerMsg" style="margin-top: 0.5rem; padding: 0.5rem; background: #dbeafe; color: #1e40af; border-radius: 4px; font-size: 0.875rem; display: none;">
+                <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1rem;">info</span>
+                Returning customer found! Details auto-filled.
+              </div>
             </div>
             <div style="margin-bottom: 1rem;">
               <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500;">Email Address</label>
@@ -3954,6 +3961,47 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('cancelTakeawayModal').addEventListener('click', closeModal);
       modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
+      });
+      
+      // Returning customer check - when phone number is entered
+      const phoneInput = document.getElementById('takeawayCustomerPhone');
+      let checkTimeout;
+      phoneInput.addEventListener('input', async () => {
+        clearTimeout(checkTimeout);
+        const phone = phoneInput.value.trim();
+        
+        // Wait for user to finish typing (500ms delay)
+        checkTimeout = setTimeout(async () => {
+          if (phone.length >= 10) {
+            try {
+              const response = await fetch('api/get_customer_by_phone.php', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `phone=${encodeURIComponent(phone)}`
+              });
+              
+              if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.customer) {
+                  // Auto-fill customer details
+                  document.getElementById('takeawayCustomerName').value = result.customer.customer_name || '';
+                  document.getElementById('takeawayCustomerEmail').value = result.customer.email || '';
+                  document.getElementById('takeawayCustomerAddress').value = result.customer.address || '';
+                  
+                  // Show returning customer message
+                  document.getElementById('returningCustomerMsg').style.display = 'block';
+                  setTimeout(() => {
+                    document.getElementById('returningCustomerMsg').style.display = 'none';
+                  }, 5000);
+                }
+              }
+            } catch (error) {
+              console.error('Error checking returning customer:', error);
+            }
+          }
+        }, 500);
       });
       
       // Form submission
@@ -4028,18 +4076,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const { subtotal, tax, total, selectedTable } = window.pendingPaymentData;
     const isTakeaway = !selectedTable;
     
-    // For takeaway orders, collect customer details first (before closing payment modal)
+    // For all orders (takeaway and dine-in), collect customer details
     let customerData = null;
-    if (isTakeaway) {
-      closePOSPaymentMethodModal(); // Close payment modal first
-      try {
-        customerData = await showTakeawayCustomerModal();
-      } catch (e) {
-        // User cancelled
-        return;
-      }
-    } else {
-      closePOSPaymentMethodModal();
+    closePOSPaymentMethodModal(); // Close payment modal first
+    try {
+      customerData = await showTakeawayCustomerModal(isTakeaway);
+    } catch (e) {
+      // User cancelled
+      return;
     }
       
       const formData = new URLSearchParams();
@@ -4047,8 +4091,8 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append('tableId', selectedTable || '');
       
       formData.append('orderType', isTakeaway ? 'Takeaway' : 'Dine-in');
-      formData.append('customerName', isTakeaway ? (customerData?.name || 'Takeaway') : 'Table Customer');
-      if (isTakeaway && customerData) {
+      formData.append('customerName', customerData ? customerData.name : (isTakeaway ? 'Takeaway' : 'Table Customer'));
+      if (customerData) {
         formData.append('customerPhone', customerData.phone || '');
         formData.append('customerEmail', customerData.email || '');
         formData.append('customerAddress', customerData.address || '');

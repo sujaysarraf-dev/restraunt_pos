@@ -508,6 +508,14 @@ $restaurant_id = $_SESSION['restaurant_id'];
                                     <span>📍 ${kot.table_number || 'Takeaway'}</span>
                                     ${kot.area_name ? `<span>• ${kot.area_name}</span>` : ''}
                                 </div>
+                                ${kot.customer_name && kot.customer_name !== 'Table Customer' && kot.customer_name !== 'Takeaway' ? `
+                                <div class="kot-customer-info" style="margin-top: 8px; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 6px; font-size: 0.85rem;">
+                                    <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">👤 ${kot.customer_name}</div>
+                                    ${kot.customer_phone ? `<div style="color: #6b7280; font-size: 0.8rem;">📞 ${kot.customer_phone}</div>` : ''}
+                                    ${kot.customer_email ? `<div style="color: #6b7280; font-size: 0.8rem;">✉️ ${kot.customer_email}</div>` : ''}
+                                    ${kot.customer_address ? `<div style="color: #6b7280; font-size: 0.8rem;">📍 ${kot.customer_address}</div>` : ''}
+                                </div>
+                                ` : ''}
                             </div>
                             <div style="text-align: right;">
                                 <span class="kot-status ${statusBadgeClass}">
