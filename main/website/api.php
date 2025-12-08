@@ -205,7 +205,7 @@ try {
                       ORDER BY mi.item_name_en LIMIT 20";
             $like = '%' . $searchTerm . '%';
             try {
-                $stmt = $pdo->prepare($query);
+                $stmt = $conn->prepare($query);
                 $stmt->execute([':search' => $like, ':rid' => $restaurantId]);
                 $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
