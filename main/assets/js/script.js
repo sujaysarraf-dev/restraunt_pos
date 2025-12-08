@@ -9449,12 +9449,11 @@ function exportReportsToCSV() {
     });
   }
   
-  // Download as Excel file (.xls) but using CSV format (Excel will open it correctly)
-  const filename = `${reportType}_report_${new Date().toISOString().split('T')[0]}.xls`;
+  // Download CSV file
+  const filename = `${reportType}_report_${new Date().toISOString().split('T')[0]}.csv`;
   
   // Create blob with UTF-8 encoding and BOM
-  // Using CSV format with .xls extension - Excel will open and format it correctly
-  const blob = new Blob(['\uFEFF' + csv], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
