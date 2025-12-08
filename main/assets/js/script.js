@@ -4318,7 +4318,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const dropdown = document.createElement('div');
     dropdown.className = 'customer-autocomplete-dropdown';
-    dropdown.style.cssText = 'position: absolute; background: white; border: 1px solid #d1d5db; border-radius: 8px; max-height: 250px; overflow-y: auto; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; width: 100%; margin-top: 4px;';
+    dropdown.style.cssText = 'position: absolute !important; background: white !important; border: 1px solid #d1d5db !important; border-radius: 8px !important; max-height: 250px !important; overflow-y: auto !important; z-index: 99999 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; display: none; width: 100% !important; margin-top: 4px !important; visibility: visible !important; opacity: 1 !important;';
     
     // Ensure container has relative positioning
     if (getComputedStyle(container).position === 'static') {
@@ -4331,7 +4331,16 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Initialize autocomplete for customer name or phone field
   function initCustomerAutocomplete(inputElement, options = {}) {
-    if (!inputElement) return;
+    if (!inputElement) {
+      console.warn('initCustomerAutocomplete: inputElement is null');
+      return;
+    }
+    
+    // Check if autocomplete is already initialized
+    if (inputElement.dataset.autocompleteInitialized === 'true') {
+      console.log('Autocomplete already initialized for:', inputElement.id);
+      return;
+    }
     
     const {
       nameField = null,      // Field to autofill name
@@ -4342,14 +4351,24 @@ document.addEventListener("DOMContentLoaded", () => {
     } = options;
     
     const container = inputElement.parentElement;
+    if (!container) {
+      console.warn('initCustomerAutocomplete: container is null');
+      return;
+    }
+    
     const dropdown = createAutocompleteDropdown(inputElement, container);
     let searchTimeout = null;
     let selectedIndex = -1;
     let currentSuggestions = [];
     
+    // Mark as initialized
+    inputElement.dataset.autocompleteInitialized = 'true';
+    
     // Determine search type based on input field
     const isPhoneField = inputElement.id === 'customerPhoneInput' || inputElement.id === 'phone';
     const searchType = isPhoneField ? 'phone' : 'name';
+    
+    console.log('Initializing autocomplete for:', inputElement.id, 'searchType:', searchType);
     
     // Search customers
     async function searchCustomers(query) {
@@ -4360,13 +4379,58 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       
       try {
-        const response = await fetch(`../api/search_customers.php?q=${encodeURIComponent(query)}&type=${searchType}`);
-        const result = await response.json();
+        // Try different API paths
+        const apiPaths = [
+          '../api/search_customers.php',
+          'api/search_customers.php',
+          '/main/api/search_customers.php'
+        ];
+        
+        let response = null;
+        let result = null;
+        let lastError = null;
+        
+        for (const apiPath of apiPaths) {
+          try {
+            const url = `${apiPath}?q=${encodeURIComponent(query)}&type=${searchType}`;
+            console.log('Trying API path:', url);
+            
+            response = await fetch(url, {
+              credentials: 'same-origin',
+              headers: {
+                'Accept': 'application/json'
+              }
+            });
+            
+            if (!response.ok) {
+              console.warn('API response not OK:', response.status, response.statusText);
+              const text = await response.text();
+              console.warn('Response text:', text.substring(0, 200));
+              continue;
+            }
+            
+            result = await response.json();
+            console.log('Search result:', result);
+            
+            if (result.success !== undefined) {
+              break; // Success, exit loop
+            }
+          } catch (err) {
+            console.warn('Error with API path:', apiPath, err);
+            lastError = err;
+            continue;
+          }
+        }
+        
+        if (!result) {
+          throw lastError || new Error('All API paths failed');
+        }
         
         if (result.success && result.customers && result.customers.length > 0) {
           currentSuggestions = result.customers;
           displaySuggestions(result.customers, query);
         } else {
+          console.log('No customers found or empty result');
           dropdown.style.display = 'none';
           currentSuggestions = [];
         }
@@ -4374,11 +4438,23 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error('Error searching customers:', error);
         dropdown.style.display = 'none';
         currentSuggestions = [];
+        
+        // Show error in dropdown
+        dropdown.innerHTML = `<div style="padding: 12px; color: #dc2626; font-size: 0.875rem;">Error loading suggestions. Please check console.</div>`;
+        dropdown.style.display = 'block';
+        setTimeout(() => {
+          dropdown.style.display = 'none';
+        }, 3000);
       }
     }
     
     // Display suggestions
     function displaySuggestions(customers, query = '') {
+      if (!dropdown) {
+        console.warn('displaySuggestions: dropdown is null');
+        return;
+      }
+      
       dropdown.innerHTML = '';
       selectedIndex = -1;
       
@@ -4386,6 +4462,8 @@ document.addEventListener("DOMContentLoaded", () => {
         dropdown.style.display = 'none';
         return;
       }
+      
+      console.log('Displaying', customers.length, 'suggestions');
       
       // Add header
       const header = document.createElement('div');
@@ -4444,12 +4522,17 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       
       dropdown.style.display = 'block';
+      dropdown.style.visibility = 'visible';
+      dropdown.style.opacity = '1';
       
       // Position dropdown below input
       const rect = inputElement.getBoundingClientRect();
       dropdown.style.top = `${inputElement.offsetHeight + 4}px`;
       dropdown.style.left = '0px';
       dropdown.style.width = `${inputElement.offsetWidth}px`;
+      dropdown.style.minWidth = `${inputElement.offsetWidth}px`;
+      
+      console.log('Dropdown displayed at:', dropdown.style.top, dropdown.style.left, dropdown.style.width);
     }
     
     // Select customer and autofill fields
@@ -4481,21 +4564,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     // Handle input - trigger search immediately for better UX
-    inputElement.addEventListener('input', (e) => {
+    const inputHandler = (e) => {
       const query = e.target.value.trim();
+      console.log('Input event triggered, query:', query);
       
       clearTimeout(searchTimeout);
       
       // Search immediately if query is 1 character or more
       if (query.length >= 1) {
         searchTimeout = setTimeout(() => {
+          console.log('Executing search for:', query);
           searchCustomers(query);
         }, 150); // Reduced delay for faster response
       } else {
         dropdown.style.display = 'none';
         currentSuggestions = [];
       }
-    });
+    };
+    
+    inputElement.addEventListener('input', inputHandler);
+    inputElement.addEventListener('keyup', inputHandler); // Backup trigger
     
     // Also trigger search on focus if there's already text
     inputElement.addEventListener('focus', (e) => {
@@ -4582,8 +4670,44 @@ document.addEventListener("DOMContentLoaded", () => {
     customerModal.style.display = "block";
     document.body.style.overflow = "hidden";
     
+    // Re-initialize autocomplete when modal opens (in case elements were recreated)
     setTimeout(() => {
-      customerNameInputField.focus();
+      if (customerNameInputField && customerPhoneInputField) {
+        // Remove existing autocomplete dropdowns if any
+        const existingDropdowns = customerModal.querySelectorAll('.customer-autocomplete-dropdown');
+        existingDropdowns.forEach(d => d.remove());
+        
+        // Reset initialization flags
+        customerNameInputField.dataset.autocompleteInitialized = 'false';
+        customerPhoneInputField.dataset.autocompleteInitialized = 'false';
+        
+        // Initialize autocomplete for customer name field
+        initCustomerAutocomplete(customerNameInputField, {
+          nameField: customerNameInputField,
+          phoneField: customerPhoneInputField,
+          emailField: customerEmailInputField,
+          onSelect: (customer) => {
+            if (typeof loadCustomers === 'function') {
+              setTimeout(() => loadCustomers(), 500);
+            }
+          }
+        });
+        
+        // Initialize autocomplete for customer phone field
+        initCustomerAutocomplete(customerPhoneInputField, {
+          nameField: customerNameInputField,
+          phoneField: customerPhoneInputField,
+          emailField: customerEmailInputField,
+          onSelect: (customer) => {
+            if (typeof loadCustomers === 'function') {
+              setTimeout(() => loadCustomers(), 500);
+            }
+          }
+        });
+      }
+      if (customerNameInputField) {
+        customerNameInputField.focus();
+      }
     }, 150);
   }
   
@@ -4664,34 +4788,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   
-  // Initialize autocomplete for customer modal fields
-  if (customerNameInputField && customerPhoneInputField) {
-    // Autocomplete for customer name field
-    initCustomerAutocomplete(customerNameInputField, {
-      nameField: customerNameInputField,
-      phoneField: customerPhoneInputField,
-      emailField: customerEmailInputField,
-      onSelect: (customer) => {
-        // Customer selected, refresh customers tab
-        if (typeof loadCustomers === 'function') {
-          setTimeout(() => loadCustomers(), 500);
-        }
-      }
-    });
-    
-    // Autocomplete for customer phone field
-    initCustomerAutocomplete(customerPhoneInputField, {
-      nameField: customerNameInputField,
-      phoneField: customerPhoneInputField,
-      emailField: customerEmailInputField,
-      onSelect: (customer) => {
-        // Customer selected, refresh customers tab
-        if (typeof loadCustomers === 'function') {
-          setTimeout(() => loadCustomers(), 500);
-        }
-      }
-    });
-  }
+  // Note: Autocomplete is now initialized when the modal opens (in openCustomerModal function)
+  // This ensures the elements exist and are ready for autocomplete
   
   // Load customers
   async function loadCustomers() {
