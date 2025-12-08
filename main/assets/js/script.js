@@ -3171,6 +3171,35 @@ document.addEventListener("DOMContentLoaded", () => {
         clearFieldError(e.target.id);
       }
     });
+    
+    // Initialize autocomplete for reservation form customer fields
+    if (customerNameInput && phoneInput) {
+      // Autocomplete for customer name field
+      initCustomerAutocomplete(customerNameInput, {
+        nameField: customerNameInput,
+        phoneField: phoneInput,
+        emailField: emailInput,
+        onSelect: (customer) => {
+          // Customer selected, refresh customers tab
+          if (typeof loadCustomers === 'function') {
+            setTimeout(() => loadCustomers(), 500);
+          }
+        }
+      });
+      
+      // Autocomplete for phone field
+      initCustomerAutocomplete(phoneInput, {
+        nameField: customerNameInput,
+        phoneField: phoneInput,
+        emailField: emailInput,
+        onSelect: (customer) => {
+          // Customer selected, refresh customers tab
+          if (typeof loadCustomers === 'function') {
+            setTimeout(() => loadCustomers(), 500);
+          }
+        }
+      });
+    }
   }
   
   // Clear time slot error when a slot is selected
@@ -4277,6 +4306,181 @@ document.addEventListener("DOMContentLoaded", () => {
   
   let currentCustomerId = null;
   
+  // ========== CUSTOMER AUTCOMPLETE FUNCTIONALITY ==========
+  
+  // Create autocomplete dropdown for customer fields
+  function createAutocompleteDropdown(inputElement, container) {
+    const dropdown = document.createElement('div');
+    dropdown.className = 'customer-autocomplete-dropdown';
+    dropdown.style.cssText = 'position: absolute; background: white; border: 1px solid #d1d5db; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; width: 100%; margin-top: 4px;';
+    container.style.position = 'relative';
+    container.appendChild(dropdown);
+    return dropdown;
+  }
+  
+  // Initialize autocomplete for customer name or phone field
+  function initCustomerAutocomplete(inputElement, options = {}) {
+    if (!inputElement) return;
+    
+    const {
+      nameField = null,      // Field to autofill name
+      phoneField = null,     // Field to autofill phone
+      emailField = null,     // Field to autofill email
+      addressField = null,   // Field to autofill address
+      onSelect = null        // Callback when customer is selected
+    } = options;
+    
+    const container = inputElement.parentElement;
+    const dropdown = createAutocompleteDropdown(inputElement, container);
+    let searchTimeout = null;
+    let selectedIndex = -1;
+    let currentSuggestions = [];
+    
+    // Determine search type based on input field
+    const isPhoneField = inputElement.id === 'customerPhoneInput' || inputElement.id === 'phone';
+    const searchType = isPhoneField ? 'phone' : 'name';
+    
+    // Search customers
+    async function searchCustomers(query) {
+      if (!query || query.length < 2) {
+        dropdown.style.display = 'none';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`../api/search_customers.php?q=${encodeURIComponent(query)}&type=${searchType}`);
+        const result = await response.json();
+        
+        if (result.success && result.customers && result.customers.length > 0) {
+          currentSuggestions = result.customers;
+          displaySuggestions(result.customers);
+        } else {
+          dropdown.style.display = 'none';
+          currentSuggestions = [];
+        }
+      } catch (error) {
+        console.error('Error searching customers:', error);
+        dropdown.style.display = 'none';
+      }
+    }
+    
+    // Display suggestions
+    function displaySuggestions(customers) {
+      dropdown.innerHTML = '';
+      selectedIndex = -1;
+      
+      customers.forEach((customer, index) => {
+        const item = document.createElement('div');
+        item.className = 'autocomplete-item';
+        item.style.cssText = 'padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f3f4f6; transition: background 0.2s;';
+        item.innerHTML = `
+          <div style="font-weight: 500; color: #1f2937;">${escapeHtml(customer.name)}</div>
+          <div style="font-size: 0.875rem; color: #6b7280; margin-top: 2px;">${customer.phone || 'No phone'}</div>
+        `;
+        
+        item.addEventListener('mouseenter', () => {
+          item.style.background = '#f3f4f6';
+          selectedIndex = index;
+        });
+        
+        item.addEventListener('mouseleave', () => {
+          item.style.background = '';
+        });
+        
+        item.addEventListener('click', () => {
+          selectCustomer(customer);
+        });
+        
+        dropdown.appendChild(item);
+      });
+      
+      dropdown.style.display = 'block';
+    }
+    
+    // Select customer and autofill fields
+    function selectCustomer(customer) {
+      if (nameField) nameField.value = customer.name || '';
+      if (phoneField) phoneField.value = customer.phone || '';
+      if (emailField) emailField.value = customer.email || '';
+      if (addressField) addressField.value = customer.address || '';
+      
+      // Set the input value
+      if (searchType === 'name') {
+        inputElement.value = customer.name || '';
+      } else {
+        inputElement.value = customer.phone || '';
+      }
+      
+      dropdown.style.display = 'none';
+      currentSuggestions = [];
+      
+      // Callback if provided
+      if (onSelect) {
+        onSelect(customer);
+      }
+      
+      // Refresh customers tab if it exists
+      if (typeof loadCustomers === 'function') {
+        setTimeout(() => loadCustomers(), 500);
+      }
+    }
+    
+    // Handle input
+    inputElement.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
+      
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        searchCustomers(query);
+      }, 300);
+    });
+    
+    // Handle keyboard navigation
+    inputElement.addEventListener('keydown', (e) => {
+      if (dropdown.style.display === 'none' || currentSuggestions.length === 0) return;
+      
+      const items = dropdown.querySelectorAll('.autocomplete-item');
+      
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+        items[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+        items.forEach((item, idx) => {
+          item.style.background = idx === selectedIndex ? '#f3f4f6' : '';
+        });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, -1);
+        if (selectedIndex >= 0) {
+          items[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+        }
+        items.forEach((item, idx) => {
+          item.style.background = idx === selectedIndex ? '#f3f4f6' : '';
+        });
+      } else if (e.key === 'Enter' && selectedIndex >= 0 && currentSuggestions[selectedIndex]) {
+        e.preventDefault();
+        selectCustomer(currentSuggestions[selectedIndex]);
+      } else if (e.key === 'Escape') {
+        dropdown.style.display = 'none';
+        selectedIndex = -1;
+      }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!container.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+    
+    // Close dropdown on blur (with delay to allow click events)
+    inputElement.addEventListener('blur', () => {
+      setTimeout(() => {
+        dropdown.style.display = 'none';
+      }, 200);
+    });
+  }
+  
   // Add customer button event listener
   if (addCustomerBtn) {
     addCustomerBtn.addEventListener("click", () => openCustomerModal(false));
@@ -4386,6 +4590,35 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (error) {
         console.error("Error:", error);
         showMessage("Network error. Please check your connection and try again.", "error");
+      }
+    });
+  }
+  
+  // Initialize autocomplete for customer modal fields
+  if (customerNameInputField && customerPhoneInputField) {
+    // Autocomplete for customer name field
+    initCustomerAutocomplete(customerNameInputField, {
+      nameField: customerNameInputField,
+      phoneField: customerPhoneInputField,
+      emailField: customerEmailInputField,
+      onSelect: (customer) => {
+        // Customer selected, refresh customers tab
+        if (typeof loadCustomers === 'function') {
+          setTimeout(() => loadCustomers(), 500);
+        }
+      }
+    });
+    
+    // Autocomplete for customer phone field
+    initCustomerAutocomplete(customerPhoneInputField, {
+      nameField: customerNameInputField,
+      phoneField: customerPhoneInputField,
+      emailField: customerEmailInputField,
+      onSelect: (customer) => {
+        // Customer selected, refresh customers tab
+        if (typeof loadCustomers === 'function') {
+          setTimeout(() => loadCustomers(), 500);
+        }
       }
     });
   }
