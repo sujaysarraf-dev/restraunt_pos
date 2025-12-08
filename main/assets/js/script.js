@@ -6267,7 +6267,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <input type="text" id="takeawayCustomerName" required placeholder="Enter customer name" autocomplete="off" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
             </div>
             <div style="margin-bottom: 1rem;">
-              <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500;">Phone Number <span style="color: red;">*</span></label>
+              <label style="display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500;">Phone Number</label>
               <input type="tel" id="takeawayCustomerPhone" placeholder="Enter phone number (optional)" autocomplete="off" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
               <div id="returningCustomerMsg" style="margin-top: 0.5rem; padding: 0.5rem; background: #dbeafe; color: #1e40af; border-radius: 4px; font-size: 0.875rem; display: none;">
                 <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1rem;">info</span>
