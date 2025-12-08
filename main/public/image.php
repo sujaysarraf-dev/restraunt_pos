@@ -18,6 +18,20 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
     exit('Database connection not available');
 }
 
+// Get connection using getConnection() for lazy connection support
+if (function_exists('getConnection')) {
+    $conn = getConnection();
+} else {
+    // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+    global $pdo;
+    $conn = $pdo ?? null;
+    if (!$conn) {
+        http_response_code(500);
+        header('Content-Type: text/plain');
+        exit('Database connection not available');
+    }
+}
+
 $imagePath = $_GET['path'] ?? '';
 $imageType = $_GET['type'] ?? ''; // 'logo', 'item', or 'banner'
 $imageId = $_GET['id'] ?? '';
@@ -28,14 +42,14 @@ $imageId = $_GET['id'] ?? '';
 if (!empty($imagePath) && strpos($imagePath, 'http') !== 0 && empty($imageType)) {
     try {
         // First try: Check for BLOB data by matching the item_image value exactly
-        $stmt = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
+        $stmt = $conn->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE item_image = ? AND image_data IS NOT NULL LIMIT 1");
         $stmt->execute([$imagePath]);
         $item = $stmt->fetch(PDO::FETCH_ASSOC);
         
         // If not found by path, try to find by filename match
         if (!$item || empty($item['image_data'])) {
             $filename = basename($imagePath);
-            $stmt2 = $pdo->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image = ?) AND image_data IS NOT NULL LIMIT 1");
+            $stmt2 = $conn->prepare("SELECT id, image_data, image_mime_type FROM menu_items WHERE (item_image LIKE ? OR item_image = ?) AND image_data IS NOT NULL LIMIT 1");
             $stmt2->execute(['%' . $filename . '%', $imagePath]);
             $item = $stmt2->fetch(PDO::FETCH_ASSOC);
         }
@@ -61,7 +75,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
         if ($imageType === 'logo' && !empty($imageId)) {
             // Get restaurant logo
             try {
-                $stmt = $pdo->prepare("SELECT logo_data, logo_mime_type, restaurant_logo FROM users WHERE id = ? LIMIT 1");
+                $stmt = $conn->prepare("SELECT logo_data, logo_mime_type, restaurant_logo FROM users WHERE id = ? LIMIT 1");
                 $stmt->execute([$imageId]);
                 $logo = $stmt->fetch(PDO::FETCH_ASSOC);
                 
@@ -87,7 +101,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
                 if (strpos($e->getMessage(), 'logo_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
                     error_log("Logo data column not found, trying file-based: " . $e->getMessage());
                     try {
-                        $stmt = $pdo->prepare("SELECT restaurant_logo FROM users WHERE id = ? LIMIT 1");
+                        $stmt = $conn->prepare("SELECT restaurant_logo FROM users WHERE id = ? LIMIT 1");
                         $stmt->execute([$imageId]);
                         $logoRow = $stmt->fetch(PDO::FETCH_ASSOC);
                         if ($logoRow && !empty($logoRow['restaurant_logo']) && strpos($logoRow['restaurant_logo'], 'db:') !== 0) {
@@ -109,7 +123,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
             }
         } elseif ($imageType === 'banner' && !empty($imageId)) {
             // Get website banner by ID
-            $stmt = $pdo->prepare("SELECT banner_data, banner_mime_type FROM website_banners WHERE id = ? LIMIT 1");
+            $stmt = $conn->prepare("SELECT banner_data, banner_mime_type FROM website_banners WHERE id = ? LIMIT 1");
             $stmt->execute([$imageId]);
             $banner = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -122,7 +136,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
             }
         } elseif (!empty($imagePath) && strpos($imagePath, 'db:') === 0) {
             // Try to find menu item by item_image reference
-            $stmt = $pdo->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE item_image = ? LIMIT 1");
+            $stmt = $conn->prepare("SELECT image_data, image_mime_type FROM menu_items WHERE item_image = ? LIMIT 1");
             $stmt->execute([$imagePath]);
             $item = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -135,7 +149,7 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
             }
             
             // Try to find banner by banner_path reference
-            $stmt = $pdo->prepare("SELECT banner_data, banner_mime_type FROM website_banners WHERE banner_path = ? LIMIT 1");
+            $stmt = $conn->prepare("SELECT banner_data, banner_mime_type FROM website_banners WHERE banner_path = ? LIMIT 1");
             $stmt->execute([$imagePath]);
             $banner = $stmt->fetch(PDO::FETCH_ASSOC);
             
