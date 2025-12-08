@@ -89,7 +89,7 @@ try {
                 customer_name as name, 
                 phone, 
                 email, 
-                address,
+                NULL as address,
                 'customer' as source
             FROM customers 
             WHERE restaurant_id = ? 
@@ -160,7 +160,7 @@ try {
                 customer_name as name, 
                 phone, 
                 email, 
-                address,
+                NULL as address,
                 'customer' as source
             FROM customers 
             WHERE restaurant_id = ? 
