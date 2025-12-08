@@ -9357,38 +9357,57 @@ function exportReportsToCSV() {
   // Get currency symbol
   const currencySymbol = globalCurrencySymbol || window.globalCurrencySymbol || '₹';
   
-  // Helper to escape CSV (handle quotes and commas)
-  const escapeCsv = (str) => {
+  // Helper to escape XML
+  const escapeXml = (str) => {
     if (str == null) return '';
-    const strValue = String(str);
-    // If contains comma, quote, or newline, wrap in quotes and escape quotes
-    if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) {
-      return '"' + strValue.replace(/"/g, '""') + '"';
-    }
-    return strValue;
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   };
   
-  // Helper to format currency for CSV (keep symbol and number together)
-  const formatCurrencyForCsv = (amount) => {
+  // Helper to format currency for Excel (keep symbol and number together)
+  const formatCurrencyForExcel = (amount) => {
     const formatted = parseFloat(amount || 0).toLocaleString('en-IN', {maximumFractionDigits: 0});
     return currencySymbol + formatted;
   };
   
-  // Start CSV with UTF-8 BOM for proper Unicode support
-  let csv = '\uFEFF'; // UTF-8 BOM
-  // Add header with report info
-  csv += escapeCsv(getReportTypeName(reportType)) + '\n';
-  csv += 'Date Range: ' + escapeCsv(dateRange) + '\n';
-  csv += 'Generated on: ' + escapeCsv(new Date().toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })) + '\n';
-  csv += '\n'; // Empty row
+  // Determine number of columns based on report type
+  let numColumns = 6; // Default for sales details
+  if (reportType === 'customers') numColumns = 5;
+  else if (reportType === 'items' || reportType === 'payment' || reportType === 'hourly' || reportType === 'staff') numColumns = 3;
   
-  // Add summary
-  csv += 'Summary\n';
-  csv += 'Total Sales,' + escapeCsv(formatCurrencyForCsv(data.summary?.total_sales || 0)) + '\n';
-  csv += 'Total Orders,' + (data.summary?.total_orders || 0) + '\n';
-  csv += 'Items Sold,' + (data.summary?.total_items || 0) + '\n';
-  csv += 'Total Customers,' + (data.summary?.total_customers || 0) + '\n';
-  csv += '\n'; // Empty row
+  // Start Excel XML
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<?mso-application progid="Excel.Sheet"?>\n';
+  xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n';
+  xml += ' xmlns:o="urn:schemas-microsoft-com:office:office"\n';
+  xml += ' xmlns:x="urn:schemas-microsoft-com:office:excel"\n';
+  xml += ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"\n';
+  xml += ' xmlns:html="http://www.w3.org/TR/REC-html40">\n';
+  xml += '<Styles>\n';
+  xml += '<Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#E0E0E0" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center"/></Style>\n';
+  xml += '<Style ss:ID="Title"><Font ss:Size="14" ss:Bold="1"/><Alignment ss:Horizontal="Center"/></Style>\n';
+  xml += '<Style ss:ID="SectionHeader"><Font ss:Bold="1"/><Alignment ss:Horizontal="Center"/></Style>\n';
+  xml += '</Styles>\n';
+  xml += '<Worksheet ss:Name="Report">\n';
+  xml += '<Table>\n';
+  
+  // Add header with merged cells
+  xml += '<Row><Cell ss:StyleID="Title" ss:MergeAcross="' + (numColumns - 1) + '"><Data ss:Type="String">' + escapeXml(getReportTypeName(reportType)) + '</Data></Cell></Row>\n';
+  xml += '<Row><Cell ss:MergeAcross="' + (numColumns - 1) + '"><Data ss:Type="String">Date Range: ' + escapeXml(dateRange) + '</Data></Cell></Row>\n';
+  xml += '<Row><Cell ss:MergeAcross="' + (numColumns - 1) + '"><Data ss:Type="String">Generated on: ' + escapeXml(new Date().toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })) + '</Data></Cell></Row>\n';
+  xml += '<Row></Row>\n'; // Empty row
+  
+  // Add summary with merged header
+  xml += '<Row><Cell ss:StyleID="SectionHeader" ss:MergeAcross="' + (numColumns - 1) + '"><Data ss:Type="String">Summary</Data></Cell></Row>\n';
+  xml += '<Row><Cell><Data ss:Type="String">Total Sales</Data></Cell><Cell><Data ss:Type="String">' + escapeXml(formatCurrencyForExcel(data.summary?.total_sales || 0)) + '</Data></Cell></Row>\n';
+  xml += '<Row><Cell><Data ss:Type="String">Total Orders</Data></Cell><Cell><Data ss:Type="Number">' + (data.summary?.total_orders || 0) + '</Data></Cell></Row>\n';
+  xml += '<Row><Cell><Data ss:Type="String">Items Sold</Data></Cell><Cell><Data ss:Type="Number">' + (data.summary?.total_items || 0) + '</Data></Cell></Row>\n';
+  xml += '<Row><Cell><Data ss:Type="String">Total Customers</Data></Cell><Cell><Data ss:Type="Number">' + (data.summary?.total_customers || 0) + '</Data></Cell></Row>\n';
+  xml += '<Row></Row>\n'; // Empty row
   
   // Add report-specific data
   if (reportType === 'customers' && data.top_customers && data.top_customers.length > 0) {
