@@ -35,42 +35,87 @@ $restaurant_id = $_SESSION['restaurant_id'];
 try {
     $conn = $pdo;
     
+    // Helper function to normalize phone number (remove spaces, dashes, etc.)
+    function normalizePhone($phone) {
+        return preg_replace('/[^0-9]/', '', $phone ?? '');
+    }
+    
+    // Helper function to create unique key from name and phone
+    function createCustomerKey($name, $phone) {
+        $normalizedPhone = normalizePhone($phone);
+        return strtolower(trim($name)) . '|' . $normalizedPhone;
+    }
+    
     // Get customers from customers table
     $stmt = $conn->prepare("SELECT * FROM customers WHERE restaurant_id = ? ORDER BY customer_name ASC");
     $stmt->execute([$restaurant_id]);
     $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Also get unique customers from orders table (for takeaway orders with customer details)
+    // Get all orders and group by normalized name+phone in PHP for accurate aggregation
+    // This handles phone number format variations (spaces, dashes, etc.)
     $orderCustomersStmt = $conn->prepare("
-        SELECT DISTINCT 
+        SELECT 
             customer_name, 
-            customer_phone as phone, 
+            COALESCE(customer_phone, '') as phone, 
             customer_email as email,
             customer_address as address,
-            COALESCE(SUM(total), 0) as total_spent,
-            COUNT(*) as total_visits,
-            MAX(created_at) as last_visit_date
+            total,
+            created_at
         FROM orders 
         WHERE restaurant_id = ? 
         AND customer_name IS NOT NULL 
         AND customer_name != '' 
         AND customer_name != 'Table Customer'
         AND customer_name != 'Takeaway'
-        GROUP BY customer_name, customer_phone, customer_email, customer_address
+        ORDER BY created_at DESC
     ");
     $orderCustomersStmt->execute([$restaurant_id]);
-    $orderCustomers = $orderCustomersStmt->fetchAll(PDO::FETCH_ASSOC);
+    $allOrderRows = $orderCustomersStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Group orders by normalized name+phone combination
+    $orderCustomers = [];
+    foreach ($allOrderRows as $row) {
+        $key = createCustomerKey($row['customer_name'], $row['phone']);
+        
+        if (!isset($orderCustomers[$key])) {
+            $orderCustomers[$key] = [
+                'customer_name' => $row['customer_name'],
+                'phone' => $row['phone'],
+                'email' => $row['email'] ?? '',
+                'address' => $row['address'] ?? '',
+                'total_spent' => 0,
+                'total_visits' => 0,
+                'last_visit_date' => null
+            ];
+        }
+        
+        // Aggregate totals
+        $orderCustomers[$key]['total_spent'] += (float)$row['total'];
+        $orderCustomers[$key]['total_visits']++;
+        
+        // Keep most recent email, address, and visit date
+        if (!empty($row['email']) && empty($orderCustomers[$key]['email'])) {
+            $orderCustomers[$key]['email'] = $row['email'];
+        }
+        if (!empty($row['address']) && empty($orderCustomers[$key]['address'])) {
+            $orderCustomers[$key]['address'] = $row['address'];
+        }
+        if (!$orderCustomers[$key]['last_visit_date'] || $row['created_at'] > $orderCustomers[$key]['last_visit_date']) {
+            $orderCustomers[$key]['last_visit_date'] = $row['created_at'];
+        }
+    }
+    $orderCustomers = array_values($orderCustomers);
     
     // Merge customers - use customers table as base, update with order data
     $customerMap = [];
     foreach ($customers as $c) {
-        $key = strtolower(trim($c['customer_name']));
+        $key = createCustomerKey($c['customer_name'], $c['phone'] ?? '');
         $customerMap[$key] = $c;
     }
     
     // Add/update customers from orders
     foreach ($orderCustomers as $oc) {
-        $key = strtolower(trim($oc['customer_name']));
+        $key = createCustomerKey($oc['customer_name'], $oc['phone'] ?? '');
         if (isset($customerMap[$key])) {
             // Update existing customer with order data if missing
             if (empty($customerMap[$key]['phone']) && !empty($oc['phone'])) {
@@ -82,7 +127,7 @@ try {
             if (empty($customerMap[$key]['address']) && !empty($oc['address'])) {
                 $customerMap[$key]['address'] = $oc['address'];
             }
-            // Update spending/visits from orders
+            // Update spending/visits from orders (use the aggregated values from orders)
             $customerMap[$key]['total_spent'] = (float)$oc['total_spent'];
             $customerMap[$key]['total_visits'] = (int)$oc['total_visits'];
             $customerMap[$key]['last_visit_date'] = $oc['last_visit_date'] ? substr($oc['last_visit_date'], 0, 10) : null;
@@ -111,25 +156,53 @@ try {
     });
 
     // Recalculate spending and visits from orders table for accuracy (for customers table entries)
-    $sumStmt = $conn->prepare("SELECT COALESCE(SUM(total),0) AS spent, COUNT(*) AS orders, MAX(created_at) AS last_order
-                               FROM orders WHERE restaurant_id = ? AND customer_name = ?");
+    // Fetch all orders and group by normalized name+phone in PHP for accurate matching
+    $allOrdersStmt = $conn->prepare("SELECT customer_name, customer_phone, total, created_at
+                                     FROM orders 
+                                     WHERE restaurant_id = ? 
+                                     AND customer_name IS NOT NULL 
+                                     AND customer_name != '' 
+                                     AND customer_name != 'Table Customer'
+                                     AND customer_name != 'Takeaway'");
+    $allOrdersStmt->execute([$restaurant_id]);
+    $allOrders = $allOrdersStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Group orders by normalized name+phone
+    $orderTotals = [];
+    foreach ($allOrders as $order) {
+        $key = createCustomerKey($order['customer_name'], $order['customer_phone'] ?? '');
+        if (!isset($orderTotals[$key])) {
+            $orderTotals[$key] = [
+                'spent' => 0,
+                'visits' => 0,
+                'last_order' => null
+            ];
+        }
+        $orderTotals[$key]['spent'] += (float)$order['total'];
+        $orderTotals[$key]['visits']++;
+        if (!$orderTotals[$key]['last_order'] || $order['created_at'] > $orderTotals[$key]['last_order']) {
+            $orderTotals[$key]['last_order'] = $order['created_at'];
+        }
+    }
+    
     $updStmt = $conn->prepare("UPDATE customers SET total_spent = ?, total_visits = ?, last_visit_date = DATE(?) WHERE id = ?");
 
     foreach ($allCustomers as &$c) {
         if ($c['id']) { // Only update if exists in customers table
-            $name = $c['customer_name'];
-            $sumStmt->execute([$restaurant_id, $name]);
-            $row = $sumStmt->fetch(PDO::FETCH_ASSOC) ?: ['spent'=>0,'orders'=>0,'last_order'=>null];
-            $calcSpent = (float)$row['spent'];
-            $calcVisits = (int)$row['orders'];
-            $lastOrder = $row['last_order'];
+            $key = createCustomerKey($c['customer_name'], $c['phone'] ?? '');
+            
+            if (isset($orderTotals[$key])) {
+                $calcSpent = (float)$orderTotals[$key]['spent'];
+                $calcVisits = (int)$orderTotals[$key]['visits'];
+                $lastOrder = $orderTotals[$key]['last_order'];
 
-            // If values differ, update DB so future fetches are fast
-            if ((float)$c['total_spent'] !== $calcSpent || (int)$c['total_visits'] !== $calcVisits || ($lastOrder && $c['last_visit_date'] != substr($lastOrder,0,10))) {
-                $updStmt->execute([$calcSpent, $calcVisits, $lastOrder, $c['id']]);
-                $c['total_spent'] = $calcSpent;
-                $c['total_visits'] = $calcVisits;
-                $c['last_visit_date'] = $lastOrder ? substr($lastOrder,0,10) : $c['last_visit_date'];
+                // If values differ, update DB so future fetches are fast
+                if ((float)$c['total_spent'] !== $calcSpent || (int)$c['total_visits'] !== $calcVisits || ($lastOrder && $c['last_visit_date'] != substr($lastOrder,0,10))) {
+                    $updStmt->execute([$calcSpent, $calcVisits, $lastOrder, $c['id']]);
+                    $c['total_spent'] = $calcSpent;
+                    $c['total_visits'] = $calcVisits;
+                    $c['last_visit_date'] = $lastOrder ? substr($lastOrder,0,10) : $c['last_visit_date'];
+                }
             }
         }
     }

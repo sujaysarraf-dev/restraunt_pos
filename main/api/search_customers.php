@@ -34,6 +34,11 @@ $restaurant_id = $_SESSION['restaurant_id'];
 $query = isset($_GET['q']) ? trim($_GET['q']) : '';
 $type = isset($_GET['type']) ? trim($_GET['type']) : 'name'; // 'name' or 'phone'
 
+// Normalize phone number (remove spaces, dashes, etc. for better matching)
+function normalizePhone($phone) {
+    return preg_replace('/[^0-9]/', '', $phone);
+}
+
 if (empty($query) || strlen($query) < 2) {
     echo json_encode(['success' => true, 'customers' => []]);
     exit();
@@ -85,21 +90,31 @@ try {
         $orderStmt->execute([$restaurant_id, '%' . $query . '%']);
         $orderCustomers = $orderStmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Merge and deduplicate by phone
+        // Merge and deduplicate by normalized phone
         $phoneMap = [];
         foreach ($customers as $c) {
-            $phoneMap[$c['phone']] = $c;
+            $normalizedPhone = normalizePhone($c['phone'] ?? '');
+            if ($normalizedPhone) {
+                $phoneMap[$normalizedPhone] = $c;
+            }
         }
         foreach ($orderCustomers as $oc) {
-            if (!isset($phoneMap[$oc['phone']])) {
-                $phoneMap[$oc['phone']] = $oc;
-            } else {
-                // Update with more complete data
-                if (empty($phoneMap[$oc['phone']]['email']) && !empty($oc['email'])) {
-                    $phoneMap[$oc['phone']]['email'] = $oc['email'];
-                }
-                if (empty($phoneMap[$oc['phone']]['address']) && !empty($oc['address'])) {
-                    $phoneMap[$oc['phone']]['address'] = $oc['address'];
+            $normalizedPhone = normalizePhone($oc['phone'] ?? '');
+            if ($normalizedPhone) {
+                if (!isset($phoneMap[$normalizedPhone])) {
+                    $phoneMap[$normalizedPhone] = $oc;
+                } else {
+                    // Update with more complete data
+                    if (empty($phoneMap[$normalizedPhone]['email']) && !empty($oc['email'])) {
+                        $phoneMap[$normalizedPhone]['email'] = $oc['email'];
+                    }
+                    if (empty($phoneMap[$normalizedPhone]['address']) && !empty($oc['address'])) {
+                        $phoneMap[$normalizedPhone]['address'] = $oc['address'];
+                    }
+                    // Keep the most recent name if different
+                    if (!empty($oc['name']) && empty($phoneMap[$normalizedPhone]['name'])) {
+                        $phoneMap[$normalizedPhone]['name'] = $oc['name'];
+                    }
                 }
             }
         }
@@ -144,14 +159,16 @@ try {
         $orderStmt->execute([$restaurant_id, '%' . $query . '%']);
         $orderCustomers = $orderStmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Merge and deduplicate by name+phone combination
+        // Merge and deduplicate by name+normalized phone combination
         $namePhoneMap = [];
         foreach ($customers as $c) {
-            $key = strtolower(trim($c['name'])) . '|' . ($c['phone'] ?? '');
+            $normalizedPhone = normalizePhone($c['phone'] ?? '');
+            $key = strtolower(trim($c['name'])) . '|' . $normalizedPhone;
             $namePhoneMap[$key] = $c;
         }
         foreach ($orderCustomers as $oc) {
-            $key = strtolower(trim($oc['name'])) . '|' . ($oc['phone'] ?? '');
+            $normalizedPhone = normalizePhone($oc['phone'] ?? '');
+            $key = strtolower(trim($oc['name'])) . '|' . $normalizedPhone;
             if (!isset($namePhoneMap[$key])) {
                 $namePhoneMap[$key] = $oc;
             } else {
