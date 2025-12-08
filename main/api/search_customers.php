@@ -68,15 +68,12 @@ try {
     // Get database connection using getConnection() for lazy connection support
     if (function_exists('getConnection')) {
         $conn = getConnection();
-    } else if (isset($pdo) && $pdo instanceof PDO) {
-        $conn = $pdo;
     } else {
-        throw new Exception('Database connection not available. $pdo not set and getConnection() not available.');
-    }
-    
-    // Test connection
-    if (!$conn || !($conn instanceof PDO)) {
-        throw new Exception('Invalid database connection object');
+        // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+        $conn = $pdo ?? null;
+        if (!$conn) {
+            throw new Exception('Database connection not available');
+        }
     }
     
     $customers = [];
