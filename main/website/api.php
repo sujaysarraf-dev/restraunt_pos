@@ -27,9 +27,16 @@ $restaurantId = isset($_GET['restaurant_id']) && $_GET['restaurant_id'] !== ''
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
 try {
-    // Check if database connection is available
-    if (!isset($pdo)) {
-        throw new Exception('Database connection not available');
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $conn = getConnection();
+    } else {
+        // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        $conn = $pdo ?? null;
+        if (!$conn) {
+            throw new Exception('Database connection not available');
+        }
     }
     
     if (!$restaurantId) {
@@ -40,7 +47,7 @@ try {
 
     switch ($action) {
         case 'getMenus':
-            $stmt = $pdo->prepare("SELECT * FROM menu WHERE restaurant_id = :rid AND is_active = 1 ORDER BY sort_order");
+            $stmt = $conn->prepare("SELECT * FROM menu WHERE restaurant_id = :rid AND is_active = 1 ORDER BY sort_order");
             $stmt->execute([':rid' => $restaurantId]);
             $menus = $stmt->fetchAll();
             echo json_encode($menus);
@@ -96,9 +103,9 @@ try {
                     
                     // Load variations for this item
                     try {
-                        $checkTable = $pdo->query("SHOW TABLES LIKE 'menu_item_variations'");
+                        $checkTable = $conn->query("SHOW TABLES LIKE 'menu_item_variations'");
                         if ($checkTable->rowCount() > 0) {
-                            $variationsStmt = $pdo->prepare("
+                            $variationsStmt = $conn->prepare("
                                 SELECT id, variation_name, price, sort_order, is_available 
                                 FROM menu_item_variations 
                                 WHERE menu_item_id = ? AND is_available = TRUE 
@@ -138,16 +145,16 @@ try {
                     }
                     $query .= " ORDER BY mi.sort_order, mi.item_name_en";
                     
-                    $stmt = $pdo->prepare($query);
+                    $stmt = $conn->prepare($query);
                     $stmt->execute($params);
                     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    
+
                     // Load variations for each item
                     try {
-                        $checkTable = $pdo->query("SHOW TABLES LIKE 'menu_item_variations'");
+                        $checkTable = $conn->query("SHOW TABLES LIKE 'menu_item_variations'");
                         if ($checkTable->rowCount() > 0) {
                             foreach ($items as &$item) {
-                                $variationsStmt = $pdo->prepare("
+                                $variationsStmt = $conn->prepare("
                                     SELECT id, variation_name, price, sort_order, is_available 
                                     FROM menu_item_variations 
                                     WHERE menu_item_id = ? AND is_available = TRUE 
@@ -178,7 +185,7 @@ try {
             break;
             
         case 'getCategories':
-            $stmt = $pdo->prepare("SELECT DISTINCT item_category FROM menu_items WHERE restaurant_id = :rid AND item_category IS NOT NULL AND item_category != '' ORDER BY item_category");
+            $stmt = $conn->prepare("SELECT DISTINCT item_category FROM menu_items WHERE restaurant_id = :rid AND item_category IS NOT NULL AND item_category != '' ORDER BY item_category");
             $stmt->execute([':rid' => $restaurantId]);
             $categories = $stmt->fetchAll(PDO::FETCH_COLUMN);
             echo json_encode($categories);
@@ -248,7 +255,7 @@ try {
                               WHERE (mi.item_name_en LIKE :search OR mi.item_description_en LIKE :search OR mi.item_category LIKE :search)
                               AND mi.is_available = 1 AND mi.restaurant_id = :rid
                               ORDER BY mi.item_name_en LIMIT 20";
-                    $stmt = $pdo->prepare($query);
+                    $stmt = $conn->prepare($query);
                     $stmt->execute([':search' => $like, ':rid' => $restaurantId]);
                     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     echo json_encode($items);
