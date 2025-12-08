@@ -9340,11 +9340,27 @@ function exportReportsToCSV() {
   const data = window.currentReportData;
   const reportType = data.report_type || 'sales';
   const period = data.period || 'today';
-  let csv = '';
+  
+  // Get actual date range
+  let dateRange = '';
+  const periodSelect = document.getElementById('reportPeriod');
+  if (periodSelect && periodSelect.value === 'custom') {
+    const startDate = document.getElementById('reportStartDate')?.value || '';
+    const endDate = document.getElementById('reportEndDate')?.value || '';
+    if (startDate && endDate) {
+      dateRange = `${formatDateForExport(startDate)} to ${formatDateForExport(endDate)}`;
+    }
+  } else {
+    dateRange = getActualDateRange(period);
+  }
+  
+  // Start CSV with UTF-8 BOM for proper Unicode support
+  let csv = '\uFEFF'; // UTF-8 BOM
   
   // Add header with report info
-  csv += `${getReportTypeName(reportType)} - ${getPeriodName(period)}\n`;
-  csv += `Generated on: ${new Date().toLocaleString()}\n\n`;
+  csv += `${getReportTypeName(reportType)}\n`;
+  csv += `Date Range: ${dateRange}\n`;
+  csv += `Generated on: ${new Date().toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })}\n\n`;
   
   // Add summary
   csv += 'Summary\n';
@@ -9423,6 +9439,50 @@ function getPeriodName(period) {
     'custom': 'Custom Range'
   };
   return names[period] || period;
+}
+
+// Helper function to get actual date range
+function getActualDateRange(period) {
+  const today = new Date();
+  let startDate, endDate;
+  
+  switch (period) {
+    case 'today':
+      startDate = new Date(today);
+      endDate = new Date(today);
+      break;
+    case 'week':
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 7);
+      endDate = new Date(today);
+      break;
+    case 'month':
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 30);
+      endDate = new Date(today);
+      break;
+    case 'year':
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 365);
+      endDate = new Date(today);
+      break;
+    default:
+      startDate = new Date(today);
+      endDate = new Date(today);
+  }
+  
+  return `${formatDateForExport(startDate.toISOString().split('T')[0])} to ${formatDateForExport(endDate.toISOString().split('T')[0])}`;
+}
+
+// Helper function to format date for export
+function formatDateForExport(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString + 'T00:00:00');
+  return date.toLocaleDateString('en-IN', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
 }
 
 // Setup reports page listener
