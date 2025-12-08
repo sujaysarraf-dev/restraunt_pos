@@ -39,7 +39,7 @@ function normalizePhone($phone) {
     return preg_replace('/[^0-9]/', '', $phone);
 }
 
-if (empty($query) || strlen($query) < 2) {
+if (empty($query) || strlen($query) < 1) {
     echo json_encode(['success' => true, 'customers' => []]);
     exit();
 }

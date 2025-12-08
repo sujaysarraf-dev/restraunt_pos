@@ -4310,10 +4310,21 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Create autocomplete dropdown for customer fields
   function createAutocompleteDropdown(inputElement, container) {
+    // Remove existing dropdown if any
+    const existing = container.querySelector('.customer-autocomplete-dropdown');
+    if (existing) {
+      existing.remove();
+    }
+    
     const dropdown = document.createElement('div');
     dropdown.className = 'customer-autocomplete-dropdown';
-    dropdown.style.cssText = 'position: absolute; background: white; border: 1px solid #d1d5db; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; width: 100%; margin-top: 4px;';
-    container.style.position = 'relative';
+    dropdown.style.cssText = 'position: absolute; background: white; border: 1px solid #d1d5db; border-radius: 8px; max-height: 250px; overflow-y: auto; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; width: 100%; margin-top: 4px;';
+    
+    // Ensure container has relative positioning
+    if (getComputedStyle(container).position === 'static') {
+      container.style.position = 'relative';
+    }
+    
     container.appendChild(dropdown);
     return dropdown;
   }
@@ -4342,8 +4353,9 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Search customers
     async function searchCustomers(query) {
-      if (!query || query.length < 2) {
+      if (!query || query.length < 1) {
         dropdown.style.display = 'none';
+        currentSuggestions = [];
         return;
       }
       
@@ -4353,7 +4365,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (result.success && result.customers && result.customers.length > 0) {
           currentSuggestions = result.customers;
-          displaySuggestions(result.customers);
+          displaySuggestions(result.customers, query);
         } else {
           dropdown.style.display = 'none';
           currentSuggestions = [];
@@ -4361,21 +4373,58 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (error) {
         console.error('Error searching customers:', error);
         dropdown.style.display = 'none';
+        currentSuggestions = [];
       }
     }
     
     // Display suggestions
-    function displaySuggestions(customers) {
+    function displaySuggestions(customers, query = '') {
       dropdown.innerHTML = '';
       selectedIndex = -1;
+      
+      if (customers.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+      }
+      
+      // Add header
+      const header = document.createElement('div');
+      header.style.cssText = 'padding: 8px 12px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-size: 0.75rem; color: #6b7280; font-weight: 500; text-transform: uppercase;';
+      header.textContent = `Previous Customers (${customers.length})`;
+      dropdown.appendChild(header);
       
       customers.forEach((customer, index) => {
         const item = document.createElement('div');
         item.className = 'autocomplete-item';
-        item.style.cssText = 'padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f3f4f6; transition: background 0.2s;';
+        item.style.cssText = 'padding: 12px; cursor: pointer; border-bottom: 1px solid #f3f4f6; transition: background 0.2s;';
+        
+        // Highlight matching text
+        const highlightText = (text, query) => {
+          if (!query || !text) return escapeHtml(text || '');
+          const regex = new RegExp(`(${escapeHtml(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))})`, 'gi');
+          return escapeHtml(text).replace(regex, '<strong style="color: #dc2626; background: #fef2f2;">$1</strong>');
+        };
+        
         item.innerHTML = `
-          <div style="font-weight: 500; color: #1f2937;">${escapeHtml(customer.name)}</div>
-          <div style="font-size: 0.875rem; color: #6b7280; margin-top: 2px;">${customer.phone || 'No phone'}</div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span class="material-symbols-rounded" style="font-size: 20px; color: #6b7280;">person</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 500; color: #1f2937; font-size: 0.95rem;">
+                ${highlightText(customer.name, query)}
+              </div>
+            </div>
+          </div>
+          <div style="font-size: 0.875rem; color: #6b7280; display: flex; align-items: center; gap: 8px; margin-left: 28px;">
+            ${customer.phone ? `
+              <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">phone</span>
+              <span>${highlightText(customer.phone, query)}</span>
+            ` : '<span style="color: #9ca3af;">No phone</span>'}
+            ${customer.email ? `
+              <span style="margin-left: 8px; color: #9ca3af;">•</span>
+              <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">email</span>
+              <span>${escapeHtml(customer.email)}</span>
+            ` : ''}
+          </div>
         `;
         
         item.addEventListener('mouseenter', () => {
@@ -4395,6 +4444,12 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       
       dropdown.style.display = 'block';
+      
+      // Position dropdown below input
+      const rect = inputElement.getBoundingClientRect();
+      dropdown.style.top = `${inputElement.offsetHeight + 4}px`;
+      dropdown.style.left = '0px';
+      dropdown.style.width = `${inputElement.offsetWidth}px`;
     }
     
     // Select customer and autofill fields
@@ -4425,14 +4480,29 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     
-    // Handle input
+    // Handle input - trigger search immediately for better UX
     inputElement.addEventListener('input', (e) => {
       const query = e.target.value.trim();
       
       clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => {
+      
+      // Search immediately if query is 1 character or more
+      if (query.length >= 1) {
+        searchTimeout = setTimeout(() => {
+          searchCustomers(query);
+        }, 150); // Reduced delay for faster response
+      } else {
+        dropdown.style.display = 'none';
+        currentSuggestions = [];
+      }
+    });
+    
+    // Also trigger search on focus if there's already text
+    inputElement.addEventListener('focus', (e) => {
+      const query = e.target.value.trim();
+      if (query.length >= 1) {
         searchCustomers(query);
-      }, 300);
+      }
     });
     
     // Handle keyboard navigation
