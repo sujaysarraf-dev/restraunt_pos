@@ -33,8 +33,18 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
 
 try {
     $conn = $pdo;
-    $restaurant_id = $_SESSION['restaurant_id'];
     
+    // Validate restaurant_id
+    if (!isset($_SESSION['restaurant_id'])) {
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Session expired. Please login again.'
+        ]);
+        exit();
+    }
+    
+    $restaurant_id = $_SESSION['restaurant_id'];
     $period = $_GET['period'] ?? 'today';
     $type = $_GET['type'] ?? 'sales';
     
@@ -213,19 +223,31 @@ try {
     echo json_encode($response);
     
 } catch (PDOException $e) {
-    error_log("PDO Error in get_sales_report.php: " . $e->getMessage());
+    $errorMsg = $e->getMessage();
+    $errorCode = $e->getCode();
+    error_log("PDO Error in get_sales_report.php: " . $errorMsg);
+    error_log("PDO Error code: " . $errorCode);
+    error_log("Period: " . ($period ?? 'N/A') . ", Type: " . ($type ?? 'N/A'));
+    error_log("Date condition: " . ($dateCondition ?? 'N/A'));
+    error_log("Date condition no alias: " . ($dateConditionNoAlias ?? 'N/A'));
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Database error occurred. Please try again later.'
+        'message' => 'Database error occurred. Please try again later.',
+        'debug' => [
+            'error_code' => $errorCode,
+            'error_message' => $errorMsg
+        ]
     ]);
     exit();
 } catch (Exception $e) {
-    error_log("Error in get_sales_report.php: " . $e->getMessage());
+    $errorMsg = $e->getMessage();
+    error_log("Error in get_sales_report.php: " . $errorMsg);
+    error_log("Period: " . ($period ?? 'N/A') . ", Type: " . ($type ?? 'N/A'));
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => $errorMsg
     ]);
     exit();
 }
