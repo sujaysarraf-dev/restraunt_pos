@@ -232,9 +232,9 @@ try {
             <li class="nav-item">
               <a href="#" class="nav-link submenu-link" data-page="menuPage">
                 <span class="nav-icon material-symbols-rounded">menu</span>
-                <span class="nav-label">Menu</span>
+                <span class="nav-label">Category</span>
               </a>
-              <span class="nav-tooltip">Menu</span>
+              <span class="nav-tooltip">Category</span>
             </li>
             <li class="nav-item">
               <a href="#" class="nav-link submenu-link" data-page="menuItemsPage">
@@ -711,10 +711,10 @@ try {
         </div>
       </div>
     </div>
-    <!-- Menu Management Page -->
+    <!-- Category Management Page -->
     <div id="menuPage" class="page">
       <div class="page-header">
-        <h1>Menu Management</h1>
+        <h1>Category Management</h1>
         <p>Create, edit, and manage your menus</p>
       </div>
       <div class="page-content">
@@ -1967,7 +1967,7 @@ try {
             </div>
             
             <div class="form-group">
-              <label for="itemCategory">Item Category:</label>
+              <label for="itemCategory">Category:</label>
               <select id="itemCategory" name="itemCategory">
                 <option value="">--</option>
                 <option value="Main Course">Main Course</option>
