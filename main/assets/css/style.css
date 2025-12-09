@@ -3555,6 +3555,43 @@ select:focus {
   box-sizing: border-box;
 }
 
+/* Force all children and nested elements of settings-section to respect parent width */
+.settings-section > * {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Force ALL nested elements inside settings-section to respect parent width */
+.settings-section * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Specifically target preview containers and ALL their nested children */
+.settings-section #colorPreviewContainer,
+.settings-section #heroPreview,
+.settings-section #bannersGrid,
+.settings-section #bannersPreview {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.settings-section #colorPreviewContainer *,
+.settings-section #heroPreview *,
+.settings-section #bannersGrid *,
+.settings-section #bannersPreview * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+
 .settings-section-title {
   display: flex;
   align-items: center;
