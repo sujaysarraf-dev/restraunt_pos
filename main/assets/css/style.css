@@ -5650,6 +5650,15 @@ select:focus {
   #heroPreview {
     padding: 1rem !important;
     margin-bottom: 0.75rem !important;
+    overflow: visible !important;
+  }
+  
+  #heroPreview > div {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
   #heroPreview > div:first-child {
@@ -5878,6 +5887,15 @@ select:focus {
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+  
+  #heroPreview > div {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
   #heroPreview > div:first-child {
@@ -6039,6 +6057,15 @@ select:focus {
   
   #heroPreview {
     padding: 0.75rem !important;
+    overflow: visible !important;
+  }
+  
+  #heroPreview > div {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
   #heroPreview > div:first-child {
@@ -6121,6 +6148,15 @@ select:focus {
   
   #heroPreview {
     padding: 0.625rem !important;
+    overflow: visible !important;
+  }
+  
+  #heroPreview > div {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
   #heroPreview > div:first-child {
