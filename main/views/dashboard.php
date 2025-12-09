@@ -2498,7 +2498,7 @@ try {
             <span class="material-symbols-rounded" style="font-size:1.3rem;">search</span>
           </button>
         </div>
-        <div id="mobileItemsList" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;">
+        <div id="mobileItemsList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.5rem;">
           <!-- Items will be loaded here -->
         </div>
       </div>
