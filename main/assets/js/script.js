@@ -10153,7 +10153,7 @@ async function initWebsiteThemeEditor() {
     
     // Save colors
     const saveBtn = document.getElementById('saveWebsiteThemeBtn');
-    if (saveBtn) {
+    if (saveBtn && saveBtn.parentNode) {
       // Remove old listener if exists
       const newSaveBtn = saveBtn.cloneNode(true);
       saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
@@ -10177,7 +10177,7 @@ async function initWebsiteThemeEditor() {
     }
     
     // Upload banners
-    if (uploadBannerBtn && bannerUpload) {
+    if (uploadBannerBtn && bannerUpload && uploadBannerBtn.parentNode) {
       // Clone button to remove old listeners
       const newUploadBtn = uploadBannerBtn.cloneNode(true);
       uploadBannerBtn.parentNode.replaceChild(newUploadBtn, uploadBannerBtn);
