@@ -5768,6 +5768,180 @@ select:focus {
   }
 }
 
+/* Very small phones (320px - 360px) */
+@media (max-width: 360px) {
+  .settings-section {
+    padding: 0.75rem !important;
+  }
+  
+  .settings-section-title {
+    font-size: 0.9rem !important;
+  }
+  
+  .settings-section-title .material-symbols-rounded {
+    font-size: 1.1rem !important;
+  }
+  
+  #colorPreviewContainer {
+    padding: 0.5rem !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  #heroPreview {
+    padding: 0.75rem !important;
+  }
+  
+  #heroPreview > div:first-child {
+    font-size: 1rem !important;
+  }
+  
+  #heroPreview > div:last-child {
+    font-size: 0.75rem !important;
+  }
+  
+  #websiteThemePage div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] {
+    gap: 0.5rem !important;
+  }
+  
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] {
+    padding: 0.75rem !important;
+  }
+  
+  #websiteThemePage input[type="color"] {
+    height: 45px !important;
+  }
+  
+  #websiteThemePage div[id$="Display"] {
+    font-size: 0.75rem !important;
+    padding: 0.25rem !important;
+  }
+  
+  #websiteThemePage .form-actions .btn {
+    padding: 0.625rem 1rem !important;
+    font-size: 0.85rem !important;
+  }
+  
+  #bannersGrid {
+    gap: 0.5rem !important;
+  }
+  
+  #websiteThemePage .form-group p {
+    font-size: 0.8rem !important;
+  }
+  
+  #websiteThemePage .form-group label {
+    font-size: 0.9rem !important;
+  }
+  
+  #restaurantWebsiteLink {
+    font-size: 0.75rem !important;
+    padding: 0.4rem !important;
+  }
+  
+  #websiteThemePage div[style*="margin-top: 2rem; padding: 1.5rem"] {
+    padding: 0.75rem !important;
+  }
+  
+  #websiteThemePage div[style*="margin-top: 2rem; padding: 1.5rem"] h3 {
+    font-size: 0.9rem !important;
+  }
+  
+  #websiteThemePage div[style*="margin-top: 2rem; padding: 1.5rem"] p {
+    font-size: 0.8rem !important;
+  }
+}
+
+/* Extra small phones (below 320px) */
+@media (max-width: 320px) {
+  .settings-section {
+    padding: 0.625rem !important;
+  }
+  
+  .settings-section-title {
+    font-size: 0.85rem !important;
+  }
+  
+  .settings-section-title .material-symbols-rounded {
+    font-size: 1rem !important;
+  }
+  
+  #colorPreviewContainer {
+    padding: 0.4rem !important;
+  }
+  
+  #heroPreview {
+    padding: 0.625rem !important;
+  }
+  
+  #heroPreview > div:first-child {
+    font-size: 0.9rem !important;
+  }
+  
+  #heroPreview > div:last-child {
+    font-size: 0.7rem !important;
+  }
+  
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] {
+    padding: 0.625rem !important;
+  }
+  
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] > div > div:first-child {
+    font-size: 0.85rem !important;
+  }
+  
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] > div > div:last-child {
+    font-size: 0.7rem !important;
+  }
+  
+  #websiteThemePage input[type="color"] {
+    height: 40px !important;
+  }
+  
+  #websiteThemePage div[id$="Display"] {
+    font-size: 0.7rem !important;
+    padding: 0.2rem !important;
+  }
+  
+  #websiteThemePage .form-actions .btn {
+    padding: 0.5rem 0.875rem !important;
+    font-size: 0.8rem !important;
+  }
+  
+  #bannersGrid {
+    gap: 0.5rem !important;
+  }
+  
+  #websiteThemePage .form-group p {
+    font-size: 0.75rem !important;
+  }
+  
+  #websiteThemePage .form-group label {
+    font-size: 0.85rem !important;
+  }
+  
+  #restaurantWebsiteLink {
+    font-size: 0.7rem !important;
+    padding: 0.35rem !important;
+  }
+  
+  #websiteThemePage div[style*="margin-top: 2rem; padding: 1.5rem"] {
+    padding: 0.625rem !important;
+  }
+  
+  #websiteThemePage div[style*="margin-top: 2rem; padding: 1.5rem"] h3 {
+    font-size: 0.85rem !important;
+  }
+  
+  #websiteThemePage div[style*="margin-top: 2rem; padding: 1.5rem"] p {
+    font-size: 0.75rem !important;
+  }
+  
+  #websiteThemePage div[style*="display: flex; gap: 0.5rem; flex-wrap: wrap"] > div {
+    font-size: 0.7rem !important;
+    padding: 0.3rem 0.5rem !important;
+  }
+}
+
 /* Ensure icons scale properly */
 .reservation-card .material-symbols-rounded {
   flex-shrink: 0;
