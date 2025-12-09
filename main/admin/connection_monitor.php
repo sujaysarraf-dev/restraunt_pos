@@ -186,8 +186,17 @@ $refresh_interval = 5;
 
         <?php
         try {
-            global $pdo;
-            $conn = $pdo;
+            // Get connection using getConnection() for lazy connection support
+            if (function_exists('getConnection')) {
+                $conn = getConnection();
+            } else {
+                // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+                global $pdo;
+                $conn = $pdo ?? null;
+                if (!$conn) {
+                    throw new Exception('Database connection not available');
+                }
+            }
             
             // Get connection statistics
             $stats = [];
@@ -342,22 +351,31 @@ $refresh_interval = 5;
         <div class="log-section">
             <h3>Connection Information</h3>
             <div class="log-entry">
-                <strong>Database Host:</strong> <?php echo htmlspecialchars($host ?? 'localhost'); ?><br>
-                <strong>Database Name:</strong> <?php echo htmlspecialchars($dbname ?? 'N/A'); ?><br>
-                <strong>Connection Type:</strong> <?php echo isset($options[PDO::ATTR_PERSISTENT]) && $options[PDO::ATTR_PERSISTENT] ? 'Persistent' : 'Non-Persistent (Optimized)'; ?><br>
+                <?php
+                // Get connection info
+                global $host, $dbname, $options;
+                $db_host = $host ?? 'localhost';
+                $db_name = $dbname ?? 'N/A';
+                $is_persistent = isset($options[PDO::ATTR_PERSISTENT]) && $options[PDO::ATTR_PERSISTENT];
+                ?>
+                <strong>Database Host:</strong> <?php echo htmlspecialchars($db_host); ?><br>
+                <strong>Database Name:</strong> <?php echo htmlspecialchars($db_name); ?><br>
+                <strong>Connection Type:</strong> <?php echo $is_persistent ? 'Persistent' : 'Non-Persistent (Optimized)'; ?><br>
                 <strong>PHP Version:</strong> <?php echo PHP_VERSION; ?><br>
                 <strong>PDO Driver:</strong> <?php echo $conn->getAttribute(PDO::ATTR_DRIVER_NAME); ?><br>
                 <strong>Server Info:</strong> <?php echo $conn->getAttribute(PDO::ATTR_SERVER_INFO); ?><br>
-                <?php if (function_exists('getConnectionStats')): 
-                    $stats = getConnectionStats();
+                <?php 
+                // Get connection stats if available
+                if (isset($GLOBALS['db_connection_stats'])) {
+                    $stats = $GLOBALS['db_connection_stats'];
                 ?>
                 <strong>Connection Stats:</strong><br>
-                &nbsp;&nbsp;Total Attempts: <?php echo $stats['attempts']; ?><br>
-                &nbsp;&nbsp;Successful: <?php echo $stats['success']; ?><br>
-                &nbsp;&nbsp;Failed: <?php echo $stats['failures']; ?><br>
-                &nbsp;&nbsp;Retries: <?php echo $stats['retries']; ?><br>
-                &nbsp;&nbsp;Success Rate: <?php echo $stats['attempts'] > 0 ? number_format(($stats['success'] / $stats['attempts']) * 100, 2) : 0; ?>%
-                <?php endif; ?>
+                &nbsp;&nbsp;Total Attempts: <?php echo $stats['attempts'] ?? 0; ?><br>
+                &nbsp;&nbsp;Successful: <?php echo $stats['success'] ?? 0; ?><br>
+                &nbsp;&nbsp;Failed: <?php echo $stats['failures'] ?? 0; ?><br>
+                &nbsp;&nbsp;Retries: <?php echo $stats['retries'] ?? 0; ?><br>
+                &nbsp;&nbsp;Success Rate: <?php echo ($stats['attempts'] ?? 0) > 0 ? number_format((($stats['success'] ?? 0) / ($stats['attempts'] ?? 1)) * 100, 2) : 0; ?>%
+                <?php } ?>
             </div>
         </div>
 
