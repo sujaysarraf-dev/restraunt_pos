@@ -5476,6 +5476,18 @@ select:focus {
    Website Appearance Section - Responsive
    ============================================ */
 
+/* Prevent horizontal scrolling globally */
+body, html {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 /* Tablet and below (768px) */
 @media (max-width: 768px) {
   /* Ensure main containers shrink horizontally */
