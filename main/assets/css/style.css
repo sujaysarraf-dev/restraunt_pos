@@ -3505,7 +3505,23 @@ select:focus {
   gap: 25px;
   overflow: hidden; /* Prevent overflow */
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
+}
+
+/* Banner grid container - ensure it fits within settings section */
+#bannersGrid {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#bannersPreview {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .settings-section {
@@ -3514,8 +3530,10 @@ select:focus {
   padding: 25px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
-  overflow: visible; /* Allow hover effects */
+  overflow: hidden; /* Prevent content from overflowing */
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Add padding to color picker grid container to accommodate hover transform */
@@ -5490,12 +5508,26 @@ select:focus {
   #bannersGrid {
     grid-template-columns: 1fr !important;
     gap: 1rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
   }
   
   /* Banner preview cards */
   #bannersGrid > div {
     width: 100% !important;
     max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  
+  /* Banner preview container */
+  #bannersPreview {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
   }
   
   /* Banner upload section */
