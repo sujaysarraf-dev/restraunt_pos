@@ -5406,6 +5406,37 @@ select:focus {
 
 /* Specific breakpoint for 538px width (portrait tablets/small tablets) */
 @media (max-width: 600px) {
+  /* Ensure page content doesn't overflow */
+  .page-content {
+    padding: 0.75rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+  
+  #websiteThemePage {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0.5rem !important;
+    overflow-x: hidden !important;
+  }
+  
+  #websiteThemePage .page-header {
+    padding: 0.75rem 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  #websiteThemePage .page-header h1 {
+    font-size: 1.3rem !important;
+  }
+  
+  #websiteThemePage .page-header p {
+    font-size: 0.9rem !important;
+  }
   .settings-grid {
     grid-template-columns: 1fr !important;
     gap: 0.875rem !important;
