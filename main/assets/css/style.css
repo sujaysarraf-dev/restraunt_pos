@@ -562,6 +562,7 @@ body {
 
 .sidebar.collapsed + .main-content {
   margin-left: 117px; /* Collapsed sidebar width + margin */
+  width: calc(100% - 117px);
 }
 
 .page {
