@@ -1028,11 +1028,31 @@ document.addEventListener("DOMContentLoaded", () => {
     currentMenuId = null;
     currentMenuName = null;
     currentMenuImage = null;
+    
+    // Clean up cropper
+    if (menuImageCropper) {
+      menuImageCropper.destroy();
+      menuImageCropper = null;
+    }
+    menuCropApplied = false;
+    
     // Clear image preview
     const preview = document.getElementById("menuImagePreview");
     const previewImg = document.getElementById("menuImagePreviewImg");
     if (preview) preview.style.display = "none";
     if (previewImg) previewImg.src = "";
+    
+    // Hide cropper section
+    const cropperSection = document.getElementById("menuImageCropperSection");
+    if (cropperSection) cropperSection.style.display = "none";
+    
+    // Clear file name
+    const fileName = document.getElementById("menuImageFileName");
+    if (fileName) fileName.textContent = "No file chosen";
+    
+    // Clear base64 input
+    const base64Input = document.getElementById("menuImageBase64");
+    if (base64Input) base64Input.value = "";
     
     // Clear any existing messages
     const existingMessage = document.querySelector(".message");
