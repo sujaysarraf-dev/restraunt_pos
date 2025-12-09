@@ -488,11 +488,21 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function showPage(pageId) {
-    // Initialize website theme editor when navigating to that page
+    // Enable zoom only for website appearance section
+    const viewport = document.querySelector('meta[name="viewport"]');
     if (pageId === 'websiteThemePage') {
+      // Allow zoom in website appearance section
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+      }
       setTimeout(() => {
         initWebsiteThemeEditor();
       }, 100);
+    } else {
+      // Disable zoom for all other pages
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      }
     }
     // Check subscription status before allowing access (except dashboard and settings)
     if (pageId !== "dashboardPage" && pageId !== "settingsPage") {
