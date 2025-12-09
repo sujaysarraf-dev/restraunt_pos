@@ -5903,14 +5903,14 @@ document.addEventListener("DOMContentLoaded", () => {
            data-item-image="${escapeHtml(item.item_image || '')}"
            data-has-variations="${hasVariations ? '1' : '0'}"
            data-variations="${variationsJson}"
-           style="background:white;border:2px solid #e5e7eb;border-radius:8px;padding:0.75rem;cursor:pointer;transition:all 0.2s;">
-        <div style="width:100%;height:80px;border-radius:6px;overflow:hidden;margin-bottom:0.5rem;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
-          ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" style="width:100%;height:100%;object-fit:cover;">` : '<span class="material-symbols-rounded" style="font-size:2rem;color:#9ca3af;">restaurant</span>'}
+           style="background:white;border:2px solid #e5e7eb;border-radius:6px;padding:0.5rem;cursor:pointer;transition:all 0.2s;">
+        <div style="width:100%;height:60px;border-radius:4px;overflow:hidden;margin-bottom:0.4rem;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
+          ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" style="width:100%;height:100%;object-fit:cover;">` : '<span class="material-symbols-rounded" style="font-size:1.5rem;color:#9ca3af;">restaurant</span>'}
         </div>
-        <div style="font-weight:600;color:#111827;font-size:0.85rem;margin-bottom:0.25rem;line-height:1.3;">${escapeHtml(item.item_name_en)}</div>
-        <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.5rem;">${escapeHtml(item.item_category || '')}</div>
-        <div style="font-weight:700;color:#f70000;font-size:0.95rem;">
-          ${priceDisplay}${hasVariations ? ' <span style="font-size:0.65rem;color:#6b7280;">(Variations)</span>' : ''}
+        <div style="font-weight:600;color:#111827;font-size:0.75rem;margin-bottom:0.2rem;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(item.item_name_en)}</div>
+        <div style="font-size:0.65rem;color:#6b7280;margin-bottom:0.3rem;line-height:1.2;">${escapeHtml(item.item_category || '')}</div>
+        <div style="font-weight:700;color:#f70000;font-size:0.8rem;line-height:1.2;">
+          ${priceDisplay}${hasVariations ? ' <span style="font-size:0.6rem;color:#6b7280;">(Var)</span>' : ''}
       </div>
       </div>
     `;

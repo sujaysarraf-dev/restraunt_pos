@@ -2483,22 +2483,22 @@ try {
 
   <!-- Mobile Add Item Modal -->
   <div id="mobileAddItemModal" class="modal" style="display:none;z-index:10000;" onclick="if(event.target===this) closeMobileAddItemModal();">
-    <div class="modal-content" style="max-width:100%;height:90vh;margin:5vh auto;display:flex;flex-direction:column;background:white;border-radius:16px 16px 0 0;" onclick="event.stopPropagation();">
-      <div class="modal-header" style="flex-shrink:0;border-bottom:2px solid #f3f4f6;padding:1rem;">
-        <h2 style="font-size:1.25rem;margin:0;">
-          <span class="material-symbols-rounded" style="vertical-align:middle;margin-right:0.5rem;">add_circle</span>
+    <div class="modal-content" style="max-width:100%;height:85vh;margin:7.5vh auto;display:flex;flex-direction:column;background:white;border-radius:16px 16px 0 0;" onclick="event.stopPropagation();">
+      <div class="modal-header" style="flex-shrink:0;border-bottom:2px solid #f3f4f6;padding:0.75rem 1rem;">
+        <h2 style="font-size:1.1rem;margin:0;">
+          <span class="material-symbols-rounded" style="vertical-align:middle;margin-right:0.5rem;font-size:1.2rem;">add_circle</span>
           Add Item
         </h2>
-        <span class="close" onclick="closeMobileAddItemModal()" style="font-size:1.5rem;">&times;</span>
+        <span class="close" onclick="closeMobileAddItemModal()" style="font-size:1.4rem;">&times;</span>
       </div>
-      <div class="modal-body" style="flex:1;overflow-y:auto;padding:1rem;">
-        <div style="margin-bottom:1rem;position:relative;">
-          <input type="text" id="mobileItemSearch" placeholder="🔍 Search items by name, category, menu, or type..." style="width:100%;padding:0.75rem 3rem 0.75rem 0.75rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.95rem;box-sizing:border-box;" oninput="filterMobileItems()">
-          <button type="button" onclick="filterMobileItems()" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0.5rem;display:flex;align-items:center;justify-content:center;color:#6b7280;transition:color 0.2s;" onmouseover="this.style.color='#f70000'" onmouseout="this.style.color='#6b7280'">
-            <span class="material-symbols-rounded" style="font-size:1.5rem;">search</span>
+      <div class="modal-body" style="flex:1;overflow-y:auto;padding:0.75rem;max-height:calc(85vh - 80px);">
+        <div style="margin-bottom:0.75rem;position:relative;">
+          <input type="text" id="mobileItemSearch" placeholder="🔍 Search items..." style="width:100%;padding:0.6rem 2.5rem 0.6rem 0.6rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.85rem;box-sizing:border-box;" oninput="filterMobileItems()">
+          <button type="button" onclick="filterMobileItems()" style="position:absolute;right:0.4rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0.4rem;display:flex;align-items:center;justify-content:center;color:#6b7280;transition:color 0.2s;" onmouseover="this.style.color='#f70000'" onmouseout="this.style.color='#6b7280'">
+            <span class="material-symbols-rounded" style="font-size:1.3rem;">search</span>
           </button>
         </div>
-        <div id="mobileItemsList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;">
+        <div id="mobileItemsList" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;">
           <!-- Items will be loaded here -->
         </div>
       </div>
