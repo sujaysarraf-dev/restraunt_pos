@@ -5441,6 +5441,17 @@ select:focus {
   #websiteThemePage .page-header p {
     font-size: 0.9rem !important;
   }
+  
+  /* Ensure main-content doesn't cause overflow */
+  .main-content {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+  
   .settings-grid {
     grid-template-columns: 1fr !important;
     gap: 0.875rem !important;
