@@ -5523,6 +5523,7 @@ select:focus {
   #colorPreviewContainer {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
   }
@@ -5530,12 +5531,14 @@ select:focus {
   #colorPreviewContainer > * {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
   }
   
   #heroPreview {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
   }
@@ -5543,6 +5546,7 @@ select:focus {
   #heroPreview > * {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
   }
   
@@ -5552,6 +5556,7 @@ select:focus {
   #checkoutPreview {
     width: auto !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     word-wrap: break-word !important;
     overflow-wrap: break-word !important;
@@ -5562,6 +5567,7 @@ select:focus {
   #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
   }
@@ -5569,6 +5575,38 @@ select:focus {
   #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] > * {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Banner grid and preview */
+  #bannersGrid {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  
+  #bannersGrid > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  #bannersPreview {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  
+  #bannersPreview > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
   }
 }
