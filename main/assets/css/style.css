@@ -3503,39 +3503,58 @@ select:focus {
   }
 }
 
-/* Settings Page Styles */
+/* ============================================
+   Website Appearance Section Styles
+   ============================================ */
+
+/* Main Grid Container */
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 25px;
-  overflow: hidden; /* Prevent overflow */
   width: 100%;
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
-/* Allow settings grid items to shrink below 400px on smaller screens */
 .settings-grid > * {
   min-width: 0;
 }
 
-/* Banner grid container - ensure it fits within settings section */
-#bannersGrid {
+/* Settings Section Card */
+.settings-section {
+  background: white;
+  border-radius: 12px;
+  padding: 25px 25px 29px 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  position: relative;
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
-#bannersPreview {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
+.settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f3f4f6;
+  color: #151A2D;
+  font-size: 1.3rem;
 }
 
-/* Ensure all inner cards are bound to main card */
+.settings-section-title .material-symbols-rounded {
+  font-size: 1.5rem;
+  color: #151A2D;
+}
+
+/* Color Preview Container */
 #colorPreviewContainer {
   width: 100%;
   max-width: 100%;
@@ -3551,6 +3570,7 @@ select:focus {
   box-sizing: border-box;
 }
 
+/* Hero Preview */
 #heroPreview {
   width: 100%;
   max-width: 100%;
@@ -3568,7 +3588,24 @@ select:focus {
   overflow-wrap: break-word;
 }
 
-/* Color picker cards - bind to container */
+/* Button Previews */
+#categoryButtonPreview,
+#addToCartPreview,
+#checkoutPreview {
+  min-width: 0;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+/* Color Picker Grid */
+#websiteThemePage .settings-section > div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] {
+  padding: 6px 0;
+  margin: 0;
+}
+
+/* Color Picker Cards */
 #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] {
   width: 100%;
   max-width: 100%;
@@ -3584,18 +3621,7 @@ select:focus {
   box-sizing: border-box;
 }
 
-/* Button previews */
-#categoryButtonPreview,
-#addToCartPreview,
-#checkoutPreview {
-  min-width: 0;
-  box-sizing: border-box;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  white-space: normal;
-}
-
-/* Banner grid and preview */
+/* Banner Grid */
 #bannersGrid {
   width: 100%;
   max-width: 100%;
@@ -3611,6 +3637,7 @@ select:focus {
   box-sizing: border-box;
 }
 
+/* Banner Preview */
 #bannersPreview {
   width: 100%;
   max-width: 100%;
@@ -3624,47 +3651,6 @@ select:focus {
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-}
-
-.settings-section {
-  background: white;
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
-  overflow: hidden; /* Prevent content from overflowing */
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-
-/* Add padding to color picker grid container to accommodate hover transform */
-#websiteThemePage .settings-section > div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] {
-  padding: 6px 0 !important; /* Add padding top/bottom for hover transform */
-  margin: 0 !important;
-}
-
-/* Ensure settings section has enough space for hover effects */
-#websiteThemePage .settings-section {
-  padding: 25px 25px 29px 25px !important; /* Extra bottom padding for hover */
-}
-
-.settings-section-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #f3f4f6;
-  color: #151A2D;
-  font-size: 1.3rem;
-}
-
-.settings-section-title .material-symbols-rounded {
-  font-size: 1.5rem;
-  color: #151A2D;
 }
 
 /* Profile Page Styles */
@@ -5478,7 +5464,11 @@ select:focus {
   }
 }
 
-/* Website Appearance Section - Mobile Responsive */
+/* ============================================
+   Website Appearance Section - Responsive
+   ============================================ */
+
+/* Tablet and below (768px) */
 @media (max-width: 768px) {
   .page-content {
     width: 100% !important;
