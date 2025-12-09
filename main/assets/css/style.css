@@ -3514,8 +3514,14 @@ select:focus {
   padding: 25px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
-  overflow: hidden; /* Prevent cards from overflowing */
+  overflow: visible; /* Allow hover effects */
   position: relative;
+}
+
+/* Add padding to color picker grid container to accommodate hover transform */
+#websiteThemePage .settings-section > div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] {
+  padding: 4px 0 !important; /* Add padding top/bottom for hover transform */
+  margin: 0 !important;
 }
 
 .settings-section-title {
