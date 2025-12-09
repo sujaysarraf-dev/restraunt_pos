@@ -5524,6 +5524,8 @@ select:focus {
     max-width: 100% !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
   
   /* Banner preview cards */
@@ -5532,6 +5534,7 @@ select:focus {
     max-width: 100% !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
+    margin: 0 !important;
   }
   
   /* Banner preview container */
@@ -5540,30 +5543,48 @@ select:focus {
     max-width: 100% !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
   
   /* Banner upload section */
   #websiteThemePage .form-group {
     margin-bottom: 1rem;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
   }
   
   #websiteThemePage .form-group label {
     font-size: 0.95rem;
     margin-bottom: 0.5rem;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
   }
   
   #websiteThemePage .form-group p {
     font-size: 0.85rem !important;
     margin-bottom: 0.75rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    word-wrap: break-word !important;
   }
   
   #bannerUpload {
-    width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
     margin-bottom: 0.75rem !important;
   }
   
   #uploadBannerBtn {
-    width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
     margin-bottom: 0.75rem !important;
   }
   
