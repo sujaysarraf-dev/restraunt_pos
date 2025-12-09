@@ -400,7 +400,7 @@ body {
 
 .search-suggestions-item {
     padding: 1rem 1.5rem;
-    cursor: pointer;
+    cursor: default;
     transition: all 0.2s;
     display: flex;
     align-items: center;

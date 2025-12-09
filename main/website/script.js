@@ -1907,14 +1907,18 @@ function renderSearchSuggestions() {
         return `
             <div class="search-suggestions-item ${index === selectedSuggestionIndex ? 'selected' : ''}" 
                  data-index="${index}" 
-                 onmousedown="event.preventDefault(); selectSuggestion(${index})"
                  onmouseenter="highlightSuggestion(${index})">
                 ${imageHtml}
-                <div class="search-suggestions-item-info">
+                <div class="search-suggestions-item-info" style="flex: 1;">
                     <div class="search-suggestions-item-name">${escapeHtml(itemName)}</div>
                     ${category ? `<div class="search-suggestions-item-category">${escapeHtml(category)}</div>` : ''}
                     <div class="search-suggestions-item-price">${formatCurrency(price)}</div>
                 </div>
+                <button class="add-to-cart-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem; margin-left: 0.5rem; flex-shrink: 0;" 
+                        onclick="event.stopPropagation(); addToCartFromSearch(${item.id}, '${escapeHtml(itemName)}', ${price}, '${escapeHtml(item.item_image || '')}')">
+                    <span class="material-symbols-rounded" style="font-size: 1rem;">add_shopping_cart</span>
+                    Add
+                </button>
             </div>
         `;
     }).join('');
