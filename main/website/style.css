@@ -1801,10 +1801,10 @@ body {
 
 .item-modal-content {
   background: var(--white);
-  border-radius: 20px;
-  max-width: 800px;
+  border-radius: 16px;
+  max-width: 500px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 85vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
   position: relative;
@@ -1846,14 +1846,14 @@ body {
 
 .item-modal-image {
   width: 100%;
-  height: 300px;
+  height: 180px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  border-radius: 20px 20px 0 0;
+  border-radius: 16px 16px 0 0;
 }
 
 .item-modal-image img {
@@ -1873,19 +1873,19 @@ body {
 }
 
 .item-modal-info {
-  padding: 2rem;
+  padding: 1.25rem;
 }
 
 .item-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
-  gap: 1rem;
+  margin-bottom: 0.75rem;
+  gap: 0.75rem;
 }
 
 .item-modal-name {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--text-dark);
   margin: 0;
@@ -1895,59 +1895,59 @@ body {
 .item-modal-type-badge {
   background: var(--primary-yellow);
   color: var(--text-dark);
-  padding: 0.5rem 1rem;
-  border-radius: 25px;
-  font-size: 0.9rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .item-modal-price {
-  font-size: 2.5rem;
+  font-size: 1.75rem;
   font-weight: 800;
   color: var(--primary-red);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .item-modal-description {
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 }
 
 .item-modal-description h3 {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-dark);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .item-modal-description p {
   color: var(--text-light);
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 0.9rem;
+  line-height: 1.5;
   margin: 0;
 }
 
 .item-modal-actions {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .item-quantity-controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.75rem;
+  padding: 0.75rem;
   background: var(--light-gray);
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .item-quantity-controls .quantity-btn {
   background: var(--white);
   border: 2px solid var(--primary-red);
-  width: 45px;
-  height: 45px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -1962,17 +1962,17 @@ body {
 }
 
 .item-quantity-controls .quantity-btn .material-symbols-rounded {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
 }
 
 .item-quantity-controls .quantity-input {
-  width: 80px;
+  width: 70px;
   text-align: center;
   border: 2px solid var(--primary-red);
-  border-radius: 12px;
-  padding: 0.75rem;
+  border-radius: 10px;
+  padding: 0.6rem;
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   background: var(--white);
 }
 
@@ -1980,16 +1980,16 @@ body {
   background: var(--primary-red);
   color: var(--white);
   border: none;
-  padding: 1.25rem 2rem;
-  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .add-to-cart-modal-btn:hover {
@@ -1999,12 +1999,12 @@ body {
 }
 
 .add-to-cart-modal-btn .material-symbols-rounded {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
 }
 
 .item-modal-total-price {
   margin-left: auto;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
 }
 
 @media (max-width: 768px) {
@@ -2021,49 +2021,65 @@ body {
   }
   
   .item-modal-image {
-    height: 250px;
+    height: 150px;
     border-radius: 0;
   }
   
   .item-modal-info {
-    padding: 1.5rem;
+    padding: 1rem;
   }
   
   .item-modal-name {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
   
   .item-modal-price {
-    font-size: 2rem;
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
   }
   
   .item-modal-header {
     flex-direction: column;
     align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+  
+  .item-modal-description {
+    margin-bottom: 1rem;
+  }
+  
+  .item-modal-description h3 {
+    font-size: 0.95rem;
+    margin-bottom: 0.4rem;
+  }
+  
+  .item-modal-description p {
+    font-size: 0.85rem;
   }
   
   .item-quantity-controls {
-    padding: 0.75rem;
+    padding: 0.6rem;
+    gap: 0.6rem;
   }
   
   .item-quantity-controls .quantity-btn {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
   }
   
   .item-quantity-controls .quantity-input {
-    width: 70px;
+    width: 60px;
     padding: 0.5rem;
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
   
   .add-to-cart-modal-btn {
-    padding: 1rem 1.5rem;
-    font-size: 1.1rem;
+    padding: 0.9rem 1.25rem;
+    font-size: 1rem;
   }
   
   .item-modal-total-price {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 }
 
