@@ -379,7 +379,7 @@ $refresh_interval = 5;
         </div>
 
         <a href="dashboard.php" class="btn">Back to Dashboard</a>
-        <a href="connection_monitor.php" class="btn" style="margin-left: 10px;">Refresh Now</a>
+        <button class="btn" id="refreshBtn" style="margin-left: 10px; cursor: pointer; border: none;">Refresh Now</button>
 
         <?php
         } catch (Exception $e) {
@@ -392,6 +392,65 @@ $refresh_interval = 5;
         }
         ?>
     </div>
+    
+    <script>
+        // Auto-refresh using JavaScript instead of meta refresh (more efficient)
+        let refreshInterval = null;
+        const refreshIntervalMs = <?php echo $refresh_interval * 1000; ?>;
+        let lastRefreshTime = Date.now();
+        
+        function refreshData() {
+            // Only refresh if page is visible
+            if (document.hidden) {
+                return;
+            }
+            
+            // Reload the page data
+            if (Date.now() - lastRefreshTime >= refreshIntervalMs) {
+                lastRefreshTime = Date.now();
+                window.location.reload();
+            }
+        }
+        
+        // Start auto-refresh
+        refreshInterval = setInterval(refreshData, refreshIntervalMs);
+        
+        // Manual refresh button
+        document.getElementById('refreshBtn')?.addEventListener('click', function() {
+            window.location.reload();
+        });
+        
+        // Pause auto-refresh when page is hidden, resume when visible
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                // Page hidden - clear interval
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                    refreshInterval = null;
+                }
+            } else {
+                // Page visible - resume refresh
+                if (!refreshInterval) {
+                    lastRefreshTime = Date.now();
+                    refreshInterval = setInterval(refreshData, refreshIntervalMs);
+                    // Refresh immediately when page becomes visible
+                    refreshData();
+                }
+            }
+        });
+        
+        // Update refresh info display
+        function updateRefreshInfo() {
+            const refreshInfo = document.querySelector('.refresh-info');
+            if (refreshInfo) {
+                const secondsSinceRefresh = Math.floor((Date.now() - lastRefreshTime) / 1000);
+                refreshInfo.textContent = `Auto-refresh: <?php echo $refresh_interval; ?>s (Last: ${secondsSinceRefresh}s ago)`;
+            }
+        }
+        
+        // Update refresh info every second
+        setInterval(updateRefreshInfo, 1000);
+    </script>
 </body>
 </html>
 
