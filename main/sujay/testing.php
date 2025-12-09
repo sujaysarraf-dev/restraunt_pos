@@ -6,9 +6,21 @@
 
 require_once __DIR__ . '/../db_connection.php';
 
+// Get connection using getConnection() for lazy connection support
+if (function_exists('getConnection')) {
+    $conn = getConnection();
+} else {
+    // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+    global $pdo;
+    $conn = $pdo ?? null;
+    if (!$conn) {
+        die('Database connection not available');
+    }
+}
+
 // Get first restaurant ID for testing (or use sujay's restaurant if exists)
 try {
-    $restaurantStmt = $pdo->query("SELECT id, restaurant_name FROM users WHERE username = 'sujay' LIMIT 1");
+    $restaurantStmt = $conn->query("SELECT id, restaurant_name FROM users WHERE username = 'sujay' LIMIT 1");
     $restaurant = $restaurantStmt->fetch(PDO::FETCH_ASSOC);
     $restaurant_id = $restaurant ? $restaurant['id'] : 1; // Default to ID 1 if sujay doesn't exist
     $restaurant_name = $restaurant ? $restaurant['restaurant_name'] : 'Test Restaurant';

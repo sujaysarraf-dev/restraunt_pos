@@ -3,6 +3,20 @@ require_once __DIR__ . '/../db_connection.php';
 require_once __DIR__ . '/auth.php';
 require_superadmin();
 
+// Get connection using getConnection() for lazy connection support
+if (function_exists('getConnection')) {
+    $conn = getConnection();
+} else {
+    // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+    global $pdo;
+    $conn = $pdo ?? null;
+    if (!$conn) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database connection not available']);
+        exit();
+    }
+}
+
 header('Content-Type: application/json');
 $action = $_GET['action'] ?? '';
 
@@ -34,13 +48,13 @@ try {
               FROM users $where 
               ORDER BY created_at DESC 
               LIMIT :limit OFFSET :offset";
-      $stmt = $pdo->prepare($sql);
+      $stmt = $conn->prepare($sql);
       foreach ($params as $k=>$v) $stmt->bindValue($k, $v);
       $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
       $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
       $stmt->execute();
 
-      $countStmt = $pdo->prepare("SELECT COUNT(*) as c FROM users $where");
+      $countStmt = $conn->prepare("SELECT COUNT(*) as c FROM users $where");
       foreach ($params as $k=>$v) $countStmt->bindValue($k, $v);
       $countStmt->execute();
       $total = (int)($countStmt->fetch()['c'] ?? 0);
@@ -57,11 +71,11 @@ try {
         throw new Exception('Missing required fields');
       }
       // Auto-generate unique restaurant_id: RES + 3 letters + 3 digits
-      $generateId = function() use ($pdo) {
+      $generateId = function() use ($conn) {
         $letters = substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ'), 0, 3);
         $digits = str_pad(strval(random_int(0, 999)), 3, '0', STR_PAD_LEFT);
         $rid = 'RES' . $letters . $digits;
-        $check = $pdo->prepare('SELECT COUNT(*) FROM users WHERE restaurant_id = :rid');
+        $check = $conn->prepare('SELECT COUNT(*) FROM users WHERE restaurant_id = :rid');
         $check->execute([':rid' => $rid]);
         return $check->fetchColumn() == 0 ? $rid : null;
       };
@@ -70,7 +84,7 @@ try {
       if (!$restaurant_id) { throw new Exception('Failed to generate restaurant id'); }
 
       $hash = password_hash($password, PASSWORD_DEFAULT);
-      $stmt = $pdo->prepare("INSERT INTO users (username, password, restaurant_id, restaurant_name, is_active) VALUES (:u, :p, :rid, :rname, 1)");
+      $stmt = $conn->prepare("INSERT INTO users (username, password, restaurant_id, restaurant_name, is_active) VALUES (:u, :p, :rid, :rname, 1)");
       $stmt->execute([':u' => $username, ':p' => $hash, ':rid' => $restaurant_id, ':rname' => $restaurant_name]);
       echo json_encode(['success' => true, 'message' => 'Restaurant created', 'restaurant_id' => $restaurant_id]);
       break;
@@ -82,15 +96,15 @@ try {
       if ($id <= 0) throw new Exception('Invalid id');
       if ($active === 1) {
         // Re-enable: set renewal_date +30d and status trial
-        $stmt = $pdo->prepare("UPDATE users SET is_active=1, subscription_status='trial', renewal_date = DATE_ADD(CURRENT_DATE(), INTERVAL 30 DAY), disabled_at=NULL WHERE id=:id");
+        $stmt = $conn->prepare("UPDATE users SET is_active=1, subscription_status='trial', renewal_date = DATE_ADD(CURRENT_DATE(), INTERVAL 30 DAY), disabled_at=NULL WHERE id=:id");
         $stmt->execute([':id'=>$id]);
-        $info = $pdo->prepare('SELECT renewal_date FROM users WHERE id=:id');
+        $info = $conn->prepare('SELECT renewal_date FROM users WHERE id=:id');
         $info->execute([':id'=>$id]);
         $renew = $info->fetchColumn();
         echo json_encode(['success'=>true,'message'=>'Enabled; renewal set','renewal_date'=>$renew]);
       } else {
         // Disable
-        $stmt = $pdo->prepare("UPDATE users SET is_active=0, subscription_status='disabled', disabled_at=NOW() WHERE id=:id");
+        $stmt = $conn->prepare("UPDATE users SET is_active=0, subscription_status='disabled', disabled_at=NOW() WHERE id=:id");
         $stmt->execute([':id'=>$id]);
         echo json_encode(['success'=>true,'message'=>'Disabled']);
       }
@@ -102,7 +116,7 @@ try {
       $password = $data['password'] ?? '';
       if ($id <= 0 || !$password) throw new Exception('Invalid payload');
       $hash = password_hash($password, PASSWORD_DEFAULT);
-      $stmt = $pdo->prepare('UPDATE users SET password = :p WHERE id = :id');
+      $stmt = $conn->prepare('UPDATE users SET password = :p WHERE id = :id');
       $stmt->execute([':p' => $hash, ':id' => $id]);
       echo json_encode(['success' => true, 'message' => 'Password reset']);
       break;
@@ -114,7 +128,7 @@ try {
 
       try {
         // Check if table exists
-        $tableCheck = $pdo->query("SHOW TABLES LIKE 'password_reset_tokens'");
+        $tableCheck = $conn->query("SHOW TABLES LIKE 'password_reset_tokens'");
         if ($tableCheck->rowCount() == 0) {
           echo json_encode(['success' => false, 'message' => 'password_reset_tokens table does not exist. Please run the migration first.']);
           break;
@@ -127,12 +141,12 @@ try {
                 LEFT JOIN users u ON prt.user_id = u.id
                 ORDER BY prt.created_at DESC 
                 LIMIT :limit OFFSET :offset";
-        $stmt = $pdo->prepare($sql);
+        $stmt = $conn->prepare($sql);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
 
-        $countStmt = $pdo->query("SELECT COUNT(*) as c FROM password_reset_tokens");
+        $countStmt = $conn->query("SELECT COUNT(*) as c FROM password_reset_tokens");
         $total = (int)($countStmt->fetch()['c'] ?? 0);
 
         echo json_encode(['success' => true, 'tokens' => $stmt->fetchAll(), 'total' => $total, 'page' => $page, 'limit' => $limit]);
@@ -144,14 +158,14 @@ try {
     case 'getStats':
       $stats = [];
       // totals
-      $stats['restaurants'] = (int)($pdo->query("SELECT COUNT(*) FROM users")->fetchColumn());
-      $stats['active'] = (int)($pdo->query("SELECT COUNT(*) FROM users WHERE is_active=1")->fetchColumn());
+      $stats['restaurants'] = (int)($conn->query("SELECT COUNT(*) FROM users")->fetchColumn());
+      $stats['active'] = (int)($conn->query("SELECT COUNT(*) FROM users WHERE is_active=1")->fetchColumn());
       // revenue and orders today (sum across restaurants)
       $today = (new DateTime('now', new DateTimeZone('Asia/Kolkata')))->format('Y-m-d');
-      $revStmt = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM payments WHERE DATE(created_at)=?");
+      $revStmt = $conn->prepare("SELECT COALESCE(SUM(amount),0) FROM payments WHERE DATE(created_at)=?");
       $revStmt->execute([$today]);
       $stats['todayRevenue'] = (float)$revStmt->fetchColumn();
-      $ordStmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE DATE(created_at)=?");
+      $ordStmt = $conn->prepare("SELECT COUNT(*) FROM orders WHERE DATE(created_at)=?");
       $ordStmt->execute([$today]);
       $stats['todayOrders'] = (int)$ordStmt->fetchColumn();
       echo json_encode(['success'=>true,'stats'=>$stats]);
@@ -186,7 +200,7 @@ try {
         $params[':status'] = $status;
       }
       $sql .= " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
-      $stmt = $pdo->prepare($sql);
+      $stmt = $conn->prepare($sql);
       foreach ($params as $key => $value) {
         $stmt->bindValue($key, $value);
       }

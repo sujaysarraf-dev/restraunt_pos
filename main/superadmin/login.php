@@ -12,12 +12,24 @@ if (isSessionValid() && isset($_SESSION['superadmin_id']) && isset($_SESSION['su
 
 require_once __DIR__ . '/../db_connection.php';
 
+// Get connection using getConnection() for lazy connection support
+if (function_exists('getConnection')) {
+    $conn = getConnection();
+} else {
+    // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+    global $pdo;
+    $conn = $pdo ?? null;
+    if (!$conn) {
+        die('Database connection not available');
+    }
+}
+
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     try {
-        $stmt = $pdo->prepare('SELECT * FROM super_admins WHERE username = :u AND is_active = 1 LIMIT 1');
+        $stmt = $conn->prepare('SELECT * FROM super_admins WHERE username = :u AND is_active = 1 LIMIT 1');
         $stmt->execute([':u' => $username]);
         $sa = $stmt->fetch();
         if ($sa && password_verify($password, $sa['password_hash'])) {

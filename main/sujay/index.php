@@ -6,16 +6,28 @@
 
 require_once __DIR__ . '/../db_connection.php';
 
+// Get connection using getConnection() for lazy connection support
+if (function_exists('getConnection')) {
+    $conn = getConnection();
+} else {
+    // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+    global $pdo;
+    $conn = $pdo ?? null;
+    if (!$conn) {
+        die('Database connection not available');
+    }
+}
+
 // Create superadmin user "sujay" if it doesn't exist
 try {
-    $checkStmt = $pdo->prepare("SELECT id FROM super_admins WHERE username = 'sujay' LIMIT 1");
+    $checkStmt = $conn->prepare("SELECT id FROM super_admins WHERE username = 'sujay' LIMIT 1");
     $checkStmt->execute();
     $existing = $checkStmt->fetch();
     
     if (!$existing) {
         // Create superadmin user "sujay" with password "sujay123"
         $passwordHash = password_hash('sujay123', PASSWORD_DEFAULT);
-        $insertStmt = $pdo->prepare("INSERT INTO super_admins (username, email, password_hash, is_active) VALUES ('sujay', 'sujay@restrogrow.com', ?, 1)");
+        $insertStmt = $conn->prepare("INSERT INTO super_admins (username, email, password_hash, is_active) VALUES ('sujay', 'sujay@restrogrow.com', ?, 1)");
         $insertStmt->execute([$passwordHash]);
         $userCreated = true;
     } else {
@@ -29,7 +41,7 @@ try {
 $dbStatus = 'success';
 $dbMessage = 'Connected successfully';
 try {
-    $testQuery = $pdo->query("SELECT 1");
+    $testQuery = $conn->query("SELECT 1");
     $testQuery->fetch();
 } catch (Exception $e) {
     $dbStatus = 'error';

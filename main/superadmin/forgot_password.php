@@ -2,6 +2,18 @@
 require_once __DIR__ . '/../db_connection.php';
 require_once __DIR__ . '/../config/email_config.php';
 
+// Get connection using getConnection() for lazy connection support
+if (function_exists('getConnection')) {
+    $conn = getConnection();
+} else {
+    // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+    global $pdo;
+    $conn = $pdo ?? null;
+    if (!$conn) {
+        die('Database connection not available');
+    }
+}
+
 $message = '';
 $error = '';
 
@@ -13,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             // Find superadmin by username
-            $stmt = $pdo->prepare('SELECT * FROM super_admins WHERE username = :u AND is_active = 1 LIMIT 1');
+            $stmt = $conn->prepare('SELECT * FROM super_admins WHERE username = :u AND is_active = 1 LIMIT 1');
             $stmt->execute([':u' => $username]);
             $superadmin = $stmt->fetch();
             
@@ -26,14 +38,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Or create a separate table for superadmin reset tokens
                 // For now, let's create a simple reset_token column if it doesn't exist
                 try {
-                    $pdo->exec("ALTER TABLE super_admins ADD COLUMN reset_token VARCHAR(64) NULL");
-                    $pdo->exec("ALTER TABLE super_admins ADD COLUMN reset_token_expires DATETIME NULL");
+                    $conn->exec("ALTER TABLE super_admins ADD COLUMN reset_token VARCHAR(64) NULL");
+                    $conn->exec("ALTER TABLE super_admins ADD COLUMN reset_token_expires DATETIME NULL");
                 } catch (PDOException $e) {
                     // Columns might already exist, ignore
                 }
                 
                 // Store token
-                $updateStmt = $pdo->prepare('UPDATE super_admins SET reset_token = :token, reset_token_expires = :expires WHERE id = :id');
+                $updateStmt = $conn->prepare('UPDATE super_admins SET reset_token = :token, reset_token_expires = :expires WHERE id = :id');
                 $updateStmt->execute([
                     ':token' => $token,
                     ':expires' => $expiresAt,

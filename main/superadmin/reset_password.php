@@ -1,6 +1,18 @@
 <?php
 require_once __DIR__ . '/../db_connection.php';
 
+// Get connection using getConnection() for lazy connection support
+if (function_exists('getConnection')) {
+    $conn = getConnection();
+} else {
+    // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+    global $pdo;
+    $conn = $pdo ?? null;
+    if (!$conn) {
+        die('Database connection not available');
+    }
+}
+
 $error = '';
 $success = false;
 $token = $_GET['token'] ?? '';
@@ -21,14 +33,14 @@ if (empty($token)) {
         } else {
             try {
                 // Verify token
-                $stmt = $pdo->prepare('SELECT * FROM super_admins WHERE reset_token = :token AND reset_token_expires > NOW() AND is_active = 1 LIMIT 1');
+                $stmt = $conn->prepare('SELECT * FROM super_admins WHERE reset_token = :token AND reset_token_expires > NOW() AND is_active = 1 LIMIT 1');
                 $stmt->execute([':token' => $token]);
                 $superadmin = $stmt->fetch();
                 
                 if ($superadmin) {
                     // Update password
                     $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-                    $updateStmt = $pdo->prepare('UPDATE super_admins SET password_hash = :hash, reset_token = NULL, reset_token_expires = NULL WHERE id = :id');
+                    $updateStmt = $conn->prepare('UPDATE super_admins SET password_hash = :hash, reset_token = NULL, reset_token_expires = NULL WHERE id = :id');
                     $updateStmt->execute([
                         ':hash' => $hashedPassword,
                         ':id' => $superadmin['id']
@@ -46,7 +58,7 @@ if (empty($token)) {
     } else {
         // Verify token exists and is valid (GET request)
         try {
-            $stmt = $pdo->prepare('SELECT * FROM super_admins WHERE reset_token = :token AND reset_token_expires > NOW() AND is_active = 1 LIMIT 1');
+            $stmt = $conn->prepare('SELECT * FROM super_admins WHERE reset_token = :token AND reset_token_expires > NOW() AND is_active = 1 LIMIT 1');
             $stmt->execute([':token' => $token]);
             $superadmin = $stmt->fetch();
             
