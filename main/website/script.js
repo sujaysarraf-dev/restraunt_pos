@@ -1115,6 +1115,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // Add click handler to search button
+    const searchBtn = document.querySelector('.search-btn');
+    if (searchBtn) {
+        searchBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            performSearch();
+        });
+    }
+    
     document.getElementById('typeFilter').addEventListener('change', handleFilter);
     document.getElementById('categoryFilter').addEventListener('change', handleFilter);
     document.getElementById('cartIcon').addEventListener('click', toggleCart);
