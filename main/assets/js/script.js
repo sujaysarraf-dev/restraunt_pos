@@ -947,6 +947,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
   let currentMenuId = null;
   let currentMenuName = null;
+  let currentMenuImage = null;
 
   // Open modal for adding new menu (only if button exists)
   if (addMenuBtn) {
@@ -957,23 +958,38 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Open modal for editing existing menu
-  window.editMenu = function(menuId, menuName) {
+  window.editMenu = function(menuId, menuName, menuImage = null) {
     currentMenuId = menuId;
     currentMenuName = menuName;
+    currentMenuImage = menuImage;
     openMenuModal(true);
   };
 
   function openMenuModal(isEdit = false) {
     if (isEdit) {
-      modalTitle.textContent = "Edit Menu";
+      modalTitle.textContent = "Edit Category";
       menuIdInput.value = currentMenuId;
       menuNameInput.value = currentMenuName;
-      saveBtn.textContent = "Update Menu";
+      saveBtn.textContent = "Update Category";
+      // Load existing image if available
+      if (currentMenuImage) {
+        const preview = document.getElementById("menuImagePreview");
+        const previewImg = document.getElementById("menuImagePreviewImg");
+        previewImg.src = currentMenuImage;
+        preview.style.display = "block";
+      }
     } else {
-      modalTitle.textContent = "Add New Menu";
+      modalTitle.textContent = "Add New Category";
       menuIdInput.value = "";
       menuNameInput.value = "";
-      saveBtn.textContent = "Save Menu";
+      saveBtn.textContent = "Save Category";
+      // Clear image preview
+      const preview = document.getElementById("menuImagePreview");
+      const previewImg = document.getElementById("menuImagePreviewImg");
+      if (preview) preview.style.display = "none";
+      if (previewImg) previewImg.src = "";
+      const menuImageInput = document.getElementById("menuImage");
+      if (menuImageInput) menuImageInput.value = "";
     }
     
     menuModal.style.display = "block";
@@ -1009,6 +1025,12 @@ document.addEventListener("DOMContentLoaded", () => {
     menuForm.reset();
     currentMenuId = null;
     currentMenuName = null;
+    currentMenuImage = null;
+    // Clear image preview
+    const preview = document.getElementById("menuImagePreview");
+    const previewImg = document.getElementById("menuImagePreviewImg");
+    if (preview) preview.style.display = "none";
+    if (previewImg) previewImg.src = "";
     
     // Clear any existing messages
     const existingMessage = document.querySelector(".message");
@@ -1077,10 +1099,11 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const menuName = menuNameInput.value.trim();
     const menuId = menuIdInput.value;
+    const menuImageInput = document.getElementById("menuImage");
     const isEdit = menuId !== "";
     
     if (!menuName) {
-      showMessage("Please enter a menu name.", "error");
+      showMessage("Please enter a category name.", "error");
       return;
     }
 
@@ -1089,18 +1112,18 @@ document.addEventListener("DOMContentLoaded", () => {
     saveBtn.textContent = isEdit ? "Updating..." : "Saving...";
 
     try {
-      const formData = new URLSearchParams();
+      const formData = new FormData();
       formData.append('action', isEdit ? 'update' : 'add');
       formData.append('menuName', menuName);
       if (isEdit) {
         formData.append('menuId', menuId);
       }
+      if (menuImageInput && menuImageInput.files.length > 0) {
+        formData.append('menuImage', menuImageInput.files[0]);
+      }
 
       const response = await fetch("../controllers/menu_operations.php", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
         body: formData
       });
 
@@ -1122,11 +1145,28 @@ document.addEventListener("DOMContentLoaded", () => {
       // Re-enable save button
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.textContent = isEdit ? "Update Menu" : "Save Menu";
+        saveBtn.textContent = isEdit ? "Update Category" : "Save Category";
       }
     }
     });
   }
+  
+  // Image preview function
+  window.previewMenuImage = function(input) {
+    const preview = document.getElementById("menuImagePreview");
+    const previewImg = document.getElementById("menuImagePreviewImg");
+    
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        previewImg.src = e.target.result;
+        preview.style.display = "block";
+      };
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      preview.style.display = "none";
+    }
+  };
 
   // Function to show messages
   function showMessage(message, type) {
@@ -1330,12 +1370,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    menuList.innerHTML = menus.map(menu => `
+    menuList.innerHTML = menus.map(menu => {
+      const menuImageUrl = menu.menu_image && menu.menu_image.startsWith('db:') 
+        ? `../api/image.php?type=menu&id=${menu.id}` 
+        : (menu.menu_image || '');
+      const imageHtml = menuImageUrl 
+        ? `<div class="menu-image" style="width: 100%; height: 150px; overflow: hidden; border-radius: 8px; margin-bottom: 1rem;"><img src="${menuImageUrl}" alt="${escapeHtml(menu.menu_name)}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'"></div>`
+        : '';
+      return `
       <div class="menu-card" data-menu-id="${menu.id}">
+        ${imageHtml}
         <h3>${escapeHtml(menu.menu_name)}</h3>
         <div class="menu-date">Created: ${formatDate(menu.created_at)}</div>
         <div class="menu-actions-card">
-          <button class="btn-edit" onclick="editMenu(${menu.id}, '${escapeHtml(menu.menu_name)}')">
+          <button class="btn-edit" onclick="editMenu(${menu.id}, '${escapeHtml(menu.menu_name)}', '${menuImageUrl || ''}')">
             <span class="material-symbols-rounded">edit</span>
             Edit
           </button>
@@ -1345,7 +1393,8 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   // Delete menu function

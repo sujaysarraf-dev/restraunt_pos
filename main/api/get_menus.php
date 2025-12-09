@@ -124,8 +124,16 @@ if (!$restaurant_id) {
 }
 
 try {
-    // Get all menus for this restaurant
-    $stmt = $conn->prepare("SELECT id, menu_name, is_active, created_at, updated_at FROM menu WHERE restaurant_id = ? ORDER BY sort_order ASC, created_at DESC");
+    // Get all menus for this restaurant (include image columns if they exist)
+    // Check if image columns exist first
+    $checkCol = $conn->query("SHOW COLUMNS FROM menu LIKE 'menu_image'");
+    $hasImageColumns = $checkCol->rowCount() > 0;
+    
+    if ($hasImageColumns) {
+        $stmt = $conn->prepare("SELECT id, menu_name, menu_image, is_active, created_at, updated_at FROM menu WHERE restaurant_id = ? ORDER BY sort_order ASC, created_at DESC");
+    } else {
+        $stmt = $conn->prepare("SELECT id, menu_name, is_active, created_at, updated_at FROM menu WHERE restaurant_id = ? ORDER BY sort_order ASC, created_at DESC");
+    }
     $stmt->execute([$restaurant_id]);
     $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
     

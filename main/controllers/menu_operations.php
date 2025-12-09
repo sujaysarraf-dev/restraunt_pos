@@ -57,6 +57,20 @@ try {
     $menuId = isset($_POST['menuId']) ? (int)$_POST['menuId'] : 0;
     $menuName = isset($_POST['menuName']) ? trim($_POST['menuName']) : '';
     
+    // Handle image upload
+    $menuImageData = null;
+    $menuImageMimeType = null;
+    $menuImagePath = null;
+    
+    if (isset($_FILES['menuImage']) && $_FILES['menuImage']['error'] === UPLOAD_ERR_OK) {
+        $imageInfo = handleMenuImageUpload($_FILES['menuImage'], $conn);
+        if (is_array($imageInfo)) {
+            $menuImageData = $imageInfo['data'];
+            $menuImageMimeType = $imageInfo['mime_type'];
+            $menuImagePath = 'db:' . uniqid(); // Reference ID for database storage
+        }
+    }
+    
     // Validate action
     if (empty($action)) {
         throw new Exception('Action is required');
@@ -87,9 +101,21 @@ try {
                 throw new Exception('Menu name already exists');
             }
             
-            // Insert new menu
-            $insertStmt = $conn->prepare("INSERT INTO menu (restaurant_id, menu_name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
-            $result = $insertStmt->execute([$restaurant_id, $menuName]);
+            // Ensure image columns exist
+            try {
+                $checkCol = $conn->query("SHOW COLUMNS FROM menu LIKE 'menu_image'");
+                if ($checkCol->rowCount() == 0) {
+                    $conn->exec("ALTER TABLE menu ADD COLUMN menu_image VARCHAR(255) NULL AFTER menu_name");
+                    $conn->exec("ALTER TABLE menu ADD COLUMN menu_image_data LONGBLOB NULL AFTER menu_image");
+                    $conn->exec("ALTER TABLE menu ADD COLUMN menu_image_mime_type VARCHAR(50) NULL AFTER menu_image_data");
+                }
+            } catch (PDOException $e) {
+                // Columns might already exist, continue
+            }
+            
+            // Insert new menu with image
+            $insertStmt = $conn->prepare("INSERT INTO menu (restaurant_id, menu_name, menu_image, menu_image_data, menu_image_mime_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())");
+            $result = $insertStmt->execute([$restaurant_id, $menuName, $menuImagePath, $menuImageData, $menuImageMimeType]);
             
             if ($result) {
                 $newMenuId = $conn->lastInsertId();
@@ -126,9 +152,33 @@ try {
                 throw new Exception('Menu name already exists');
             }
             
-            // Update menu
-            $updateStmt = $conn->prepare("UPDATE menu SET menu_name = ?, updated_at = NOW() WHERE id = ? AND restaurant_id = ?");
-            $result = $updateStmt->execute([$menuName, $menuId, $restaurant_id]);
+            // Get existing menu data
+            $existingStmt = $conn->prepare("SELECT menu_image, menu_image_data, menu_image_mime_type FROM menu WHERE id = ? AND restaurant_id = ?");
+            $existingStmt->execute([$menuId, $restaurant_id]);
+            $existingMenu = $existingStmt->fetch(PDO::FETCH_ASSOC);
+            
+            // If no new image uploaded, keep existing image
+            if ($menuImageData === null && $existingMenu) {
+                $menuImageData = $existingMenu['menu_image_data'];
+                $menuImageMimeType = $existingMenu['menu_image_mime_type'];
+                $menuImagePath = $existingMenu['menu_image'];
+            }
+            
+            // Ensure image columns exist
+            try {
+                $checkCol = $conn->query("SHOW COLUMNS FROM menu LIKE 'menu_image'");
+                if ($checkCol->rowCount() == 0) {
+                    $conn->exec("ALTER TABLE menu ADD COLUMN menu_image VARCHAR(255) NULL AFTER menu_name");
+                    $conn->exec("ALTER TABLE menu ADD COLUMN menu_image_data LONGBLOB NULL AFTER menu_image");
+                    $conn->exec("ALTER TABLE menu ADD COLUMN menu_image_mime_type VARCHAR(50) NULL AFTER menu_image_data");
+                }
+            } catch (PDOException $e) {
+                // Columns might already exist, continue
+            }
+            
+            // Update menu with image
+            $updateStmt = $conn->prepare("UPDATE menu SET menu_name = ?, menu_image = ?, menu_image_data = ?, menu_image_mime_type = ?, updated_at = NOW() WHERE id = ? AND restaurant_id = ?");
+            $result = $updateStmt->execute([$menuName, $menuImagePath, $menuImageData, $menuImageMimeType, $menuId, $restaurant_id]);
             
             if ($result) {
                 // Return success response
@@ -195,6 +245,38 @@ try {
         'message' => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
     exit();
+}
+
+function handleMenuImageUpload($file, $conn) {
+    // Validate file type
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    
+    // Verify MIME type from file content
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $actualMimeType = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    
+    if (!in_array($actualMimeType, $allowedTypes)) {
+        throw new Exception('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.');
+    }
+    
+    // Validate file size (5MB max)
+    $maxSize = 5 * 1024 * 1024; // 5MB
+    if ($file['size'] > $maxSize) {
+        throw new Exception('File size too large. Maximum size is 5MB.');
+    }
+    
+    // Read image data
+    $imageData = file_get_contents($file['tmp_name']);
+    if ($imageData === false) {
+        throw new Exception('Failed to read image file');
+    }
+    
+    return [
+        'data' => $imageData,
+        'mime_type' => $actualMimeType,
+        'size' => $file['size']
+    ];
 }
 ?>
 

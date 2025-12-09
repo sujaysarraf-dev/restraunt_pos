@@ -164,6 +164,35 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
                     throw $e;
                 }
             }
+        } elseif ($imageType === 'menu' && !empty($imageId)) {
+            // Get menu image
+            try {
+                $stmt = $conn->prepare("SELECT menu_image_data, menu_image_mime_type FROM menu WHERE id = ? LIMIT 1");
+                $stmt->execute([$imageId]);
+                $menu = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($menu && !empty($menu['menu_image_data'])) {
+                    ob_end_clean();
+                    header('Content-Type: ' . ($menu['menu_image_mime_type'] ?? 'image/jpeg'));
+                    header('Content-Length: ' . strlen($menu['menu_image_data']));
+                    header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
+                    echo $menu['menu_image_data'];
+                    exit();
+                } else {
+                    http_response_code(404);
+                    header('Content-Type: text/plain');
+                    exit('Menu image not found');
+                }
+            } catch (PDOException $e) {
+                // If menu_image_data column doesn't exist, return 404
+                if (strpos($e->getMessage(), 'menu_image_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
+                    http_response_code(404);
+                    header('Content-Type: text/plain');
+                    exit('Menu image not found');
+                } else {
+                    throw $e;
+                }
+            }
         } elseif ($imageType === 'banner' && !empty($imageId)) {
             // Get website banner
             try {

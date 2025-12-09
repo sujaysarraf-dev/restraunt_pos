@@ -73,7 +73,7 @@ try {
         $conn = $pdo ?? null;
         if (!$conn) {
             throw new Exception('Database connection not available');
-        }
+    }
     }
     
     $customers = [];

@@ -1917,19 +1917,26 @@ try {
   <div id="menuModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 id="modalTitle">Add New Menu</h2>
+        <h2 id="modalTitle">Add New Category</h2>
         <span class="close">&times;</span>
       </div>
       <div class="modal-body">
-        <form id="menuForm">
+        <form id="menuForm" enctype="multipart/form-data">
           <input type="hidden" id="menuId" name="menuId" value="">
           <div class="form-group">
-            <label for="menuName">Menu Name:</label>
-            <input type="text" id="menuName" name="menuName" required placeholder="Enter menu name (e.g., Breakfast, Lunch, Dinner)">
+            <label for="menuName">Category Name:</label>
+            <input type="text" id="menuName" name="menuName" required placeholder="Enter category name (e.g., Breakfast, Lunch, Dinner)">
+          </div>
+          <div class="form-group">
+            <label for="menuImage">Category Image:</label>
+            <input type="file" id="menuImage" name="menuImage" accept="image/*" onchange="previewMenuImage(this)">
+            <div id="menuImagePreview" style="margin-top: 10px; display: none;">
+              <img id="menuImagePreviewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #e5e7eb;">
+            </div>
           </div>
           <div class="form-actions">
             <button type="button" class="btn btn-cancel" id="cancelBtn">Cancel</button>
-            <button type="submit" class="btn btn-save" id="saveBtn">Save Menu</button>
+            <button type="submit" class="btn btn-save" id="saveBtn">Save Category</button>
           </div>
         </form>
       </div>
