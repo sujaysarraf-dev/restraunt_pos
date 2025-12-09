@@ -3503,7 +3503,9 @@ select:focus {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 25px;
-  overflow: visible; /* Allow hover effects to show */
+  overflow: hidden; /* Prevent overflow */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .settings-section {
@@ -3512,7 +3514,7 @@ select:focus {
   padding: 25px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
-  overflow: visible; /* Allow shadows to show, but contain transforms */
+  overflow: hidden; /* Prevent cards from overflowing */
   position: relative;
 }
 
@@ -5348,13 +5350,16 @@ select:focus {
   .settings-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
-    overflow: visible;
+    overflow: hidden;
+    width: 100%;
   }
   
   .settings-section {
     padding: 1.25rem;
     border-radius: 12px;
-    overflow: visible;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
   }
   
   .settings-section-title {
@@ -5391,22 +5396,28 @@ select:focus {
     grid-template-columns: 1fr !important;
     gap: 1rem !important;
     margin-bottom: 1.5rem !important;
-    overflow: visible !important;
-    padding: 0.5rem 0 !important; /* Add padding to accommodate hover effects */
+    overflow: hidden !important;
+    padding: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    max-width: 100% !important;
   }
   
-  /* Color picker cards */
+  /* Color picker cards - prevent overflow */
   #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] {
     padding: 1rem !important;
     border-radius: 12px !important;
-    overflow: hidden !important; /* Prevent content from overflowing */
+    overflow: hidden !important;
     position: relative !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
   }
   
-  /* Ensure color picker grid container has proper spacing */
-  #websiteThemePage div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] {
-    overflow: visible !important;
-    padding: 0.5rem 0 !important; /* Add padding to accommodate hover effects */
+  /* Disable hover transform on mobile to prevent overflow */
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"]:hover {
+    transform: none !important;
   }
   
   /* Color input */
