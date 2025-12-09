@@ -3510,6 +3510,7 @@ select:focus {
   overflow: hidden; /* Prevent overflow */
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 }
 
@@ -3595,6 +3596,8 @@ select:focus {
   overflow: hidden; /* Prevent content from overflowing */
   position: relative;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 }
 
