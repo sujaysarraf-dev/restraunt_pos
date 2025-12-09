@@ -1727,6 +1727,55 @@ let searchTimeout;
 let searchSuggestions = [];
 let selectedSuggestionIndex = -1;
 
+// Perform search function
+async function performSearch() {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) return;
+    
+    const searchTerm = searchInput.value.trim();
+    const suggestionsDiv = document.getElementById('searchSuggestions');
+    
+    // Hide suggestions if search is empty
+    if (searchTerm.length === 0) {
+        if (suggestionsDiv) suggestionsDiv.style.display = 'none';
+        loadMenuItems(currentFilter);
+        selectedSuggestionIndex = -1;
+        return;
+    }
+    
+    try {
+        const restaurantId = getRestaurantId();
+        const response = await fetch(`api.php?action=searchItems&q=${encodeURIComponent(searchTerm)}&restaurant_id=${encodeURIComponent(restaurantId)}`);
+        const data = await response.json();
+        
+        // Check for error
+        if (data.error) {
+            console.error('Search Error:', data.error);
+            menuItems = [];
+            searchSuggestions = [];
+        } else {
+            menuItems = Array.isArray(data) ? data : [];
+            // Show top 5 results in suggestions
+            searchSuggestions = menuItems.slice(0, 5);
+        }
+        
+        // Hide suggestions dropdown and show full results
+        if (suggestionsDiv) suggestionsDiv.style.display = 'none';
+        renderMenuItems();
+        
+        // Scroll to menu section
+        const menuSection = document.getElementById('menu');
+        if (menuSection) {
+            menuSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        menuItems = [];
+        searchSuggestions = [];
+        if (suggestionsDiv) suggestionsDiv.style.display = 'none';
+    }
+}
+
 function handleSearch(e) {
     const searchTerm = e.target.value.trim();
     const suggestionsDiv = document.getElementById('searchSuggestions');
