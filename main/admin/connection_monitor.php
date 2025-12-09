@@ -17,7 +17,7 @@ if (!isSessionValid() || (!isset($_SESSION['user_id']) && !isset($_SESSION['staf
 // Include database connection
 require_once __DIR__ . '/../db_connection.php';
 
-// Auto-refresh every 5 seconds
+// Auto-refresh every 5 seconds (using AJAX, not meta refresh)
 $refresh_interval = 5;
 ?>
 <!DOCTYPE html>
@@ -25,7 +25,6 @@ $refresh_interval = 5;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="<?php echo $refresh_interval; ?>">
     <title>Database Connection Monitor</title>
     <style>
         * {
