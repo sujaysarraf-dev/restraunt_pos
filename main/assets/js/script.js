@@ -491,9 +491,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Enable zoom only for website appearance section
     const viewport = document.querySelector('meta[name="viewport"]');
     if (pageId === 'websiteThemePage') {
-      // Allow zoom in website appearance section
+      // Allow zoom in and out in website appearance section
       if (viewport) {
-        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=5.0, user-scalable=yes');
       }
       setTimeout(() => {
         initWebsiteThemeEditor();
@@ -10261,7 +10261,7 @@ document.addEventListener('DOMContentLoaded', function(){
     // Enable zoom if website appearance page is active on load
     const viewport = document.querySelector('meta[name="viewport"]');
     if (viewport) {
-      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=5.0, user-scalable=yes');
     }
     setTimeout(() => {
       initWebsiteThemeEditor();
