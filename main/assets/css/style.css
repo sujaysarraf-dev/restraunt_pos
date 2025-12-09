@@ -558,11 +558,18 @@ body {
   padding: 20px;
   min-height: 100vh;
   transition: margin-left 0.4s ease;
+  width: calc(100% - 302px);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .sidebar.collapsed + .main-content {
   margin-left: 117px; /* Collapsed sidebar width + margin */
   width: calc(100% - 117px);
+  max-width: 100%;
+  min-width: 0;
 }
 
 .page {
@@ -5471,12 +5478,30 @@ select:focus {
 
 /* Tablet and below (768px) */
 @media (max-width: 768px) {
+  /* Ensure main containers shrink horizontally */
+  .main-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+  
   .page-content {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
     padding: 1rem !important;
+    overflow-x: hidden !important;
+  }
+  
+  #websiteThemePage {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
   }
   
   .settings-grid {
