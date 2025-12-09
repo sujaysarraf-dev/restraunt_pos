@@ -324,8 +324,9 @@ try {
     }
 } catch (PDOException $e) {
     error_log("Database error in website/api.php: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
     http_response_code(500);
-    echo json_encode(['error' => 'Database error occurred. Please check your database connection.']);
+    echo json_encode(['error' => 'Database error occurred. Please check your database connection.', 'details' => $e->getMessage()]);
 } catch (Exception $e) {
     error_log("Error in website/api.php: " . $e->getMessage());
     http_response_code(500);
