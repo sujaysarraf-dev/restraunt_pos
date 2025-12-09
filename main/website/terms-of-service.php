@@ -25,7 +25,17 @@ $primary_yellow = '#FFD100';
 
 try {
     require_once __DIR__ . '/db_config.php';
-    $conn = $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $conn = getConnection();
+    } else {
+        // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        $conn = $pdo ?? null;
+        if (!$conn) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     if ($restaurant_id) {
         $stmt = $conn->prepare("SELECT restaurant_name, currency_symbol FROM users WHERE restaurant_id = ? LIMIT 1");

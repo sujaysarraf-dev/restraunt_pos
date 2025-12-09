@@ -66,8 +66,17 @@ try {
     // Include database connection
     require_once __DIR__ . '/db_config.php';
     
-    // Get connection from db_config.php
-    $conn = $pdo;
+    // Get connection using getConnection() for lazy connection support
+    if (function_exists('getConnection')) {
+        $conn = getConnection();
+    } else {
+        // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+        global $pdo;
+        $conn = $pdo ?? null;
+        if (!$conn) {
+            throw new Exception('Database connection not available');
+        }
+    }
     
     // Track if restaurant was explicitly requested (not default)
     $restaurant_explicitly_requested = false;

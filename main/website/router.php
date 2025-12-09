@@ -40,8 +40,18 @@ if (empty($restaurant_slug) && isset($_GET['restaurant'])) {
 // Include database connection
 require_once __DIR__ . '/db_config.php';
 
-// Get connection from db_config.php
-$conn = $pdo;
+// Get connection using getConnection() for lazy connection support
+if (function_exists('getConnection')) {
+    $conn = getConnection();
+} else {
+    // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
+    global $pdo;
+    $conn = $pdo ?? null;
+    if (!$conn) {
+        http_response_code(500);
+        die('Database connection not available');
+    }
+}
 
 // Function to create URL-friendly slug from restaurant name
 function createRestaurantSlug($name) {
