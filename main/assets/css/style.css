@@ -5556,8 +5556,15 @@ body, html {
     min-width: 0 !important;
   }
   
-  /* Bind inner cards to main card */
-  #colorPreviewContainer {
+  /* Bind ALL inner cards to main card - force them to shrink */
+  .settings-section #colorPreviewContainer,
+  .settings-section #heroPreview,
+  .settings-section #bannersGrid,
+  .settings-section #bannersPreview,
+  #colorPreviewContainer,
+  #heroPreview,
+  #bannersGrid,
+  #bannersPreview {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -5565,22 +5572,14 @@ body, html {
     overflow: hidden !important;
   }
   
-  #colorPreviewContainer > * {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-  }
-  
-  #heroPreview {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-    overflow: hidden !important;
-  }
-  
-  #heroPreview > * {
+  .settings-section #colorPreviewContainer > *,
+  .settings-section #heroPreview > *,
+  .settings-section #bannersGrid > *,
+  .settings-section #bannersPreview > *,
+  #colorPreviewContainer > *,
+  #heroPreview > *,
+  #bannersGrid > *,
+  #bannersPreview > * {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -5600,8 +5599,11 @@ body, html {
     white-space: normal !important;
   }
   
-  /* Color picker cards bound to container */
-  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] {
+  /* Color picker cards bound to container - force shrink */
+  .settings-section div[style*="background: linear-gradient(135deg, #f9fafb"],
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"],
+  .settings-section > div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"],
+  #websiteThemePage .settings-section > div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -5609,38 +5611,10 @@ body, html {
     overflow: hidden !important;
   }
   
-  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] > * {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-  }
-  
-  /* Banner grid and preview */
-  #bannersGrid {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-    overflow: hidden !important;
-  }
-  
-  #bannersGrid > * {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-  }
-  
-  #bannersPreview {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-    overflow: hidden !important;
-  }
-  
-  #bannersPreview > * {
+  .settings-section div[style*="background: linear-gradient(135deg, #f9fafb"] > *,
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] > *,
+  .settings-section > div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] > *,
+  #websiteThemePage .settings-section > div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] > * {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
