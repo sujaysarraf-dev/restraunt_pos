@@ -1118,9 +1118,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add click handler to search button
     const searchBtn = document.querySelector('.search-btn');
     if (searchBtn) {
-        searchBtn.addEventListener('click', (e) => {
+        searchBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            performSearch();
+            e.stopPropagation();
+            await performSearch();
+        });
+    }
+    
+    // Also handle Enter key in search input to trigger search
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
         });
     }
     
@@ -1739,14 +1750,21 @@ let selectedSuggestionIndex = -1;
 // Perform search function
 async function performSearch() {
     const searchInput = document.getElementById('searchInput');
-    if (!searchInput) return;
+    if (!searchInput) {
+        console.error('Search input not found');
+        return;
+    }
     
     const searchTerm = searchInput.value.trim();
     const suggestionsDiv = document.getElementById('searchSuggestions');
     
-    // Hide suggestions if search is empty
+    // Hide suggestions dropdown
+    if (suggestionsDiv) {
+        suggestionsDiv.style.display = 'none';
+    }
+    
+    // If search is empty, show all items
     if (searchTerm.length === 0) {
-        if (suggestionsDiv) suggestionsDiv.style.display = 'none';
         loadMenuItems(currentFilter);
         selectedSuggestionIndex = -1;
         return;
@@ -1754,7 +1772,17 @@ async function performSearch() {
     
     try {
         const restaurantId = getRestaurantId();
+        if (!restaurantId) {
+            console.error('Restaurant ID not found');
+            return;
+        }
+        
         const response = await fetch(`api.php?action=searchItems&q=${encodeURIComponent(searchTerm)}&restaurant_id=${encodeURIComponent(restaurantId)}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         // Check for error
@@ -1762,26 +1790,30 @@ async function performSearch() {
             console.error('Search Error:', data.error);
             menuItems = [];
             searchSuggestions = [];
-        } else {
-            menuItems = Array.isArray(data) ? data : [];
-            // Show top 5 results in suggestions
-            searchSuggestions = menuItems.slice(0, 5);
+            renderMenuItems();
+            return;
         }
         
-        // Hide suggestions dropdown and show full results
-        if (suggestionsDiv) suggestionsDiv.style.display = 'none';
+        // Get search results
+        menuItems = Array.isArray(data) ? data : (data.items || []);
+        searchSuggestions = menuItems.slice(0, 5);
+        
+        // Render the search results
         renderMenuItems();
         
-        // Scroll to menu section
-        const menuSection = document.getElementById('menu');
-        if (menuSection) {
-            menuSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        // Scroll to menu section to show results
+        setTimeout(() => {
+            const menuSection = document.getElementById('menu');
+            if (menuSection) {
+                menuSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
+        
     } catch (error) {
         console.error('Search error:', error);
         menuItems = [];
         searchSuggestions = [];
-        if (suggestionsDiv) suggestionsDiv.style.display = 'none';
+        renderMenuItems();
     }
 }
 
