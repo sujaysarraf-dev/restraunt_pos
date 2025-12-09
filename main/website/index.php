@@ -254,7 +254,7 @@ try {
     <meta name="restaurant-id" content="<?php echo htmlspecialchars($restaurant_id, ENT_QUOTES, 'UTF-8'); ?>">
     <meta name="restaurant-slug" content="<?php echo htmlspecialchars($restaurant_slug, ENT_QUOTES, 'UTF-8'); ?>">
     <title>RestroGrow POS - Order Online</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <style>
