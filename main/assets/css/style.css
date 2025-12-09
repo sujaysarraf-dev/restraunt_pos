@@ -5402,6 +5402,144 @@ select:focus {
     max-width: 100% !important;
     box-sizing: border-box !important;
   }
+}
+
+/* Specific breakpoint for 538px width (portrait tablets/small tablets) */
+@media (max-width: 600px) {
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.875rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .settings-section {
+    padding: 1rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  .settings-section-title {
+    font-size: 1.05rem !important;
+    margin-bottom: 0.875rem !important;
+  }
+  
+  /* Color preview container */
+  #colorPreviewContainer {
+    padding: 0.7rem !important;
+    margin-bottom: 1.25rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  #heroPreview {
+    padding: 1rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Color picker grid */
+  #websiteThemePage div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] {
+    grid-template-columns: 1fr !important;
+    gap: 0.875rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 0 1.25rem 0 !important;
+  }
+  
+  /* Color picker cards */
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] {
+    padding: 1rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+  
+  #websiteThemePage input[type="color"] {
+    height: 55px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Banner grid */
+  #bannersGrid {
+    grid-template-columns: 1fr !important;
+    gap: 0.875rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  #bannersPreview {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  /* Form elements */
+  #websiteThemePage .form-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+  }
+  
+  #websiteThemePage .form-group input[type="file"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  #websiteThemePage .form-group button {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Restaurant website link section */
+  #websiteThemePage div[style*="margin-top: 2rem; padding: 1.5rem"] {
+    padding: 1rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin-top: 1.5rem !important;
+  }
+  
+  #restaurantWebsiteLink {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Form actions */
+  #websiteThemePage .form-actions {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  #websiteThemePage .form-actions .btn {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
   
   .settings-section-title {
     font-size: 1.1rem;
