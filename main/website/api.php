@@ -215,13 +215,18 @@ try {
                              mi.sort_order, mi.created_at, mi.updated_at, m.menu_name 
                       FROM menu_items mi 
                       JOIN menu m ON mi.menu_id = m.id 
-                      WHERE (mi.item_name_en LIKE :search OR mi.item_description_en LIKE :search OR mi.item_category LIKE :search)
+                      WHERE (mi.item_name_en LIKE :search1 OR mi.item_description_en LIKE :search2 OR mi.item_category LIKE :search3)
                       AND mi.is_available = 1 AND mi.restaurant_id = :rid
                       ORDER BY mi.item_name_en LIMIT 20";
             $like = '%' . $searchTerm . '%';
             try {
                 $stmt = $conn->prepare($query);
-                $stmt->execute([':search' => $like, ':rid' => $restaurantId]);
+                $stmt->execute([
+                    ':search1' => $like,
+                    ':search2' => $like,
+                    ':search3' => $like,
+                    ':rid' => $restaurantId
+                ]);
                 $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 // Clean up any binary data and load variations
