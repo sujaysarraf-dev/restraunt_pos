@@ -739,6 +739,9 @@ try {
             break;
             
         case 'getTables':
+            if (!$restaurant_id) {
+                throw new Exception('restaurant_id is required');
+            }
             $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             $stmt = $conn->prepare("
                 SELECT t.id, t.table_number, t.capacity, a.area_name 
@@ -758,6 +761,9 @@ try {
             break;
             
         case 'getMenuItems':
+            if (!$restaurant_id) {
+                throw new Exception('restaurant_id is required');
+            }
             $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             $stmt = $conn->prepare("
                 SELECT id, item_name_en, item_category, item_type, base_price 
@@ -776,6 +782,9 @@ try {
             break;
             
         case 'getMenus':
+            if (!$restaurant_id) {
+                throw new Exception('restaurant_id is required');
+            }
             // Convert numeric ID to restaurant code if needed
             $restaurantCode = $restaurant_id;
             if (is_numeric($restaurant_id)) {
@@ -804,6 +813,9 @@ try {
             break;
             
         case 'getAreas':
+            if (!$restaurant_id) {
+                throw new Exception('restaurant_id is required');
+            }
             $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             $stmt = $conn->prepare("
                 SELECT a.id, a.area_name, a.created_at, a.updated_at, 
