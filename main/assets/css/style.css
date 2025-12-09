@@ -3513,6 +3513,11 @@ select:focus {
   box-sizing: border-box;
 }
 
+/* Allow settings grid items to shrink below 400px on smaller screens */
+.settings-grid > * {
+  min-width: 0;
+}
+
 /* Banner grid container - ensure it fits within settings section */
 #bannersGrid {
   width: 100%;
@@ -5462,10 +5467,22 @@ select:focus {
     margin: 0 !important;
   }
   
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+    min-width: 0 !important;
+  }
+  
+  .settings-grid > * {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
   .settings-section {
     padding: 1rem !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     margin: 0 !important;
     overflow: hidden !important;
@@ -5474,6 +5491,7 @@ select:focus {
   .settings-section-title {
     font-size: 1.05rem !important;
     margin-bottom: 0.875rem !important;
+    min-width: 0 !important;
   }
   
   /* Color preview container */
@@ -5498,9 +5516,17 @@ select:focus {
     gap: 0.875rem !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     padding: 0 !important;
     margin: 0 0 1.25rem 0 !important;
+  }
+  
+  /* Ensure all grid items can shrink */
+  #websiteThemePage div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] > * {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
   /* Color picker cards */
@@ -5508,6 +5534,7 @@ select:focus {
     padding: 1rem !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     margin: 0 !important;
   }
@@ -5525,14 +5552,22 @@ select:focus {
     gap: 0.875rem !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     padding: 0 !important;
     margin: 0 !important;
   }
   
+  #bannersGrid > * {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
   #bannersPreview {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -5835,13 +5870,21 @@ select:focus {
     gap: 0.75rem !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
+  }
+  
+  #websiteThemePage div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] > * {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
   #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] {
     padding: 0.875rem !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
   }
   
