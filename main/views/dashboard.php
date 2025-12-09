@@ -721,7 +721,7 @@ try {
         <div class="menu-actions">
           <button class="btn btn-primary" id="addMenuBtn">
             <span class="material-symbols-rounded">add</span>
-            Add New Menu
+            Add New Category
           </button>
         </div>
         
