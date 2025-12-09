@@ -278,10 +278,9 @@ try {
       console.log('Restaurant ID:', '<?php echo htmlspecialchars($restaurant_id, ENT_QUOTES, 'UTF-8'); ?>');
       console.log('=====================');
       
-      // Verify currency is set correctly
-      if (!window.globalCurrencySymbol || window.globalCurrencySymbol === '₹') {
-          console.warn('WARNING: Currency might not be loaded from database correctly!');
-          console.warn('Expected: Your database currency, Got:', window.globalCurrencySymbol);
+      // Verify currency is set correctly (only warn if actually missing)
+      if (!window.globalCurrencySymbol || window.globalCurrencySymbol.trim() === '') {
+          console.warn('WARNING: Currency symbol is missing or empty!');
       }
       // Clear any old localStorage currency to ensure database is source of truth
       if (window.globalCurrencySymbol) {
