@@ -3533,6 +3533,59 @@ select:focus {
   overflow: hidden;
 }
 
+/* Ensure all inner cards are bound to main card */
+#colorPreviewContainer {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#colorPreviewContainer > * {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#heroPreview {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#heroPreview > * {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Color picker cards - bind to container */
+#websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] > * {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Button previews */
+#categoryButtonPreview,
+#addToCartPreview,
+#checkoutPreview {
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
 .settings-section {
   background: white;
   border-radius: 12px;
