@@ -57,12 +57,21 @@ try {
     $menuId = isset($_POST['menuId']) ? (int)$_POST['menuId'] : 0;
     $menuName = isset($_POST['menuName']) ? trim($_POST['menuName']) : '';
     
-    // Handle image upload
+    // Handle image upload - check for base64 first (cropped), then file
     $menuImageData = null;
     $menuImageMimeType = null;
     $menuImagePath = null;
     
-    if (isset($_FILES['menuImage']) && $_FILES['menuImage']['error'] === UPLOAD_ERR_OK) {
+    if (!empty($_POST['menuImageBase64'])) {
+        // Handle base64 cropped image
+        $imageInfo = handleBase64MenuImage($_POST['menuImageBase64']);
+        if (is_array($imageInfo)) {
+            $menuImageData = $imageInfo['data'];
+            $menuImageMimeType = $imageInfo['mime_type'];
+            $menuImagePath = 'db:' . uniqid(); // Reference ID for database storage
+        }
+    } elseif (isset($_FILES['menuImage']) && $_FILES['menuImage']['error'] === UPLOAD_ERR_OK) {
+        // Handle file upload
         $imageInfo = handleMenuImageUpload($_FILES['menuImage'], $conn);
         if (is_array($imageInfo)) {
             $menuImageData = $imageInfo['data'];
@@ -276,6 +285,56 @@ function handleMenuImageUpload($file, $conn) {
         'data' => $imageData,
         'mime_type' => $actualMimeType,
         'size' => $file['size']
+    ];
+}
+
+function handleBase64MenuImage($base64String) {
+    // Remove data URL prefix if present and extract MIME type
+    $mimeType = 'image/jpeg'; // Default
+    if (strpos($base64String, 'data:image/') === 0) {
+        $mimePart = substr($base64String, 5, strpos($base64String, ';') - 5);
+        $mimeType = str_replace('data:', '', $mimePart);
+        $base64String = substr($base64String, strpos($base64String, ',') + 1);
+    }
+    
+    // Decode base64
+    $imageData = base64_decode($base64String);
+    
+    if ($imageData === false) {
+        throw new Exception('Invalid base64 image data');
+    }
+    
+    // Validate image size (5MB max)
+    if (strlen($imageData) > 5 * 1024 * 1024) {
+        throw new Exception('Image size too large. Maximum size is 5MB.');
+    }
+    
+    // Get image info
+    $imageInfo = getimagesizefromstring($imageData);
+    if ($imageInfo === false) {
+        throw new Exception('Invalid image format');
+    }
+    
+    // Validate image type
+    $allowedTypes = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_WEBP];
+    if (!in_array($imageInfo[2], $allowedTypes)) {
+        throw new Exception('Invalid image type. Only JPEG, PNG, GIF, and WebP images are allowed.');
+    }
+    
+    // Determine MIME type from image info
+    $mimeTypes = [
+        IMAGETYPE_JPEG => 'image/jpeg',
+        IMAGETYPE_PNG => 'image/png',
+        IMAGETYPE_GIF => 'image/gif',
+        IMAGETYPE_WEBP => 'image/webp'
+    ];
+    $mimeType = $mimeTypes[$imageInfo[2]] ?? $mimeType;
+    
+    // Return array with image data and MIME type for database storage
+    return [
+        'data' => $imageData,
+        'mime_type' => $mimeType,
+        'size' => strlen($imageData)
     ];
 }
 ?>

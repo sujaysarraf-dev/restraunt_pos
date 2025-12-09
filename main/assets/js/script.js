@@ -975,8 +975,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (currentMenuImage) {
         const preview = document.getElementById("menuImagePreview");
         const previewImg = document.getElementById("menuImagePreviewImg");
-        previewImg.src = currentMenuImage;
-        preview.style.display = "block";
+        if (preview && previewImg) {
+          previewImg.src = currentMenuImage;
+          preview.style.display = "block";
+        }
       }
     } else {
       modalTitle.textContent = "Add New Category";
@@ -1118,7 +1120,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (isEdit) {
         formData.append('menuId', menuId);
       }
-      if (menuImageInput && menuImageInput.files.length > 0) {
+      // Handle image - use base64 if cropped, otherwise use file
+      const menuImageBase64 = document.getElementById('menuImageBase64');
+      if (menuImageBase64 && menuImageBase64.value && menuCropApplied) {
+        // Use cropped base64 image
+        formData.append('menuImageBase64', menuImageBase64.value);
+      } else if (menuImageInput && menuImageInput.files.length > 0) {
+        // Use original file if no crop applied
         formData.append('menuImage', menuImageInput.files[0]);
       }
 
@@ -1151,22 +1159,215 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   
-  // Image preview function
-  window.previewMenuImage = function(input) {
-    const preview = document.getElementById("menuImagePreview");
-    const previewImg = document.getElementById("menuImagePreviewImg");
+  // Category image upload and cropper functionality
+  let menuImageCropper = null;
+  let menuCropApplied = false;
+  
+  const menuImageInput = document.getElementById("menuImage");
+  const menuImageFileName = document.getElementById("menuImageFileName");
+  const menuImageCropperSection = document.getElementById("menuImageCropperSection");
+  const menuImageToCrop = document.getElementById("menuImageToCrop");
+  const menuImageBase64Input = document.getElementById("menuImageBase64");
+  
+  if (menuImageInput) {
+    menuImageInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      
+      if (file) {
+        menuImageFileName.textContent = file.name;
+        
+        // Clean up existing cropper
+        if (menuImageCropper) {
+          menuImageCropper.destroy();
+          menuImageCropper = null;
+        }
+        
+        // Reset crop applied flag
+        menuCropApplied = false;
+        if (menuImageBase64Input) menuImageBase64Input.value = '';
+        
+        // Reset crop button appearance
+        const cropBtn = document.getElementById('cropMenuImageBtn');
+        if (cropBtn) {
+          cropBtn.style.background = '';
+          cropBtn.style.color = '';
+          cropBtn.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">crop</span> Apply Crop';
+        }
+        
+        // Show preview and initialize cropper
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const imageUrl = e.target.result;
+          
+          // Set image source for cropper
+          menuImageToCrop.src = imageUrl;
+          menuImageCropperSection.style.display = 'block';
+          
+          // Initialize Cropper.js with square aspect ratio for categories
+          menuImageCropper = new Cropper(menuImageToCrop, {
+            aspectRatio: 1, // Square for categories
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.8,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            ready: function() {
+              // Update preview when cropper is ready
+              updateMenuCategoryPreview();
+              // Initialize crop buttons
+              initializeMenuCropButtons();
+            },
+            crop: function() {
+              // Update preview on crop
+              updateMenuCategoryPreview();
+            }
+          });
+          
+          // Hide old preview
+          const oldPreview = document.getElementById("menuImagePreview");
+          if (oldPreview) oldPreview.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        menuImageFileName.textContent = 'No file chosen';
+        const oldPreview = document.getElementById("menuImagePreview");
+        if (oldPreview) oldPreview.style.display = 'none';
+        menuImageCropperSection.style.display = 'none';
+        if (menuImageCropper) {
+          menuImageCropper.destroy();
+          menuImageCropper = null;
+        }
+        if (menuImageBase64Input) menuImageBase64Input.value = '';
+      }
+    });
+  }
+  
+  // Update category preview with cropped image
+  function updateMenuCategoryPreview() {
+    if (!menuImageCropper) return;
     
-    if (input.files && input.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        previewImg.src = e.target.result;
-        preview.style.display = "block";
-      };
-      reader.readAsDataURL(input.files[0]);
-    } else {
-      preview.style.display = "none";
+    const croppedCanvas = menuImageCropper.getCroppedCanvas({
+      width: 600,
+      height: 600,
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high'
+    });
+    
+    if (croppedCanvas) {
+      const croppedDataUrl = croppedCanvas.toDataURL('image/jpeg', 0.9);
+      const croppedPreviewImg = document.getElementById('croppedMenuPreviewImg');
+      const categoryPreviewImage = document.getElementById('menuCategoryPreviewImage');
+      
+      if (croppedPreviewImg) {
+        croppedPreviewImg.src = croppedDataUrl;
+        croppedPreviewImg.style.display = 'block';
+      }
+      
+      // Hide placeholder emoji
+      if (categoryPreviewImage) {
+        const placeholder = categoryPreviewImage.querySelector('span');
+        if (placeholder) placeholder.style.display = 'none';
+      }
+      
+      // Update preview category name if available
+      const categoryNameInput = document.getElementById('menuName');
+      if (categoryNameInput && categoryNameInput.value) {
+        const previewName = document.getElementById('previewCategoryName');
+        if (previewName) previewName.textContent = categoryNameInput.value;
+      }
     }
-  };
+  }
+  
+  // Initialize menu crop buttons
+  function initializeMenuCropButtons() {
+    const cropBtn = document.getElementById('cropMenuImageBtn');
+    const resetBtn = document.getElementById('resetMenuCropBtn');
+    
+    if (cropBtn) {
+      // Remove existing listener if any
+      const newCropBtn = cropBtn.cloneNode(true);
+      cropBtn.parentNode.replaceChild(newCropBtn, cropBtn);
+      
+      newCropBtn.addEventListener('click', function() {
+        if (!menuImageCropper) return;
+        
+        // Show loading state
+        const originalBtnHTML = newCropBtn.innerHTML;
+        newCropBtn.disabled = true;
+        newCropBtn.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">hourglass_empty</span> Processing...';
+        
+        const croppedCanvas = menuImageCropper.getCroppedCanvas({
+          width: 1200,
+          height: 1200,
+          imageSmoothingEnabled: true,
+          imageSmoothingQuality: 'high'
+        });
+        
+        if (croppedCanvas) {
+          const croppedDataUrl = croppedCanvas.toDataURL('image/jpeg', 0.9);
+          
+          // Store cropped image as base64
+          if (menuImageBase64Input) menuImageBase64Input.value = croppedDataUrl;
+          menuCropApplied = true;
+          
+          // Update preview
+          updateMenuCategoryPreview();
+          
+          // Show success state on button
+          newCropBtn.disabled = false;
+          newCropBtn.style.background = '#10b981';
+          newCropBtn.style.color = 'white';
+          newCropBtn.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">check_circle</span> Crop Applied!';
+          
+          // Show success message
+          showMessage('Image cropped successfully!', 'success');
+          
+          // Reset button after 3 seconds
+          setTimeout(() => {
+            newCropBtn.style.background = '';
+            newCropBtn.style.color = '';
+            newCropBtn.innerHTML = originalBtnHTML;
+          }, 3000);
+        } else {
+          // Error state
+          newCropBtn.disabled = false;
+          newCropBtn.innerHTML = originalBtnHTML;
+          showMessage('Failed to crop image. Please try again.', 'error');
+        }
+      });
+    }
+    
+    if (resetBtn) {
+      // Remove existing listener if any
+      const newResetBtn = resetBtn.cloneNode(true);
+      resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
+      
+      newResetBtn.addEventListener('click', function() {
+        if (!menuImageCropper) return;
+        
+        // Reset cropper to initial state
+        menuImageCropper.reset();
+        menuCropApplied = false;
+        if (menuImageBase64Input) menuImageBase64Input.value = '';
+        
+        // Reset crop button
+        const cropBtn = document.getElementById('cropMenuImageBtn');
+        if (cropBtn) {
+          cropBtn.style.background = '';
+          cropBtn.style.color = '';
+          cropBtn.innerHTML = '<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">crop</span> Apply Crop';
+        }
+        
+        // Update preview
+        updateMenuCategoryPreview();
+      });
+    }
+  }
 
   // Function to show messages
   function showMessage(message, type) {

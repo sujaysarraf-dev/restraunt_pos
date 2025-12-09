@@ -1929,10 +1929,58 @@ try {
           </div>
           <div class="form-group">
             <label for="menuImage">Category Image:</label>
-            <input type="file" id="menuImage" name="menuImage" accept="image/*" onchange="previewMenuImage(this)">
+            <div class="file-upload">
+              <input type="file" id="menuImage" name="menuImage" accept="image/*">
+              <label for="menuImage" class="file-upload-btn">
+                <span class="material-symbols-rounded">upload</span>
+                Choose File
+              </label>
+              <span class="file-name" id="menuImageFileName">No file chosen</span>
+            </div>
+            
+            <!-- Image Cropper Section for Category -->
+            <div id="menuImageCropperSection" style="display: none; margin-top: 1rem;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem;">
+                <!-- Cropper Container -->
+                <div>
+                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Crop Image:</label>
+                  <div style="max-width: 100%; height: 300px; background: #f3f4f6; border-radius: 8px; overflow: hidden;">
+                    <img id="menuImageToCrop" src="" alt="Image to crop" style="max-width: 100%; max-height: 100%; display: block;">
+                  </div>
+                  <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button type="button" id="cropMenuImageBtn" class="btn btn-primary" style="flex: 1;">
+                      <span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">crop</span>
+                      Apply Crop
+                    </button>
+                    <button type="button" id="resetMenuCropBtn" class="btn btn-secondary" style="flex: 1;">
+                      <span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">refresh</span>
+                      Reset
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Category Preview -->
+                <div>
+                  <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Preview:</label>
+                  <div style="border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div id="menuCategoryPreviewImage" style="width: 100%; height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                      <img id="croppedMenuPreviewImg" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                      <span style="color: white; font-size: 3rem; opacity: 0.5;">📁</span>
+                    </div>
+                    <div style="padding: 1rem; background: #f9fafb;">
+                      <div style="font-weight: 600; color: #111827; margin-bottom: 0.25rem;" id="previewCategoryName">Category Name</div>
+                      <div style="font-size: 0.875rem; color: #6b7280;">Category preview</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Old Preview (hidden, kept for backward compatibility) -->
             <div id="menuImagePreview" style="margin-top: 10px; display: none;">
               <img id="menuImagePreviewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #e5e7eb;">
             </div>
+            <input type="hidden" id="menuImageBase64" name="menuImageBase64" value="">
           </div>
           <div class="form-actions">
             <button type="button" class="btn btn-cancel" id="cancelBtn">Cancel</button>
