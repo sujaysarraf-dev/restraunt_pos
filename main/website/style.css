@@ -1801,14 +1801,16 @@ body {
 
 .item-modal-content {
   background: var(--white);
-  border-radius: 16px;
-  max-width: 500px;
+  border-radius: 20px;
+  max-width: 800px;
   width: 100%;
-  max-height: 85vh;
+  max-height: 95vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
   position: relative;
   margin: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .item-modal-content .close-modal {
@@ -1842,18 +1844,21 @@ body {
 .item-modal-body {
   display: flex;
   flex-direction: column;
+  max-height: 95vh;
+  overflow: hidden;
 }
 
 .item-modal-image {
   width: 100%;
-  height: 180px;
+  height: 250px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  border-radius: 16px 16px 0 0;
+  border-radius: 20px 20px 0 0;
+  flex-shrink: 0;
 }
 
 .item-modal-image img {
@@ -1873,19 +1878,22 @@ body {
 }
 
 .item-modal-info {
-  padding: 1.25rem;
+  padding: 2rem;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .item-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.75rem;
-  gap: 0.75rem;
+  margin-bottom: 1rem;
+  gap: 1rem;
 }
 
 .item-modal-name {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 800;
   color: var(--text-dark);
   margin: 0;
@@ -1895,59 +1903,60 @@ body {
 .item-modal-type-badge {
   background: var(--primary-yellow);
   color: var(--text-dark);
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  font-size: 0.9rem;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .item-modal-price {
-  font-size: 1.75rem;
+  font-size: 2.5rem;
   font-weight: 800;
   color: var(--primary-red);
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .item-modal-description {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .item-modal-description h3 {
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--text-dark);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .item-modal-description p {
   color: var(--text-light);
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: 1rem;
+  line-height: 1.6;
   margin: 0;
 }
 
 .item-modal-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
 .item-quantity-controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
+  gap: 1rem;
+  padding: 1rem;
   background: var(--light-gray);
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .item-quantity-controls .quantity-btn {
   background: var(--white);
   border: 2px solid var(--primary-red);
-  width: 38px;
-  height: 38px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -1962,17 +1971,17 @@ body {
 }
 
 .item-quantity-controls .quantity-btn .material-symbols-rounded {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
 }
 
 .item-quantity-controls .quantity-input {
-  width: 70px;
+  width: 80px;
   text-align: center;
   border: 2px solid var(--primary-red);
-  border-radius: 10px;
-  padding: 0.6rem;
+  border-radius: 12px;
+  padding: 0.75rem;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   background: var(--white);
 }
 
@@ -1980,16 +1989,16 @@ body {
   background: var(--primary-red);
   color: var(--white);
   border: none;
-  padding: 1rem 1.5rem;
-  border-radius: 10px;
+  padding: 1.25rem 2rem;
+  border-radius: 12px;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   cursor: pointer;
   transition: all 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .add-to-cart-modal-btn:hover {
@@ -1999,12 +2008,12 @@ body {
 }
 
 .add-to-cart-modal-btn .material-symbols-rounded {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
 }
 
 .item-modal-total-price {
   margin-left: auto;
-  font-size: 1.1rem;
+  font-size: 1.3rem;
 }
 
 @media (max-width: 768px) {
