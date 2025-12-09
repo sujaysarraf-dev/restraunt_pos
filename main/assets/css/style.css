@@ -5340,6 +5340,236 @@ select:focus {
   }
 }
 
+/* Website Appearance Section - Mobile Responsive */
+@media (max-width: 768px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .settings-section {
+    padding: 1.25rem;
+    border-radius: 12px;
+  }
+  
+  .settings-section-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+  }
+  
+  .settings-section-title .material-symbols-rounded {
+    font-size: 1.3rem;
+  }
+  
+  /* Color preview container */
+  #colorPreviewContainer {
+    padding: 0.75rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+  
+  #heroPreview {
+    padding: 1rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  #heroPreview > div:first-child {
+    font-size: 1.2rem !important;
+  }
+  
+  #heroPreview > div:last-child {
+    font-size: 0.85rem !important;
+  }
+  
+  /* Color picker grid - stack on mobile */
+  #websiteThemePage div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+  
+  /* Color picker cards */
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] {
+    padding: 1rem !important;
+    border-radius: 12px !important;
+  }
+  
+  /* Color input */
+  #websiteThemePage input[type="color"] {
+    height: 60px !important;
+    border-radius: 10px !important;
+  }
+  
+  /* Form actions - stack buttons */
+  #websiteThemePage .form-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+  
+  #websiteThemePage .form-actions .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.875rem 1.5rem;
+  }
+  
+  /* Restaurant website link section */
+  #websiteThemePage div[style*="margin-top: 2rem; padding: 1.5rem"] {
+    margin-top: 1.5rem !important;
+    padding: 1rem !important;
+    border-radius: 10px !important;
+  }
+  
+  #websiteThemePage div[style*="margin-top: 2rem; padding: 1.5rem"] h3 {
+    font-size: 1rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  #websiteThemePage div[style*="margin-top: 2rem; padding: 1.5rem"] p {
+    font-size: 0.85rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* Website link input and button */
+  #websiteThemePage div[style*="display: flex; gap: 0.5rem; align-items: center"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+  
+  #restaurantWebsiteLink {
+    min-width: 100% !important;
+    width: 100% !important;
+    padding: 0.625rem !important;
+    font-size: 0.85rem !important;
+  }
+  
+  #websiteThemePage div[style*="display: flex; gap: 0.5rem"] button {
+    width: 100% !important;
+    white-space: nowrap;
+  }
+  
+  /* Banner grid - single column on mobile */
+  #bannersGrid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  /* Banner preview cards */
+  #bannersGrid > div {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Banner upload section */
+  #websiteThemePage .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  #websiteThemePage .form-group label {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  #websiteThemePage .form-group p {
+    font-size: 0.85rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  #bannerUpload {
+    width: 100%;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  #uploadBannerBtn {
+    width: 100%;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* Preview buttons - wrap better */
+  #websiteThemePage div[style*="display: flex; gap: 0.5rem; flex-wrap: wrap"] {
+    gap: 0.5rem !important;
+  }
+  
+  #websiteThemePage div[style*="display: flex; gap: 0.5rem; flex-wrap: wrap"] > div {
+    font-size: 0.8rem !important;
+    padding: 0.4rem 0.75rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-section {
+    padding: 1rem;
+  }
+  
+  .settings-section-title {
+    font-size: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  #colorPreviewContainer {
+    padding: 0.625rem !important;
+  }
+  
+  #heroPreview {
+    padding: 0.875rem !important;
+  }
+  
+  #heroPreview > div:first-child {
+    font-size: 1.1rem !important;
+    margin-bottom: 0.375rem !important;
+  }
+  
+  #heroPreview > div:last-child {
+    font-size: 0.8rem !important;
+  }
+  
+  #websiteThemePage div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] {
+    gap: 0.75rem !important;
+  }
+  
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] {
+    padding: 0.875rem !important;
+  }
+  
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] > div {
+    margin-bottom: 0.75rem !important;
+  }
+  
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] > div > div:first-child {
+    font-size: 0.9rem !important;
+    margin-bottom: 0.375rem !important;
+  }
+  
+  #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] > div > div:last-child {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  #websiteThemePage input[type="color"] {
+    height: 50px !important;
+  }
+  
+  #websiteThemePage div[id$="Display"] {
+    font-size: 0.8rem !important;
+    padding: 0.375rem !important;
+  }
+  
+  #websiteThemePage div[style*="margin-top: 2rem; padding: 1.5rem"] {
+    padding: 0.875rem !important;
+  }
+  
+  #restaurantWebsiteLink {
+    font-size: 0.8rem !important;
+    padding: 0.5rem !important;
+  }
+  
+  #websiteThemePage .form-actions .btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+  }
+}
+
 /* Ensure icons scale properly */
 .reservation-card .material-symbols-rounded {
   flex-shrink: 0;
