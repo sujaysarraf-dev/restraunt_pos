@@ -739,7 +739,7 @@ try {
             break;
             
         case 'getTables':
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             $stmt = $conn->prepare("
                 SELECT t.id, t.table_number, t.capacity, a.area_name 
                 FROM tables t 
@@ -758,7 +758,7 @@ try {
             break;
             
         case 'getMenuItems':
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             $stmt = $conn->prepare("
                 SELECT id, item_name_en, item_category, item_type, base_price 
                 FROM menu_items 
@@ -804,7 +804,7 @@ try {
             break;
             
         case 'getAreas':
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             $stmt = $conn->prepare("
                 SELECT a.id, a.area_name, a.created_at, a.updated_at, 
                        COUNT(t.id) as no_of_tables 
@@ -825,7 +825,7 @@ try {
             break;
             
         case 'addMenu':
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             $menuName = $_POST['menuName'] ?? '';
             if (empty($menuName)) {
                 throw new Exception('Menu name is required');
@@ -849,7 +849,7 @@ try {
             break;
             
         case 'addArea':
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             $areaName = $_POST['areaName'] ?? '';
             if (empty($areaName)) {
                 throw new Exception('Area name is required');
@@ -873,7 +873,7 @@ try {
             break;
             
         case 'addTable':
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             $tableNumber = $_POST['tableNumber'] ?? '';
             $capacity = (int)($_POST['capacity'] ?? 4);
             $areaId = (int)($_POST['chooseArea'] ?? 0);
@@ -913,7 +913,7 @@ try {
             break;
             
         case 'addMenuItem':
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             $menuId = (int)($_POST['chooseMenu'] ?? 0);
             $itemNameEn = $_POST['itemNameEn'] ?? '';
             $itemDescriptionEn = $_POST['itemDescriptionEn'] ?? '';
@@ -972,7 +972,7 @@ try {
             }
             
             // Get restaurant code
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             
             // Generate random demo data
             $demoMenus = ['Breakfast Menu', 'Lunch Menu', 'Dinner Menu', 'Desserts', 'Beverages'];
@@ -1147,7 +1147,7 @@ try {
             
             // Get restaurant code
             try {
-                $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+                $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             } catch (Exception $e) {
                 throw new Exception('Failed to get restaurant code: ' . $e->getMessage());
             }
@@ -1174,7 +1174,7 @@ try {
             $items = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
             
                 // Get database schema
-                $schema = getDatabaseSchema($pdo, $restaurantCode);
+                $schema = getDatabaseSchema($conn, $restaurantCode);
                 
                 // Build comprehensive context for AI - it should understand ANY natural language request
                 $context = "You are an advanced restaurant management AI assistant. You understand NATURAL LANGUAGE and convert user requests into executable database operations.\n\n";
@@ -1358,7 +1358,7 @@ try {
                 // Handle SQL type plans
                 if ($planType === 'sql' && isset($plan['sql'])) {
                     try {
-                        $sqlResult = executeSafeSQL($pdo, $plan['sql'], $restaurantCode, $restaurant_id);
+                        $sqlResult = executeSafeSQL($conn, $plan['sql'], $restaurantCode, $restaurant_id);
                         $results[] = $sqlResult;
                         if ($sqlResult['operation'] === 'SELECT') {
                             $created[] = "Query returned " . $sqlResult['rows_affected'] . " row(s)";
@@ -1607,7 +1607,7 @@ try {
             }
             
             // Get restaurant code
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             
             // Get next area number - use restaurant code
             $countStmt = $conn->prepare("SELECT COUNT(*) FROM areas WHERE restaurant_id = ?");
@@ -1642,7 +1642,7 @@ try {
             }
             
             // Get restaurant code
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             
             // Get a random area or create one if none exists
             $areaStmt = $conn->prepare("SELECT id FROM areas WHERE restaurant_id = ? LIMIT 1");
@@ -1694,7 +1694,7 @@ try {
             
             // Get restaurant code
             try {
-                $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+                $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             } catch (Exception $e) {
                 throw new Exception('Failed to get restaurant code: ' . $e->getMessage());
             }
@@ -1840,7 +1840,7 @@ try {
             $restaurant_id = $input['restaurant_id'] ?? $restaurant_id;
             
             // Get restaurant code
-            $restaurantCode = getRestaurantCode($pdo, $restaurant_id);
+            $restaurantCode = getRestaurantCode($conn, $restaurant_id);
             
             $created = [];
             $action = $plan['action'] ?? '';
