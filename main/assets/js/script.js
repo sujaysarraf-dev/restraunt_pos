@@ -10258,6 +10258,11 @@ document.addEventListener('DOMContentLoaded', function(){
   // Check if websiteThemePage is already active on load
   const websiteThemePage = document.getElementById('websiteThemePage');
   if (websiteThemePage && websiteThemePage.classList.contains('active')) {
+    // Enable zoom if website appearance page is active on load
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+    }
     setTimeout(() => {
       initWebsiteThemeEditor();
     }, 300);
