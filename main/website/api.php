@@ -275,7 +275,8 @@ try {
                     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     echo json_encode($items);
                 } else {
-                    throw $e;
+                    error_log("Search error: " . $e->getMessage());
+                    echo json_encode(['error' => 'Search failed: ' . $e->getMessage()]);
                 }
             }
             break;
