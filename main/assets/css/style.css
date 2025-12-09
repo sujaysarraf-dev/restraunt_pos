@@ -3539,6 +3539,7 @@ select:focus {
 #colorPreviewContainer {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -3546,12 +3547,14 @@ select:focus {
 #colorPreviewContainer > * {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 }
 
 #heroPreview {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -3559,6 +3562,7 @@ select:focus {
 #heroPreview > * {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -3568,6 +3572,7 @@ select:focus {
 #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -3575,6 +3580,7 @@ select:focus {
 #websiteThemePage div[style*="background: linear-gradient(135deg, #f9fafb"] > * {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 }
 
@@ -3582,10 +3588,42 @@ select:focus {
 #categoryButtonPreview,
 #addToCartPreview,
 #checkoutPreview {
+  min-width: 0;
   box-sizing: border-box;
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: normal;
+}
+
+/* Banner grid and preview */
+#bannersGrid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#bannersGrid > * {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#bannersPreview {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#bannersPreview > * {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .settings-section {
