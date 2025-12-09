@@ -5508,6 +5508,15 @@ select:focus {
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+  
+  #heroPreview > div {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
   /* Color picker grid */
