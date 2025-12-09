@@ -49,6 +49,11 @@ try {
         }
     }
     
+    // Verify connection is valid
+    if (!$conn) {
+        throw new Exception('Database connection not available');
+    }
+    
     if (!$restaurantId) {
         // No restaurant context available
         echo json_encode(['error' => 'RESTAURANT_NOT_SET']);
