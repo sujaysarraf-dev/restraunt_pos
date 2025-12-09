@@ -1793,6 +1793,7 @@ body {
   justify-content: center;
   padding: 1rem;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .item-modal.active {
