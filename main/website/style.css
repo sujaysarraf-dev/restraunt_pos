@@ -922,8 +922,29 @@ body {
     }
 
     .menu-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1rem !important;
+    }
+    
+    .menu-card {
+        min-width: 0;
+    }
+    
+    .menu-card-content {
+        padding: 1rem;
+    }
+    
+    .menu-card-name {
+        font-size: 1rem;
+    }
+    
+    .menu-card-price {
+        font-size: 1.25rem;
+    }
+    
+    .add-to-cart-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
     }
 
     .filter-group {
