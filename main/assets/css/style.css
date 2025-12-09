@@ -5819,10 +5819,22 @@ select:focus {
 }
 
 @media (max-width: 480px) {
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+    min-width: 0 !important;
+  }
+  
+  .settings-grid > * {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
   .settings-section {
     padding: 1rem !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     margin: 0 !important;
     overflow: hidden !important;
@@ -5833,6 +5845,7 @@ select:focus {
     flex-wrap: wrap;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
   }
   
@@ -5840,6 +5853,7 @@ select:focus {
   .settings-section > * {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
   }
   
