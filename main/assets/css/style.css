@@ -3520,8 +3520,13 @@ select:focus {
 
 /* Add padding to color picker grid container to accommodate hover transform */
 #websiteThemePage .settings-section > div[style*="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"] {
-  padding: 4px 0 !important; /* Add padding top/bottom for hover transform */
+  padding: 6px 0 !important; /* Add padding top/bottom for hover transform */
   margin: 0 !important;
+}
+
+/* Ensure settings section has enough space for hover effects */
+#websiteThemePage .settings-section {
+  padding: 25px 25px 29px 25px !important; /* Extra bottom padding for hover */
 }
 
 .settings-section-title {
