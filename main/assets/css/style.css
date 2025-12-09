@@ -5442,12 +5442,21 @@ select:focus {
 
 /* Website Appearance Section - Mobile Responsive */
 @media (max-width: 768px) {
+  .page-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    padding: 1rem !important;
+  }
+  
   .settings-grid {
     grid-template-columns: 1fr !important;
     gap: 1rem;
     overflow: hidden;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -5459,6 +5468,7 @@ select:focus {
     overflow: hidden !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     margin: 0 !important;
   }
