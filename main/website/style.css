@@ -29,6 +29,18 @@ body {
     flex-direction: column;
 }
 
+/* Font display optimization */
+@font-face {
+    font-family: 'Inter';
+    font-display: swap;
+}
+
+/* Image optimization */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
 /* Navigation */
 .navbar {
     background: var(--white);

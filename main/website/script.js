@@ -1445,7 +1445,7 @@ function createMenuItemCard(item) {
     
     card.innerHTML = `
         <div class="menu-card-image">
-            ${imageUrl ? `<img src="${imageUrl}" alt="${escapeHtml(item.item_name_en)}" style="width: 100%; height: 100%; object-fit: cover;">` : '🍽️'}
+            ${imageUrl ? `<img src="${imageUrl}" alt="${escapeHtml(item.item_name_en)}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">` : '🍽️'}
         </div>
         <div class="menu-card-content">
             <div class="menu-card-header">
@@ -1640,7 +1640,7 @@ function createCartItemHTML(item, index) {
     
     div.innerHTML = `
         <div class="cart-item-image">
-            ${imageUrl ? `<img src="${imageUrl}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">` : '🍽️'}
+            ${imageUrl ? `<img src="${imageUrl}" alt="${item.name}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">` : '🍽️'}
         </div>
         <div class="cart-item-info">
             <div class="cart-item-name">${item.name}</div>
@@ -1892,7 +1892,7 @@ function renderSearchSuggestions() {
         // Build image HTML
         let imageHtml = '';
         if (imageUrl) {
-            imageHtml = `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(itemName)}" class="search-suggestions-item-image" onerror="this.onerror=null; this.style.display='none'; const fallback = this.nextElementSibling; if(fallback) fallback.style.display='flex';">`;
+            imageHtml = `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(itemName)}" class="search-suggestions-item-image" loading="lazy" onerror="this.onerror=null; this.style.display='none'; const fallback = this.nextElementSibling; if(fallback) fallback.style.display='flex';">`;
             // Add fallback icon div that shows if image fails
             imageHtml += `<div class="search-suggestions-item-image" style="display: none; align-items: center; justify-content: center; color: var(--text-light); background: var(--light-gray);">
                 <span class="material-symbols-rounded">restaurant_menu</span>
@@ -2407,7 +2407,7 @@ window.openItemModal = function(itemId) {
     
     modalBody.innerHTML = `
         <div class="item-modal-image">
-            ${imageUrl ? `<img src="${imageUrl}" alt="${escapeHtml(item.item_name_en)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+            ${imageUrl ? `<img src="${imageUrl}" alt="${escapeHtml(item.item_name_en)}" loading="eager" fetchpriority="high" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
             <div class="item-modal-image-placeholder" style="display: ${imageUrl ? 'none' : 'flex'};">
                 <span class="material-symbols-rounded" style="font-size: 5rem; opacity: 0.3;">restaurant_menu</span>
             </div>

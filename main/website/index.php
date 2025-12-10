@@ -255,9 +255,21 @@ try {
     <meta name="restaurant-id" content="<?php echo htmlspecialchars($restaurant_id, ENT_QUOTES, 'UTF-8'); ?>">
     <meta name="restaurant-slug" content="<?php echo htmlspecialchars($restaurant_slug, ENT_QUOTES, 'UTF-8'); ?>">
     <title>RestroGrow POS - Order Online</title>
+    
+    <!-- Resource Hints for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    
+    <!-- Critical CSS - Load first -->
     <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    
+    <!-- Optimized Font Loading -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0"></noscript>
     <style>
       /* Theme colors loaded server-side from database - prevents flash */
       :root {
@@ -328,7 +340,7 @@ try {
         <div class="nav-container">
             <div class="nav-logo" style="display: flex; align-items: center; gap: 0.75rem;">
                 <?php if ($restaurant_logo): ?>
-                    <img src="<?php echo htmlspecialchars($restaurant_logo, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($restaurant_name, ENT_QUOTES, 'UTF-8'); ?>" onerror="this.style.display='none';" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-red);">
+                    <img src="<?php echo htmlspecialchars($restaurant_logo, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($restaurant_name, ENT_QUOTES, 'UTF-8'); ?>" loading="eager" fetchpriority="high" onerror="this.style.display='none';" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-red);">
                 <?php endif; ?>
                 <h1 style="margin: 0; font-size: 1.5rem; color: var(--text-dark);"><?php echo htmlspecialchars($restaurant_name, ENT_QUOTES, 'UTF-8'); ?></h1>
             </div>
@@ -392,7 +404,8 @@ try {
                         // File-based image (backward compatibility)
                         $bannerUrl = '../' . $bannerPath;
                     }
-                    echo '<img src="' . $bannerUrl . '" alt="Banner ' . ($index + 1) . '" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">';
+                    $loadingAttr = $index === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
+                    echo '<img src="' . $bannerUrl . '" alt="Banner ' . ($index + 1) . '" ' . $loadingAttr . ' style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">';
                     echo '</div>';
                 }
             } elseif (!empty($banner_image)) {
@@ -408,7 +421,7 @@ try {
                 } else {
                     $bannerUrl = '../' . $bannerPath;
                 }
-                echo '<img src="' . $bannerUrl . '" alt="Banner" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">';
+                echo '<img src="' . $bannerUrl . '" alt="Banner" loading="eager" fetchpriority="high" style="width:100%;height:auto;display:block;object-fit:cover;max-height:400px;">';
                 echo '</div>';
             }
             ?>
@@ -846,7 +859,7 @@ try {
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
     <script>
     // Cookie Consent Management
     (function() {
