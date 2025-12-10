@@ -66,8 +66,50 @@ try {
     // Resolve restaurant ID: session > query param > default
     $restaurant_id = $_SESSION['restaurant_id'] ?? ($_GET['restaurant_id'] ?? 'RES001');
     
-    // Include helper functions for generating unique numbers
-    require_once __DIR__ . '/../controllers/kot_operations.php';
+    // Generate unique order number function (extracted to avoid authorization requirement)
+    if (!function_exists('generateOrderNumber')) {
+        function generateOrderNumber($conn = null, $restaurant_id = null) {
+            global $pdo;
+            
+            // Use provided connection or global
+            $db = $conn ?? $pdo;
+            
+            // If no connection or restaurant_id, generate without check (fallback)
+            if (!$db || !$restaurant_id) {
+                return 'ORD-' . date('Ymd') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+            }
+            
+            // Generate unique number with collision check
+            $maxAttempts = 100;
+            $attempt = 0;
+            
+            do {
+                $orderNumber = 'ORD-' . date('Ymd') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+                
+                // Check if number already exists
+                try {
+                    $checkStmt = $db->prepare("SELECT COUNT(*) FROM orders WHERE order_number = ? AND restaurant_id = ?");
+                    $checkStmt->execute([$orderNumber, $restaurant_id]);
+                    $exists = $checkStmt->fetchColumn() > 0;
+                } catch (PDOException $e) {
+                    // If query fails, return generated number (fallback)
+                    error_log("Error checking Order number uniqueness: " . $e->getMessage());
+                    return $orderNumber;
+                }
+                
+                $attempt++;
+                
+                // Safety check to prevent infinite loop
+                if ($attempt >= $maxAttempts) {
+                    // Add timestamp to make it unique if we can't find a unique number
+                    $orderNumber = 'ORD-' . date('YmdHis') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+                    break;
+                }
+            } while ($exists);
+            
+            return $orderNumber;
+        }
+    }
     
     // Generate unique order number with collision check
     $order_number = generateOrderNumber($conn, $restaurant_id);
