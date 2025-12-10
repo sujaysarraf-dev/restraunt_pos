@@ -1045,13 +1045,24 @@ window.setupTopNavLinks = function() {
     }
 };
 
-// Initialize
+// Initialize - Optimized for mobile performance
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize currency first (ensures formatCurrency functions can use it)
     initializeCurrency();
     
-    loadMenus();
-    loadMenuItems();
+    // Defer API calls to improve initial render on mobile
+    // Use requestIdleCallback if available, otherwise setTimeout
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => {
+            loadMenus();
+            loadMenuItems();
+        }, { timeout: 2000 });
+    } else {
+        setTimeout(() => {
+            loadMenus();
+            loadMenuItems();
+        }, 100);
+    }
     
     // FORCE HIDE cart summary bar on load - will be shown by updateCartUI if cart has items
     const cartSummaryBar = document.getElementById('cartSummaryBar');

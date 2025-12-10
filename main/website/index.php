@@ -262,14 +262,22 @@ try {
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://fonts.gstatic.com">
     
-    <!-- Critical CSS - Load first -->
-    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
+    <!-- Critical CSS - Inline critical styles for faster mobile render -->
+    <style>
+      /* Critical above-the-fold styles */
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#333;background:#fff;line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
+      .navbar{background:#fff;box-shadow:0 2px 10px rgba(0,0,0,0.1);position:sticky;top:0;z-index:1000}
+      .nav-container{max-width:1200px;margin:0 auto;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center}
+      :root{--primary-red:<?php echo htmlspecialchars($primary_red, ENT_QUOTES, 'UTF-8'); ?>;--dark-red:<?php echo htmlspecialchars($dark_red, ENT_QUOTES, 'UTF-8'); ?>;--primary-yellow:<?php echo htmlspecialchars($primary_yellow, ENT_QUOTES, 'UTF-8'); ?>}
+    </style>
+    <!-- Non-critical CSS - Load asynchronously -->
+    <link rel="preload" href="style.css?v=<?php echo time(); ?>" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="style.css?v=<?php echo time(); ?>"></noscript>
     
-    <!-- Optimized Font Loading -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0"></noscript>
+    <!-- Optimized Font Loading - Direct load with display=swap for mobile -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
     <style>
       /* Theme colors loaded server-side from database - prevents flash */
       :root {
