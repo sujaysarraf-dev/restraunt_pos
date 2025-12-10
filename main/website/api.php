@@ -21,7 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Include secure session configuration
 require_once __DIR__ . '/../config/session_config.php';
-startSecureSession();
+// Skip timeout validation for public customer website API - sessions are just for restaurant context
+startSecureSession(true);
 require_once 'db_config.php';
 
 header('Content-Type: application/json');

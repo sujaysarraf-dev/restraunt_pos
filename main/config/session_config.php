@@ -39,10 +39,12 @@ ini_set('session.gc_maxlifetime', SESSION_TIMEOUT); // Garbage collection timeou
  * 
  * @return void
  */
-function startSecureSession() {
+function startSecureSession($skipTimeoutValidation = false) {
     if (session_status() === PHP_SESSION_ACTIVE) {
-        // Session already started, just validate timeout
-        validateSessionTimeout();
+        // Session already started, just validate timeout if not skipped
+        if (!$skipTimeoutValidation) {
+            validateSessionTimeout();
+        }
         return;
     }
     
@@ -53,8 +55,10 @@ function startSecureSession() {
         $_SESSION['last_activity'] = time();
     }
     
-    // Validate session timeout
-    validateSessionTimeout();
+    // Validate session timeout only if not skipped (for public pages like customer website)
+    if (!$skipTimeoutValidation) {
+        validateSessionTimeout();
+    }
     
     // Regenerate session ID periodically (every 5 minutes) to prevent session fixation
     if (!isset($_SESSION['created'])) {

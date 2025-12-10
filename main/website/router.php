@@ -8,7 +8,8 @@
 
 // Include secure session configuration
 require_once __DIR__ . '/../config/session_config.php';
-startSecureSession();
+// Skip timeout validation for public customer website - sessions are just for restaurant context
+startSecureSession(true);
 
 // Get restaurant identifier from URL
 $restaurant_slug = isset($_GET['restaurant']) ? trim($_GET['restaurant']) : '';

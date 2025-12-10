@@ -3,7 +3,8 @@
 // Get restaurant_id from URL, restaurant name slug, session, or default to RES001
 // Include secure session configuration
 require_once __DIR__ . '/../config/session_config.php';
-startSecureSession();
+// Skip timeout validation for public customer website - sessions are just for restaurant context, not authentication
+startSecureSession(true);
 
 // Function to create URL-friendly slug from restaurant name
 function createRestaurantSlug($name) {
