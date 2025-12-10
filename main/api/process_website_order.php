@@ -1,4 +1,10 @@
 <?php
+// Clean any output buffers and prevent any output before JSON
+if (ob_get_level()) {
+    ob_clean();
+}
+ob_start();
+
 // Handle CORS preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Origin: *');
@@ -6,13 +12,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
     header('Access-Control-Max-Age: 86400'); // 24 hours
     http_response_code(200);
+    ob_end_clean();
     exit();
 }
 
 // Include secure session configuration
 require_once __DIR__ . '/../config/session_config.php';
-startSecureSession();
-header('Content-Type: application/json');
+startSecureSession(true); // Skip timeout validation for public customer website
+
+// Set headers
+header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
@@ -34,18 +43,20 @@ $payment_method = $input['payment_method'] ?? 'Cash';
 
 // Validate required fields
 if (empty($customer_name) || empty($customer_phone)) {
+    ob_end_clean();
     echo json_encode([
         'success' => false,
         'message' => 'Name and phone are required'
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
 if (empty($items)) {
+    ob_end_clean();
     echo json_encode([
         'success' => false,
         'message' => 'Cart is empty'
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -105,18 +116,21 @@ try {
         // Payments table might not exist, skip it
     }
     
+    ob_end_clean();
     echo json_encode([
         'success' => true,
         'order_id' => $order_id,
         'order_number' => $order_number,
         'message' => 'Order placed successfully'
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
+    ob_end_clean();
+    error_log("Order processing error: " . $e->getMessage());
     echo json_encode([
         'success' => false,
         'message' => 'Error: ' . $e->getMessage()
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 }
 ?>
 
