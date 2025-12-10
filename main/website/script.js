@@ -2574,9 +2574,14 @@ async function processOrder(total) {
     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
     
     try {
-        const response = await fetch('../api/process_website_order.php', {
+        const restaurantId = getRestaurantId();
+        const response = await fetch(`../api/process_website_order.php?restaurant_id=${encodeURIComponent(restaurantId)}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'include', // Include cookies for session
             body: JSON.stringify({
                 customer_name: name,
                 customer_phone: phone,
