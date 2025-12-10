@@ -87,13 +87,28 @@ try {
     $kotData = $stmt->fetch();
     $activeKOT = $kotData['count'] ?? 0;
     
-    // Total Customers
-    $stmt = $conn->prepare("SELECT COUNT(*) as count 
-                           FROM customers 
-                           WHERE restaurant_id = ?");
+    // Total Customers - Count distinct customers from orders (more accurate)
+    // This counts unique customers who have actually placed orders
+    $stmt = $conn->prepare("SELECT COUNT(DISTINCT CONCAT(COALESCE(customer_name, ''), '|', COALESCE(customer_phone, ''))) as count 
+                           FROM orders 
+                           WHERE restaurant_id = ? 
+                           AND customer_name IS NOT NULL 
+                           AND customer_name != '' 
+                           AND customer_name != 'Table Customer'
+                           AND customer_name != 'Takeaway'");
     $stmt->execute([$restaurant_id]);
     $customersData = $stmt->fetch();
     $totalCustomers = $customersData['count'] ?? 0;
+    
+    // Fallback: If no orders yet, count from customers table
+    if ($totalCustomers == 0) {
+        $stmt = $conn->prepare("SELECT COUNT(*) as count 
+                               FROM customers 
+                               WHERE restaurant_id = ?");
+        $stmt->execute([$restaurant_id]);
+        $customersData = $stmt->fetch();
+        $totalCustomers = $customersData['count'] ?? 0;
+    }
     
     // Available Tables
     $stmt = $conn->prepare("SELECT COUNT(*) as count 
