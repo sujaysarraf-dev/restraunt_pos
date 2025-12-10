@@ -178,13 +178,26 @@ try {
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Restaurant Management System</title>
+  
+  <!-- Resource Hints for Performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  
+  <!-- Critical CSS -->
   <link rel="stylesheet" href="../assets/css/style.css">
-  <!-- Linking Google fonts for icons -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
-  <script src="../assets/js/sweetalert2.all.min.js"></script>
+  
+  <!-- Optimized Font Loading -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0"></noscript>
+  
   <!-- Cropper.js for image cropping (local files to avoid tracking prevention blocking) -->
   <link rel="stylesheet" href="../assets/libs/cropperjs/cropper.min.css">
-  <script src="../assets/libs/cropperjs/cropper.min.js"></script>
+  
+  <!-- Scripts - Defer non-critical -->
+  <script src="../assets/js/sweetalert2.all.min.js" defer></script>
+  <script src="../assets/libs/cropperjs/cropper.min.js" defer></script>
   <script>
     // Currency symbol loaded from server-side PHP (exactly like restaurant logo/name)
     // NO JavaScript updates needed - value is already correct in HTML from PHP

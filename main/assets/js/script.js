@@ -2461,7 +2461,7 @@ document.addEventListener("DOMContentLoaded", () => {
     menuItemsList.innerHTML = menuItems.map(item => `
       <div class="menu-item-card" data-item-id="${item.id}">
         <div class="item-image">
-          ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
             <div class="no-image" style="display:none;"><span class="material-symbols-rounded">image</span></div>` : '<div class="no-image"><span class="material-symbols-rounded">image</span></div>'}
         </div>
         <div class="item-details">
@@ -5817,7 +5817,7 @@ document.addEventListener("DOMContentLoaded", () => {
            data-variations="${variationsJson}"
            style="cursor:pointer;">
         <div class="item-image">
-          ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}">` : '<span class="material-symbols-rounded">restaurant</span>'}
+          ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" loading="lazy">` : '<span class="material-symbols-rounded">restaurant</span>'}
         </div>
         <div class="item-name">${escapeHtml(item.item_name_en)}</div>
         <div class="item-category">${escapeHtml(item.item_category || '')}</div>
@@ -5905,7 +5905,7 @@ document.addEventListener("DOMContentLoaded", () => {
            data-variations="${variationsJson}"
            style="background:white;border:2px solid #e5e7eb;border-radius:6px;padding:0.5rem;cursor:pointer;transition:all 0.2s;">
         <div style="width:100%;height:60px;border-radius:4px;overflow:hidden;margin-bottom:0.4rem;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
-          ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" style="width:100%;height:100%;object-fit:cover;">` : '<span class="material-symbols-rounded" style="font-size:1.5rem;color:#9ca3af;">restaurant</span>'}
+          ${item.item_image ? `<img src="../api/image.php?path=${encodeURIComponent(item.item_image)}" alt="${escapeHtml(item.item_name_en)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;">` : '<span class="material-symbols-rounded" style="font-size:1.5rem;color:#9ca3af;">restaurant</span>'}
         </div>
         <div style="font-weight:600;color:#111827;font-size:0.75rem;margin-bottom:0.2rem;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(item.item_name_en)}</div>
         <div style="font-size:0.65rem;color:#6b7280;margin-bottom:0.3rem;line-height:1.2;">${escapeHtml(item.item_category || '')}</div>
@@ -9927,7 +9927,7 @@ async function initWebsiteThemeEditor() {
             <span class="material-symbols-rounded" style="font-size:16px;vertical-align:middle;">drag_indicator</span>
             Drag to reorder
           </div>
-          <img src="${imagePath}" alt="Banner" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width:100%;height:auto;display:block;max-height:300px;min-height:200px;object-fit:cover;background:#f0f0f0;pointer-events:none;">
+          <img src="${imagePath}" alt="Banner" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width:100%;height:auto;display:block;max-height:300px;min-height:200px;object-fit:cover;background:#f0f0f0;pointer-events:none;">
           <div style="display:none;width:100%;height:200px;align-items:center;justify-content:center;background:#f0f0f0;color:#999;flex-direction:column;">
             <span class="material-symbols-rounded" style="font-size:48px;margin-bottom:10px;">image_not_supported</span>
             <span>Image not found</span>
