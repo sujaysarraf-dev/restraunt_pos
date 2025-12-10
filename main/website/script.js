@@ -1045,10 +1045,60 @@ window.setupTopNavLinks = function() {
     }
 };
 
+// Load restaurant details and theme asynchronously
+async function loadRestaurantDetails() {
+    try {
+        const restaurantId = getRestaurantId();
+        const response = await fetch(`api.php?action=getRestaurantDetails&restaurant_id=${encodeURIComponent(restaurantId)}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                // Update restaurant name
+                const nameEl = document.querySelector('.nav-logo h1');
+                if (nameEl && data.restaurant_name) {
+                    nameEl.textContent = data.restaurant_name;
+                }
+                // Update logo
+                if (data.restaurant_logo) {
+                    const logoContainer = document.querySelector('.nav-logo');
+                    if (logoContainer && !logoContainer.querySelector('img')) {
+                        const img = document.createElement('img');
+                        img.src = data.restaurant_logo;
+                        img.alt = data.restaurant_name || 'Restaurant';
+                        img.loading = 'eager';
+                        img.fetchPriority = 'high';
+                        img.style.cssText = 'width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-red);';
+                        img.onerror = function() { this.style.display = 'none'; };
+                        logoContainer.insertBefore(img, logoContainer.firstChild);
+                    }
+                }
+                // Update currency
+                if (data.currency_symbol) {
+                    window.globalCurrencySymbol = data.currency_symbol;
+                    localStorage.setItem('system_currency', data.currency_symbol);
+                    initializeCurrency();
+                }
+                // Update theme colors
+                if (data.theme) {
+                    const root = document.documentElement;
+                    if (data.theme.primary_red) root.style.setProperty('--primary-red', data.theme.primary_red);
+                    if (data.theme.dark_red) root.style.setProperty('--dark-red', data.theme.dark_red);
+                    if (data.theme.primary_yellow) root.style.setProperty('--primary-yellow', data.theme.primary_yellow);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error loading restaurant details:', error);
+    }
+}
+
 // Initialize - Optimized for mobile performance
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize currency first (ensures formatCurrency functions can use it)
     initializeCurrency();
+    
+    // Load restaurant details asynchronously
+    loadRestaurantDetails();
     
     // Defer API calls to improve initial render on mobile
     // Use requestIdleCallback if available, otherwise setTimeout

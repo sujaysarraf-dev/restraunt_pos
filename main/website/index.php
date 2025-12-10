@@ -1,4 +1,7 @@
 <?php
+// Start output buffering to send HTML immediately
+ob_start();
+
 // Load currency symbol from database server-side (same as dashboard)
 // Get restaurant_id from URL, restaurant name slug, session, or default to RES001
 // Include secure session configuration
@@ -60,189 +63,40 @@ else {
     exit();
 }
 
-// Default currency symbol - will be loaded from database
-$currency_symbol = '₹'; // This is only a fallback if database fails
+// Use defaults immediately - load from database via JavaScript after page renders
+$currency_symbol = '₹';
+$restaurant_name = 'Restaurant';
+$restaurant_logo = null;
+$primary_red = '#F70000';
+$dark_red = '#DA020E';
+$primary_yellow = '#FFD100';
+$banners = [];
+$banner_image = null;
 
-try {
-    // Include database connection
-    require_once __DIR__ . '/db_config.php';
-    
-    // Get connection using getConnection() for lazy connection support
-    if (function_exists('getConnection')) {
-        $conn = getConnection();
-    } else {
-        // Fallback to $pdo if getConnection() doesn't exist (backward compatibility)
-        global $pdo;
-        $conn = $pdo ?? null;
-        if (!$conn) {
-            throw new Exception('Database connection not available');
-        }
-    }
-    
-    // Track if restaurant was explicitly requested (not default)
-    $restaurant_explicitly_requested = false;
-    
-    // If we have a restaurant slug, validate it (and ensure it matches restaurant_id if provided)
-    if ($has_slug_param) {
-        $restaurant_explicitly_requested = true;
-        $restaurant_info = findRestaurantBySlug($conn, $restaurant_slug);
-        if ($restaurant_info) {
-            if ($has_id_param && $restaurant_id_param !== $restaurant_info['restaurant_id']) {
-                // Slug does not correspond to provided restaurant_id
+// Only do minimal validation - load data async via JavaScript
+if ($has_slug_param && !$has_id_param) {
+    // Need to validate slug, but do it quickly
+    try {
+        require_once __DIR__ . '/db_config.php';
+        if (function_exists('getConnection')) {
+            $conn = getConnection();
+            $restaurant_info = findRestaurantBySlug($conn, $restaurant_slug);
+            if ($restaurant_info) {
+                $restaurant_id = $restaurant_info['restaurant_id'];
+            } else {
+                ob_end_clean();
                 http_response_code(404);
                 include __DIR__ . '/404.php';
                 exit();
             }
-            $restaurant_id = $restaurant_info['restaurant_id'];
-        } else {
-            // Restaurant not found by slug - show 404
-            http_response_code(404);
-            include __DIR__ . '/404.php';
-            exit();
         }
+    } catch (Exception $e) {
+        // Continue with defaults
     }
-    
-    // If restaurant_id was explicitly provided in URL, mark as requested
-    if ($has_id_param && $restaurant_id_param !== 'RES001') {
-        $restaurant_explicitly_requested = true;
-    }
-    
-    // Get restaurant details from users table based on restaurant_id
-    $restaurant_name = 'Restaurant';
-    $restaurant_logo = null;
-    $restaurant_phone = '';
-    $restaurant_email = '';
-    $restaurant_address = '';
-    $restaurant_found = false;
-    
-    try {
-        // First try to get user_id from restaurant_id, then get currency
-        // This matches how dashboard loads currency (by user_id)
-        $userStmt = $conn->prepare("SELECT id FROM users WHERE restaurant_id = ? LIMIT 1");
-        $userStmt->execute([$restaurant_id]);
-        $userResult = $userStmt->fetch(PDO::FETCH_ASSOC);
-        $user_id = $userResult ? $userResult['id'] : null;
-        
-        // Now get all user details including currency (same as dashboard)
-        if ($user_id) {
-            $stmt = $conn->prepare("SELECT id, restaurant_name, restaurant_logo, currency_symbol, phone, email, address FROM users WHERE id = ? LIMIT 1");
-            $stmt->execute([$user_id]);
-        } else {
-            // Fallback: try by restaurant_id directly
-            $stmt = $conn->prepare("SELECT id, restaurant_name, restaurant_logo, currency_symbol, phone, email, address FROM users WHERE restaurant_id = ? LIMIT 1");
-            $stmt->execute([$restaurant_id]);
-        }
-        $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        // If restaurant was explicitly requested but not found, show 404
-        if ($restaurant_explicitly_requested && !$userRow) {
-            http_response_code(404);
-            include __DIR__ . '/404.php';
-            exit();
-        }
-        
-        if ($userRow) {
-            $restaurant_found = true;
-            // Restaurant name
-            if (!empty($userRow['restaurant_name'])) {
-                $restaurant_name = htmlspecialchars($userRow['restaurant_name'], ENT_QUOTES, 'UTF-8');
-            }
-            // Restaurant logo
-            if (!empty($userRow['restaurant_logo'])) {
-                // Check if logo is stored in database (starts with 'db:')
-                if (strpos($userRow['restaurant_logo'], 'db:') === 0) {
-                    // Use API endpoint for database-stored image
-                    $restaurant_logo = '../api/image.php?type=logo&id=' . ($userRow['id'] ?? $user_id ?? '');
-                } elseif (strpos($userRow['restaurant_logo'], 'http') === 0) {
-                    // External URL
-                    $restaurant_logo = $userRow['restaurant_logo'];
-                } else {
-                    // File-based image (backward compatibility)
-                    $restaurant_logo = $userRow['restaurant_logo'];
-                    if (strpos($restaurant_logo, 'uploads/') !== 0) {
-                        $restaurant_logo = '../uploads/' . $restaurant_logo;
-                    } else if (strpos($restaurant_logo, 'uploads/') === 0) {
-                        $restaurant_logo = '../' . $restaurant_logo;
-                    }
-                }
-            }
-            // Currency symbol - load server-side to prevent flash (same as dashboard)
-            // IMPORTANT: Use array_key_exists to check if column exists, then check value
-            // This matches exactly how dashboard.php loads currency
-            if (array_key_exists('currency_symbol', $userRow) && $userRow['currency_symbol'] !== null && $userRow['currency_symbol'] !== '') {
-                // Use centralized Unicode fix function
-                require_once __DIR__ . '/../config/unicode_utils.php';
-                $db_currency = fixCurrencySymbol($userRow['currency_symbol']);
-                $currency_symbol = htmlspecialchars($db_currency, ENT_QUOTES, 'UTF-8');
-                // Save to session for faster loading next time (like dashboard)
-                $_SESSION['currency_symbol'] = $currency_symbol;
-                error_log("DEBUG: Currency loaded from DB for restaurant_id '$restaurant_id' (user_id: " . ($user_id ?? 'N/A') . "): '$currency_symbol'");
-            } else {
-                // Currency is NULL or doesn't exist - use default
-                error_log("Currency symbol is NULL or not found in database for restaurant_id: " . $restaurant_id . " (user_id: " . ($user_id ?? 'N/A') . ")");
-            }
-            // Phone
-            if (!empty($userRow['phone'])) {
-                $restaurant_phone = htmlspecialchars($userRow['phone'], ENT_QUOTES, 'UTF-8');
-            }
-            // Email
-            if (!empty($userRow['email'])) {
-                $restaurant_email = htmlspecialchars($userRow['email'], ENT_QUOTES, 'UTF-8');
-            }
-            // Address
-            if (!empty($userRow['address'])) {
-                $restaurant_address = htmlspecialchars($userRow['address'], ENT_QUOTES, 'UTF-8');
-            }
-        }
-    } catch (PDOException $e) {
-        // Use defaults if query fails
-        error_log("Error loading restaurant details: " . $e->getMessage());
-    }
-    
-    // Load theme colors and banners from database server-side (prevent flash)
-    $primary_red = '#F70000';
-    $dark_red = '#DA020E';
-    $primary_yellow = '#FFD100';
-    $banners = [];
-    $banner_image = null;
-    
-    try {
-        // Get theme colors from website_settings table
-        $stmt = $conn->prepare("SELECT primary_red, dark_red, primary_yellow, banner_image FROM website_settings WHERE restaurant_id = ? LIMIT 1");
-        $stmt->execute([$restaurant_id]);
-        $themeRow = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($themeRow) {
-            if (!empty($themeRow['primary_red'])) {
-                $primary_red = htmlspecialchars($themeRow['primary_red'], ENT_QUOTES, 'UTF-8');
-            }
-            if (!empty($themeRow['dark_red'])) {
-                $dark_red = htmlspecialchars($themeRow['dark_red'], ENT_QUOTES, 'UTF-8');
-            }
-            if (!empty($themeRow['primary_yellow'])) {
-                $primary_yellow = htmlspecialchars($themeRow['primary_yellow'], ENT_QUOTES, 'UTF-8');
-            }
-            if (!empty($themeRow['banner_image']) && trim($themeRow['banner_image']) !== '') {
-                $banner_image = htmlspecialchars($themeRow['banner_image'], ENT_QUOTES, 'UTF-8');
-            }
-        }
-        
-        // Get banners from website_banners table
-        try {
-            $bannersStmt = $conn->prepare("SELECT id, banner_path, display_order FROM website_banners WHERE restaurant_id = ? ORDER BY display_order ASC, id ASC");
-            $bannersStmt->execute([$restaurant_id]);
-            $banners = $bannersStmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            // Table might not exist, use empty array
-            error_log("Error loading banners: " . $e->getMessage());
-        }
-    } catch (PDOException $e) {
-        // Use default colors if query fails
-        error_log("Error loading theme settings: " . $e->getMessage());
-    }
-} catch (Exception $e) {
-    // Use default currency if database connection fails
-    error_log("Database connection error: " . $e->getMessage());
 }
+
+// Flush output buffer to send HTML immediately
+ob_end_flush();
 ?>
 <!DOCTYPE html>
 <html lang="en">

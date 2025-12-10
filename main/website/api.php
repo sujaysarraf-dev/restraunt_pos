@@ -62,6 +62,70 @@ try {
     }
 
     switch ($action) {
+        case 'getRestaurantDetails':
+            try {
+                // Get user_id first
+                $userStmt = $conn->prepare("SELECT id FROM users WHERE restaurant_id = ? LIMIT 1");
+                $userStmt->execute([$restaurantId]);
+                $userResult = $userStmt->fetch(PDO::FETCH_ASSOC);
+                $user_id = $userResult ? $userResult['id'] : null;
+                
+                // Get restaurant details
+                if ($user_id) {
+                    $stmt = $conn->prepare("SELECT id, restaurant_name, restaurant_logo, currency_symbol FROM users WHERE id = ? LIMIT 1");
+                    $stmt->execute([$user_id]);
+                } else {
+                    $stmt = $conn->prepare("SELECT id, restaurant_name, restaurant_logo, currency_symbol FROM users WHERE restaurant_id = ? LIMIT 1");
+                    $stmt->execute([$restaurantId]);
+                }
+                $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                $result = ['success' => false];
+                if ($userRow) {
+                    $result['success'] = true;
+                    $result['restaurant_name'] = $userRow['restaurant_name'] ?? 'Restaurant';
+                    
+                    // Logo URL
+                    if (!empty($userRow['restaurant_logo'])) {
+                        if (strpos($userRow['restaurant_logo'], 'db:') === 0) {
+                            $result['restaurant_logo'] = '../api/image.php?type=logo&id=' . ($userRow['id'] ?? $user_id ?? '');
+                        } elseif (strpos($userRow['restaurant_logo'], 'http') === 0) {
+                            $result['restaurant_logo'] = $userRow['restaurant_logo'];
+                        } else {
+                            $logo = $userRow['restaurant_logo'];
+                            if (strpos($logo, 'uploads/') !== 0) {
+                                $logo = '../uploads/' . $logo;
+                            } else {
+                                $logo = '../' . $logo;
+                            }
+                            $result['restaurant_logo'] = $logo;
+                        }
+                    }
+                    
+                    // Currency
+                    if (array_key_exists('currency_symbol', $userRow) && $userRow['currency_symbol'] !== null && $userRow['currency_symbol'] !== '') {
+                        require_once __DIR__ . '/../config/unicode_utils.php';
+                        $result['currency_symbol'] = fixCurrencySymbol($userRow['currency_symbol']);
+                    }
+                    
+                    // Theme colors
+                    $themeStmt = $conn->prepare("SELECT primary_red, dark_red, primary_yellow FROM website_settings WHERE restaurant_id = ? LIMIT 1");
+                    $themeStmt->execute([$restaurantId]);
+                    $themeRow = $themeStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($themeRow) {
+                        $result['theme'] = [
+                            'primary_red' => $themeRow['primary_red'] ?? '#F70000',
+                            'dark_red' => $themeRow['dark_red'] ?? '#DA020E',
+                            'primary_yellow' => $themeRow['primary_yellow'] ?? '#FFD100'
+                        ];
+                    }
+                }
+                echo json_encode($result);
+            } catch (PDOException $e) {
+                echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            }
+            break;
+            
         case 'getMenus':
             $stmt = $conn->prepare("SELECT * FROM menu WHERE restaurant_id = :rid AND is_active = 1 ORDER BY sort_order");
             $stmt->execute([':rid' => $restaurantId]);
