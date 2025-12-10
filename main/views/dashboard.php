@@ -2671,7 +2671,7 @@ try {
   </div>
 
   <!-- Script -->
-  <script src="../assets/js/script.js?v=<?php echo time(); ?>"></script>
+  <script src="../assets/js/script.js?v=<?php echo time(); ?>" defer></script>
   <script>
     // Check payment status on page load (for redirect from PhonePe or Demo)
     window.addEventListener('load', function() {
