@@ -6,7 +6,7 @@ $action = $_GET['action'] ?? 'get';
 // When opened from admin, restaurant_id comes from session; when opened directly, query param can be used
 // Include secure session configuration
 require_once __DIR__ . '/../config/session_config.php';
-startSecureSession();
+startSecureSession(true); // Skip timeout validation for public customer website
 $restaurant_id = $_GET['restaurant_id'] ?? ($_SESSION['restaurant_id'] ?? 'RES001');
 
 // Get connection using getConnection() for lazy connection support

@@ -1,7 +1,7 @@
 <?php
 // Include secure session configuration
 require_once __DIR__ . '/../config/session_config.php';
-startSecureSession();
+startSecureSession(true); // Skip timeout validation for public customer website
 
 // Get restaurant identifier - priority: restaurant_id > restaurant slug > session
 $restaurant_id = null;
