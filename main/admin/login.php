@@ -120,7 +120,8 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         .login-right {
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
+            padding-top: 60px;
         }
         
         .auth-container {
@@ -451,6 +452,10 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             
             .login-tagline {
                 font-size: 0.95rem;
+            }
+            
+            .login-right {
+                padding-top: 60px;
             }
             
             .auth-container {
