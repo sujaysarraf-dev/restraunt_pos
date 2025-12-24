@@ -47,11 +47,11 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         body {
             margin: 0;
             padding: 0;
-            min-height: 100vh;
+            height: 100vh;
             font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: #151A2D;
+            background: #1e293b;
             position: relative;
-            overflow-x: hidden;
+            overflow: hidden;
         }
         
         /* Background patterns */
@@ -63,9 +63,9 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             right: 0;
             bottom: 0;
             background: 
-                radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+                radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(99, 102, 241, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
@@ -73,11 +73,12 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         .login-wrapper {
             position: relative;
             z-index: 1;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 24px;
+            overflow-y: auto;
         }
         
         .login-container {
@@ -85,7 +86,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             max-width: 1200px;
             display: grid;
             grid-template-columns: 1fr;
-            gap: 40px;
+            gap: 32px;
             align-items: center;
         }
         
@@ -99,7 +100,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             align-items: center;
             justify-content: center;
             gap: 12px;
-            margin-bottom: 40px;
+            margin-bottom: 32px;
         }
         
         .logo-circle {
@@ -132,13 +133,13 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             color: white;
             font-size: 2.5rem;
             font-weight: 700;
-            margin: 0 0 16px 0;
+            margin: 0 0 12px 0;
             line-height: 1.2;
         }
         
         .login-tagline {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 1rem;
             margin: 0;
             font-weight: 400;
         }
@@ -154,13 +155,13 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             background: white;
             border-radius: 24px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 48px;
+            padding: 40px;
             width: 100%;
             max-width: 450px;
         }
         
         .auth-header {
-            margin-bottom: 32px;
+            margin-bottom: 28px;
         }
         
         .auth-header h1 {
@@ -177,7 +178,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         }
         
         .form-group {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         
         .form-group label {
@@ -209,7 +210,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         
         .forgot-password-link {
@@ -251,7 +252,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         
         .signup-link {
             text-align: center;
-            margin-top: 24px;
+            margin-top: 20px;
             color: #666;
             font-size: 0.95rem;
         }
@@ -290,9 +291,9 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             background: #eff6ff;
             border: 1px solid #bfdbfe;
             border-radius: 12px;
-            padding: 16px;
-            margin-top: 24px;
-            font-size: 0.85rem;
+            padding: 12px;
+            margin-top: 20px;
+            font-size: 0.8rem;
         }
         
         .demo-credentials h4 {
@@ -390,9 +391,13 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         
         /* Desktop layout */
         @media (min-width: 768px) {
+            .login-wrapper {
+                padding: 32px;
+            }
+            
             .login-container {
                 grid-template-columns: 1fr 1fr;
-                gap: 60px;
+                gap: 48px;
             }
             
             .login-left {
@@ -401,41 +406,64 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             
             .logo-section {
                 justify-content: flex-start;
+                margin-bottom: 28px;
             }
             
             .login-heading {
-                font-size: 3rem;
+                font-size: 2.75rem;
+                margin-bottom: 10px;
             }
             
             .login-tagline {
-                font-size: 1.2rem;
+                font-size: 1.05rem;
             }
             
             .auth-container {
-                padding: 56px;
-                max-width: 480px;
+                padding: 44px;
+                max-width: 460px;
             }
         }
         
         @media (min-width: 1024px) {
             .login-heading {
-                font-size: 3.5rem;
+                font-size: 3rem;
             }
         }
         
         /* Footer */
         .login-footer {
             position: fixed;
-            bottom: 20px;
-            left: 20px;
+            bottom: 16px;
+            left: 24px;
             color: rgba(255, 255, 255, 0.6);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             z-index: 1;
         }
         
         @media (max-width: 767px) {
             .login-footer {
                 display: none;
+            }
+            
+            .login-wrapper {
+                padding: 20px;
+            }
+            
+            .logo-section {
+                margin-bottom: 24px;
+            }
+            
+            .login-heading {
+                font-size: 2rem;
+                margin-bottom: 10px;
+            }
+            
+            .login-tagline {
+                font-size: 0.95rem;
+            }
+            
+            .auth-container {
+                padding: 32px;
             }
         }
     </style>
