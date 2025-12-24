@@ -87,20 +87,28 @@ try {
         VALUES (?, ?, ?, ?, 'new')
     ");
     
-    $stmt->execute([$name, $email, $phone, $message]);
+    $result = $stmt->execute([$name, $email, $phone, $message]);
     
     // Verify the insert was successful
     $insertId = $conn->lastInsertId();
+    $rowCount = $stmt->rowCount();
     
-    if ($insertId) {
+    error_log("Contact form insert attempt - Result: " . ($result ? 'true' : 'false') . ", RowCount: $rowCount, InsertId: $insertId");
+    
+    if ($result && $insertId) {
         error_log("Contact form submitted successfully - ID: $insertId, Name: $name, Email: $email");
         echo json_encode([
             'success' => true,
             'message' => 'Thank you for your interest! We will contact you soon.',
-            'id' => $insertId
+            'id' => $insertId,
+            'debug' => [
+                'insertId' => $insertId,
+                'rowCount' => $rowCount
+            ]
         ]);
     } else {
-        throw new Exception('Failed to insert contact query into database');
+        error_log("Contact form insert failed - Result: " . ($result ? 'true' : 'false') . ", RowCount: $rowCount, InsertId: $insertId);
+        throw new Exception('Failed to insert contact query into database. InsertId: ' . $insertId . ', RowCount: ' . $rowCount);
     }
     
 } catch (PDOException $e) {
