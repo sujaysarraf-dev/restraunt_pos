@@ -88,15 +88,8 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         }
         
         .logo-img {
-            width: 40px;
-            height: 40px;
-            object-fit: contain;
-            filter: brightness(0) invert(1);
-        }
-        
-        .logo-img {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             object-fit: contain;
             filter: none;
         }
