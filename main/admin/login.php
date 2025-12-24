@@ -441,27 +441,8 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
                 gap: 24px;
             }
             
-            .logo-section {
-                margin-bottom: 16px;
-                gap: 10px;
-            }
-            
-            .logo-img {
-                width: 40px;
-                height: 40px;
-            }
-            
-            .logo-text {
-                font-size: 1.4rem;
-            }
-            
-            .login-heading {
-                font-size: 1.75rem;
-                margin-bottom: 8px;
-            }
-            
-            .login-tagline {
-                font-size: 0.9rem;
+            .login-left {
+                display: none;
             }
             
             .auth-container {
