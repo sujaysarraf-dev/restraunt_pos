@@ -76,41 +76,42 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         /* Left side - Logo and heading */
         .login-left {
             text-align: center;
+            padding-top: 40px;
         }
         
         .logo-section {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 14px;
-            margin-bottom: 32px;
+            gap: 12px;
+            margin-bottom: 24px;
         }
         
         .logo-img {
-            width: 48px;
-            height: 48px;
+            width: 40px;
+            height: 40px;
             object-fit: contain;
             filter: brightness(0) invert(1);
         }
         
         .logo-text {
             color: white;
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             font-weight: 700;
             letter-spacing: -0.5px;
         }
         
         .login-heading {
             color: white;
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
-            margin: 0 0 12px 0;
-            line-height: 1.2;
+            margin: 0 0 10px 0;
+            line-height: 1.3;
         }
         
         .login-tagline {
             color: rgba(255, 255, 255, 0.85);
-            font-size: 1rem;
+            font-size: 0.95rem;
             margin: 0;
             font-weight: 400;
         }
@@ -434,20 +435,22 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             
             .login-left {
                 text-align: left;
+                padding-top: 0;
+                display: block;
             }
             
             .logo-section {
                 justify-content: flex-start;
-                margin-bottom: 28px;
+                margin-bottom: 24px;
             }
             
             .login-heading {
-                font-size: 2.75rem;
+                font-size: 2.25rem;
                 margin-bottom: 10px;
             }
             
             .login-tagline {
-                font-size: 1.05rem;
+                font-size: 1rem;
             }
             
             .auth-container {
@@ -458,7 +461,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         
         @media (min-width: 1024px) {
             .login-heading {
-                font-size: 3rem;
+                font-size: 2.5rem;
             }
         }
         
