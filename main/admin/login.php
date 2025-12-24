@@ -60,6 +60,48 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             margin: 20px;
         }
         
+        /* Desktop/Laptop improvements */
+        @media (min-width: 768px) {
+            .auth-container {
+                max-width: 500px;
+                padding: 50px 60px;
+            }
+            
+            .auth-header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .auth-header p {
+                font-size: 1rem;
+            }
+            
+            .form-group {
+                margin-bottom: 24px;
+            }
+            
+            .form-group input {
+                padding: 14px 18px;
+                font-size: 1.05rem;
+            }
+            
+            .btn {
+                padding: 14px 24px;
+                font-size: 1.05rem;
+            }
+            
+            .auth-tab {
+                padding: 14px;
+                font-size: 1.05rem;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .auth-container {
+                max-width: 550px;
+                padding: 60px 70px;
+            }
+        }
+        
         .auth-header {
             text-align: center;
             margin-bottom: 30px;
