@@ -145,7 +145,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             height: 200px;
             background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
             border-radius: 50%;
-            opacity: 0.1;
+            opacity: 0.08;
             z-index: 0;
         }
         
@@ -473,10 +473,10 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         /* Footer */
         .login-footer {
             position: fixed;
-            bottom: 16px;
+            bottom: 20px;
             left: 24px;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.8rem;
+            color: #9ca3af;
+            font-size: 0.85rem;
             z-index: 1;
         }
         
