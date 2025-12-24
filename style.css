@@ -135,7 +135,7 @@ body {
 .nav-brand {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     font-size: 1.5rem;
     font-weight: 800;
     background: var(--gradient-primary);
@@ -152,8 +152,8 @@ body {
 }
 
 .brand-logo {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     object-fit: contain;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
