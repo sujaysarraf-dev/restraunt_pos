@@ -2,13 +2,23 @@
 // Include secure session configuration (callback may not need auth, but session config is safe)
 require_once __DIR__ . '/../config/session_config.php';
 startSecureSession();
+
+// Load environment variables
+if (file_exists(__DIR__ . '/../config/env_loader.php')) {
+    require_once __DIR__ . '/../config/env_loader.php';
+}
+
 if (file_exists(__DIR__ . '/../db_connection.php')) {
     require_once __DIR__ . '/../db_connection.php';
 }
 
-// PhonePe Test API Configuration
-define('PHONEPE_SALT_KEY', '099eb0cd-02cf-4e2a-8aca-3e6c6aff8719'); // Test Salt Key
-define('PHONEPE_SALT_INDEX', '1'); // Test Salt Index
+// PhonePe API Configuration - Load from .env
+if (!defined('PHONEPE_SALT_KEY')) {
+    define('PHONEPE_SALT_KEY', env('PHONEPE_SALT_KEY', '099eb0cd-02cf-4e2a-8aca-3e6c6aff8719'));
+}
+if (!defined('PHONEPE_SALT_INDEX')) {
+    define('PHONEPE_SALT_INDEX', env('PHONEPE_SALT_INDEX', '1'));
+}
 
 try {
     $conn = getConnection();

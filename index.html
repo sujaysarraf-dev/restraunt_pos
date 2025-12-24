@@ -6,6 +6,10 @@
     <title>Restro Grow - Complete Restaurant Management System</title>
     <meta name="description" content="Restro Grow - Powerful restaurant POS system with KOT management, order tracking, staff management, and real-time analytics. Perfect for restaurants of all sizes.">
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/images/logo-transparent.png">
+    <link rel="apple-touch-icon" href="assets/images/logo-transparent.png">
+    
     <!-- Resource Hints for Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,10 +29,10 @@
     <!-- Navigation -->
     <nav class="navbar">
         <div class="container">
-            <div class="nav-brand">
-                <span class="material-symbols-rounded">restaurant</span>
+            <a href="/" class="nav-brand" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                <img src="assets/images/logo-transparent.png" alt="Restro Grow Logo" class="brand-logo">
                 <span class="brand-text">Restro Grow</span>
-            </div>
+            </a>
             <ul class="nav-menu">
                 <li><a href="#features">Features</a></li>
                 <li><a href="#benefits">Benefits</a></li>
@@ -48,29 +52,29 @@
             <div class="hero-content">
                 <div class="hero-text">
                     <h1 class="hero-title">
-                        Welcome to <span class="highlight">Restro Grow</span><br>
-                        Restaurant Management System
+                        Stop juggling orders, staff, and chaos.<br>
+                        <span class="highlight">Restro Grow</span> runs your restaurant.
                     </h1>
                     <p class="hero-description">
-                        Streamline your restaurant operations with our all-in-one POS solution. 
-                        Manage orders, track inventory, handle staff, and grow your business effortlessly.
+                        We built this because we were tired of losing orders, confusing the kitchen, and watching waiters run around clueless. 
+                        Now your POS actually works the way your restaurant does - fast, simple, and without the headaches.
                     </p>
                     <div class="hero-buttons">
-                        <a href="#features" class="btn btn-primary">Explore Features</a>
-                        <a href="#pricing" class="btn btn-secondary">View Pricing</a>
+                        <a href="main/admin/login.php" class="btn btn-primary">Start Free Trial</a>
+                        <a href="#features" class="btn btn-secondary">See How It Works</a>
                     </div>
                     <div class="hero-stats">
                         <div class="stat-item">
-                            <div class="stat-number">99%</div>
-                            <div class="stat-label">Uptime</div>
+                            <div class="stat-number">₹0</div>
+                            <div class="stat-label">Setup Fee</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-number">24/7</div>
-                            <div class="stat-label">Support</div>
+                            <div class="stat-number">7 Days</div>
+                            <div class="stat-label">Free Trial</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-number">100+</div>
-                            <div class="stat-label">Restaurants</div>
+                            <div class="stat-number">5 Min</div>
+                            <div class="stat-label">Setup Time</div>
                         </div>
                     </div>
                 </div>
@@ -82,12 +86,7 @@
                             <span></span>
                         </div>
                         <div class="preview-content">
-                            <div class="preview-nav">Dashboard</div>
-                            <div class="preview-stats">
-                                <div class="preview-stat"></div>
-                                <div class="preview-stat"></div>
-                                <div class="preview-stat"></div>
-                            </div>
+                            <img src="assets/images/restro-grow-dashboard.png" alt="Restro Grow Dashboard - Complete Restaurant Management System" class="dashboard-screenshot" />
                         </div>
                     </div>
                 </div>
@@ -99,72 +98,72 @@
     <section id="features" class="features">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Powerful Features</h2>
-                <p class="section-subtitle">Everything you need to run your restaurant efficiently</p>
+                <h2 class="section-title">What You Actually Get</h2>
+                <p class="section-subtitle">No fluff. Just the stuff that makes your life easier.</p>
             </div>
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
                         <span class="material-symbols-rounded">point_of_sale</span>
                     </div>
-                    <h3>Point of Sale</h3>
-                    <p>Fast and intuitive POS system for quick order processing, multiple payment methods, and real-time inventory updates.</p>
+                    <h3>Take Orders Without Losing Your Mind</h3>
+                    <p>Your waiters can take orders on tablets or phones. No more running back and forth to the counter. Orders go straight to the kitchen. Cash, card, UPI - we handle it all.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <span class="material-symbols-rounded">restaurant_menu</span>
                     </div>
-                    <h3>KOT Management</h3>
-                    <p>Kitchen Order Tickets (KOT) system with real-time status tracking, automated notifications, and seamless order flow.</p>
+                    <h3>Kitchen Actually Knows What's Coming</h3>
+                    <p>KOT tickets print automatically (or show on screen). Chefs see orders in real-time. Mark items as cooking, ready, or served. No more "where's my order?" chaos.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <span class="material-symbols-rounded">groups</span>
                     </div>
-                    <h3>Staff Management</h3>
-                    <p>Role-based access control for Admin, Manager, Chef, and Waiter roles with dedicated dashboards for each.</p>
+                    <h3>Everyone Gets Their Own Dashboard</h3>
+                    <p>Managers see sales and reports. Chefs see pending orders. Waiters see their tables and requests. Admins control everything. No one sees what they shouldn't.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <span class="material-symbols-rounded">table_restaurant</span>
                     </div>
-                    <h3>Table Management</h3>
-                    <p>Organize tables by areas, track availability, manage reservations, and optimize seating capacity.</p>
+                    <h3>Know Which Tables Are Free</h3>
+                    <p>Organize tables by areas (indoor, outdoor, rooftop). See what's occupied, what's reserved, what's dirty. Stop double-booking tables.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <span class="material-symbols-rounded">bar_chart</span>
                     </div>
-                    <h3>Analytics & Reports</h3>
-                    <p>Comprehensive sales reports, revenue tracking, popular items analysis, and customer insights.</p>
+                    <h3>See What's Actually Selling</h3>
+                    <p>Daily sales reports. Which items are popular. Which waiter is selling more. What time you're busiest. Make decisions based on real data, not guesses.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <span class="material-symbols-rounded">shopping_cart</span>
                     </div>
-                    <h3>Online Orders</h3>
-                    <p>Customer-facing website for online ordering, table QR codes, menu browsing, and waiter requests.</p>
+                    <h3>Customers Order Online Too</h3>
+                    <p>Put QR codes on tables. Customers scan, browse menu, order, pay. Or they order from your website. Orders come straight to your kitchen. No third-party apps taking 30%.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <span class="material-symbols-rounded">credit_card</span>
                     </div>
-                    <h3>Payment Processing</h3>
-                    <p>Multiple payment options including Cash, Card, UPI, and online payments with comprehensive payment tracking.</p>
+                    <h3>Accept All Payment Types</h3>
+                    <p>Cash, card swipe, UPI (PhonePe, Google Pay, Paytm), online payments. Track everything. Split bills. Partial payments. Refunds. It's all there.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <span class="material-symbols-rounded">notifications</span>
                     </div>
-                    <h3>Waiter Requests</h3>
-                    <p>Real-time customer requests system with instant notifications and automatic assignment to waiters.</p>
+                    <h3>Customers Can Call Waiters</h3>
+                    <p>Customer needs something? They tap a button on their phone. Waiter gets notified instantly. No more waving hands or shouting across the restaurant.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <span class="material-symbols-rounded">calendar_month</span>
                     </div>
-                    <h3>Reservations</h3>
-                    <p>Complete reservation management system with time slots, guest management, and automated confirmations.</p>
+                    <h3>Handle Reservations Properly</h3>
+                    <p>Customers book tables online. You see all reservations. Check availability before confirming. Send reminders. Stop overbooking or losing reservations.</p>
                 </div>
             </div>
         </div>
@@ -175,40 +174,40 @@
         <div class="container">
             <div class="benefits-content">
                 <div class="benefits-text">
-                    <h2 class="section-title">Why Choose Our POS System?</h2>
+                    <h2 class="section-title">Why Restaurants Actually Switch</h2>
                     <div class="benefit-item">
                         <span class="material-symbols-rounded benefit-icon">speed</span>
                         <div>
-                            <h3>Lightning Fast</h3>
-                            <p>Process orders in seconds with our optimized system designed for speed and efficiency.</p>
+                            <h3>It's Actually Fast</h3>
+                            <p>No lag. No freezing. Orders go through instantly, even during rush hour. We tested it with real restaurants, not in a lab.</p>
                         </div>
                     </div>
                     <div class="benefit-item">
                         <span class="material-symbols-rounded benefit-icon">security</span>
                         <div>
-                            <h3>Secure & Reliable</h3>
-                            <p>Bank-level security with encrypted transactions and regular data backups to keep your business safe.</p>
+                            <h3>Your Data Stays Yours</h3>
+                            <p>We don't sell your customer data. Everything is encrypted. Daily backups. If something breaks, we fix it. Simple.</p>
                         </div>
                     </div>
                     <div class="benefit-item">
                         <span class="material-symbols-rounded benefit-icon">devices</span>
                         <div>
-                            <h3>Multi-Device Support</h3>
-                            <p>Access your POS from any device - desktop, tablet, or mobile - works seamlessly everywhere.</p>
+                            <h3>Works on Whatever You Have</h3>
+                            <p>Old Android tablet? Works. New iPad? Works. Windows PC? Works. Your phone? Works. Use what you already own.</p>
                         </div>
                     </div>
                     <div class="benefit-item">
                         <span class="material-symbols-rounded benefit-icon">trending_up</span>
                         <div>
-                            <h3>Grow Your Business</h3>
-                            <p>Make data-driven decisions with comprehensive analytics and insights into your operations.</p>
+                            <h3>Stop Guessing, Start Knowing</h3>
+                            <p>See which dishes sell, which don't. Know your busy hours. Track which staff performs best. Make changes that actually work.</p>
                         </div>
                     </div>
                     <div class="benefit-item">
                         <span class="material-symbols-rounded benefit-icon">support_agent</span>
                         <div>
-                            <h3>Expert Support</h3>
-                            <p>Dedicated support team available 24/7 to help you maximize the potential of your POS system.</p>
+                            <h3>We Actually Answer</h3>
+                            <p>Email us. Call us. WhatsApp us. We respond. No bots. No "your call is important to us" nonsense. Real people, real help.</p>
                         </div>
                     </div>
                 </div>
@@ -216,18 +215,18 @@
                     <div class="feature-showcase">
                         <div class="showcase-card active">
                             <div class="showcase-icon">📱</div>
-                            <h4>Mobile-First Design</h4>
-                            <p>Fully responsive interface that works perfectly on all devices</p>
+                            <h4>Use Your Existing Devices</h4>
+                            <p>Works on tablets, phones, computers. No expensive hardware needed.</p>
                         </div>
                         <div class="showcase-card">
                             <div class="showcase-icon">⚡</div>
-                            <h4>Real-Time Updates</h4>
-                            <p>Instant synchronization across all devices and users</p>
+                            <h4>Updates Instantly</h4>
+                            <p>Order placed? Kitchen sees it immediately. No delays, no confusion.</p>
                         </div>
                         <div class="showcase-card">
                             <div class="showcase-icon">💳</div>
-                            <h4>Secure Payments</h4>
-                            <p>Multiple secure payment gateways integrated</p>
+                            <h4>All Payment Methods</h4>
+                            <p>Cash, card, UPI, online. Accept everything your customers want to pay with.</p>
                         </div>
                     </div>
                 </div>
@@ -239,8 +238,8 @@
     <section class="dashboard-preview-section">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Intuitive Dashboard</h2>
-                <p class="section-subtitle">See your restaurant operations at a glance</p>
+                <h2 class="section-title">What It Looks Like</h2>
+                <p class="section-subtitle">Different views for different people. Everyone sees what they need.</p>
             </div>
             <div class="dashboard-showcase">
                 <div class="dashboard-tabs">
@@ -282,70 +281,73 @@
     <section id="pricing" class="pricing">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Simple, Transparent Pricing</h2>
-                <p class="section-subtitle">Choose the plan that fits your restaurant</p>
+                <h2 class="section-title">Pricing That Makes Sense</h2>
+                <p class="section-subtitle">One price. Everything included. No surprises.</p>
             </div>
             <div class="pricing-grid">
                 <div class="pricing-card">
                     <div class="pricing-header">
-                        <h3>Starter</h3>
+                        <h3>Small Restaurant</h3>
                         <div class="price">
                             <span class="currency">₹</span>
                             <span class="amount">2,999</span>
                             <span class="period">/month</span>
                         </div>
+                        <p style="color: var(--gray); font-size: 0.9rem; margin-top: 8px;">For 1-5 tables</p>
                     </div>
                     <ul class="pricing-features">
-                        <li><span class="material-symbols-rounded">check</span> Basic POS System</li>
-                        <li><span class="material-symbols-rounded">check</span> Order Management</li>
-                        <li><span class="material-symbols-rounded">check</span> Table Management</li>
-                        <li><span class="material-symbols-rounded">check</span> Basic Reports</li>
-                        <li><span class="material-symbols-rounded">check</span> Email Support</li>
+                        <li><span class="material-symbols-rounded">check</span> Full POS system</li>
+                        <li><span class="material-symbols-rounded">check</span> KOT management</li>
+                        <li><span class="material-symbols-rounded">check</span> Online ordering</li>
+                        <li><span class="material-symbols-rounded">check</span> Basic reports</li>
+                        <li><span class="material-symbols-rounded">check</span> Email support</li>
                     </ul>
-                    <a href="#contact" class="btn btn-outline">Get Started</a>
+                    <a href="main/admin/login.php" class="btn btn-outline">Start Free Trial</a>
                 </div>
                 <div class="pricing-card featured">
                     <div class="pricing-badge">Most Popular</div>
                     <div class="pricing-header">
-                        <h3>Professional</h3>
+                        <h3>Growing Restaurant</h3>
                         <div class="price">
                             <span class="currency">₹</span>
                             <span class="amount">4,999</span>
                             <span class="period">/month</span>
                         </div>
+                        <p style="color: var(--gray); font-size: 0.9rem; margin-top: 8px;">For 6-20 tables</p>
                     </div>
                     <ul class="pricing-features">
-                        <li><span class="material-symbols-rounded">check</span> Full POS System</li>
-                        <li><span class="material-symbols-rounded">check</span> KOT Management</li>
-                        <li><span class="material-symbols-rounded">check</span> Staff Management</li>
-                        <li><span class="material-symbols-rounded">check</span> Online Ordering</li>
-                        <li><span class="material-symbols-rounded">check</span> Advanced Analytics</li>
-                        <li><span class="material-symbols-rounded">check</span> Priority Support</li>
+                        <li><span class="material-symbols-rounded">check</span> Everything in Small</li>
+                        <li><span class="material-symbols-rounded">check</span> Staff management</li>
+                        <li><span class="material-symbols-rounded">check</span> Advanced analytics</li>
+                        <li><span class="material-symbols-rounded">check</span> Table reservations</li>
+                        <li><span class="material-symbols-rounded">check</span> Priority support</li>
+                        <li><span class="material-symbols-rounded">check</span> Custom training</li>
                     </ul>
-                    <a href="#contact" class="btn btn-primary">Get Started</a>
+                    <a href="main/admin/login.php" class="btn btn-primary">Start Free Trial</a>
                 </div>
                 <div class="pricing-card">
                     <div class="pricing-header">
-                        <h3>Enterprise</h3>
+                        <h3>Multiple Locations</h3>
                         <div class="price">
                             <span class="currency">₹</span>
                             <span class="amount">9,999</span>
                             <span class="period">/month</span>
                         </div>
+                        <p style="color: var(--gray); font-size: 0.9rem; margin-top: 8px;">For 2+ restaurants</p>
                     </div>
                     <ul class="pricing-features">
-                        <li><span class="material-symbols-rounded">check</span> Everything in Professional</li>
-                        <li><span class="material-symbols-rounded">check</span> Multi-location Support</li>
-                        <li><span class="material-symbols-rounded">check</span> Custom Integrations</li>
-                        <li><span class="material-symbols-rounded">check</span> Dedicated Account Manager</li>
-                        <li><span class="material-symbols-rounded">check</span> 24/7 Phone Support</li>
-                        <li><span class="material-symbols-rounded">check</span> Custom Training</li>
+                        <li><span class="material-symbols-rounded">check</span> Everything in Growing</li>
+                        <li><span class="material-symbols-rounded">check</span> Multi-location support</li>
+                        <li><span class="material-symbols-rounded">check</span> Centralized reporting</li>
+                        <li><span class="material-symbols-rounded">check</span> Dedicated account manager</li>
+                        <li><span class="material-symbols-rounded">check</span> Phone + WhatsApp support</li>
+                        <li><span class="material-symbols-rounded">check</span> Custom features</li>
                     </ul>
-                    <a href="#contact" class="btn btn-outline">Contact Sales</a>
+                    <a href="#contact" class="btn btn-outline">Contact Us</a>
                 </div>
             </div>
             <div class="pricing-note">
-                <p>All plans include a <strong>7-day free trial</strong>. No credit card required.</p>
+                <p><strong>7-day free trial</strong> - No credit card needed. Cancel anytime. Setup takes 5 minutes.</p>
             </div>
         </div>
     </section>
@@ -354,8 +356,8 @@
     <section id="contact" class="contact">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Get in Touch</h2>
-                <p class="section-subtitle">Ready to transform your restaurant operations? Let's talk!</p>
+                <h2 class="section-title">Let's Talk</h2>
+                <p class="section-subtitle">Have questions? Want a demo? Just want to chat? We're here.</p>
             </div>
             <div class="contact-content">
                 <div class="contact-info">
@@ -406,7 +408,7 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <div class="footer-brand">
-                        <span class="material-symbols-rounded">restaurant</span>
+                        <img src="assets/images/logo-transparent.png" alt="Restro Grow Logo" class="footer-logo">
                         <span>Restro Grow</span>
                     </div>
                     <p>Complete restaurant management solution for modern restaurants.</p>
@@ -422,17 +424,18 @@
                 <div class="footer-section">
                     <h4>Company</h4>
                     <ul>
-                        <li><a href="#contact">Contact Us</a></li>
-                        <li><a href="#">About</a></li>
-                        <li><a href="#">Blog</a></li>
+                        <li><a href="index.html#contact">Contact Us</a></li>
+                        <li><a href="/about">About</a></li>
+                        <li><a href="/blog">Blog</a></li>
+                        <li><a href="/faq">FAQ</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h4>Legal</h4>
                     <ul>
-                        <li><a href="#">Privacy Policy</a></li>
-                        <li><a href="#">Terms of Service</a></li>
-                        <li><a href="#">Cookie Policy</a></li>
+                        <li><a href="/privacy-policy">Privacy Policy</a></li>
+                        <li><a href="/terms-of-service">Terms of Service</a></li>
+                        <li><a href="/cookie-policy">Cookie Policy</a></li>
                     </ul>
                 </div>
             </div>

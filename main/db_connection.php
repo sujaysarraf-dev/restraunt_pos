@@ -22,6 +22,11 @@ if (function_exists('getConnection')) {
     return;
 }
 
+// Load environment variables first
+if (file_exists(__DIR__ . '/config/env_loader.php')) {
+    require_once __DIR__ . '/config/env_loader.php';
+}
+
 // Lazy connection flag - only connect when actually needed
 $GLOBALS['db_lazy_connect'] = true;
 
@@ -47,17 +52,35 @@ $is_hostinger_server = (
      strpos($_SERVER['HTTP_HOST'] ?? '', 'restrogrow.com') !== false)
 );
 
-if ($is_hostinger_server) {
-    // Running ON Hostinger server - use localhost
-    $host = 'localhost';
-} else {
-    // Running from local machine - use remote host (if remote access enabled)
-    $host = 'auth-db1336.hstgr.io';
+// Load database credentials from environment variables
+// Fallback function if env() is not defined
+if (!function_exists('env')) {
+    function env($key, $default = null) {
+        if (isset($_ENV[$key])) {
+            return $_ENV[$key];
+        }
+        if (isset($_SERVER[$key])) {
+            return $_SERVER[$key];
+        }
+        $value = getenv($key);
+        if ($value !== false) {
+            return $value;
+        }
+        return $default;
+    }
 }
 
-$dbname = 'u509616587_restrogrow';
-$username = 'u509616587_restrogrow';
-$password = 'Sujaysarraf@5569';
+if ($is_hostinger_server) {
+    // Running ON Hostinger server - use localhost
+    $host = env('DB_HOST_LOCAL', 'localhost');
+} else {
+    // Running from local machine - use remote host (if remote access enabled)
+    $host = env('DB_HOST_REMOTE', 'auth-db1336.hstgr.io');
+}
+
+$dbname = env('DB_NAME', 'u509616587_restrogrow');
+$username = env('DB_USER', 'u509616587_restrogrow');
+$password = env('DB_PASS', 'Sujaysarraf@5569');
 
 // Highly optimized connection configuration
 // Add connection timeout in DSN for remote connections

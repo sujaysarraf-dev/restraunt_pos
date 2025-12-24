@@ -34,7 +34,9 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - Restaurant Management</title>
+    <title>Admin Login - Restro Grow</title>
+    <link rel="icon" type="image/png" href="../assets/images/logo-transparent.png">
+    <link rel="apple-touch-icon" href="../assets/images/logo-transparent.png">
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
     <style>

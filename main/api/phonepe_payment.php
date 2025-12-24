@@ -6,6 +6,11 @@ startSecureSession();
 // Include authorization configuration
 require_once __DIR__ . '/../config/authorization_config.php';
 
+// Load environment variables
+if (file_exists(__DIR__ . '/../config/env_loader.php')) {
+    require_once __DIR__ . '/../config/env_loader.php';
+}
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
@@ -36,30 +41,47 @@ if (file_exists(__DIR__ . '/../db_connection.php')) {
 //
 // ==========================================
 
-// Environment: 'test' or 'production'
-define('PHONEPE_ENVIRONMENT', 'test'); // Change to 'production' for live payments
-
-// PhonePe Credentials
-define('PHONEPE_MERCHANT_ID', 'YOUR_MERCHANT_ID'); // Replace with your PhonePe Merchant ID
-define('PHONEPE_SALT_KEY', 'YOUR_SALT_KEY'); // Replace with your PhonePe Salt Key
-define('PHONEPE_SALT_INDEX', '1'); // Replace with your Salt Index
-
-// Set base URL based on environment
-if (defined('PHONEPE_ENVIRONMENT') && PHONEPE_ENVIRONMENT === 'production') {
-    // PRODUCTION/LIVE - Real payments with real money
-    define('PHONEPE_BASE_URL', 'https://api.phonepe.com/apis/pg-sandbox'); // Production URL (verify with PhonePe)
-} else {
-    // TEST/SANDBOX - No real money
-    define('PHONEPE_BASE_URL', 'https://api-preprod.phonepe.com/apis/pg-sandbox'); // Test/Sandbox URL
+// Environment: 'test' or 'production' - Load from .env
+if (!defined('PHONEPE_ENVIRONMENT')) {
+    define('PHONEPE_ENVIRONMENT', env('PHONEPE_ENVIRONMENT', 'test'));
 }
 
-// Callback URLs (Update these with your actual domain in production)
-define('PHONEPE_CALLBACK_URL', 'http://localhost/menu/phonepe_callback.php');
-define('PHONEPE_REDIRECT_URL', 'http://localhost/menu/dashboard.php');
+// PhonePe Credentials - Load from .env
+if (!defined('PHONEPE_MERCHANT_ID')) {
+    define('PHONEPE_MERCHANT_ID', env('PHONEPE_MERCHANT_ID', 'YOUR_MERCHANT_ID'));
+}
+if (!defined('PHONEPE_SALT_KEY')) {
+    define('PHONEPE_SALT_KEY', env('PHONEPE_SALT_KEY', 'YOUR_SALT_KEY'));
+}
+if (!defined('PHONEPE_SALT_INDEX')) {
+    define('PHONEPE_SALT_INDEX', env('PHONEPE_SALT_INDEX', '1'));
+}
+
+// Set base URL based on environment
+if (!defined('PHONEPE_BASE_URL')) {
+    if (PHONEPE_ENVIRONMENT === 'production') {
+        // PRODUCTION/LIVE - Real payments with real money
+        define('PHONEPE_BASE_URL', env('PHONEPE_BASE_URL_PRODUCTION', 'https://api.phonepe.com/apis/pg-sandbox'));
+    } else {
+        // TEST/SANDBOX - No real money
+        define('PHONEPE_BASE_URL', env('PHONEPE_BASE_URL_TEST', 'https://api-preprod.phonepe.com/apis/pg-sandbox'));
+    }
+}
+
+// Callback URLs - Load from .env
+if (!defined('PHONEPE_CALLBACK_URL')) {
+    define('PHONEPE_CALLBACK_URL', env('PHONEPE_CALLBACK_URL', 'http://localhost/menu/phonepe_callback.php'));
+}
+if (!defined('PHONEPE_REDIRECT_URL')) {
+    define('PHONEPE_REDIRECT_URL', env('PHONEPE_REDIRECT_URL', 'http://localhost/menu/dashboard.php'));
+}
 
 // DEMO MODE: Set to true to simulate payment without calling PhonePe API at all
 // Set to false when you have PhonePe credentials (test or production)
-define('PHONEPE_DEMO_MODE', true); // Set to false when using real PhonePe credentials
+if (!defined('PHONEPE_DEMO_MODE')) {
+    $demoMode = env('PHONEPE_DEMO_MODE', 'true');
+    define('PHONEPE_DEMO_MODE', $demoMode === 'true' || $demoMode === true);
+}
 
 try {
     $conn = getConnection();

@@ -4,6 +4,11 @@
  * Configure SMTP settings here
  */
 
+// Load environment variables if not already loaded
+if (!defined('ENV_LOADER_LOADED') && file_exists(__DIR__ . '/env_loader.php')) {
+    require_once __DIR__ . '/env_loader.php';
+}
+
 // Development Mode Configuration
 // When DEVELOPMENT_MODE is true, emails will only be sent on localhost
 // On production servers, emails will be logged instead of sent
@@ -22,15 +27,31 @@ function isLocalhost() {
     );
 }
 
-// SMTP Configuration
-define('SMTP_ENABLED', true); // Set to false to use PHP mail() function
-define('SMTP_HOST', 'smtp.gmail.com');
-define('SMTP_PORT', 587);
-define('SMTP_SECURE', 'tls'); // 'tls' or 'ssl'
-define('SMTP_USERNAME', 'restrogrow@gmail.com'); // Your Gmail address
-define('SMTP_PASSWORD', 'eelnueoixaluiffq'); // Your Gmail App Password (not regular password)
-define('SMTP_FROM_EMAIL', 'restrogrow@gmail.com');
-define('SMTP_FROM_NAME', 'Restaurant POS System');
+// SMTP Configuration - Load from environment variables
+if (!defined('SMTP_ENABLED')) {
+    define('SMTP_ENABLED', env('SMTP_ENABLED', 'true') === 'true' || env('SMTP_ENABLED', 'true') === true);
+}
+if (!defined('SMTP_HOST')) {
+    define('SMTP_HOST', env('SMTP_HOST', 'smtp.gmail.com'));
+}
+if (!defined('SMTP_PORT')) {
+    define('SMTP_PORT', (int)env('SMTP_PORT', 587));
+}
+if (!defined('SMTP_SECURE')) {
+    define('SMTP_SECURE', env('SMTP_SECURE', 'tls')); // 'tls' or 'ssl'
+}
+if (!defined('SMTP_USERNAME')) {
+    define('SMTP_USERNAME', env('SMTP_USERNAME', 'restrogrow@gmail.com'));
+}
+if (!defined('SMTP_PASSWORD')) {
+    define('SMTP_PASSWORD', env('SMTP_PASSWORD', ''));
+}
+if (!defined('SMTP_FROM_EMAIL')) {
+    define('SMTP_FROM_EMAIL', env('SMTP_FROM_EMAIL', 'restrogrow@gmail.com'));
+}
+if (!defined('SMTP_FROM_NAME')) {
+    define('SMTP_FROM_NAME', env('SMTP_FROM_NAME', 'Restaurant POS System'));
+}
 
 /**
  * Send email using SMTP
