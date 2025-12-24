@@ -442,22 +442,22 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             
             .login-left {
                 text-align: left;
-                padding-top: 0;
+                padding-top: 60px;
                 display: block;
             }
             
             .logo-section {
                 justify-content: flex-start;
-                margin-bottom: 24px;
+                margin-bottom: 20px;
             }
             
             .login-heading {
-                font-size: 2.25rem;
-                margin-bottom: 10px;
+                font-size: 2rem;
+                margin-bottom: 8px;
             }
             
             .login-tagline {
-                font-size: 1rem;
+                font-size: 0.95rem;
             }
             
             .auth-container {
@@ -468,7 +468,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         
         @media (min-width: 1024px) {
             .login-heading {
-                font-size: 2.5rem;
+                font-size: 2.15rem;
             }
         }
         
