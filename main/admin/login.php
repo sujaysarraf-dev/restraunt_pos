@@ -566,8 +566,8 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             <div class="login-right">
                 <div class="auth-container">
                     <div class="auth-header">
-                        <h1>Welcome Back</h1>
-                        <p>Enter your credentials to access your account</p>
+                        <h1>Login</h1>
+                        <p>Please sign in to continue.</p>
                     </div>
                     
                     <!-- Login Form -->
