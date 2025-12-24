@@ -49,7 +49,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             padding: 0;
             height: 100vh;
             font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: #1e293b;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             position: relative;
             overflow: hidden;
         }
@@ -63,9 +63,9 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             right: 0;
             bottom: 0;
             background: 
-                radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(99, 102, 241, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+                radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.06) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
@@ -99,32 +99,20 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 14px;
             margin-bottom: 32px;
         }
         
-        .logo-circle {
+        .logo-img {
             width: 48px;
             height: 48px;
-            background: linear-gradient(135deg, #3b82f6, #6366f1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-        
-        .logo-circle::after {
-            content: '';
-            width: 24px;
-            height: 24px;
-            background: white;
-            border-radius: 50%;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
         }
         
         .logo-text {
             color: white;
-            font-size: 1.5rem;
+            font-size: 1.75rem;
             font-weight: 700;
             letter-spacing: -0.5px;
         }
@@ -201,9 +189,9 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         
         .form-group input:focus {
             outline: none;
-            border-color: #3b82f6;
+            border-color: #667eea;
             background: white;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
         }
         
         .form-actions {
@@ -214,7 +202,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         }
         
         .forgot-password-link {
-            color: #3b82f6;
+            color: #667eea;
             text-decoration: none;
             font-size: 0.9rem;
             font-weight: 500;
@@ -222,7 +210,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         }
         
         .forgot-password-link:hover {
-            color: #2563eb;
+            color: #764ba2;
         }
         
         .btn {
@@ -234,14 +222,14 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            background: #3b82f6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
         
         .btn:hover {
-            background: #2563eb;
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
         
         .btn:disabled {
@@ -258,14 +246,14 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         }
         
         .signup-link a {
-            color: #3b82f6;
+            color: #667eea;
             text-decoration: none;
             font-weight: 600;
             margin-left: 4px;
         }
         
         .signup-link a:hover {
-            color: #2563eb;
+            color: #764ba2;
         }
         
         .message {
@@ -474,7 +462,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             <!-- Left Side - Logo and Heading -->
             <div class="login-left">
                 <div class="logo-section">
-                    <div class="logo-circle"></div>
+                    <img src="../assets/images/logo-transparent.png" alt="Restro Grow Logo" class="logo-img">
                     <span class="logo-text">Restro Grow</span>
                 </div>
                 <h1 class="login-heading">Login into your account</h1>
