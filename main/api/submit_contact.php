@@ -107,7 +107,7 @@ try {
             ]
         ]);
     } else {
-        error_log("Contact form insert failed - Result: " . ($result ? 'true' : 'false') . ", RowCount: $rowCount, InsertId: $insertId);
+        error_log("Contact form insert failed - Result: " . ($result ? 'true' : 'false') . ", RowCount: $rowCount, InsertId: $insertId");
         throw new Exception('Failed to insert contact query into database. InsertId: ' . $insertId . ', RowCount: ' . $rowCount);
     }
     
