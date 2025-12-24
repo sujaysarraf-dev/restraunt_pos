@@ -4,10 +4,9 @@
 # Allow access to all files
 Options -Indexes
 
-# Security: Prevent direct access to sensitive files
+# Security: Prevent direct access to sensitive files (Apache 2.4+ compatible)
 <FilesMatch "\.(sql|md|log)$">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 # PHP Settings

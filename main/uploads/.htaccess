@@ -11,9 +11,8 @@
 # Enable directory listing for images (optional, for testing)
 Options +Indexes
 
-# Prevent execution of PHP files in uploads directory (security)
+# Prevent execution of PHP files in uploads directory (security - Apache 2.4+ compatible)
 <FilesMatch "\.php$">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 

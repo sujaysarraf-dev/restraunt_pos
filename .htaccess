@@ -30,10 +30,9 @@ RewriteRule ^cookies/?$ cookie-policy/index.html [L]
 # Prevent directory listing
 Options -Indexes
 
-# Protect sensitive files
-<FilesMatch "^(\.htaccess|\.git|composer\.(json|lock)|package\.json|\.env|db_connection\.php|config\.php)$">
-    Order allow,deny
-    Deny from all
+# Protect sensitive files (Apache 2.4+ compatible)
+<FilesMatch "^(\.htaccess|\.git|composer\.(json|lock)|package\.json|\.env|config\.php)$">
+    Require all denied
 </FilesMatch>
 
 # Set default charset
