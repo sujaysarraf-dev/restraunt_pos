@@ -429,26 +429,18 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         }
         
         @media (max-width: 767px) {
-            body {
-                overflow: hidden;
-            }
-            
             .login-footer {
                 display: none;
             }
             
             .login-wrapper {
-                padding: 0;
-                align-items: stretch;
-                height: 100vh;
-                overflow: hidden;
+                padding: 16px;
+                align-items: center;
             }
             
             .login-container {
                 gap: 0;
-                height: 100%;
-                display: flex;
-                align-items: stretch;
+                width: 100%;
             }
             
             .login-left {
@@ -457,71 +449,55 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             
             .login-right {
                 width: 100%;
-                display: flex;
-                align-items: stretch;
             }
             
             .auth-container {
-                padding: 20px;
+                padding: 32px 24px;
                 max-width: 100%;
                 width: 100%;
-                border-radius: 0;
-                box-shadow: none;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                overflow-y: auto;
+                border-radius: 20px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             }
             
             .auth-header {
-                margin-bottom: 16px;
+                margin-bottom: 24px;
+                text-align: center;
             }
             
             .auth-header h1 {
-                font-size: 1.5rem;
-                margin-bottom: 4px;
+                font-size: 1.75rem;
+                margin-bottom: 6px;
             }
             
             .auth-header p {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
             }
             
             .form-group {
-                margin-bottom: 14px;
+                margin-bottom: 18px;
             }
             
             .form-group label {
                 font-size: 0.9rem;
-                margin-bottom: 5px;
+                margin-bottom: 6px;
             }
             
             .form-group input {
-                padding: 12px 14px;
-                font-size: 0.95rem;
+                padding: 13px 16px;
+                font-size: 1rem;
             }
             
             .form-actions {
-                margin-bottom: 14px;
+                margin-bottom: 20px;
             }
             
             .signup-link {
-                margin-top: 14px;
-                font-size: 0.85rem;
+                margin-top: 20px;
+                font-size: 0.9rem;
             }
             
             .demo-credentials {
-                padding: 8px 12px;
-                margin-top: 12px;
-                font-size: 0.7rem;
-            }
-            
-            .demo-credentials h4 {
-                font-size: 0.8rem;
-                margin-bottom: 4px;
-            }
-            
-            .demo-credentials p {
-                margin: 2px 0;
+                display: none;
             }
         }
     </style>
