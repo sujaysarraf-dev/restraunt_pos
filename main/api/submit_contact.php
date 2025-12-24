@@ -89,10 +89,19 @@ try {
     
     $stmt->execute([$name, $email, $phone, $message]);
     
-    echo json_encode([
-        'success' => true,
-        'message' => 'Thank you for your interest! We will contact you soon.'
-    ]);
+    // Verify the insert was successful
+    $insertId = $conn->lastInsertId();
+    
+    if ($insertId) {
+        error_log("Contact form submitted successfully - ID: $insertId, Name: $name, Email: $email");
+        echo json_encode([
+            'success' => true,
+            'message' => 'Thank you for your interest! We will contact you soon.',
+            'id' => $insertId
+        ]);
+    } else {
+        throw new Exception('Failed to insert contact query into database');
+    }
     
 } catch (PDOException $e) {
     error_log("PDO Error in submit_contact.php: " . $e->getMessage());
