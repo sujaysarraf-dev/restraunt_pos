@@ -434,24 +434,88 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             }
             
             .login-wrapper {
-                padding: 20px;
+                padding: 16px;
+            }
+            
+            .login-container {
+                gap: 24px;
             }
             
             .logo-section {
-                margin-bottom: 24px;
+                margin-bottom: 16px;
+                gap: 10px;
+            }
+            
+            .logo-img {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .logo-text {
+                font-size: 1.4rem;
             }
             
             .login-heading {
-                font-size: 2rem;
-                margin-bottom: 10px;
+                font-size: 1.75rem;
+                margin-bottom: 8px;
             }
             
             .login-tagline {
-                font-size: 0.95rem;
+                font-size: 0.9rem;
             }
             
             .auth-container {
-                padding: 32px;
+                padding: 24px;
+            }
+            
+            .auth-header {
+                margin-bottom: 20px;
+            }
+            
+            .auth-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .auth-header p {
+                font-size: 0.9rem;
+            }
+            
+            .form-group {
+                margin-bottom: 16px;
+            }
+            
+            .form-group label {
+                font-size: 0.9rem;
+                margin-bottom: 6px;
+            }
+            
+            .form-group input {
+                padding: 12px 14px;
+                font-size: 0.95rem;
+            }
+            
+            .form-actions {
+                margin-bottom: 16px;
+            }
+            
+            .signup-link {
+                margin-top: 16px;
+                font-size: 0.9rem;
+            }
+            
+            .demo-credentials {
+                padding: 10px;
+                margin-top: 16px;
+                font-size: 0.75rem;
+            }
+            
+            .demo-credentials h4 {
+                font-size: 0.85rem;
+                margin-bottom: 6px;
+            }
+            
+            .demo-credentials p {
+                margin: 3px 0;
             }
         }
     </style>
