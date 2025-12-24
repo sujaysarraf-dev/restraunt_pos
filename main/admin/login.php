@@ -94,15 +94,22 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             filter: brightness(0) invert(1);
         }
         
+        .logo-img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            filter: none;
+        }
+        
         .logo-text {
-            color: white;
+            color: #1f2937;
             font-size: 1.5rem;
             font-weight: 700;
             letter-spacing: -0.5px;
         }
         
         .login-heading {
-            color: white;
+            color: #1f2937;
             font-size: 2rem;
             font-weight: 700;
             margin: 0 0 10px 0;
@@ -110,7 +117,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         }
         
         .login-tagline {
-            color: rgba(255, 255, 255, 0.85);
+            color: #6b7280;
             font-size: 0.95rem;
             margin: 0;
             font-weight: 400;
