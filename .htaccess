@@ -1,85 +1,33 @@
-# Hostinger Deployment Configuration
+# Basic Configuration
 RewriteEngine On
 
-# Force HTTPS (if SSL is enabled)
-# RewriteCond %{HTTPS} off
-# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
-# Remove .html extension from URLs (redirect)
+# Clean URLs - Remove .html extension
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}\.html -f
 RewriteCond %{REQUEST_URI} \.html$
 RewriteRule ^(.*)\.html$ /$1 [R=301,L]
 
-# Add .html extension internally (clean URLs)
+# Add .html extension internally
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}\.html -f
 RewriteRule ^(.*)$ $1.html [L]
 
-# Clean URLs for folder-based pages
+# Clean URLs for pages
 RewriteRule ^about/?$ about/index.html [L]
 RewriteRule ^blog/?$ blog/index.html [L]
 RewriteRule ^faq/?$ faq/index.html [L]
 RewriteRule ^privacy-policy/?$ privacy-policy/index.html [L]
 RewriteRule ^terms-of-service/?$ terms-of-service/index.html [L]
-RewriteRule ^terms/?$ terms-of-service/index.html [L]
 RewriteRule ^cookie-policy/?$ cookie-policy/index.html [L]
-RewriteRule ^cookies/?$ cookie-policy/index.html [L]
 
 # Prevent directory listing
 Options -Indexes
 
-# Protect sensitive files (Apache 2.4+ compatible)
-<FilesMatch "^(\.htaccess|\.git|composer\.(json|lock)|package\.json|\.env|config\.php)$">
+# Protect sensitive files
+<FilesMatch "^(\.htaccess|\.git|\.env|config\.php)$">
     Require all denied
 </FilesMatch>
 
 # Set default charset
 AddDefaultCharset UTF-8
-
-# PHP settings (if allowed by Hostinger)
-<IfModule mod_php7.c>
-    php_value upload_max_filesize 10M
-    php_value post_max_size 10M
-    php_value max_execution_time 300
-    php_value max_input_time 300
-</IfModule>
-
-# Error pages (optional)
-# ErrorDocument 404 /404.php
-# ErrorDocument 500 /500.php
-
-# Security headers
-<IfModule mod_headers.c>
-    Header set X-Content-Type-Options "nosniff"
-    Header set X-Frame-Options "SAMEORIGIN"
-    Header set X-XSS-Protection "1; mode=block"
-</IfModule>
-
-# Enable compression
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
-</IfModule>
-
-# Browser caching
-<IfModule mod_expires.c>
-    ExpiresActive On
-    ExpiresByType image/jpg "access plus 1 year"
-    ExpiresByType image/jpeg "access plus 1 year"
-    ExpiresByType image/gif "access plus 1 year"
-    ExpiresByType image/png "access plus 1 year"
-    ExpiresByType image/webp "access plus 1 year"
-    ExpiresByType text/css "access plus 1 month"
-    ExpiresByType application/javascript "access plus 0 seconds"
-    ExpiresByType text/html "access plus 0 seconds"
-</IfModule>
-
-# Prevent caching of HTML and JS files to ensure updates show immediately
-<IfModule mod_headers.c>
-    <FilesMatch "\.(html|htm|js)$">
-        Header set Cache-Control "no-cache, no-store, must-revalidate"
-        Header set Pragma "no-cache"
-        Header set Expires "0"
-    </FilesMatch>
-</IfModule>
