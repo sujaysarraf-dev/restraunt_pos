@@ -4,6 +4,27 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
+// Start output buffering to catch any errors
+ob_start();
+
+// Set error handler to catch fatal errors
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error !== NULL && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        ob_clean();
+        header('Content-Type: application/json');
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Server error occurred. Please try again later.',
+            'error' => $error['message'],
+            'file' => $error['file'],
+            'line' => $error['line']
+        ]);
+        exit();
+    }
+});
+
 // Ensure no output before headers
 if (ob_get_level()) {
     ob_clean();
@@ -15,11 +36,28 @@ header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
 // Include database connection
-if (file_exists(__DIR__ . '/../db_connection.php')) {
-    require_once __DIR__ . '/../db_connection.php';
+$dbPath = __DIR__ . '/../db_connection.php';
+if (file_exists($dbPath)) {
+    try {
+        require_once $dbPath;
+    } catch (Exception $e) {
+        error_log("Error including db_connection.php: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Database configuration error',
+            'error' => $e->getMessage()
+        ]);
+        exit();
+    }
 } else {
+    error_log("db_connection.php not found at: $dbPath");
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection file not found']);
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Database connection file not found',
+        'path' => $dbPath
+    ]);
     exit();
 }
 
@@ -113,18 +151,24 @@ try {
     
 } catch (PDOException $e) {
     error_log("PDO Error in submit_contact.php: " . $e->getMessage());
+    error_log("PDO Error Code: " . $e->getCode());
+    error_log("PDO Error Trace: " . $e->getTraceAsString());
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Error submitting your message. Please try again later.'
+        'message' => 'Database error occurred. Please try again later.',
+        'error' => $e->getMessage(),
+        'code' => $e->getCode()
     ]);
     exit();
 } catch (Exception $e) {
     error_log("Error in submit_contact.php: " . $e->getMessage());
+    error_log("Error Trace: " . $e->getTraceAsString());
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Error: ' . $e->getMessage()
+        'message' => 'Error: ' . $e->getMessage(),
+        'error' => $e->getMessage()
     ]);
     exit();
 }
