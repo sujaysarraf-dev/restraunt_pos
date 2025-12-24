@@ -534,8 +534,14 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             }
             
             .form-group input {
-                padding: 13px 16px;
+                padding: 13px 16px 13px 48px;
                 font-size: 1rem;
+            }
+            
+            .input-icon {
+                left: 16px;
+                width: 18px;
+                height: 18px;
             }
             
             .form-actions {
