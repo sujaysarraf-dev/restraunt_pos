@@ -226,6 +226,8 @@ body {
     border: none;
     cursor: pointer;
     color: var(--dark);
+    z-index: 1001;
+    position: relative;
 }
 
 /* Hero Section */
@@ -1234,8 +1236,10 @@ body {
         width: 100%;
         padding: 2rem;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        transition: left 0.3s;
-        z-index: 999;
+        transition: left 0.3s ease;
+        z-index: 1001;
+        height: calc(100vh - 70px);
+        overflow-y: auto;
     }
 
     .nav-menu.active {
@@ -1244,6 +1248,8 @@ body {
 
     .nav-toggle {
         display: block;
+        z-index: 1001;
+        position: relative;
     }
 
     .hero {

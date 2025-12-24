@@ -20,15 +20,35 @@ function showFrontendAlert(message, type = 'info', options = {}) {
     return window.showFrontendAlert(message);
 }
 
-﻿// Navigation Toggle
-const navToggle = document.querySelector('.nav-toggle');
-const navMenu = document.querySelector('.nav-menu');
-
-if (navToggle) {
-    navToggle.addEventListener('click', () => {
-        navMenu.classList.toggle('active');
-    });
-}
+﻿// Navigation Toggle with debugging
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing navigation...');
+    const navToggle = document.querySelector('.nav-toggle');
+    const navMenu = document.querySelector('.nav-menu');
+    
+    console.log('navToggle found:', navToggle);
+    console.log('navMenu found:', navMenu);
+    
+    if (navToggle) {
+        console.log('Adding click event to navToggle');
+        navToggle.addEventListener('click', function(e) {
+            console.log('Hamburger menu clicked!');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (navMenu) {
+                const isActive = navMenu.classList.contains('active');
+                console.log('Menu is currently:', isActive ? 'active' : 'inactive');
+                navMenu.classList.toggle('active');
+                console.log('Menu is now:', navMenu.classList.contains('active') ? 'active' : 'inactive');
+            } else {
+                console.error('navMenu is null!');
+            }
+        });
+    } else {
+        console.error('navToggle not found!');
+    }
+});
 
 // Smooth Scrolling
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
