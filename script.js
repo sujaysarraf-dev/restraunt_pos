@@ -138,6 +138,11 @@ if (contactForm) {
                 body: formData
             });
             
+            // Check if response is ok
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const result = await response.json();
             
             if (result.success) {
@@ -148,7 +153,7 @@ if (contactForm) {
             }
         } catch (error) {
             console.error('Error submitting contact form:', error);
-            showFrontendAlert('Error sending message. Please try again.');
+            showFrontendAlert('Error sending message. Please check your connection and try again.');
         } finally {
             // Re-enable button
             if (submitButton) {
