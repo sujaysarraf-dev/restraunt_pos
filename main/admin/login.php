@@ -49,25 +49,8 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             padding: 0;
             height: 100vh;
             font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f5f0;
             position: relative;
-            overflow: hidden;
-        }
-        
-        /* Background patterns */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.06) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
         }
         
         .login-wrapper {
@@ -142,94 +125,149 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         .auth-container {
             background: white;
             border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             padding: 40px;
             width: 100%;
             max-width: 450px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Decorative gradient element */
+        .auth-container::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            border-radius: 50%;
+            opacity: 0.1;
+            z-index: 0;
         }
         
         .auth-header {
-            margin-bottom: 28px;
+            margin-bottom: 32px;
+            position: relative;
+            z-index: 1;
         }
         
         .auth-header h1 {
-            color: #151A2D;
+            color: #1f2937;
             margin: 0 0 8px 0;
-            font-size: 1.75rem;
+            font-size: 2rem;
             font-weight: 700;
         }
         
         .auth-header p {
-            color: #666;
+            color: #6b7280;
             margin: 0;
             font-size: 0.95rem;
+            font-weight: 400;
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
         }
         
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
+            color: #9ca3af;
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            width: 20px;
+            height: 20px;
+            color: #9ca3af;
+            z-index: 2;
+            pointer-events: none;
         }
         
         .form-group input {
             width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e5e7eb;
+            padding: 14px 16px 14px 48px;
+            border: 1px solid #e5e7eb;
             border-radius: 12px;
             font-size: 1rem;
             transition: all 0.3s ease;
-            background: #f9fafb;
+            background: white;
+            color: #1f2937;
         }
         
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
-            background: white;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            border-color: #ff6b35;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
         }
         
         .form-actions {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
         }
         
         .forgot-password-link {
-            color: #667eea;
+            color: #ff6b35;
             text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             transition: color 0.3s ease;
         }
         
         .forgot-password-link:hover {
-            color: #764ba2;
+            color: #f7931e;
         }
         
         .btn {
             width: 100%;
-            padding: 14px 24px;
+            padding: 16px 24px;
             border: none;
             border-radius: 12px;
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
             color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            z-index: 1;
         }
         
         .btn:hover {
-            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #f7931e 0%, #ff6b35 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+        }
+        
+        .btn-icon {
+            width: 20px;
+            height: 20px;
+            fill: white;
         }
         
         .btn:disabled {
@@ -240,20 +278,22 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         
         .signup-link {
             text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 0.95rem;
+            margin-top: 24px;
+            color: #6b7280;
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 1;
         }
         
         .signup-link a {
-            color: #667eea;
+            color: #ff6b35;
             text-decoration: none;
             font-weight: 600;
             margin-left: 4px;
         }
         
         .signup-link a:hover {
-            color: #764ba2;
+            color: #f7931e;
         }
         
         .message {
@@ -456,7 +496,14 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
                 max-width: 100%;
                 width: 100%;
                 border-radius: 20px;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            }
+            
+            .auth-container::before {
+                width: 150px;
+                height: 150px;
+                top: -30px;
+                right: -30px;
             }
             
             .auth-header {
@@ -526,17 +573,32 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
                     <!-- Login Form -->
                     <form id="loginForm" class="auth-form active">
                         <div class="form-group">
-                            <label for="loginUsername">Email</label>
-                            <input type="text" id="loginUsername" name="username" required placeholder="name@example.com">
+                            <label for="loginUsername">EMAIL</label>
+                            <div class="input-wrapper">
+                                <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                                <input type="text" id="loginUsername" name="username" required placeholder="user123@email.com">
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label for="loginPassword">Password</label>
-                            <input type="password" id="loginPassword" name="password" required placeholder="Your password">
+                            <label for="loginPassword">PASSWORD</label>
+                            <div class="input-wrapper">
+                                <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                                <input type="password" id="loginPassword" name="password" required placeholder="Your password">
+                            </div>
                         </div>
                         <div class="form-actions">
-                            <a href="#" id="forgotPasswordLink" class="forgot-password-link">Forgot Password?</a>
+                            <a href="#" id="forgotPasswordLink" class="forgot-password-link">FORGOT</a>
                         </div>
-                        <button type="submit" class="btn btn-primary" id="loginBtn">Login</button>
+                        <button type="submit" class="btn btn-primary" id="loginBtn">
+                            LOGIN
+                            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
                         <div class="signup-link">
                             Don't have an account? <a href="#" onclick="event.preventDefault(); switchTab('signup');">Sign up</a>
                         </div>
@@ -545,18 +607,38 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
                     <!-- Signup Form -->
                     <form id="signupForm" class="auth-form">
                         <div class="form-group">
-                            <label for="signupUsername">Username</label>
-                            <input type="text" id="signupUsername" name="username" required placeholder="Choose a username">
+                            <label for="signupUsername">USERNAME</label>
+                            <div class="input-wrapper">
+                                <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                <input type="text" id="signupUsername" name="username" required placeholder="Choose a username">
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label for="signupPassword">Password</label>
-                            <input type="password" id="signupPassword" name="password" required placeholder="Choose a password">
+                            <label for="signupPassword">PASSWORD</label>
+                            <div class="input-wrapper">
+                                <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                                <input type="password" id="signupPassword" name="password" required placeholder="Choose a password">
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label for="restaurantName">Restaurant Name</label>
-                            <input type="text" id="restaurantName" name="restaurant_name" required placeholder="Enter your restaurant name">
+                            <label for="restaurantName">RESTAURANT NAME</label>
+                            <div class="input-wrapper">
+                                <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                                <input type="text" id="restaurantName" name="restaurant_name" required placeholder="Enter your restaurant name">
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-primary" id="signupBtn">Sign Up</button>
+                        <button type="submit" class="btn btn-primary" id="signupBtn">
+                            SIGN UP
+                            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
                         <div class="signup-link">
                             Already have an account? <a href="#" onclick="event.preventDefault(); switchTab('login');">Sign in</a>
                         </div>
