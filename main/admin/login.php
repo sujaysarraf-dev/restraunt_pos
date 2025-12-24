@@ -210,6 +210,10 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             color: #1f2937;
         }
         
+        .form-group input::placeholder {
+            color: #9ca3af;
+        }
+        
         .form-group input:focus {
             outline: none;
             border-color: #ff6b35;
