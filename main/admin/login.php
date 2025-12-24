@@ -429,45 +429,70 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         }
         
         @media (max-width: 767px) {
+            body {
+                overflow: hidden;
+            }
+            
             .login-footer {
                 display: none;
             }
             
             .login-wrapper {
-                padding: 16px;
+                padding: 0;
+                align-items: stretch;
+                height: 100vh;
+                overflow: hidden;
             }
             
             .login-container {
-                gap: 24px;
+                gap: 0;
+                height: 100%;
+                display: flex;
+                align-items: stretch;
             }
             
             .login-left {
                 display: none;
             }
             
+            .login-right {
+                width: 100%;
+                display: flex;
+                align-items: stretch;
+            }
+            
             .auth-container {
-                padding: 24px;
+                padding: 20px;
+                max-width: 100%;
+                width: 100%;
+                border-radius: 0;
+                box-shadow: none;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                overflow-y: auto;
             }
             
             .auth-header {
-                margin-bottom: 20px;
+                margin-bottom: 16px;
             }
             
             .auth-header h1 {
                 font-size: 1.5rem;
+                margin-bottom: 4px;
             }
             
             .auth-header p {
-                font-size: 0.9rem;
+                font-size: 0.85rem;
             }
             
             .form-group {
-                margin-bottom: 16px;
+                margin-bottom: 14px;
             }
             
             .form-group label {
                 font-size: 0.9rem;
-                margin-bottom: 6px;
+                margin-bottom: 5px;
             }
             
             .form-group input {
@@ -476,27 +501,27 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             }
             
             .form-actions {
-                margin-bottom: 16px;
+                margin-bottom: 14px;
             }
             
             .signup-link {
-                margin-top: 16px;
-                font-size: 0.9rem;
+                margin-top: 14px;
+                font-size: 0.85rem;
             }
             
             .demo-credentials {
-                padding: 10px;
-                margin-top: 16px;
-                font-size: 0.75rem;
+                padding: 8px 12px;
+                margin-top: 12px;
+                font-size: 0.7rem;
             }
             
             .demo-credentials h4 {
-                font-size: 0.85rem;
-                margin-bottom: 6px;
+                font-size: 0.8rem;
+                margin-bottom: 4px;
             }
             
             .demo-credentials p {
-                margin: 3px 0;
+                margin: 2px 0;
             }
         }
     </style>
