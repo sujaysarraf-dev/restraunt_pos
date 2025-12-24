@@ -128,13 +128,11 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             background: white;
             border-radius: 24px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            padding: 36px;
+            padding: 28px;
             width: 100%;
-            max-width: 450px;
+            max-width: 420px;
             position: relative;
             overflow: hidden;
-            max-height: 90vh;
-            overflow-y: auto;
         }
         
         /* Decorative gradient element */
@@ -152,27 +150,27 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         }
         
         .auth-header {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             position: relative;
             z-index: 1;
         }
         
         .auth-header h1 {
             color: #1f2937;
-            margin: 0 0 6px 0;
-            font-size: 2rem;
+            margin: 0 0 4px 0;
+            font-size: 1.85rem;
             font-weight: 700;
         }
         
         .auth-header p {
             color: #6b7280;
             margin: 0;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 400;
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             position: relative;
             z-index: 1;
         }
@@ -205,10 +203,10 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         
         .form-group input {
             width: 100%;
-            padding: 14px 16px 14px 48px;
+            padding: 12px 14px 12px 48px;
             border: 1px solid #e5e7eb;
             border-radius: 12px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             transition: all 0.3s ease;
             background: white;
             color: #1f2937;
@@ -228,7 +226,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             position: relative;
             z-index: 1;
         }
@@ -249,10 +247,10 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         
         .btn {
             width: 100%;
-            padding: 16px 24px;
+            padding: 14px 24px;
             border: none;
             border-radius: 12px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -286,9 +284,9 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         
         .signup-link {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 16px;
             color: #6b7280;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             position: relative;
             z-index: 1;
         }
@@ -460,8 +458,8 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             }
             
             .auth-container {
-                padding: 40px;
-                max-width: 460px;
+                padding: 32px;
+                max-width: 420px;
             }
         }
         
