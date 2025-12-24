@@ -40,109 +40,273 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
-            background: linear-gradient(135deg, #151A2D, #2a3a5c);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #151A2D;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Background patterns */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+        
+        /* Left side - Logo and heading */
+        .login-left {
+            text-align: center;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+        
+        .logo-circle {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .logo-circle::after {
+            content: '';
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+        }
+        
+        .logo-text {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .login-heading {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0 0 16px 0;
+            line-height: 1.2;
+        }
+        
+        .login-tagline {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            margin: 0;
+            font-weight: 400;
+        }
+        
+        /* Right side - Form card */
+        .login-right {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            font-family: "Poppins", sans-serif;
         }
         
         .auth-container {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 48px;
             width: 100%;
-            max-width: 400px;
-            margin: 20px;
-        }
-        
-        /* Desktop/Laptop improvements */
-        @media (min-width: 768px) {
-            .auth-container {
-                max-width: 500px;
-                padding: 50px 60px;
-            }
-            
-            .auth-header h1 {
-                font-size: 2.5rem;
-            }
-            
-            .auth-header p {
-                font-size: 1rem;
-            }
-            
-            .form-group {
-                margin-bottom: 24px;
-            }
-            
-            .form-group input {
-                padding: 14px 18px;
-                font-size: 1.05rem;
-            }
-            
-            .btn {
-                padding: 14px 24px;
-                font-size: 1.05rem;
-            }
-            
-            .auth-tab {
-                padding: 14px;
-                font-size: 1.05rem;
-            }
-        }
-        
-        @media (min-width: 1024px) {
-            .auth-container {
-                max-width: 550px;
-                padding: 60px 70px;
-            }
+            max-width: 450px;
         }
         
         .auth-header {
-            text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 32px;
         }
         
         .auth-header h1 {
             color: #151A2D;
-            margin: 0 0 10px 0;
-            font-size: 2rem;
+            margin: 0 0 8px 0;
+            font-size: 1.75rem;
             font-weight: 700;
         }
         
         .auth-header p {
             color: #666;
             margin: 0;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
         
-        .auth-tabs {
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-actions {
             display: flex;
-            margin-bottom: 30px;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #f5f5f5;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
         }
         
-        .auth-tab {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
+        .forgot-password-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .forgot-password-link:hover {
+            color: #2563eb;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-weight: 500;
-            color: #666;
-        }
-        
-        .auth-tab.active {
-            background: #151A2D;
+            background: #3b82f6;
             color: white;
         }
         
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .signup-link {
+            text-align: center;
+            margin-top: 24px;
+            color: #666;
+            font-size: 0.95rem;
+        }
+        
+        .signup-link a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+        
+        .signup-link a:hover {
+            color: #2563eb;
+        }
+        
+        .message {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .demo-credentials {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 24px;
+            font-size: 0.85rem;
+        }
+        
+        .demo-credentials h4 {
+            margin: 0 0 8px 0;
+            color: #1e40af;
+            font-size: 0.9rem;
+        }
+        
+        .demo-credentials p {
+            margin: 4px 0;
+            color: #1e40af;
+        }
+        
+        /* Signup form styling */
         .auth-form {
             display: none;
         }
@@ -151,99 +315,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             display: block;
         }
         
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: #151A2D;
-            box-shadow: 0 0 0 3px rgba(21, 26, 45, 0.1);
-        }
-        
-        .btn {
-            width: 100%;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 15px;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #151A2D, #2a3a5c);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #2a3a5c, #151A2D);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(21, 26, 45, 0.3);
-        }
-        
-        .btn-primary:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .message {
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-        }
-        
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .demo-credentials {
-            background: #e3f2fd;
-            border: 1px solid #bbdefb;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 0.85rem;
-        }
-        
-        .demo-credentials h4 {
-            margin: 0 0 10px 0;
-            color: #1976d2;
-        }
-        
-        .demo-credentials p {
-            margin: 5px 0;
-            color: #1976d2;
-        }
-        
+        /* Forgot Password Modal */
         .forgot-password-modal {
             display: none;
             position: fixed;
@@ -252,6 +324,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             z-index: 1000;
             align-items: center;
             justify-content: center;
+            backdrop-filter: blur(4px);
         }
         
         .forgot-password-modal.active {
@@ -260,105 +333,184 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
         
         .forgot-password-content {
             background: white;
-            border-radius: 16px;
-            padding: 30px;
+            border-radius: 24px;
+            padding: 32px;
             width: 90%;
-            max-width: 400px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
         }
         
         .forgot-password-content h2 {
-            margin: 0 0 10px 0;
+            margin: 0 0 12px 0;
             color: #151A2D;
             font-size: 1.5rem;
         }
         
         .forgot-password-content p {
             color: #666;
-            margin: 0 0 20px 0;
-            font-size: 0.9rem;
+            margin: 0 0 24px 0;
+            font-size: 0.95rem;
         }
         
         .close-modal {
-            float: right;
+            position: absolute;
+            top: 20px;
+            right: 20px;
             background: none;
             border: none;
             font-size: 1.5rem;
             cursor: pointer;
             color: #666;
             padding: 0;
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: 8px;
+            transition: all 0.3s ease;
         }
         
         .close-modal:hover {
             color: #151A2D;
+            background: #f3f4f6;
         }
         
         .btn-outline {
             background: #f5f5f5;
             color: #333;
             border: 2px solid #e0e0e0;
+            margin-top: 12px;
         }
         
         .btn-outline:hover {
-            background: #e0e0e0;
+            background: #e5e7eb;
+        }
+        
+        /* Desktop layout */
+        @media (min-width: 768px) {
+            .login-container {
+                grid-template-columns: 1fr 1fr;
+                gap: 60px;
+            }
+            
+            .login-left {
+                text-align: left;
+            }
+            
+            .logo-section {
+                justify-content: flex-start;
+            }
+            
+            .login-heading {
+                font-size: 3rem;
+            }
+            
+            .login-tagline {
+                font-size: 1.2rem;
+            }
+            
+            .auth-container {
+                padding: 56px;
+                max-width: 480px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .login-heading {
+                font-size: 3.5rem;
+            }
+        }
+        
+        /* Footer */
+        .login-footer {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+            z-index: 1;
+        }
+        
+        @media (max-width: 767px) {
+            .login-footer {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="auth-container">
-        <div class="auth-header">
-            <h1>Restaurant Login</h1>
-            <p>Admin, Manager, Waiter & Chef Portal</p>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <!-- Left Side - Logo and Heading -->
+            <div class="login-left">
+                <div class="logo-section">
+                    <div class="logo-circle"></div>
+                    <span class="logo-text">Restro Grow</span>
+                </div>
+                <h1 class="login-heading">Login into your account</h1>
+                <p class="login-tagline">Let us make your restaurant grow!</p>
+            </div>
+            
+            <!-- Right Side - Form Card -->
+            <div class="login-right">
+                <div class="auth-container">
+                    <div class="auth-header">
+                        <h1>Welcome Back</h1>
+                        <p>Enter your credentials to access your account</p>
+                    </div>
+                    
+                    <!-- Login Form -->
+                    <form id="loginForm" class="auth-form active">
+                        <div class="form-group">
+                            <label for="loginUsername">Email</label>
+                            <input type="text" id="loginUsername" name="username" required placeholder="name@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Password</label>
+                            <input type="password" id="loginPassword" name="password" required placeholder="Your password">
+                        </div>
+                        <div class="form-actions">
+                            <a href="#" id="forgotPasswordLink" class="forgot-password-link">Forgot Password?</a>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="loginBtn">Login</button>
+                        <div class="signup-link">
+                            Don't have an account? <a href="#" onclick="event.preventDefault(); switchTab('signup');">Sign up</a>
+                        </div>
+                    </form>
+                    
+                    <!-- Signup Form -->
+                    <form id="signupForm" class="auth-form">
+                        <div class="form-group">
+                            <label for="signupUsername">Username</label>
+                            <input type="text" id="signupUsername" name="username" required placeholder="Choose a username">
+                        </div>
+                        <div class="form-group">
+                            <label for="signupPassword">Password</label>
+                            <input type="password" id="signupPassword" name="password" required placeholder="Choose a password">
+                        </div>
+                        <div class="form-group">
+                            <label for="restaurantName">Restaurant Name</label>
+                            <input type="text" id="restaurantName" name="restaurant_name" required placeholder="Enter your restaurant name">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="signupBtn">Sign Up</button>
+                        <div class="signup-link">
+                            Already have an account? <a href="#" onclick="event.preventDefault(); switchTab('login');">Sign in</a>
+                        </div>
+                    </form>
+                    
+                    <div class="demo-credentials">
+                        <h4>Login Credentials:</h4>
+                        <p><strong>Admin:</strong> Use your username</p>
+                        <p><strong>Staff:</strong> Use your email or phone number</p>
+                    </div>
+                </div>
+            </div>
         </div>
         
-        <div class="auth-tabs">
-            <div class="auth-tab active" onclick="switchTab('login')">Sign In</div>
-            <div class="auth-tab" onclick="switchTab('signup')">Sign Up</div>
-        </div>
-        
-        <!-- Login Form -->
-        <form id="loginForm" class="auth-form active">
-            <div class="form-group">
-                <label for="loginUsername">Username / Email / Phone:</label>
-                <input type="text" id="loginUsername" name="username" required placeholder="Enter username, email or phone">
-            </div>
-            <div class="form-group">
-                <label for="loginPassword">Password:</label>
-                <input type="password" id="loginPassword" name="password" required placeholder="Enter your password">
-            </div>
-            <div style="text-align: right; margin-bottom: 15px;">
-                <a href="#" id="forgotPasswordLink" style="color: #151A2D; text-decoration: none; font-size: 0.9rem; font-weight: 500;">Forgot Password?</a>
-            </div>
-            <button type="submit" class="btn btn-primary" id="loginBtn">Sign In</button>
-        </form>
-        
-        <!-- Signup Form -->
-        <form id="signupForm" class="auth-form">
-            <div class="form-group">
-                <label for="signupUsername">Username:</label>
-                <input type="text" id="signupUsername" name="username" required placeholder="Choose a username">
-            </div>
-            <div class="form-group">
-                <label for="signupPassword">Password:</label>
-                <input type="password" id="signupPassword" name="password" required placeholder="Choose a password">
-            </div>
-            <div class="form-group">
-                <label for="restaurantName">Restaurant Name:</label>
-                <input type="text" id="restaurantName" name="restaurant_name" required placeholder="Enter your restaurant name">
-            </div>
-            <button type="submit" class="btn btn-primary" id="signupBtn">Sign Up</button>
-        </form>
-        
-        <div class="demo-credentials">
-            <h4>Login Credentials:</h4>
-            <p><strong>Admin:</strong> Use your username</p>
-            <p><strong>Staff:</strong> Use your email or phone number</p>
-            <p style="margin-top: 10px; font-size: 0.8rem; color: #1976d2;">Staff members can login with email/phone from staff table</p>
+        <div class="login-footer">
+            © 2024 Restro Grow. All Rights Reserved.
         </div>
     </div>
     
@@ -381,10 +533,6 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
 
     <script>
         function switchTab(tab) {
-            // Update tab appearance
-            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`.auth-tab[onclick="switchTab('${tab}')"]`).classList.add('active');
-            
             // Update form visibility
             document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
             document.getElementById(tab + 'Form').classList.add('active');
@@ -408,7 +556,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
             }
             
             loginBtn.disabled = true;
-            loginBtn.textContent = 'Signing In...';
+            loginBtn.textContent = 'Logging in...';
             
             try {
                 // Create AbortController for timeout
@@ -504,7 +652,7 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
                 showMessage(errorMessage, 'error');
             } finally {
                 loginBtn.disabled = false;
-                loginBtn.textContent = 'Sign In';
+                loginBtn.textContent = 'Login';
             }
         });
         
