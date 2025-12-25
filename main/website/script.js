@@ -1413,7 +1413,16 @@ async function loadMenus() {
             return;
         }
         
-        menus = Array.isArray(data) ? data : [];
+        // Handle both array response and wrapped response
+        if (Array.isArray(data)) {
+            menus = data;
+        } else if (data.success && Array.isArray(data.data)) {
+            menus = data.data;
+        } else {
+            menus = [];
+        }
+        
+        console.log('Loaded menus for mobile:', menus.length, menus);
         renderMenuTabs();
         
         // Load categories
@@ -1423,7 +1432,11 @@ async function loadMenus() {
         populateCategoryFilter(categories);
         
         // Render mobile menu categories (Breakfast, Snacks, etc.) with images
-        renderMobileMenuCategories(menus);
+        if (menus.length > 0) {
+            renderMobileMenuCategories(menus);
+        } else {
+            console.warn('No menus found to display');
+        }
     } catch (error) {
         console.error('Error loading menus:', error);
         document.getElementById('menuGrid').innerHTML = '<div class="loading">Error loading menu. Please try again.</div>';
