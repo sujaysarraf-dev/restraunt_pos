@@ -318,7 +318,7 @@ ob_end_flush();
             <div class="category-tabs" id="menuTabs">
                 <button class="category-btn active" data-menu="all">All Items</button>
             </div>
-            <!-- Mobile horizontal category scroll -->
+            <!-- Mobile horizontal category scroll with images -->
             <div class="mobile-category-scroll-wrapper">
                 <div class="mobile-category-scroll" id="mobileCategoryScroll">
                     <div class="mobile-category-item active" data-menu="all" onclick="selectMobileMenu(null, 'All')">

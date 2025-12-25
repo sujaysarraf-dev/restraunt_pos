@@ -2220,6 +2220,7 @@ img {
   scroll-behavior: smooth;
   gap: 1rem;
   flex-wrap: nowrap;
+  flex-direction: row;
 }
 
 .mobile-category-scroll::-webkit-scrollbar {
