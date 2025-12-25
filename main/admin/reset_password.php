@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password - Restro Grow</title>
+    <title>Reset Password - Restro Grow | Restaurant Management System</title>
+    <meta name="description" content="Reset your Restro Grow account password. Enter your new password to regain access to your restaurant management dashboard.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="https://restrogrow.com/main/admin/reset_password.php">
     <link rel="icon" type="image/png" href="../assets/images/logo-transparent.png">
     <link rel="apple-touch-icon" href="../assets/images/logo-transparent.png">
     <link rel="stylesheet" href="../assets/css/style.css">

@@ -34,7 +34,10 @@ if (isSessionValid() && (isset($_SESSION['user_id']) || isset($_SESSION['staff_i
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - Restro Grow</title>
+    <title>Admin Login - Restro Grow | Restaurant Management System</title>
+    <meta name="description" content="Login to your Restro Grow admin dashboard. Access your restaurant POS system, manage orders, staff, tables, and view real-time analytics.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="https://restrogrow.com/main/admin/login.php">
     <link rel="icon" type="image/png" href="../assets/images/logo-transparent.png">
     <link rel="apple-touch-icon" href="../assets/images/logo-transparent.png">
     <link rel="stylesheet" href="../assets/css/style.css">
