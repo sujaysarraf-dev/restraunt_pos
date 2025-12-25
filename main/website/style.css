@@ -2399,10 +2399,15 @@ img {
     width: 100%;
     position: sticky;
     top: 0;
-    z-index: 999;
+    z-index: 998;
     background: #f9fafb;
     padding: 0.75rem 0;
     margin: 0 auto;
+  }
+  
+  /* When mobile header is visible, adjust category wrapper to stick below it */
+  body:has(.mobile-category-header[style*="display: flex"]) .mobile-category-scroll-wrapper {
+    top: 60px;
   }
   
   .mobile-category-scroll {
