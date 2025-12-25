@@ -1465,14 +1465,34 @@ function populateCategoryFilter(categories) {
 // Render mobile menu categories (Breakfast, Snacks, etc.) with images
 function renderMobileMenuCategories(menus) {
     const mobileCategoryScroll = document.getElementById('mobileCategoryScroll');
-    if (!mobileCategoryScroll) return;
-    
-    // Clear existing (except "All" button)
-    const allItem = mobileCategoryScroll.querySelector('.mobile-category-item[data-menu="all"]');
-    mobileCategoryScroll.innerHTML = '';
-    if (allItem) {
-        mobileCategoryScroll.appendChild(allItem);
+    if (!mobileCategoryScroll) {
+        console.error('mobileCategoryScroll element not found');
+        return;
     }
+    
+    // Clear existing
+    mobileCategoryScroll.innerHTML = '';
+    
+    // Add "All" button first
+    const allItem = document.createElement('div');
+    allItem.className = 'mobile-category-item active';
+    allItem.dataset.menu = 'all';
+    allItem.onclick = () => selectMobileMenu(null, 'All');
+    
+    const allImageDiv = document.createElement('div');
+    allImageDiv.className = 'mobile-category-image';
+    const allIcon = document.createElement('span');
+    allIcon.className = 'material-symbols-rounded';
+    allIcon.textContent = 'restaurant_menu';
+    allImageDiv.appendChild(allIcon);
+    
+    const allLabel = document.createElement('span');
+    allLabel.className = 'mobile-category-label';
+    allLabel.textContent = 'All';
+    
+    allItem.appendChild(allImageDiv);
+    allItem.appendChild(allLabel);
+    mobileCategoryScroll.appendChild(allItem);
     
     // Add each menu category
     menus.forEach(menu => {

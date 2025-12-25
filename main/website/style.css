@@ -2212,23 +2212,18 @@ img {
   display: none;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 1rem 0;
+  padding: 1rem;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
   position: relative;
   scroll-behavior: smooth;
+  gap: 1rem;
+  flex-wrap: nowrap;
 }
 
 .mobile-category-scroll::-webkit-scrollbar {
   display: none;
-}
-
-.mobile-category-scroll {
-  display: flex;
-  gap: 1rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
 }
 
 /* Mobile Category Scroll Wrapper */
