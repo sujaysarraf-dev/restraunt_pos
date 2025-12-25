@@ -1615,9 +1615,15 @@ function renderMobileCategories(categories) {
         if (categoryImage) {
             const img = document.createElement('img');
             // Handle database-stored images or file paths
+            // Categories come from menu table, so use menu image API
             if (categoryImage.startsWith('db:')) {
-                // For db: prefixed images, use category-based lookup
-                img.src = `api/image.php?type=item&category=${encodeURIComponent(categoryName)}`;
+                // For db: prefixed images, use menu ID
+                const menuId = category.id || category.menuId;
+                if (menuId) {
+                    img.src = `api/image.php?type=menu&id=${menuId}`;
+                } else {
+                    img.src = `api/image.php?path=${encodeURIComponent(categoryImage)}`;
+                }
             } else if (categoryImage.startsWith('http')) {
                 img.src = categoryImage;
             } else {
