@@ -319,13 +319,22 @@ ob_end_flush();
                 <button class="category-btn active" data-menu="all">All Items</button>
             </div>
             <!-- Mobile horizontal category scroll -->
-            <div class="mobile-category-scroll" id="mobileCategoryScroll">
-                <div class="mobile-category-item active" data-category="all" onclick="selectMobileCategory('all')">
-                    <div class="mobile-category-image">
-                        <span class="material-symbols-rounded">restaurant_menu</span>
+            <div class="mobile-category-scroll-wrapper">
+                <div class="mobile-category-scroll" id="mobileCategoryScroll">
+                    <div class="mobile-category-item active" data-menu="all" onclick="selectMobileMenu(null, 'All')">
+                        <div class="mobile-category-image">
+                            <span class="material-symbols-rounded">restaurant_menu</span>
+                        </div>
+                        <span class="mobile-category-label">All</span>
                     </div>
-                    <span class="mobile-category-label">All</span>
                 </div>
+                <!-- Mobile category scroll arrows -->
+                <button class="mobile-category-nav-btn mobile-category-nav-prev" onclick="scrollMobileCategories('left')">
+                    <span class="material-symbols-rounded">arrow_back</span>
+                </button>
+                <button class="mobile-category-nav-btn mobile-category-nav-next" onclick="scrollMobileCategories('right')">
+                    <span class="material-symbols-rounded">arrow_forward</span>
+                </button>
             </div>
         </div>
     </section>

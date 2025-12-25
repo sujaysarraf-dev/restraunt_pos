@@ -2231,15 +2231,13 @@ img {
   padding-right: 1rem;
 }
 
-/* Mobile Category Navigation Arrows */
-.mobile-category-nav {
-  display: none;
+/* Mobile Category Scroll Wrapper */
+.mobile-category-scroll-wrapper {
   position: relative;
-  margin-top: -60px;
-  pointer-events: none;
-  z-index: 10;
+  width: 100%;
 }
 
+/* Mobile Category Navigation Arrows */
 .mobile-category-nav-btn {
   position: absolute;
   top: 50%;
@@ -2251,10 +2249,9 @@ img {
   border: none;
   color: white;
   cursor: pointer;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
-  pointer-events: all;
   z-index: 11;
   transition: background 0.3s;
 }
@@ -2336,8 +2333,8 @@ img {
     display: flex;
   }
   
-  .mobile-category-nav {
-    display: block;
+  .mobile-category-nav-btn {
+    display: flex;
   }
   
   .category-tabs {
