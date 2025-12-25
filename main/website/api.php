@@ -273,60 +273,25 @@ try {
             break;
             
         case 'getCategories':
-            $menuId = isset($_GET['menu_id']) ? trim($_GET['menu_id']) : null;
-            // Handle string "null" or empty string
-            if ($menuId === 'null' || $menuId === '' || $menuId === null) {
-                $menuId = null;
-            }
-            
+            // Get categories from menu table (admin panel categories)
             try {
-                // First, get distinct categories
-                $baseQuery = "SELECT DISTINCT mi.item_category
-                              FROM menu_items mi 
-                              WHERE mi.restaurant_id = :rid
-                              AND mi.item_category IS NOT NULL 
-                              AND mi.item_category != ''";
+                $query = "SELECT id, menu_name, menu_image, is_active, sort_order 
+                         FROM menu 
+                         WHERE restaurant_id = :rid 
+                         AND is_active = 1
+                         ORDER BY sort_order ASC, menu_name ASC";
                 
-                $baseParams = [':rid' => $restaurantId];
+                $stmt = $conn->prepare($query);
+                $stmt->execute([':rid' => $restaurantId]);
+                $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
-                if ($menuId) {
-                    $baseQuery .= " AND mi.menu_id = :menu_id";
-                    $baseParams[':menu_id'] = $menuId;
-                }
-                
-                $baseQuery .= " ORDER BY mi.item_category";
-                
-                $stmt = $conn->prepare($baseQuery);
-                $stmt->execute($baseParams);
-                $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                // Now get images for each category
+                // Format as categories with name and image
                 $result = [];
-                foreach ($categories as $cat) {
-                    $categoryName = $cat['item_category'];
-                    
-                    // Get first item image for this category
-                    $imageQuery = "SELECT item_image FROM menu_items 
-                                   WHERE restaurant_id = :rid 
-                                   AND item_category = :category
-                                   AND item_image IS NOT NULL 
-                                   AND item_image != ''";
-                    $imageParams = [':rid' => $restaurantId, ':category' => $categoryName];
-                    
-                    if ($menuId) {
-                        $imageQuery .= " AND menu_id = :menu_id";
-                        $imageParams[':menu_id'] = $menuId;
-                    }
-                    
-                    $imageQuery .= " LIMIT 1";
-                    
-                    $imageStmt = $conn->prepare($imageQuery);
-                    $imageStmt->execute($imageParams);
-                    $imageRow = $imageStmt->fetch(PDO::FETCH_ASSOC);
-                    
+                foreach ($menus as $menu) {
                     $result[] = [
-                        'name' => $categoryName,
-                        'image' => $imageRow['item_image'] ?? null
+                        'id' => $menu['id'],
+                        'name' => $menu['menu_name'],
+                        'image' => $menu['menu_image'] ?? null
                     ];
                 }
                 
