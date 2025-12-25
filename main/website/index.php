@@ -339,30 +339,6 @@ ob_end_flush();
         </div>
     </section>
 
-    <!-- Filter Bar -->
-    <section class="filters">
-        <div class="container">
-            <div class="filter-group">
-                <label>Type:</label>
-                <select id="typeFilter">
-                    <option value="">All Types</option>
-                    <option value="Veg">Veg</option>
-                    <option value="Non Veg">Non Veg</option>
-                    <option value="Egg">Egg</option>
-                    <option value="Drink">Drink</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Category:</label>
-                <select id="categoryFilter">
-                    <option value="">All Categories</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <button class="clear-filters" onclick="clearFilters()">Clear Filters</button>
-            </div>
-        </div>
-    </section>
 
     <!-- Menu Items -->
     <section class="menu-items">
