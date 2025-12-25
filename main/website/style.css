@@ -2212,7 +2212,7 @@ img {
   display: none;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 1.5rem 1rem;
+  padding: 1.5rem 3rem;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -2269,11 +2269,11 @@ img {
 }
 
 .mobile-category-nav-prev {
-  left: 0.25rem;
+  left: 0.5rem;
 }
 
 .mobile-category-nav-next {
-  right: 0.25rem;
+  right: 0.5rem;
 }
 
 .mobile-category-item {
