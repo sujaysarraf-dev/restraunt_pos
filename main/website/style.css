@@ -2373,6 +2373,9 @@ img {
   .categories {
     background: #f9fafb;
     padding: 1.5rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 998;
   }
   
   .categories .container {
