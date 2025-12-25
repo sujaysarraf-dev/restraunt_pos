@@ -1196,8 +1196,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    document.getElementById('typeFilter').addEventListener('change', handleFilter);
-    document.getElementById('categoryFilter').addEventListener('change', handleFilter);
+    // Filter elements removed - no longer needed
+    const typeFilter = document.getElementById('typeFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (typeFilter) {
+        typeFilter.addEventListener('change', handleFilter);
+    }
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', handleFilter);
+    }
     
     // Mobile veg toggle
     const mobileVegToggle = document.getElementById('mobileVegToggle');
