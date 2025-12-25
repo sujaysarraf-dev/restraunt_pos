@@ -2244,6 +2244,11 @@ img {
   margin-top: 0;
 }
 
+/* When mobile header is visible, stick below it */
+.mobile-category-header:not([style*="display: none"]) ~ .categories .mobile-category-scroll-wrapper {
+  top: 60px;
+}
+
 /* Mobile Category Navigation Arrows */
 .mobile-category-nav-btn {
   position: absolute;
