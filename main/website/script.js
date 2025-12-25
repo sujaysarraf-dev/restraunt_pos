@@ -1473,6 +1473,7 @@ function renderMenuTabs() {
 // Populate category filter
 function populateCategoryFilter(categories) {
     const categoryFilter = document.getElementById('categoryFilter');
+    if (!categoryFilter) return; // Filter removed, skip population
     categories.forEach(category => {
         const option = document.createElement('option');
         const categoryName = typeof category === 'string' ? category : category.name;
@@ -2396,8 +2397,10 @@ function filterByMenu(menuId) {
 
 // Clear filters
 function clearFilters() {
-    document.getElementById('typeFilter').value = '';
-    document.getElementById('categoryFilter').value = '';
+    const typeFilter = document.getElementById('typeFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (typeFilter) typeFilter.value = '';
+    if (categoryFilter) categoryFilter.value = '';
     
     const allBtn = document.querySelector('.category-btn');
     if (allBtn) {
