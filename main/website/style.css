@@ -2216,6 +2216,8 @@ img {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  position: relative;
+  scroll-behavior: smooth;
 }
 
 .mobile-category-scroll::-webkit-scrollbar {
@@ -2227,6 +2229,50 @@ img {
   gap: 1rem;
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+/* Mobile Category Navigation Arrows */
+.mobile-category-nav {
+  display: none;
+  position: relative;
+  margin-top: -60px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.mobile-category-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+  z-index: 11;
+  transition: background 0.3s;
+}
+
+.mobile-category-nav-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.mobile-category-nav-btn .material-symbols-rounded {
+  font-size: 1.2rem;
+}
+
+.mobile-category-nav-prev {
+  left: 0.5rem;
+}
+
+.mobile-category-nav-next {
+  right: 0.5rem;
 }
 
 .mobile-category-item {
@@ -2290,6 +2336,10 @@ img {
     display: flex;
   }
   
+  .mobile-category-nav {
+    display: block;
+  }
+  
   .category-tabs {
     display: none;
   }
@@ -2300,6 +2350,24 @@ img {
   
   .categories .container {
     padding: 0;
+    position: relative;
   }
+}
+
+// Scroll mobile categories
+function scrollMobileCategories(direction) {
+  const scrollContainer = document.getElementById('mobileCategoryScroll');
+  if (!scrollContainer) return;
+  
+  const scrollAmount = 200;
+  const currentScroll = scrollContainer.scrollLeft;
+  const newScroll = direction === 'left' 
+    ? currentScroll - scrollAmount 
+    : currentScroll + scrollAmount;
+  
+  scrollContainer.scrollTo({
+    left: newScroll,
+    behavior: 'smooth'
+  });
 }
 

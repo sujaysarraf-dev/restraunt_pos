@@ -265,22 +265,36 @@ try {
             break;
             
         case 'getCategories':
+            $menuId = isset($_GET['menu_id']) ? $_GET['menu_id'] : null;
+            
             // Get categories with their first item's image for mobile display
             $query = "SELECT DISTINCT 
                         mi.item_category,
                         (SELECT mi2.item_image FROM menu_items mi2 
                          WHERE mi2.item_category = mi.item_category 
-                         AND mi2.restaurant_id = :rid 
-                         AND mi2.item_image IS NOT NULL 
+                         AND mi2.restaurant_id = :rid";
+            if ($menuId) {
+                $query .= " AND mi2.menu_id = :menu_id";
+            }
+            $query .= " AND mi2.item_image IS NOT NULL 
                          AND mi2.item_image != '' 
                          LIMIT 1) as category_image
                       FROM menu_items mi 
-                      WHERE mi.restaurant_id = :rid 
-                      AND mi.item_category IS NOT NULL 
+                      WHERE mi.restaurant_id = :rid";
+            if ($menuId) {
+                $query .= " AND mi.menu_id = :menu_id";
+            }
+            $query .= " AND mi.item_category IS NOT NULL 
                       AND mi.item_category != '' 
                       ORDER BY mi.item_category";
+            
+            $params = [':rid' => $restaurantId];
+            if ($menuId) {
+                $params[':menu_id'] = $menuId;
+            }
+            
             $stmt = $conn->prepare($query);
-            $stmt->execute([':rid' => $restaurantId]);
+            $stmt->execute($params);
             $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             // Return as array of objects with category name and image

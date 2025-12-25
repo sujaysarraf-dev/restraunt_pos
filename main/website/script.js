@@ -1421,7 +1421,9 @@ async function loadMenus() {
         const catData = await catResponse.json();
         const categories = Array.isArray(catData) ? catData : [];
         populateCategoryFilter(categories);
-        renderMobileCategories(categories);
+        
+        // Render mobile menu categories (Breakfast, Snacks, etc.) with images
+        renderMobileMenuCategories(menus);
     } catch (error) {
         console.error('Error loading menus:', error);
         document.getElementById('menuGrid').innerHTML = '<div class="loading">Error loading menu. Please try again.</div>';
@@ -1460,17 +1462,95 @@ function populateCategoryFilter(categories) {
     });
 }
 
-// Render mobile categories with images
-function renderMobileCategories(categories) {
+// Render mobile menu categories (Breakfast, Snacks, etc.) with images
+function renderMobileMenuCategories(menus) {
     const mobileCategoryScroll = document.getElementById('mobileCategoryScroll');
     if (!mobileCategoryScroll) return;
     
     // Clear existing (except "All" button)
-    const allItem = mobileCategoryScroll.querySelector('.mobile-category-item[data-category="all"]');
+    const allItem = mobileCategoryScroll.querySelector('.mobile-category-item[data-menu="all"]');
     mobileCategoryScroll.innerHTML = '';
     if (allItem) {
         mobileCategoryScroll.appendChild(allItem);
     }
+    
+    // Add each menu category
+    menus.forEach(menu => {
+        const menuName = menu.menu_name || 'Menu';
+        const menuImage = menu.menu_image || null;
+        
+        const categoryItem = document.createElement('div');
+        categoryItem.className = 'mobile-category-item';
+        categoryItem.dataset.menu = menu.id;
+        categoryItem.onclick = () => selectMobileMenu(menu.id, menuName);
+        
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'mobile-category-image';
+        
+        if (menuImage) {
+            const img = document.createElement('img');
+            // Handle database-stored images
+            if (menuImage.startsWith('db:')) {
+                img.src = `api/image.php?type=menu&id=${menu.id}`;
+            } else if (menuImage.startsWith('http')) {
+                img.src = menuImage;
+            } else {
+                img.src = `api/image.php?path=${encodeURIComponent(menuImage)}`;
+            }
+            img.alt = menuName;
+            img.onerror = function() {
+                this.style.display = 'none';
+                const icon = document.createElement('span');
+                icon.className = 'material-symbols-rounded';
+                icon.textContent = 'restaurant';
+                imageDiv.appendChild(icon);
+            };
+            imageDiv.appendChild(img);
+        } else {
+            const icon = document.createElement('span');
+            icon.className = 'material-symbols-rounded';
+            icon.textContent = 'restaurant';
+            imageDiv.appendChild(icon);
+        }
+        
+        const label = document.createElement('span');
+        label.className = 'mobile-category-label';
+        label.textContent = menuName.length > 12 ? menuName.substring(0, 10) + '...' : menuName;
+        
+        categoryItem.appendChild(imageDiv);
+        categoryItem.appendChild(label);
+        mobileCategoryScroll.appendChild(categoryItem);
+    });
+}
+
+// Render mobile item categories with images (for when a menu is selected)
+function renderMobileCategories(categories) {
+    const mobileCategoryScroll = document.getElementById('mobileCategoryScroll');
+    if (!mobileCategoryScroll) return;
+    
+    // Clear existing
+    mobileCategoryScroll.innerHTML = '';
+    
+    // Add "All" button
+    const allItem = document.createElement('div');
+    allItem.className = 'mobile-category-item active';
+    allItem.dataset.category = 'all';
+    allItem.onclick = () => selectMobileCategory('all');
+    
+    const allImageDiv = document.createElement('div');
+    allImageDiv.className = 'mobile-category-image';
+    const allIcon = document.createElement('span');
+    allIcon.className = 'material-symbols-rounded';
+    allIcon.textContent = 'restaurant_menu';
+    allImageDiv.appendChild(allIcon);
+    
+    const allLabel = document.createElement('span');
+    allLabel.className = 'mobile-category-label';
+    allLabel.textContent = 'All';
+    
+    allItem.appendChild(allImageDiv);
+    allItem.appendChild(allLabel);
+    mobileCategoryScroll.appendChild(allItem);
     
     // Add each category
     categories.forEach(category => {
@@ -1514,7 +1594,56 @@ function renderMobileCategories(categories) {
     });
 }
 
-// Select mobile category
+// Select mobile menu (Breakfast, Snacks, etc.)
+function selectMobileMenu(menuId, menuName) {
+    // Update active state
+    document.querySelectorAll('.mobile-category-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    const selectedItem = document.querySelector(`.mobile-category-item[data-menu="${menuId}"]`);
+    if (selectedItem) {
+        selectedItem.classList.add('active');
+    }
+    
+    // Update header title
+    const title = document.getElementById('mobileCategoryTitle');
+    if (title) {
+        title.textContent = menuName;
+    }
+    
+    // Show mobile header
+    const header = document.getElementById('mobileCategoryHeader');
+    if (header) {
+        header.style.display = 'flex';
+    }
+    
+    // Filter by menu
+    filterByMenu(menuId);
+    
+    // Load categories for this menu and show them
+    loadCategoriesForMenu(menuId);
+    
+    // Scroll to menu section
+    const menuSection = document.getElementById('menu');
+    if (menuSection) {
+        menuSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// Load categories for a specific menu
+async function loadCategoriesForMenu(menuId) {
+    try {
+        const restaurantId = getRestaurantId();
+        const response = await fetch(`api.php?action=getCategories&restaurant_id=${encodeURIComponent(restaurantId)}&menu_id=${menuId}`);
+        const catData = await response.json();
+        const categories = Array.isArray(catData) ? catData : [];
+        renderMobileCategories(categories);
+    } catch (error) {
+        console.error('Error loading categories for menu:', error);
+    }
+}
+
+// Select mobile category (item category within a menu)
 function selectMobileCategory(categoryName) {
     // Update active state
     document.querySelectorAll('.mobile-category-item').forEach(item => {
@@ -1550,13 +1679,30 @@ function selectMobileCategory(categoryName) {
 
 // Go back to categories view
 function goBackToCategories() {
+    // If we're viewing item categories, go back to menu categories
+    const currentCategoryItem = document.querySelector('.mobile-category-item.active[data-category]');
+    if (currentCategoryItem) {
+        // We're in item categories, go back to menu categories
+        renderMobileMenuCategories(menus);
+        const header = document.getElementById('mobileCategoryHeader');
+        if (header) {
+            header.style.display = 'none';
+        }
+        filterByMenu(null);
+        return;
+    }
+    
+    // Otherwise, just hide header and reset
     const header = document.getElementById('mobileCategoryHeader');
     if (header) {
         header.style.display = 'none';
     }
     
     // Reset to "All"
-    selectMobileCategory('all');
+    const allItem = document.querySelector('.mobile-category-item[data-menu="all"]');
+    if (allItem) {
+        allItem.click();
+    }
 }
 
 // Focus search
