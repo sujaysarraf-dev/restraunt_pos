@@ -1432,17 +1432,21 @@ async function loadMenus() {
         console.log('Loaded menus for mobile:', menus.length, menus);
         renderMenuTabs();
         
-        // Load categories
+        // Load categories from database
         const catResponse = await fetch(`api.php?action=getCategories&restaurant_id=${encodeURIComponent(restaurantId)}`);
         const catData = await catResponse.json();
         const categories = Array.isArray(catData) ? catData : [];
         populateCategoryFilter(categories);
         
-        // Render mobile menu categories (Breakfast, Snacks, etc.) with images
-        if (menus.length > 0) {
-            renderMobileMenuCategories(menus);
+        // Render mobile item categories (Breakfast, Snacks, etc.) with images from database
+        if (categories.length > 0) {
+            renderMobileCategories(categories);
         } else {
-            console.warn('No menus found to display');
+            console.warn('No categories found to display');
+            // Fallback to menus if no categories
+            if (menus.length > 0) {
+                renderMobileMenuCategories(menus);
+            }
         }
     } catch (error) {
         console.error('Error loading menus:', error);
