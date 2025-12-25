@@ -1788,6 +1788,11 @@ function goBackToCategories() {
         const header = document.getElementById('mobileCategoryHeader');
         if (header) {
             header.style.display = 'none';
+            // Reset category wrapper sticky position when header is hidden
+            const categoryWrapper = document.querySelector('.mobile-category-scroll-wrapper');
+            if (categoryWrapper) {
+                categoryWrapper.style.top = '0';
+            }
         }
         filterByMenu(null);
         return;
