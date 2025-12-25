@@ -273,29 +273,84 @@ try {
             break;
             
         case 'getCategories':
-            // Get categories from menu table (admin panel categories)
+            $menuId = isset($_GET['menu_id']) ? trim($_GET['menu_id']) : null;
+            // Handle string "null" or empty string
+            if ($menuId === 'null' || $menuId === '' || $menuId === null) {
+                $menuId = null;
+            }
+            
             try {
-                $query = "SELECT id, menu_name, menu_image, is_active, sort_order 
-                         FROM menu 
-                         WHERE restaurant_id = :rid 
-                         AND is_active = 1
-                         ORDER BY sort_order ASC, menu_name ASC";
-                
-                $stmt = $conn->prepare($query);
-                $stmt->execute([':rid' => $restaurantId]);
-                $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                // Format as categories with name and image
-                $result = [];
-                foreach ($menus as $menu) {
-                    $result[] = [
-                        'id' => $menu['id'],
-                        'name' => $menu['menu_name'],
-                        'image' => $menu['menu_image'] ?? null
-                    ];
+                if ($menuId) {
+                    // Get item categories (sub-categories) for the selected menu
+                    // Get distinct item categories with images from menu_items
+                    $baseQuery = "SELECT DISTINCT mi.item_category
+                                  FROM menu_items mi 
+                                  WHERE mi.restaurant_id = :rid
+                                  AND mi.menu_id = :menu_id
+                                  AND mi.item_category IS NOT NULL 
+                                  AND mi.item_category != ''
+                                  AND mi.is_available = 1";
+                    
+                    $baseQuery .= " ORDER BY mi.item_category";
+                    
+                    $stmt = $conn->prepare($baseQuery);
+                    $stmt->execute([':rid' => $restaurantId, ':menu_id' => $menuId]);
+                    $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    // Get images for each category (first item's image in that category)
+                    $result = [];
+                    foreach ($categories as $cat) {
+                        $categoryName = $cat['item_category'];
+                        
+                        // Get first item image for this category
+                        $imageQuery = "SELECT item_image FROM menu_items 
+                                       WHERE restaurant_id = :rid 
+                                       AND menu_id = :menu_id
+                                       AND item_category = :category
+                                       AND item_image IS NOT NULL 
+                                       AND item_image != ''
+                                       AND is_available = 1
+                                       LIMIT 1";
+                        
+                        $imageStmt = $conn->prepare($imageQuery);
+                        $imageStmt->execute([
+                            ':rid' => $restaurantId,
+                            ':menu_id' => $menuId,
+                            ':category' => $categoryName
+                        ]);
+                        $imageRow = $imageStmt->fetch(PDO::FETCH_ASSOC);
+                        
+                        $result[] = [
+                            'name' => $categoryName,
+                            'image' => $imageRow['item_image'] ?? null
+                        ];
+                    }
+                    
+                    echo json_encode($result);
+                } else {
+                    // Get menu categories (admin panel categories) when no menu is selected
+                    $query = "SELECT id, menu_name, menu_image, is_active, sort_order 
+                             FROM menu 
+                             WHERE restaurant_id = :rid 
+                             AND is_active = 1
+                             ORDER BY sort_order ASC, menu_name ASC";
+                    
+                    $stmt = $conn->prepare($query);
+                    $stmt->execute([':rid' => $restaurantId]);
+                    $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    // Format as categories with name and image
+                    $result = [];
+                    foreach ($menus as $menu) {
+                        $result[] = [
+                            'id' => $menu['id'],
+                            'name' => $menu['menu_name'],
+                            'image' => $menu['menu_image'] ?? null
+                        ];
+                    }
+                    
+                    echo json_encode($result);
                 }
-                
-                echo json_encode($result);
             } catch (PDOException $e) {
                 error_log("Error in getCategories: " . $e->getMessage());
                 error_log("Query: " . ($baseQuery ?? 'N/A'));

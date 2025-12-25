@@ -1608,15 +1608,8 @@ function renderMobileCategories(categories) {
         const categoryItem = document.createElement('div');
         categoryItem.className = 'mobile-category-item';
         categoryItem.dataset.category = categoryName;
-        categoryItem.dataset.categoryId = categoryId;
-        // When clicking a category (menu), filter by that menu
-        categoryItem.onclick = () => {
-            if (categoryId) {
-                selectMobileMenu(categoryId, categoryName);
-            } else {
-                selectMobileCategory(categoryName);
-            }
-        };
+        // When clicking an item category, filter by that category
+        categoryItem.onclick = () => selectMobileCategory(categoryName);
         
         const imageDiv = document.createElement('div');
         imageDiv.className = 'mobile-category-image';
