@@ -2391,7 +2391,7 @@ img {
   
   .categories .container {
     padding: 0 1rem;
-    position: relative;
+    position: static;
     max-width: 100%;
   }
   
