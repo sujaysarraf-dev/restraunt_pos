@@ -53,8 +53,12 @@ document.addEventListener('DOMContentLoaded', function() {
 // Smooth Scrolling
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
+        const href = this.getAttribute('href');
+        // Only prevent default for hash links that exist on the page
+        if (href !== '#' && document.querySelector(href)) {
+            e.preventDefault();
+        }
+        const target = document.querySelector(href);
         if (target) {
             target.scrollIntoView({
                 behavior: 'smooth',
