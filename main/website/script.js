@@ -1686,9 +1686,11 @@ function selectMobileMenu(menuId, menuName) {
     if (header) {
         header.style.display = 'flex';
         // Adjust category wrapper sticky position when header is visible
+        // Calculate header height dynamically
+        const headerHeight = header.offsetHeight;
         const categoryWrapper = document.querySelector('.mobile-category-scroll-wrapper');
         if (categoryWrapper) {
-            categoryWrapper.style.top = '60px';
+            categoryWrapper.style.top = `${headerHeight}px`;
         }
     }
     
