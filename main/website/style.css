@@ -2403,6 +2403,8 @@ img {
     flex-direction: row !important;
     padding-left: 2rem;
     padding-right: 2rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
   }
   
   .mobile-category-nav-prev {
