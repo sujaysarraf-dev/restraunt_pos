@@ -2396,7 +2396,11 @@ img {
   .mobile-category-scroll-wrapper {
     display: block !important;
     width: 100%;
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background: #f9fafb;
+    padding: 0.75rem 0;
     margin: 0 auto;
   }
   
