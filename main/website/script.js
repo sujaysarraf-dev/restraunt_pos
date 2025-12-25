@@ -1685,12 +1685,14 @@ function selectMobileMenu(menuId, menuName) {
     const header = document.getElementById('mobileCategoryHeader');
     if (header) {
         header.style.display = 'flex';
-        // Category images will stick right below the category card (header)
-        // No need to adjust top position - it sticks at top: 0 relative to viewport
-        const categoryWrapper = document.querySelector('.mobile-category-scroll-wrapper');
-        if (categoryWrapper) {
-            categoryWrapper.style.top = '0';
-        }
+        // Calculate header height and position category images right below it
+        setTimeout(() => {
+            const headerHeight = header.offsetHeight;
+            const categoryWrapper = document.querySelector('.mobile-category-scroll-wrapper');
+            if (categoryWrapper) {
+                categoryWrapper.style.top = `${headerHeight}px`;
+            }
+        }, 10);
     }
     
     // Filter by menu

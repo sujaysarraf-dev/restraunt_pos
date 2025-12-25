@@ -2244,12 +2244,6 @@ img {
   margin-top: 0;
 }
 
-/* When category card (mobile header) is visible, stick category images below it */
-.mobile-category-header:not([style*="display: none"]) ~ .categories .mobile-category-scroll-wrapper {
-  top: 0;
-  margin-top: 0;
-}
-
 /* Mobile Category Navigation Arrows */
 .mobile-category-nav-btn {
   position: absolute;
@@ -2413,10 +2407,9 @@ img {
     margin-top: 0;
   }
   
-  /* When category card (header) is visible, category images stick right below it as part of category card */
+  /* When category card (header) is visible, category images stick right below it */
   .mobile-category-header:not([style*="display: none"]) ~ .categories .mobile-category-scroll-wrapper {
-    top: 0;
-    margin-top: 0;
+    top: auto;
   }
   
   .mobile-category-scroll {
