@@ -127,9 +127,17 @@ try {
             break;
             
         case 'getMenus':
-            $stmt = $conn->prepare("SELECT * FROM menu WHERE restaurant_id = :rid AND is_active = 1 ORDER BY sort_order");
+            // Check if menu_image column exists
+            $checkCol = $conn->query("SHOW COLUMNS FROM menu LIKE 'menu_image'");
+            $hasImageColumns = $checkCol->rowCount() > 0;
+            
+            if ($hasImageColumns) {
+                $stmt = $conn->prepare("SELECT id, menu_name, menu_image, is_active, sort_order FROM menu WHERE restaurant_id = :rid AND is_active = 1 ORDER BY sort_order ASC, created_at DESC");
+            } else {
+                $stmt = $conn->prepare("SELECT id, menu_name, is_active, sort_order FROM menu WHERE restaurant_id = :rid AND is_active = 1 ORDER BY sort_order ASC, created_at DESC");
+            }
             $stmt->execute([':rid' => $restaurantId]);
-            $menus = $stmt->fetchAll();
+            $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo json_encode($menus);
             break;
             
