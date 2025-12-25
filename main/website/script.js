@@ -1548,7 +1548,9 @@ function renderMobileMenuCategories(menus) {
         
         const label = document.createElement('span');
         label.className = 'mobile-category-label';
-        label.textContent = menuName.length > 12 ? menuName.substring(0, 10) + '...' : menuName;
+        // Truncate long names but keep it readable
+        const displayName = menuName.length > 15 ? menuName.substring(0, 13) + '...' : menuName;
+        label.textContent = displayName;
         
         categoryItem.appendChild(imageDiv);
         categoryItem.appendChild(label);
