@@ -1614,7 +1614,15 @@ function renderMobileCategories(categories) {
         
         if (categoryImage) {
             const img = document.createElement('img');
-            img.src = `api/image.php?path=${encodeURIComponent(categoryImage)}`;
+            // Handle database-stored images or file paths
+            if (categoryImage.startsWith('db:')) {
+                // For db: prefixed images, use category-based lookup
+                img.src = `api/image.php?type=item&category=${encodeURIComponent(categoryName)}`;
+            } else if (categoryImage.startsWith('http')) {
+                img.src = categoryImage;
+            } else {
+                img.src = `api/image.php?path=${encodeURIComponent(categoryImage)}`;
+            }
             img.alt = categoryName;
             img.onerror = function() {
                 this.style.display = 'none';
