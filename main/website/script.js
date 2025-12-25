@@ -1198,6 +1198,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('typeFilter').addEventListener('change', handleFilter);
     document.getElementById('categoryFilter').addEventListener('change', handleFilter);
+    
+    // Mobile veg toggle
+    const mobileVegToggle = document.getElementById('mobileVegToggle');
+    if (mobileVegToggle) {
+        mobileVegToggle.addEventListener('change', function() {
+            if (this.checked) {
+                currentFilter.type = 'Veg';
+            } else {
+                currentFilter.type = null;
+            }
+            loadMenuItems(currentFilter);
+        });
+    }
     document.getElementById('cartIcon').addEventListener('click', toggleCart);
     document.getElementById('closeCart').addEventListener('click', toggleCart);
     document.getElementById('checkoutBtn').addEventListener('click', handleCheckout);
