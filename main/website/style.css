@@ -2410,11 +2410,13 @@ img {
     background: #f9fafb;
     padding: 0.75rem 0;
     margin: 0 auto;
+    margin-top: 0;
   }
   
-  /* When mobile header is visible, adjust category wrapper to stick below it */
-  body:has(.mobile-category-header[style*="display: flex"]) .mobile-category-scroll-wrapper {
-    top: 60px;
+  /* When category card (header) is visible, category images stick right below it as part of category card */
+  .mobile-category-header:not([style*="display: none"]) ~ .categories .mobile-category-scroll-wrapper {
+    top: 0;
+    margin-top: 0;
   }
   
   .mobile-category-scroll {
