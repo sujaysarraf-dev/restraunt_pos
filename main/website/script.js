@@ -1685,6 +1685,11 @@ function selectMobileMenu(menuId, menuName) {
     const header = document.getElementById('mobileCategoryHeader');
     if (header) {
         header.style.display = 'flex';
+        // Adjust category wrapper sticky position when header is visible
+        const categoryWrapper = document.querySelector('.mobile-category-scroll-wrapper');
+        if (categoryWrapper) {
+            categoryWrapper.style.top = '60px';
+        }
     }
     
     // Filter by menu
