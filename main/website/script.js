@@ -1603,11 +1603,20 @@ function renderMobileCategories(categories) {
     categories.forEach(category => {
         const categoryName = typeof category === 'string' ? category : category.name;
         const categoryImage = category.image || null;
+        const categoryId = category.id || null;
         
         const categoryItem = document.createElement('div');
         categoryItem.className = 'mobile-category-item';
         categoryItem.dataset.category = categoryName;
-        categoryItem.onclick = () => selectMobileCategory(categoryName);
+        categoryItem.dataset.categoryId = categoryId;
+        // When clicking a category (menu), filter by that menu
+        categoryItem.onclick = () => {
+            if (categoryId) {
+                selectMobileMenu(categoryId, categoryName);
+            } else {
+                selectMobileCategory(categoryName);
+            }
+        };
         
         const imageDiv = document.createElement('div');
         imageDiv.className = 'mobile-category-image';
