@@ -280,49 +280,67 @@ try {
             }
             
             try {
-                // Get categories with their first item's image for mobile display
-                $query = "SELECT DISTINCT 
-                            mi.item_category,
-                            (SELECT mi2.item_image FROM menu_items mi2 
-                             WHERE mi2.item_category = mi.item_category 
-                             AND mi2.restaurant_id = :rid";
-                if ($menuId) {
-                    $query .= " AND mi2.menu_id = :menu_id";
-                }
-                $query .= " AND mi2.item_image IS NOT NULL 
-                             AND mi2.item_image != '' 
-                             LIMIT 1) as category_image
-                          FROM menu_items mi 
-                          WHERE mi.restaurant_id = :rid";
-                if ($menuId) {
-                    $query .= " AND mi.menu_id = :menu_id";
-                }
-                $query .= " AND mi.item_category IS NOT NULL 
-                          AND mi.item_category != '' 
-                          ORDER BY mi.item_category";
+                // First, get distinct categories
+                $baseQuery = "SELECT DISTINCT mi.item_category
+                              FROM menu_items mi 
+                              WHERE mi.restaurant_id = :rid
+                              AND mi.item_category IS NOT NULL 
+                              AND mi.item_category != ''";
                 
-                $params = [':rid' => $restaurantId];
+                $baseParams = [':rid' => $restaurantId];
+                
                 if ($menuId) {
-                    $params[':menu_id'] = $menuId;
+                    $baseQuery .= " AND mi.menu_id = :menu_id";
+                    $baseParams[':menu_id'] = $menuId;
                 }
                 
-                $stmt = $conn->prepare($query);
-                $stmt->execute($params);
+                $baseQuery .= " ORDER BY mi.item_category";
+                
+                $stmt = $conn->prepare($baseQuery);
+                $stmt->execute($baseParams);
                 $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
-                // Return as array of objects with category name and image
-                $result = array_map(function($cat) {
-                    return [
-                        'name' => $cat['item_category'],
-                        'image' => $cat['category_image'] ?? null
+                // Now get images for each category
+                $result = [];
+                foreach ($categories as $cat) {
+                    $categoryName = $cat['item_category'];
+                    
+                    // Get first item image for this category
+                    $imageQuery = "SELECT item_image FROM menu_items 
+                                   WHERE restaurant_id = :rid 
+                                   AND item_category = :category
+                                   AND item_image IS NOT NULL 
+                                   AND item_image != ''";
+                    $imageParams = [':rid' => $restaurantId, ':category' => $categoryName];
+                    
+                    if ($menuId) {
+                        $imageQuery .= " AND menu_id = :menu_id";
+                        $imageParams[':menu_id'] = $menuId;
+                    }
+                    
+                    $imageQuery .= " LIMIT 1";
+                    
+                    $imageStmt = $conn->prepare($imageQuery);
+                    $imageStmt->execute($imageParams);
+                    $imageRow = $imageStmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    $result[] = [
+                        'name' => $categoryName,
+                        'image' => $imageRow['item_image'] ?? null
                     ];
-                }, $categories);
+                }
                 
                 echo json_encode($result);
             } catch (PDOException $e) {
                 error_log("Error in getCategories: " . $e->getMessage());
+                error_log("Query: " . ($baseQuery ?? 'N/A'));
+                error_log("Params: " . print_r($baseParams ?? [], true));
                 http_response_code(500);
                 echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+            } catch (Exception $e) {
+                error_log("Error in getCategories: " . $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error' => 'Error: ' . $e->getMessage()]);
             }
             break;
             
