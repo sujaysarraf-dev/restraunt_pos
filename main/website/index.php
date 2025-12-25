@@ -313,7 +313,6 @@ ob_end_flush();
     <!-- Category Filter -->
     <section class="categories" id="menu">
         <div class="container">
-            <h2 class="section-title">Browse Categories</h2>
             <!-- Desktop category tabs -->
             <div class="category-tabs" id="menuTabs">
                 <button class="category-btn active" data-menu="all">All Items</button>
