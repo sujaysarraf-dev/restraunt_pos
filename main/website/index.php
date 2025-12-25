@@ -290,12 +290,42 @@ ob_end_flush();
         </div>
     </section>
 
+    <!-- Mobile Category Header (shown only on mobile) -->
+    <div class="mobile-category-header" id="mobileCategoryHeader" style="display: none;">
+        <button class="mobile-back-btn" onclick="goBackToCategories()">
+            <span class="material-symbols-rounded">arrow_back</span>
+        </button>
+        <h1 class="mobile-category-title" id="mobileCategoryTitle">Menu</h1>
+        <div class="mobile-category-actions">
+            <div class="mobile-veg-toggle">
+                <span>Veg Only</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="mobileVegToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <button class="mobile-search-btn" onclick="focusSearch()">
+                <span class="material-symbols-rounded">search</span>
+            </button>
+        </div>
+    </div>
+
     <!-- Category Filter -->
     <section class="categories" id="menu">
         <div class="container">
             <h2 class="section-title">Browse Categories</h2>
+            <!-- Desktop category tabs -->
             <div class="category-tabs" id="menuTabs">
                 <button class="category-btn active" data-menu="all">All Items</button>
+            </div>
+            <!-- Mobile horizontal category scroll -->
+            <div class="mobile-category-scroll" id="mobileCategoryScroll">
+                <div class="mobile-category-item active" data-category="all" onclick="selectMobileCategory('all')">
+                    <div class="mobile-category-image">
+                        <span class="material-symbols-rounded">restaurant_menu</span>
+                    </div>
+                    <span class="mobile-category-label">All</span>
+                </div>
             </div>
         </div>
     </section>

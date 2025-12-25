@@ -1408,6 +1408,7 @@ async function loadMenus() {
         const catData = await catResponse.json();
         const categories = Array.isArray(catData) ? catData : [];
         populateCategoryFilter(categories);
+        renderMobileCategories(categories);
     } catch (error) {
         console.error('Error loading menus:', error);
         document.getElementById('menuGrid').innerHTML = '<div class="loading">Error loading menu. Please try again.</div>';
@@ -1439,10 +1440,118 @@ function populateCategoryFilter(categories) {
     const categoryFilter = document.getElementById('categoryFilter');
     categories.forEach(category => {
         const option = document.createElement('option');
-        option.value = category;
-        option.textContent = category;
+        const categoryName = typeof category === 'string' ? category : category.name;
+        option.value = categoryName;
+        option.textContent = categoryName;
         categoryFilter.appendChild(option);
     });
+}
+
+// Render mobile categories with images
+function renderMobileCategories(categories) {
+    const mobileCategoryScroll = document.getElementById('mobileCategoryScroll');
+    if (!mobileCategoryScroll) return;
+    
+    // Clear existing (except "All" button)
+    const allItem = mobileCategoryScroll.querySelector('.mobile-category-item[data-category="all"]');
+    mobileCategoryScroll.innerHTML = '';
+    if (allItem) {
+        mobileCategoryScroll.appendChild(allItem);
+    }
+    
+    // Add each category
+    categories.forEach(category => {
+        const categoryName = typeof category === 'string' ? category : category.name;
+        const categoryImage = category.image || null;
+        
+        const categoryItem = document.createElement('div');
+        categoryItem.className = 'mobile-category-item';
+        categoryItem.dataset.category = categoryName;
+        categoryItem.onclick = () => selectMobileCategory(categoryName);
+        
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'mobile-category-image';
+        
+        if (categoryImage) {
+            const img = document.createElement('img');
+            img.src = `api/image.php?path=${encodeURIComponent(categoryImage)}`;
+            img.alt = categoryName;
+            img.onerror = function() {
+                this.style.display = 'none';
+                const icon = document.createElement('span');
+                icon.className = 'material-symbols-rounded';
+                icon.textContent = 'restaurant';
+                imageDiv.appendChild(icon);
+            };
+            imageDiv.appendChild(img);
+        } else {
+            const icon = document.createElement('span');
+            icon.className = 'material-symbols-rounded';
+            icon.textContent = 'restaurant';
+            imageDiv.appendChild(icon);
+        }
+        
+        const label = document.createElement('span');
+        label.className = 'mobile-category-label';
+        label.textContent = categoryName.length > 12 ? categoryName.substring(0, 10) + '...' : categoryName;
+        
+        categoryItem.appendChild(imageDiv);
+        categoryItem.appendChild(label);
+        mobileCategoryScroll.appendChild(categoryItem);
+    });
+}
+
+// Select mobile category
+function selectMobileCategory(categoryName) {
+    // Update active state
+    document.querySelectorAll('.mobile-category-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    const selectedItem = document.querySelector(`.mobile-category-item[data-category="${categoryName}"]`);
+    if (selectedItem) {
+        selectedItem.classList.add('active');
+    }
+    
+    // Update header title
+    const title = document.getElementById('mobileCategoryTitle');
+    if (title) {
+        title.textContent = categoryName === 'all' ? 'Menu' : categoryName;
+    }
+    
+    // Show mobile header
+    const header = document.getElementById('mobileCategoryHeader');
+    if (header) {
+        header.style.display = 'flex';
+    }
+    
+    // Filter menu items
+    currentFilter.category = categoryName === 'all' ? null : categoryName;
+    loadMenuItems(currentFilter);
+    
+    // Scroll to menu section
+    const menuSection = document.getElementById('menu');
+    if (menuSection) {
+        menuSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// Go back to categories view
+function goBackToCategories() {
+    const header = document.getElementById('mobileCategoryHeader');
+    if (header) {
+        header.style.display = 'none';
+    }
+    
+    // Reset to "All"
+    selectMobileCategory('all');
+}
+
+// Focus search
+function focusSearch() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.focus();
+    }
 }
 
 // Load menu items

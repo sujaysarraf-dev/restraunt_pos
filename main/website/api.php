@@ -265,10 +265,33 @@ try {
             break;
             
         case 'getCategories':
-            $stmt = $conn->prepare("SELECT DISTINCT item_category FROM menu_items WHERE restaurant_id = :rid AND item_category IS NOT NULL AND item_category != '' ORDER BY item_category");
+            // Get categories with their first item's image for mobile display
+            $query = "SELECT DISTINCT 
+                        mi.item_category,
+                        (SELECT mi2.item_image FROM menu_items mi2 
+                         WHERE mi2.item_category = mi.item_category 
+                         AND mi2.restaurant_id = :rid 
+                         AND mi2.item_image IS NOT NULL 
+                         AND mi2.item_image != '' 
+                         LIMIT 1) as category_image
+                      FROM menu_items mi 
+                      WHERE mi.restaurant_id = :rid 
+                      AND mi.item_category IS NOT NULL 
+                      AND mi.item_category != '' 
+                      ORDER BY mi.item_category";
+            $stmt = $conn->prepare($query);
             $stmt->execute([':rid' => $restaurantId]);
-            $categories = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            echo json_encode($categories);
+            $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Return as array of objects with category name and image
+            $result = array_map(function($cat) {
+                return [
+                    'name' => $cat['item_category'],
+                    'image' => $cat['category_image'] ?? null
+                ];
+            }, $categories);
+            
+            echo json_encode($result);
             break;
             
         case 'searchItems':
