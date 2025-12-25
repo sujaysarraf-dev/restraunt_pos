@@ -1655,8 +1655,13 @@ function selectMobileMenu(menuId, menuName) {
     // Filter by menu
     filterByMenu(menuId);
     
-    // Load categories for this menu and show them
-    loadCategoriesForMenu(menuId);
+    // Load categories for this menu and show them (only if menuId is not null)
+    if (menuId) {
+        loadCategoriesForMenu(menuId);
+    } else {
+        // If "All" is selected, show menu categories again
+        renderMobileMenuCategories(menus);
+    }
     
     // Scroll to menu section
     const menuSection = document.getElementById('menu');
