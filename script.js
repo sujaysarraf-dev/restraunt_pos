@@ -50,22 +50,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Smooth Scrolling
+// Smooth Scrolling - only for hash links on the same page
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         const href = this.getAttribute('href');
-        // Only prevent default for hash links that exist on the page
-        if (href !== '#' && document.querySelector(href)) {
+        // Only handle hash links that exist on current page
+        if (href !== '#' && href.startsWith('#') && document.querySelector(href)) {
             e.preventDefault();
+            const target = document.querySelector(href);
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                // Close mobile menu if open
+                const navMenu = document.querySelector('.nav-menu');
+                if (navMenu) {
+                    navMenu.classList.remove('active');
+                }
+            }
         }
-        const target = document.querySelector(href);
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-            navMenu.classList.remove('active');
-        }
+        // Let all other links (including /# links) work normally
     });
 });
 
