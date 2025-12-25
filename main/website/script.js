@@ -1681,16 +1681,15 @@ function selectMobileMenu(menuId, menuName) {
         title.textContent = menuName;
     }
     
-    // Show mobile header
+    // Show category card (mobile header)
     const header = document.getElementById('mobileCategoryHeader');
     if (header) {
         header.style.display = 'flex';
-        // Adjust category wrapper sticky position when header is visible
-        // Calculate header height dynamically
-        const headerHeight = header.offsetHeight;
+        // Category images will stick right below the category card (header)
+        // No need to adjust top position - it sticks at top: 0 relative to viewport
         const categoryWrapper = document.querySelector('.mobile-category-scroll-wrapper');
         if (categoryWrapper) {
-            categoryWrapper.style.top = `${headerHeight}px`;
+            categoryWrapper.style.top = '0';
         }
     }
     

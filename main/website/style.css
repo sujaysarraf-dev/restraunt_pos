@@ -2244,9 +2244,10 @@ img {
   margin-top: 0;
 }
 
-/* When mobile header is visible, stick below it */
+/* When category card (mobile header) is visible, stick category images below it */
 .mobile-category-header:not([style*="display: none"]) ~ .categories .mobile-category-scroll-wrapper {
-  top: 60px;
+  top: 0;
+  margin-top: 0;
 }
 
 /* Mobile Category Navigation Arrows */
