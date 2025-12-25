@@ -1669,13 +1669,34 @@ function selectMobileMenu(menuId, menuName) {
 async function loadCategoriesForMenu(menuId) {
     try {
         const restaurantId = getRestaurantId();
-        const response = await fetch(`api.php?action=getCategories&restaurant_id=${encodeURIComponent(restaurantId)}&menu_id=${menuId}`);
+        let url = `api.php?action=getCategories&restaurant_id=${encodeURIComponent(restaurantId)}`;
+        if (menuId) {
+            url += `&menu_id=${encodeURIComponent(menuId)}`;
+        }
+        const response = await fetch(url);
         const catData = await response.json();
         const categories = Array.isArray(catData) ? catData : [];
         renderMobileCategories(categories);
     } catch (error) {
         console.error('Error loading categories for menu:', error);
     }
+}
+
+// Scroll mobile categories
+function scrollMobileCategories(direction) {
+    const scrollContainer = document.getElementById('mobileCategoryScroll');
+    if (!scrollContainer) return;
+    
+    const scrollAmount = 200;
+    const currentScroll = scrollContainer.scrollLeft;
+    const newScroll = direction === 'left' 
+        ? currentScroll - scrollAmount 
+        : currentScroll + scrollAmount;
+    
+    scrollContainer.scrollTo({
+        left: newScroll,
+        behavior: 'smooth'
+    });
 }
 
 // Select mobile category (item category within a menu)
