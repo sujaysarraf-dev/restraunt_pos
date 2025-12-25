@@ -2226,6 +2226,7 @@ img {
   flex-wrap: nowrap;
   flex-direction: row;
   align-items: flex-start;
+  background: #f9fafb;
 }
 
 .mobile-category-scroll::-webkit-scrollbar {
