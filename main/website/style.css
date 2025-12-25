@@ -2338,29 +2338,27 @@ img {
   }
   
   .section-title {
-    display: none;
+    display: block !important;
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #1f2937;
   }
   
   .categories .container {
-    padding: 0;
+    padding: 1.5rem 1rem;
     position: relative;
   }
-}
-
-// Scroll mobile categories
-function scrollMobileCategories(direction) {
-  const scrollContainer = document.getElementById('mobileCategoryScroll');
-  if (!scrollContainer) return;
   
-  const scrollAmount = 200;
-  const currentScroll = scrollContainer.scrollLeft;
-  const newScroll = direction === 'left' 
-    ? currentScroll - scrollAmount 
-    : currentScroll + scrollAmount;
+  .mobile-category-scroll-wrapper {
+    display: block !important;
+    width: 100%;
+    position: relative;
+  }
   
-  scrollContainer.scrollTo({
-    left: newScroll,
-    behavior: 'smooth'
-  });
+  .mobile-category-scroll {
+    flex-direction: row !important;
+  }
 }
 
