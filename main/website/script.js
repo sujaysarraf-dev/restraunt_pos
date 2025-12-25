@@ -2371,8 +2371,10 @@ function escapeHtml(text) {
 
 // Handle filter
 function handleFilter() {
-    const type = document.getElementById('typeFilter').value;
-    const category = document.getElementById('categoryFilter').value;
+    const typeFilter = document.getElementById('typeFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const type = typeFilter ? typeFilter.value : '';
+    const category = categoryFilter ? categoryFilter.value : '';
     
     currentFilter.type = type;
     currentFilter.category = category;
