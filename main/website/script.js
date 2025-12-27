@@ -1394,28 +1394,17 @@ function getApiBasePath() {
     });
     
     // Use absolute path from root - works in both localhost and production
-    // If path contains /main/website/, API is at /main/api/
-    if (currentPath.includes('/main/website')) {
+    // Always use /main/api as the API path (standard structure)
+    // This works for both /main/website/ and any other structure
+    if (currentPath.includes('/main/') || currentPath.includes('/website')) {
         const apiPath = '/main/api';
-        console.log('[API Path Detection] Detected /main/website structure, using:', apiPath);
+        console.log('[API Path Detection] Detected main/website structure, using:', apiPath);
         return apiPath;
     }
-    // If path contains /website/, API might be at /api/ or ../api/
-    if (currentPath.includes('/website')) {
-        // Try absolute path first
-        const pathParts = currentPath.split('/').filter(p => p);
-        const websiteIndex = pathParts.indexOf('website');
-        if (websiteIndex >= 0) {
-            pathParts[websiteIndex] = 'api';
-            const apiPath = '/' + pathParts.join('/');
-            console.log('[API Path Detection] Detected /website structure, using:', apiPath);
-            return apiPath;
-        }
-    }
     
-    // Fallback: try relative path (for localhost with different structure)
-    const fallbackPath = '../api';
-    console.log('[API Path Detection] Using fallback path:', fallbackPath);
+    // Fallback: use absolute path /main/api (most common structure)
+    const fallbackPath = '/main/api';
+    console.log('[API Path Detection] Using fallback absolute path:', fallbackPath);
     return fallbackPath;
 }
 
