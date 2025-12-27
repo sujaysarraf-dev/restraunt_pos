@@ -1435,6 +1435,10 @@ async function loadMenus() {
         }
 
         console.log('Loaded menus for mobile:', menus.length, menus);
+        // Debug: Log menu image data
+        menus.forEach(menu => {
+            console.log('Menu:', menu.menu_name, 'Image:', menu.menu_image, 'ID:', menu.id);
+        });
         renderMenuTabs();
 
         // Load categories from database (for desktop filter only, not for mobile)
@@ -1579,31 +1583,54 @@ function renderMobileMenuCategories(menus) {
         const imageDiv = document.createElement('div');
         imageDiv.className = 'mobile-category-image';
 
+        // Always try to load image - check multiple sources
+        const img = document.createElement('img');
+        img.alt = menuName;
+        
+        // Determine image source - use correct path ../api/image.php
+        let imageSrc = null;
         if (menuImage) {
-            const img = document.createElement('img');
-            // Handle database-stored images
-            if (menuImage.startsWith('db:')) {
-                img.src = `api/image.php?type=menu&id=${menu.id}`;
-            } else if (menuImage.startsWith('http')) {
-                img.src = menuImage;
+            if (menuImage.startsWith('http')) {
+                imageSrc = menuImage;
+            } else if (menuImage.startsWith('db:')) {
+                imageSrc = `../api/image.php?type=menu&id=${menu.id}`;
             } else {
-                img.src = `api/image.php?path=${encodeURIComponent(menuImage)}`;
+                // Try type=menu&id first (handles both BLOB and file paths)
+                imageSrc = `../api/image.php?type=menu&id=${menu.id}`;
             }
-            img.alt = menuName;
-            img.onerror = function () {
-                this.style.display = 'none';
-                const icon = document.createElement('span');
-                icon.className = 'material-symbols-rounded';
-                icon.textContent = 'restaurant';
-                imageDiv.appendChild(icon);
-            };
-            imageDiv.appendChild(img);
         } else {
+            // No menu_image field, but might have BLOB data - try anyway
+            imageSrc = `../api/image.php?type=menu&id=${menu.id}`;
+        }
+        
+        img.src = imageSrc;
+        console.log('Loading menu image for', menuName, 'ID:', menu.id, 'menu_image field:', menuImage, 'from:', imageSrc);
+        
+        img.onerror = function () {
+            console.log('Image failed to load:', imageSrc, 'for menu:', menuName);
+            // Try fallback paths
+            if (!this.dataset.fallback1) {
+                this.dataset.fallback1 = 'true';
+                if (menuImage && !menuImage.startsWith('http') && !menuImage.startsWith('db:')) {
+                    this.src = `../api/image.php?path=${encodeURIComponent(menuImage)}`;
+                    console.log('Trying fallback path:', this.src);
+                    return;
+                }
+            }
+            // If all fails, show icon (no image available)
+            console.log('All image attempts failed, showing icon for:', menuName);
+            this.style.display = 'none';
             const icon = document.createElement('span');
             icon.className = 'material-symbols-rounded';
             icon.textContent = 'restaurant';
             imageDiv.appendChild(icon);
-        }
+        };
+        
+        img.onload = function () {
+            console.log('Image loaded successfully:', imageSrc, 'for menu:', menuName);
+        };
+        
+        imageDiv.appendChild(img);
 
         const label = document.createElement('span');
         label.className = 'mobile-category-label';

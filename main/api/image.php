@@ -167,31 +167,89 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
         } elseif ($imageType === 'menu' && !empty($imageId)) {
             // Get menu image
             try {
-                $stmt = $conn->prepare("SELECT menu_image_data, menu_image_mime_type FROM menu WHERE id = ? LIMIT 1");
+                // First try to get BLOB image data
+                $stmt = $conn->prepare("SELECT menu_image_data, menu_image_mime_type, menu_image FROM menu WHERE id = ? LIMIT 1");
                 $stmt->execute([$imageId]);
                 $menu = $stmt->fetch(PDO::FETCH_ASSOC);
                 
-                if ($menu && !empty($menu['menu_image_data'])) {
-                    ob_end_clean();
-                    header('Content-Type: ' . ($menu['menu_image_mime_type'] ?? 'image/jpeg'));
-                    header('Content-Length: ' . strlen($menu['menu_image_data']));
-                    header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
-                    echo $menu['menu_image_data'];
-                    exit();
-                } else {
-                    http_response_code(404);
-                    header('Content-Type: text/plain');
-                    exit('Menu image not found');
+                if ($menu) {
+                    // Priority 1: BLOB data (menu_image_data)
+                    if (!empty($menu['menu_image_data'])) {
+                        ob_end_clean();
+                        header('Content-Type: ' . ($menu['menu_image_mime_type'] ?? 'image/jpeg'));
+                        header('Content-Length: ' . strlen($menu['menu_image_data']));
+                        header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
+                        echo $menu['menu_image_data'];
+                        exit();
+                    }
+                    
+                    // Priority 2: File path (menu_image)
+                    if (!empty($menu['menu_image'])) {
+                        $menuImagePath = $menu['menu_image'];
+                        
+                        // Handle db: prefix
+                        if (strpos($menuImagePath, 'db:') === 0) {
+                            // Already tried BLOB, so skip
+                        } elseif (strpos($menuImagePath, 'http') === 0) {
+                            // External URL - redirect
+                            ob_end_clean();
+                            header('Location: ' . $menuImagePath);
+                            exit();
+                        } else {
+                            // File path - try to serve the file
+                            $filePath = __DIR__ . '/../' . ltrim($menuImagePath, '/');
+                            if (file_exists($filePath) && is_file($filePath)) {
+                                ob_end_clean();
+                                $mimeType = mime_content_type($filePath);
+                                header('Content-Type: ' . ($mimeType ?: 'image/jpeg'));
+                                header('Content-Length: ' . filesize($filePath));
+                                header('Cache-Control: public, max-age=31536000');
+                                readfile($filePath);
+                                exit();
+                            }
+                        }
+                    }
                 }
+                
+                // If we get here, no image found
+                http_response_code(404);
+                header('Content-Type: text/plain');
+                exit('Menu image not found');
             } catch (PDOException $e) {
-                // If menu_image_data column doesn't exist, return 404
+                // If menu_image_data column doesn't exist, try file path
                 if (strpos($e->getMessage(), 'menu_image_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
-                    http_response_code(404);
-                    header('Content-Type: text/plain');
-                    exit('Menu image not found');
-                } else {
-                    throw $e;
+                    try {
+                        $stmt = $conn->prepare("SELECT menu_image FROM menu WHERE id = ? LIMIT 1");
+                        $stmt->execute([$imageId]);
+                        $menu = $stmt->fetch(PDO::FETCH_ASSOC);
+                        
+                        if ($menu && !empty($menu['menu_image'])) {
+                            $menuImagePath = $menu['menu_image'];
+                            if (strpos($menuImagePath, 'http') === 0) {
+                                ob_end_clean();
+                                header('Location: ' . $menuImagePath);
+                                exit();
+                            } else {
+                                $filePath = __DIR__ . '/../' . ltrim($menuImagePath, '/');
+                                if (file_exists($filePath) && is_file($filePath)) {
+                                    ob_end_clean();
+                                    $mimeType = mime_content_type($filePath);
+                                    header('Content-Type: ' . ($mimeType ?: 'image/jpeg'));
+                                    header('Content-Length: ' . filesize($filePath));
+                                    header('Cache-Control: public, max-age=31536000');
+                                    readfile($filePath);
+                                    exit();
+                                }
+                            }
+                        }
+                    } catch (PDOException $e2) {
+                        // Ignore and return 404
+                    }
                 }
+                
+                http_response_code(404);
+                header('Content-Type: text/plain');
+                exit('Menu image not found');
             }
         } elseif ($imageType === 'banner' && !empty($imageId)) {
             // Get website banner
