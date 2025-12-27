@@ -168,19 +168,29 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
             // Get menu image
             try {
                 // First try to get BLOB image data
+                // Use PDO::FETCH_ASSOC and ensure BLOB is read correctly
                 $stmt = $conn->prepare("SELECT menu_image_data, menu_image_mime_type, menu_image FROM menu WHERE id = ? LIMIT 1");
                 $stmt->execute([$imageId]);
                 $menu = $stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if ($menu) {
                     // Priority 1: BLOB data (menu_image_data)
-                    if (!empty($menu['menu_image_data'])) {
-                        ob_end_clean();
-                        header('Content-Type: ' . ($menu['menu_image_mime_type'] ?? 'image/jpeg'));
-                        header('Content-Length: ' . strlen($menu['menu_image_data']));
-                        header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
-                        echo $menu['menu_image_data'];
-                        exit();
+                    // Check if BLOB data exists and is not empty
+                    if (isset($menu['menu_image_data']) && $menu['menu_image_data'] !== null && $menu['menu_image_data'] !== '') {
+                        // Ensure we have valid binary data
+                        $imageData = $menu['menu_image_data'];
+                        $dataLength = strlen($imageData);
+                        
+                        // Only proceed if we have actual data (not just empty string)
+                        if ($dataLength > 0) {
+                            ob_end_clean();
+                            $mimeType = !empty($menu['menu_image_mime_type']) ? $menu['menu_image_mime_type'] : 'image/jpeg';
+                            header('Content-Type: ' . $mimeType);
+                            header('Content-Length: ' . $dataLength);
+                            header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
+                            echo $imageData;
+                            exit();
+                        }
                     }
                     
                     // Priority 2: File path (menu_image)
@@ -212,10 +222,17 @@ if (strpos($imagePath, 'db:') === 0 || !empty($imageType)) {
                 }
                 
                 // If we get here, no image found
+                // Log for debugging (only in development)
+                if (isset($_GET['debug'])) {
+                    error_log("Menu image not found for ID: $imageId. Menu data: " . json_encode($menu ?? []));
+                }
                 http_response_code(404);
                 header('Content-Type: text/plain');
                 exit('Menu image not found');
             } catch (PDOException $e) {
+                // Log the error for debugging
+                error_log("PDO Error fetching menu image (ID: $imageId): " . $e->getMessage());
+                
                 // If menu_image_data column doesn't exist, try file path
                 if (strpos($e->getMessage(), 'menu_image_data') !== false || strpos($e->getMessage(), 'Unknown column') !== false) {
                     try {
