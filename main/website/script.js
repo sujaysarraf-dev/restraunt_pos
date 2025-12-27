@@ -1620,8 +1620,9 @@ function renderMobileMenuCategories(menus) {
         const img = document.createElement('img');
         img.alt = menuName;
         
-        // Determine image source - use dynamic path that works in both localhost and production
-        const apiBasePath = getApiBasePath();
+        // Determine image source - use absolute path /main/api for production
+        // Always use /main/api to avoid path issues
+        const apiBasePath = '/main/api';
         let imageSrc = null;
         let imageType = 'unknown';
         
@@ -1669,7 +1670,7 @@ function renderMobileMenuCategories(menus) {
             if (!this.dataset.fallback1) {
                 this.dataset.fallback1 = 'true';
                 if (menuImage && !menuImage.startsWith('http') && !menuImage.startsWith('db:')) {
-                    const fallbackSrc = `${apiBasePath}/image.php?path=${encodeURIComponent(menuImage)}`;
+                    const fallbackSrc = `/main/api/image.php?path=${encodeURIComponent(menuImage)}`;
                     console.log('[Menu Image Fallback 1] Trying path-based approach:', {
                         menuId: menu.id,
                         menuName: menuName,
@@ -1678,20 +1679,6 @@ function renderMobileMenuCategories(menus) {
                     this.src = fallbackSrc;
                     return;
                 }
-            }
-            // Try absolute path as last resort
-            if (!this.dataset.fallback2) {
-                this.dataset.fallback2 = 'true';
-                // Try with /main/api/image.php (absolute from root)
-                const absolutePath = '/main/api/image.php';
-                const absoluteSrc = `${absolutePath}?type=menu&id=${menu.id}`;
-                console.log('[Menu Image Fallback 2] Trying absolute path:', {
-                    menuId: menu.id,
-                    menuName: menuName,
-                    absoluteSrc: absoluteSrc
-                });
-                this.src = absoluteSrc;
-                return;
             }
             // If all fails, show icon (no image available)
             console.warn('[Menu Image Failed] All attempts failed, showing default icon:', {
