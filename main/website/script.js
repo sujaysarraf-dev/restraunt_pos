@@ -1383,11 +1383,22 @@ function openProfile(element, e) {
 function getApiBasePath() {
     // Get current page URL
     const currentPath = window.location.pathname;
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    
+    console.log('[API Path Detection]', {
+        currentPath,
+        hostname,
+        protocol,
+        fullUrl: window.location.href
+    });
     
     // Use absolute path from root - works in both localhost and production
     // If path contains /main/website/, API is at /main/api/
     if (currentPath.includes('/main/website')) {
-        return '/main/api';
+        const apiPath = '/main/api';
+        console.log('[API Path Detection] Detected /main/website structure, using:', apiPath);
+        return apiPath;
     }
     // If path contains /website/, API might be at /api/ or ../api/
     if (currentPath.includes('/website')) {
@@ -1396,12 +1407,16 @@ function getApiBasePath() {
         const websiteIndex = pathParts.indexOf('website');
         if (websiteIndex >= 0) {
             pathParts[websiteIndex] = 'api';
-            return '/' + pathParts.join('/');
+            const apiPath = '/' + pathParts.join('/');
+            console.log('[API Path Detection] Detected /website structure, using:', apiPath);
+            return apiPath;
         }
     }
     
     // Fallback: try relative path (for localhost with different structure)
-    return '../api';
+    const fallbackPath = '../api';
+    console.log('[API Path Detection] Using fallback path:', fallbackPath);
+    return fallbackPath;
 }
 
 function getRestaurantId() {
@@ -1459,10 +1474,14 @@ async function loadMenus() {
             menus = [];
         }
 
-        console.log('Loaded menus for mobile:', menus.length, menus);
-        // Debug: Log menu image data
-        menus.forEach(menu => {
-            console.log('Menu:', menu.menu_name, 'Image:', menu.menu_image, 'ID:', menu.id);
+        console.log('[Menu Loading] Loaded menus:', {
+            count: menus.length,
+            menus: menus.map(m => ({
+                id: m.id,
+                name: m.menu_name,
+                image: m.menu_image,
+                hasImage: !!m.menu_image
+            }))
         });
         renderMenuTabs();
 
@@ -1615,31 +1634,59 @@ function renderMobileMenuCategories(menus) {
         // Determine image source - use dynamic path that works in both localhost and production
         const apiBasePath = getApiBasePath();
         let imageSrc = null;
+        let imageType = 'unknown';
+        
         if (menuImage) {
             if (menuImage.startsWith('http')) {
                 imageSrc = menuImage;
+                imageType = 'external_url';
             } else if (menuImage.startsWith('db:')) {
                 imageSrc = `${apiBasePath}/image.php?type=menu&id=${menu.id}`;
+                imageType = 'database_blob';
             } else {
                 // Try type=menu&id first (handles both BLOB and file paths)
                 imageSrc = `${apiBasePath}/image.php?type=menu&id=${menu.id}`;
+                imageType = 'file_path_via_api';
             }
         } else {
             // No menu_image field, but might have BLOB data - try anyway
             imageSrc = `${apiBasePath}/image.php?type=menu&id=${menu.id}`;
+            imageType = 'no_field_try_api';
         }
         
-        img.src = imageSrc;
-        console.log('Loading menu image for', menuName, 'ID:', menu.id, 'menu_image field:', menuImage, 'from:', imageSrc);
+        console.log('[Menu Image Loading]', {
+            menuId: menu.id,
+            menuName: menuName,
+            menuImageField: menuImage,
+            imageType: imageType,
+            apiBasePath: apiBasePath,
+            imageSrc: imageSrc,
+            timestamp: new Date().toISOString()
+        });
         
-        img.onerror = function () {
-            console.log('Image failed to load:', imageSrc, 'for menu:', menuName);
+        img.src = imageSrc;
+        
+        img.onerror = function (error) {
+            console.error('[Menu Image Error]', {
+                menuId: menu.id,
+                menuName: menuName,
+                failedSrc: this.src,
+                error: error,
+                fallbackAttempt: this.dataset.fallback1 || this.dataset.fallback2 || 'none',
+                timestamp: new Date().toISOString()
+            });
+            
             // Try fallback paths
             if (!this.dataset.fallback1) {
                 this.dataset.fallback1 = 'true';
                 if (menuImage && !menuImage.startsWith('http') && !menuImage.startsWith('db:')) {
-                    this.src = `${apiBasePath}/image.php?path=${encodeURIComponent(menuImage)}`;
-                    console.log('Trying fallback path:', this.src);
+                    const fallbackSrc = `${apiBasePath}/image.php?path=${encodeURIComponent(menuImage)}`;
+                    console.log('[Menu Image Fallback 1] Trying path-based approach:', {
+                        menuId: menu.id,
+                        menuName: menuName,
+                        fallbackSrc: fallbackSrc
+                    });
+                    this.src = fallbackSrc;
                     return;
                 }
             }
@@ -1648,12 +1695,21 @@ function renderMobileMenuCategories(menus) {
                 this.dataset.fallback2 = 'true';
                 // Try with /main/api/image.php (absolute from root)
                 const absolutePath = '/main/api/image.php';
-                this.src = `${absolutePath}?type=menu&id=${menu.id}`;
-                console.log('Trying absolute path:', this.src);
+                const absoluteSrc = `${absolutePath}?type=menu&id=${menu.id}`;
+                console.log('[Menu Image Fallback 2] Trying absolute path:', {
+                    menuId: menu.id,
+                    menuName: menuName,
+                    absoluteSrc: absoluteSrc
+                });
+                this.src = absoluteSrc;
                 return;
             }
             // If all fails, show icon (no image available)
-            console.log('All image attempts failed, showing icon for:', menuName);
+            console.warn('[Menu Image Failed] All attempts failed, showing default icon:', {
+                menuId: menu.id,
+                menuName: menuName,
+                attempts: ['primary', 'fallback1', 'fallback2']
+            });
             this.style.display = 'none';
             const icon = document.createElement('span');
             icon.className = 'material-symbols-rounded';
@@ -1662,7 +1718,14 @@ function renderMobileMenuCategories(menus) {
         };
         
         img.onload = function () {
-            console.log('Image loaded successfully:', imageSrc, 'for menu:', menuName);
+            console.log('[Menu Image Success]', {
+                menuId: menu.id,
+                menuName: menuName,
+                loadedSrc: this.src,
+                imageWidth: this.naturalWidth,
+                imageHeight: this.naturalHeight,
+                timestamp: new Date().toISOString()
+            });
         };
         
         imageDiv.appendChild(img);
