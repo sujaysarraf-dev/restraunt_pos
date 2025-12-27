@@ -1379,6 +1379,31 @@ function openProfile(element, e) {
 
 
 // Get restaurant ID from URL or use default
+// Get base path for API calls (works in both localhost and production)
+function getApiBasePath() {
+    // Get current page URL
+    const currentPath = window.location.pathname;
+    
+    // Use absolute path from root - works in both localhost and production
+    // If path contains /main/website/, API is at /main/api/
+    if (currentPath.includes('/main/website')) {
+        return '/main/api';
+    }
+    // If path contains /website/, API might be at /api/ or ../api/
+    if (currentPath.includes('/website')) {
+        // Try absolute path first
+        const pathParts = currentPath.split('/').filter(p => p);
+        const websiteIndex = pathParts.indexOf('website');
+        if (websiteIndex >= 0) {
+            pathParts[websiteIndex] = 'api';
+            return '/' + pathParts.join('/');
+        }
+    }
+    
+    // Fallback: try relative path (for localhost with different structure)
+    return '../api';
+}
+
 function getRestaurantId() {
     // Primary source: PHP inlined value (database verified)
     if (window.websiteRestaurantId) {
@@ -1587,20 +1612,21 @@ function renderMobileMenuCategories(menus) {
         const img = document.createElement('img');
         img.alt = menuName;
         
-        // Determine image source - use correct path ../api/image.php
+        // Determine image source - use dynamic path that works in both localhost and production
+        const apiBasePath = getApiBasePath();
         let imageSrc = null;
         if (menuImage) {
             if (menuImage.startsWith('http')) {
                 imageSrc = menuImage;
             } else if (menuImage.startsWith('db:')) {
-                imageSrc = `../api/image.php?type=menu&id=${menu.id}`;
+                imageSrc = `${apiBasePath}/image.php?type=menu&id=${menu.id}`;
             } else {
                 // Try type=menu&id first (handles both BLOB and file paths)
-                imageSrc = `../api/image.php?type=menu&id=${menu.id}`;
+                imageSrc = `${apiBasePath}/image.php?type=menu&id=${menu.id}`;
             }
         } else {
             // No menu_image field, but might have BLOB data - try anyway
-            imageSrc = `../api/image.php?type=menu&id=${menu.id}`;
+            imageSrc = `${apiBasePath}/image.php?type=menu&id=${menu.id}`;
         }
         
         img.src = imageSrc;
@@ -1612,10 +1638,19 @@ function renderMobileMenuCategories(menus) {
             if (!this.dataset.fallback1) {
                 this.dataset.fallback1 = 'true';
                 if (menuImage && !menuImage.startsWith('http') && !menuImage.startsWith('db:')) {
-                    this.src = `../api/image.php?path=${encodeURIComponent(menuImage)}`;
+                    this.src = `${apiBasePath}/image.php?path=${encodeURIComponent(menuImage)}`;
                     console.log('Trying fallback path:', this.src);
                     return;
                 }
+            }
+            // Try absolute path as last resort
+            if (!this.dataset.fallback2) {
+                this.dataset.fallback2 = 'true';
+                // Try with /main/api/image.php (absolute from root)
+                const absolutePath = '/main/api/image.php';
+                this.src = `${absolutePath}?type=menu&id=${menu.id}`;
+                console.log('Trying absolute path:', this.src);
+                return;
             }
             // If all fails, show icon (no image available)
             console.log('All image attempts failed, showing icon for:', menuName);
