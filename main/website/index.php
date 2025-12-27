@@ -146,6 +146,7 @@ ob_end_flush();
       // NO localStorage fallback - currency MUST come from backend
       window.globalCurrencySymbol = <?php echo json_encode($currency_symbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>;
       // Debug: Log currency from database
+      
       console.log('=== CURRENCY DEBUG ===');
       console.log('Currency loaded from database (PHP):', window.globalCurrencySymbol);
       console.log('Currency type:', typeof window.globalCurrencySymbol);
@@ -233,15 +234,14 @@ ob_end_flush();
         <div class="hero-content">
             <h1 class="hero-title">RestroGrow POS<br>Restaurant Management System</h1>
             <p class="hero-subtitle">Order your favorite meals online and enjoy fast delivery</p>
-            <div style="position: relative; max-width: 600px; margin: 0 auto;">
-                <div class="hero-search">
-                    <input type="text" id="searchInput" placeholder="Search for food..." autocomplete="off">
-                    <button class="search-btn">
-                        <span class="material-symbols-rounded">search</span>
-                    </button>
-                </div>
-                <div class="search-suggestions" id="searchSuggestions" style="display: none;"></div>
+            <div class="hero-search">
+                <input type="text" id="searchInput" placeholder="Search for food..." autocomplete="off">
+                <button class="search-btn" type="button">
+                    <span class="material-symbols-rounded" style="color: #000;">search</span>
+                </button>
             </div>
+            <!-- Search Suggestions Dropdown -->
+            <div id="searchSuggestions" class="search-suggestions" style="display: none;"></div>
         </div>
     </section>
 
@@ -310,30 +310,19 @@ ob_end_flush();
         </div>
     </div>
 
+    <!-- Mobile Category Scroll (horizontal scrollable categories with images) -->
+    <div class="mobile-category-scroll-wrapper" id="mobileCategoryScrollWrapper" style="display: none;">
+        <div class="mobile-category-scroll" id="mobileCategoryScroll">
+            <!-- Categories will be dynamically loaded here -->
+        </div>
+    </div>
+
     <!-- Category Filter -->
     <section class="categories" id="menu">
         <div class="container">
             <!-- Desktop category tabs -->
             <div class="category-tabs" id="menuTabs">
                 <button class="category-btn active" data-menu="all">All Items</button>
-            </div>
-            <!-- Mobile horizontal category scroll with images -->
-            <div class="mobile-category-scroll-wrapper">
-                <div class="mobile-category-scroll" id="mobileCategoryScroll">
-                    <div class="mobile-category-item active" data-menu="all" onclick="selectMobileMenu(null, 'All')">
-                        <div class="mobile-category-image">
-                            <span class="material-symbols-rounded">restaurant_menu</span>
-                        </div>
-                        <span class="mobile-category-label">All</span>
-                    </div>
-                </div>
-                <!-- Mobile category scroll arrows -->
-                <button class="mobile-category-nav-btn mobile-category-nav-prev" onclick="scrollMobileCategories('left')">
-                    <span class="material-symbols-rounded">arrow_back</span>
-                </button>
-                <button class="mobile-category-nav-btn mobile-category-nav-next" onclick="scrollMobileCategories('right')">
-                    <span class="material-symbols-rounded">arrow_forward</span>
-                </button>
             </div>
         </div>
     </section>
@@ -735,7 +724,7 @@ ob_end_flush();
         </div>
     </div>
 
-    <script src="script.js" defer></script>
+    <script src="script.js?v=2.2" defer></script>
     <script>
     // Cookie Consent Management
     (function() {

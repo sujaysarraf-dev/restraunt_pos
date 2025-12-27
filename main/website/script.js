@@ -35,7 +35,7 @@ function updateInitialCurrencyDisplays() {
     if (!window.globalCurrencySymbol) {
         return; // Can't update without currency symbol
     }
-    
+
     // Update cart total if it exists
     const cartTotal = document.getElementById('cartTotal');
     if (cartTotal) {
@@ -44,7 +44,7 @@ function updateInitialCurrencyDisplays() {
         const amount = parseFloat(text.replace(/[^\d.]/g, '')) || 0;
         cartTotal.textContent = formatCurrency(amount);
     }
-    
+
     // Update cart summary total if it exists
     const cartSummaryTotal = document.getElementById('cartSummaryTotal');
     if (cartSummaryTotal) {
@@ -103,7 +103,7 @@ function getTableFromURL() {
 // Open Call Waiter Modal
 document.getElementById('callWaiterBtn').addEventListener('click', () => {
     const tableFromURL = getTableFromURL();
-    
+
     if (tableFromURL) {
         // If table is in URL, directly show confirmation
         showConfirmForTableFromURL(tableFromURL);
@@ -119,10 +119,10 @@ async function showConfirmForTableFromURL(tableNumber) {
         const restaurantId = getRestaurantId();
         const response = await fetch(`../api/get_tables.php?restaurant_id=${restaurantId}`);
         const data = await response.json();
-        
+
         if (data.success && data.data) {
             const table = data.data.find(t => t.table_number === tableNumber);
-            
+
             if (table) {
                 // Show confirmation popup directly
                 showWaiterConfirmation(table.id, table.table_number, table.area_name);
@@ -151,9 +151,9 @@ async function loadTables() {
         const restaurantId = getRestaurantId();
         const response = await fetch(`../api/get_tables.php?restaurant_id=${restaurantId}`);
         const data = await response.json();
-        
+
         const tableGrid = document.getElementById('tableGrid');
-        
+
         if (data.success && data.data) {
             tableGrid.innerHTML = data.data.map(table => `
                 <div class="table-option" onclick="selectTable(${table.id}, '${table.table_number}', '${table.area_name}')">
@@ -173,15 +173,15 @@ async function loadTables() {
 // Select Table
 function selectTable(tableId, tableNumber, areaName) {
     selectedTable = { id: tableId, number: tableNumber, area: areaName };
-    
+
     // Remove previous selection
     document.querySelectorAll('.table-option').forEach(opt => {
         opt.classList.remove('selected');
     });
-    
+
     // Add selection to clicked option
     event.currentTarget.classList.add('selected');
-    
+
     // Show confirmation popup
     showWaiterConfirmation(tableId, tableNumber, areaName);
 }
@@ -215,21 +215,21 @@ function closeConfirmationPopup(btn) {
 // Confirm and call waiter
 async function confirmCallWaiter(tableId, tableNumber, areaName) {
     closeConfirmationPopup(event.currentTarget);
-    
+
     // Show loading
     showNotification('Notifying waiter...', 'info');
-    
+
     // Check if there are items in cart
     const hasCartItems = cart.length > 0;
     let notes = `Customer called waiter for table ${tableNumber}`;
-    
+
     if (hasCartItems) {
         const cartItemsInfo = cart.map(item => `${item.quantity}x ${item.name}`).join(', ');
         notes = `Order request: ${cartItemsInfo}`;
         // Save cart items to localStorage for this table
         localStorage.setItem(`cart_for_table_${tableId}`, JSON.stringify(cart));
     }
-    
+
     try {
         const response = await fetch('../api/create_waiter_request.php', {
             method: 'POST',
@@ -241,21 +241,21 @@ async function confirmCallWaiter(tableId, tableNumber, areaName) {
                 has_items: hasCartItems ? 1 : 0
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             document.getElementById('waiterModal').classList.remove('active');
             showNotification('Waiter has been notified! They will be with you shortly.', 'success');
             // Clear selection
             document.querySelectorAll('.table-option').forEach(opt => opt.classList.remove('selected'));
-            
+
             // Clear cart after successful waiter call
             if (hasCartItems) {
                 cart = [];
                 updateCartStorage();
                 updateCartUI();
-                
+
                 // Ensure cart summary bar is hidden
                 const cartSummaryBar = document.getElementById('cartSummaryBar');
                 if (cartSummaryBar) {
@@ -320,14 +320,14 @@ async function loadReservationTables() {
         const restaurantId = getRestaurantId();
         const response = await fetch(`../api/get_tables.php?restaurant_id=${restaurantId}`);
         const data = await response.json();
-        
+
         const tableGrid = document.getElementById('reservationTableGrid');
-        
+
         if (!tableGrid) {
             console.error('Reservation table grid not found');
             return;
         }
-        
+
         if (data.success && data.data) {
             tableGrid.innerHTML = data.data.map(table => `
                 <div class="table-option" onclick="selectReservationTable(${table.id}, '${table.table_number}', '${table.area_name || ''}', ${table.capacity || 4})">
@@ -353,25 +353,25 @@ function selectReservationTable(tableId, tableNumber, areaName, capacity) {
     // Store selected table info
     document.getElementById('selectedTableId').value = tableId;
     selectedTableCapacity = capacity || 4;
-    
+
     // Update guests input max and show capacity info
     const guestsInput = document.getElementById('reservationGuests');
     if (guestsInput) {
         guestsInput.setAttribute('max', selectedTableCapacity);
         guestsInput.value = Math.min(parseInt(guestsInput.value) || 1, selectedTableCapacity);
     }
-    
+
     // Show capacity info
     const capacityInfo = document.getElementById('tableCapacityInfo');
     if (capacityInfo) {
         capacityInfo.innerHTML = `<span class="material-symbols-rounded" style="font-size: 1.2rem; vertical-align: middle;">table_restaurant</span> Table ${tableNumber} - ${areaName} <strong>(Max ${selectedTableCapacity} guests)</strong>`;
         capacityInfo.style.display = 'block';
     }
-    
+
     // Hide table selection, show form
     document.getElementById('reservationTableSelection').style.display = 'none';
     document.getElementById('reservationFormSection').style.display = 'block';
-    
+
     // Setup availability checking when date/time changes
     setupAvailabilityCheck();
 }
@@ -382,26 +382,26 @@ function backToTableSelection() {
     document.getElementById('reservationFormSection').style.display = 'none';
     document.getElementById('selectedTableId').value = '';
     selectedTableCapacity = null;
-    
+
     // Reset capacity info
     const capacityInfo = document.getElementById('tableCapacityInfo');
     if (capacityInfo) {
         capacityInfo.style.display = 'none';
     }
-    
+
     // Reset guests input
     const guestsInput = document.getElementById('reservationGuests');
     if (guestsInput) {
         guestsInput.removeAttribute('max');
         guestsInput.value = 1;
     }
-    
+
     // Hide warnings
     const availabilityWarning = document.getElementById('availabilityWarning');
     if (availabilityWarning) {
         availabilityWarning.style.display = 'none';
     }
-    
+
     const capacityWarning = document.getElementById('capacityWarning');
     if (capacityWarning) {
         capacityWarning.style.display = 'none';
@@ -424,7 +424,7 @@ async function checkReservationAvailability() {
     const timeSlotSelect = document.getElementById('reservationTimeSlot');
     const customTimeInput = document.getElementById('customTimeSlot');
     const customContainer = document.getElementById('customTimeSlotContainer');
-    
+
     // Get time slot - either from select or custom input
     let timeSlot = '';
     if (timeSlotSelect && timeSlotSelect.value === 'custom' && customTimeInput && customTimeInput.value) {
@@ -432,21 +432,21 @@ async function checkReservationAvailability() {
     } else if (timeSlotSelect && timeSlotSelect.value && timeSlotSelect.value !== 'custom') {
         timeSlot = timeSlotSelect.value;
     }
-    
+
     const availabilityWarning = document.getElementById('availabilityWarning');
-    
+
     if (!tableId || !date || !timeSlot) {
         if (availabilityWarning) {
             availabilityWarning.style.display = 'none';
         }
         return;
     }
-    
+
     try {
         const restaurantId = getRestaurantId();
         const response = await fetch(`../api/check_reservation_availability.php?restaurant_id=${restaurantId}&table_id=${tableId}&reservation_date=${date}&time_slot=${timeSlot}`);
         const data = await response.json();
-        
+
         if (data.success && !data.available) {
             // Table is already reserved
             if (availabilityWarning) {
@@ -474,16 +474,16 @@ function setupAvailabilityCheck() {
     const timeSlotInput = document.getElementById('reservationTimeSlot');
     const customTimeInput = document.getElementById('customTimeSlot');
     const customContainer = document.getElementById('customTimeSlotContainer');
-    
+
     if (dateInput && timeSlotInput) {
         // Remove existing listeners to avoid duplicates
         const newDateInput = dateInput.cloneNode(true);
         const newTimeSlotInput = timeSlotInput.cloneNode(true);
         dateInput.parentNode.replaceChild(newDateInput, dateInput);
         timeSlotInput.parentNode.replaceChild(newTimeSlotInput, timeSlotInput);
-        
+
         // Handle time slot selection change
-        newTimeSlotInput.addEventListener('change', function() {
+        newTimeSlotInput.addEventListener('change', function () {
             // Clear errors
             const timeSlotError = document.getElementById('timeSlotError');
             const customTimeError = document.getElementById('customTimeSlotError');
@@ -491,7 +491,7 @@ function setupAvailabilityCheck() {
                 timeSlotError.style.display = 'none';
                 timeSlotError.textContent = '';
             }
-            
+
             if (this.value === 'custom') {
                 // Show custom time input
                 if (customContainer) {
@@ -515,20 +515,20 @@ function setupAvailabilityCheck() {
                 checkReservationAvailability();
             }
         });
-        
+
         // Add listeners
         newDateInput.addEventListener('change', checkReservationAvailability);
-        
+
         // Listen to custom time input changes with validation
         if (customTimeInput) {
             const customTimeError = document.getElementById('customTimeSlotError');
-            
-            customTimeInput.addEventListener('change', function() {
+
+            customTimeInput.addEventListener('change', function () {
                 const timeValue = this.value;
-                
+
                 // Clear previous error styling
                 this.style.borderColor = '';
-                
+
                 if (!timeValue) {
                     if (customTimeError) {
                         customTimeError.textContent = 'Please enter a custom time';
@@ -537,7 +537,7 @@ function setupAvailabilityCheck() {
                     this.style.borderColor = '#dc3545';
                     return;
                 }
-                
+
                 // Validate time format (HH:MM)
                 if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeValue)) {
                     if (customTimeError) {
@@ -547,21 +547,21 @@ function setupAvailabilityCheck() {
                     this.style.borderColor = '#dc3545';
                     return;
                 }
-                
+
                 // Clear error if valid
                 if (customTimeError) {
                     customTimeError.style.display = 'none';
                     customTimeError.textContent = '';
                 }
                 this.style.borderColor = '';
-                
+
                 // Check availability
                 checkReservationAvailability();
             });
-            
-            customTimeInput.addEventListener('blur', function() {
+
+            customTimeInput.addEventListener('blur', function () {
                 const timeValue = this.value;
-                
+
                 if (!timeValue && newTimeSlotInput.value === 'custom') {
                     if (customTimeError) {
                         customTimeError.textContent = 'Please enter a custom time';
@@ -576,8 +576,8 @@ function setupAvailabilityCheck() {
                     this.style.borderColor = '#dc3545';
                 }
             });
-            
-            customTimeInput.addEventListener('input', function() {
+
+            customTimeInput.addEventListener('input', function () {
                 // Clear error as user types
                 if (this.value) {
                     if (customTimeError) {
@@ -595,12 +595,12 @@ function setupAvailabilityCheck() {
 function showFieldErrorWebsite(fieldId, message) {
     const errorEl = document.getElementById(fieldId + 'Error');
     const inputEl = document.getElementById(fieldId);
-    
+
     if (errorEl) {
         errorEl.textContent = message;
         errorEl.style.display = 'block';
     }
-    
+
     if (inputEl) {
         inputEl.style.borderColor = '#dc3545';
         inputEl.style.borderWidth = '2px';
@@ -610,12 +610,12 @@ function showFieldErrorWebsite(fieldId, message) {
 function clearFieldErrorWebsite(fieldId) {
     const errorEl = document.getElementById(fieldId + 'Error');
     const inputEl = document.getElementById(fieldId);
-    
+
     if (errorEl) {
         errorEl.style.display = 'none';
         errorEl.textContent = '';
     }
-    
+
     if (inputEl) {
         inputEl.style.borderColor = '';
         inputEl.style.borderWidth = '';
@@ -627,7 +627,7 @@ function setupReservationFormValidation() {
     // Phone number validation - must be 10 digits
     const phoneInput = document.getElementById('reservationPhone');
     if (phoneInput) {
-        phoneInput.addEventListener('input', function(e) {
+        phoneInput.addEventListener('input', function (e) {
             const phone = e.target.value.trim();
             if (phone === '') {
                 clearFieldErrorWebsite('reservationPhone');
@@ -640,8 +640,8 @@ function setupReservationFormValidation() {
                 }
             }
         });
-        
-        phoneInput.addEventListener('blur', function(e) {
+
+        phoneInput.addEventListener('blur', function (e) {
             const phone = e.target.value.trim();
             if (phone === '') {
                 showFieldErrorWebsite('reservationPhone', 'Phone number is required');
@@ -655,11 +655,11 @@ function setupReservationFormValidation() {
             }
         });
     }
-    
+
     // Customer name validation
     const nameInput = document.getElementById('reservationName');
     if (nameInput) {
-        nameInput.addEventListener('blur', function(e) {
+        nameInput.addEventListener('blur', function (e) {
             const name = e.target.value.trim();
             if (name === '') {
                 showFieldErrorWebsite('reservationName', 'Your name is required');
@@ -671,8 +671,8 @@ function setupReservationFormValidation() {
                 clearFieldErrorWebsite('reservationName');
             }
         });
-        
-        nameInput.addEventListener('input', function(e) {
+
+        nameInput.addEventListener('input', function (e) {
             const name = e.target.value.trim();
             if (name.length > 100) {
                 showFieldErrorWebsite('reservationName', 'Name must be less than 100 characters.');
@@ -681,11 +681,11 @@ function setupReservationFormValidation() {
             }
         });
     }
-    
+
     // Email validation
     const emailInput = document.getElementById('reservationEmail');
     if (emailInput) {
-        emailInput.addEventListener('blur', function(e) {
+        emailInput.addEventListener('blur', function (e) {
             const email = e.target.value.trim();
             if (email !== '') {
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -699,11 +699,11 @@ function setupReservationFormValidation() {
             }
         });
     }
-    
+
     // Number of guests validation
     const guestsInput = document.getElementById('reservationGuests');
     if (guestsInput) {
-        guestsInput.addEventListener('blur', function(e) {
+        guestsInput.addEventListener('blur', function (e) {
             const guests = parseInt(e.target.value) || 0;
             if (guests < 1) {
                 showFieldErrorWebsite('reservationGuests', 'Number of guests must be at least 1.');
@@ -713,8 +713,8 @@ function setupReservationFormValidation() {
                 clearFieldErrorWebsite('reservationGuests');
             }
         });
-        
-        guestsInput.addEventListener('input', function(e) {
+
+        guestsInput.addEventListener('input', function (e) {
             const guests = parseInt(e.target.value) || 0;
             if (guests > 50) {
                 showFieldErrorWebsite('reservationGuests', 'Number of guests cannot exceed 50.');
@@ -723,11 +723,11 @@ function setupReservationFormValidation() {
             }
         });
     }
-    
+
     // Special request validation
     const specialRequestInput = document.getElementById('reservationSpecialRequest');
     if (specialRequestInput) {
-        specialRequestInput.addEventListener('input', function(e) {
+        specialRequestInput.addEventListener('input', function (e) {
             const text = e.target.value.trim();
             if (text.length > 500) {
                 showFieldErrorWebsite('reservationSpecialRequest', 'Special request must be less than 500 characters.');
@@ -736,11 +736,11 @@ function setupReservationFormValidation() {
             }
         });
     }
-    
+
     // Date validation
     const dateInput = document.getElementById('reservationDate');
     if (dateInput) {
-        dateInput.addEventListener('change', function(e) {
+        dateInput.addEventListener('change', function (e) {
             const date = e.target.value;
             if (!date) {
                 showFieldErrorWebsite('reservationDate', 'Reservation date is required');
@@ -765,28 +765,28 @@ function setupReservationForm() {
         console.error('Reservation form not found');
         return;
     }
-    
+
     // Setup real-time validation
     setupReservationFormValidation();
-    
+
     reservationForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const tableId = document.getElementById('selectedTableId').value;
         if (!tableId) {
             showNotification('Please select a table first', 'error');
             return;
         }
-        
+
         const date = document.getElementById('reservationDate').value;
         const timeSlotSelect = document.getElementById('reservationTimeSlot');
         const customTimeInput = document.getElementById('customTimeSlot');
-        
+
         // Get time slot - either from select or custom input
         let timeSlot = '';
         const timeSlotError = document.getElementById('timeSlotError');
         const customTimeError = document.getElementById('customTimeSlotError');
-        
+
         // Clear previous errors
         if (timeSlotError) {
             timeSlotError.style.display = 'none';
@@ -796,7 +796,7 @@ function setupReservationForm() {
             customTimeError.style.display = 'none';
             customTimeError.textContent = '';
         }
-        
+
         if (timeSlotSelect && timeSlotSelect.value === 'custom') {
             if (customTimeInput && customTimeInput.value) {
                 const timeValue = customTimeInput.value;
@@ -836,13 +836,13 @@ function setupReservationForm() {
             showNotification('Please select a time slot or enter a custom time', 'error');
             return;
         }
-        
+
         const guests = parseInt(document.getElementById('reservationGuests').value) || 0;
         const customerName = document.getElementById('reservationName').value.trim();
         const phone = document.getElementById('reservationPhone').value.trim();
         const email = document.getElementById('reservationEmail').value.trim();
         const specialRequest = document.getElementById('reservationSpecialRequest').value.trim();
-        
+
         // Clear all previous errors
         clearFieldErrorWebsite('reservationDate');
         clearFieldErrorWebsite('reservationGuests');
@@ -851,10 +851,10 @@ function setupReservationForm() {
         clearFieldErrorWebsite('reservationEmail');
         clearFieldErrorWebsite('reservationSpecialRequest');
         clearFieldErrorWebsite('reservationMealType');
-        
+
         // Validate all fields
         let hasErrors = false;
-        
+
         // Validate date
         if (!date) {
             showFieldErrorWebsite('reservationDate', 'Reservation date is required');
@@ -868,13 +868,13 @@ function setupReservationForm() {
                 hasErrors = true;
             }
         }
-        
+
         // Validate time slot
         if (!timeSlot) {
             showFieldErrorWebsite('reservationTimeSlot', 'Please select a time slot or enter a custom time');
             hasErrors = true;
         }
-        
+
         // Validate number of guests
         if (guests < 1) {
             showFieldErrorWebsite('reservationGuests', 'Number of guests must be at least 1.');
@@ -883,14 +883,14 @@ function setupReservationForm() {
             showFieldErrorWebsite('reservationGuests', 'Number of guests cannot exceed 50.');
             hasErrors = true;
         }
-        
+
         // Validate capacity
         if (selectedTableCapacity && guests > selectedTableCapacity) {
             showFieldErrorWebsite('reservationGuests', `This table can only accommodate ${selectedTableCapacity} guests. Please select a different table or reduce the number of guests.`);
             showNotification(`This table can only accommodate ${selectedTableCapacity} guests. Please select a different table or reduce the number of guests.`, 'error');
             return;
         }
-        
+
         // Validate customer name
         if (!customerName || customerName.trim() === '') {
             showFieldErrorWebsite('reservationName', 'Your name is required');
@@ -902,7 +902,7 @@ function setupReservationForm() {
             showFieldErrorWebsite('reservationName', 'Name must be less than 100 characters.');
             hasErrors = true;
         }
-        
+
         // Validate phone number
         if (!phone || phone.trim() === '') {
             showFieldErrorWebsite('reservationPhone', 'Phone number is required');
@@ -914,7 +914,7 @@ function setupReservationForm() {
                 hasErrors = true;
             }
         }
-        
+
         // Validate email format if provided
         if (email && email.trim() !== '') {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -923,25 +923,25 @@ function setupReservationForm() {
                 hasErrors = true;
             }
         }
-        
+
         // Validate special request length
         if (specialRequest && specialRequest.trim().length > 500) {
             showFieldErrorWebsite('reservationSpecialRequest', 'Special request must be less than 500 characters.');
             hasErrors = true;
         }
-        
+
         // If there are validation errors, stop submission
         if (hasErrors) {
             showNotification('Please fix the errors in the form', 'error');
             return;
         }
-        
+
         // Check availability before submitting
         try {
             const restaurantId = getRestaurantId();
             const availabilityResponse = await fetch(`../api/check_reservation_availability.php?restaurant_id=${restaurantId}&table_id=${tableId}&reservation_date=${date}&time_slot=${timeSlot}`);
             const availabilityData = await availabilityResponse.json();
-            
+
             if (availabilityData.success && !availabilityData.available) {
                 // Format time for display
                 const [hours, minutes] = timeSlot.split(':');
@@ -953,7 +953,7 @@ function setupReservationForm() {
         } catch (error) {
             console.error('Error checking availability:', error);
         }
-        
+
         const formData = {
             table_id: parseInt(tableId),
             reservation_date: date,
@@ -965,31 +965,31 @@ function setupReservationForm() {
             email: document.getElementById('reservationEmail').value,
             special_request: document.getElementById('reservationSpecialRequest').value
         };
-        
+
         // Validation
         if (!formData.reservation_date) {
             showNotification('Please select a date', 'error');
             return;
         }
-        
+
         if (!formData.time_slot) {
             showNotification('Please select a time slot or enter a custom time', 'error');
             return;
         }
-        
+
         if (!formData.customer_name.trim()) {
             showNotification('Please enter your name', 'error');
             return;
         }
-        
+
         if (!formData.phone.trim()) {
             showNotification('Please enter your phone number', 'error');
             return;
         }
-        
+
         // Show loading
         showNotification('Creating reservation...', 'info');
-        
+
         try {
             const restaurantId = getRestaurantId();
             const response = await fetch(`../api/create_reservation.php?restaurant_id=${restaurantId}`, {
@@ -997,13 +997,13 @@ function setupReservationForm() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 // Close modal
                 document.getElementById('reservationModal').classList.remove('active');
-                
+
                 // Reset form and go back to table selection
                 document.getElementById('reservationForm').reset();
                 backToTableSelection();
@@ -1012,7 +1012,7 @@ function setupReservationForm() {
                     const today = new Date().toISOString().split('T')[0];
                     dateInput.value = today;
                 }
-                
+
                 showNotification('Reservation created successfully! We will confirm your reservation shortly.', 'success');
             } else {
                 showNotification(data.message || 'Failed to create reservation. Please try again.', 'error');
@@ -1025,12 +1025,12 @@ function setupReservationForm() {
 }
 
 // Setup top navigation links to be functional - MUST be defined before DOMContentLoaded
-window.setupTopNavLinks = function() {
+window.setupTopNavLinks = function () {
     // Add click handlers to top nav links
     const navLinks = document.querySelectorAll('.nav-menu .nav-link');
     if (navLinks.length > 0) {
         navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
+            link.addEventListener('click', function (e) {
                 e.preventDefault();
                 const href = this.getAttribute('href');
                 if (href && href.startsWith('#')) {
@@ -1068,7 +1068,7 @@ async function loadRestaurantDetails() {
                         img.loading = 'eager';
                         img.fetchPriority = 'high';
                         img.style.cssText = 'width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-red);';
-                        img.onerror = function() { this.style.display = 'none'; };
+                        img.onerror = function () { this.style.display = 'none'; };
                         logoContainer.insertBefore(img, logoContainer.firstChild);
                     }
                 }
@@ -1096,10 +1096,10 @@ async function loadRestaurantDetails() {
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize currency first (ensures formatCurrency functions can use it)
     initializeCurrency();
-    
+
     // Load restaurant details asynchronously
     loadRestaurantDetails();
-    
+
     // Defer API calls to improve initial render on mobile
     // Use requestIdleCallback if available, otherwise setTimeout
     if ('requestIdleCallback' in window) {
@@ -1113,25 +1113,30 @@ document.addEventListener('DOMContentLoaded', () => {
             loadMenuItems();
         }, 100);
     }
-    
+
     // FORCE HIDE cart summary bar on load - will be shown by updateCartUI if cart has items
     const cartSummaryBar = document.getElementById('cartSummaryBar');
     const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
-    
+
     // Always hide cart bar initially - FORCE HIDE if 0 items
     if (cartSummaryBar) {
         cartSummaryBar.style.display = 'none';
         cartSummaryBar.style.visibility = 'hidden';
         cartSummaryBar.classList.remove('show');
     }
+
+    // Initialize category wrapper position on page load
+    setTimeout(() => {
+        updateCategoryWrapperPosition();
+    }, 100);
     
     // Remove has-cart class if cart is empty
     if (cart.length === 0 || totalItems === 0) {
         document.body.classList.remove('has-cart');
     }
-    
+
     updateCartUI();
-    
+
     // Event listeners
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
@@ -1155,7 +1160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener('keydown', (e) => {
             const suggestionsDiv = document.getElementById('searchSuggestions');
             if (!suggestionsDiv || suggestionsDiv.style.display === 'none') return;
-            
+
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, searchSuggestions.length - 1);
@@ -1175,7 +1180,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
+
     // Add click handler to search button
     const searchBtn = document.querySelector('.search-btn');
     if (searchBtn) {
@@ -1185,7 +1190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await performSearch();
         });
     }
-    
+
     // Also handle Enter key in search input to trigger search
     if (searchInput) {
         searchInput.addEventListener('keypress', (e) => {
@@ -1195,7 +1200,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
+
     // Filter elements removed - no longer needed
     const typeFilter = document.getElementById('typeFilter');
     const categoryFilter = document.getElementById('categoryFilter');
@@ -1205,11 +1210,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (categoryFilter) {
         categoryFilter.addEventListener('change', handleFilter);
     }
-    
+
     // Mobile veg toggle
     const mobileVegToggle = document.getElementById('mobileVegToggle');
     if (mobileVegToggle) {
-        mobileVegToggle.addEventListener('change', function() {
+        mobileVegToggle.addEventListener('change', function () {
             if (this.checked) {
                 currentFilter.type = 'Veg';
             } else {
@@ -1221,10 +1226,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cartIcon').addEventListener('click', toggleCart);
     document.getElementById('closeCart').addEventListener('click', toggleCart);
     document.getElementById('checkoutBtn').addEventListener('click', handleCheckout);
-    
+
     // Close cart on overlay click
     document.getElementById('cartOverlay').addEventListener('click', toggleCart);
-    
+
     // Reservation button event listener
     const reservationBtn = document.getElementById('reservationBtn');
     if (reservationBtn) {
@@ -1232,7 +1237,7 @@ document.addEventListener('DOMContentLoaded', () => {
             openReservationModal();
         });
     }
-    
+
     // Close Reservation Modal
     const closeReservationModal = document.getElementById('closeReservationModal');
     if (closeReservationModal) {
@@ -1241,31 +1246,31 @@ document.addEventListener('DOMContentLoaded', () => {
             backToTableSelection();
         });
     }
-    
+
     // Setup reservation form
     setupReservationForm();
-    
+
     // Setup capacity validation
     setupCapacityValidation();
-    
+
     // Setup top nav links
     setupTopNavLinks();
-    
+
     // Setup profile modal close button
     const closeProfileModalBtn = document.getElementById('closeProfileModal');
     if (closeProfileModalBtn) {
         closeProfileModalBtn.addEventListener('click', closeProfileModal);
     }
-    
+
     // Setup profile form
     setupProfileForm();
-    
+
     // Setup item modal close button
     const closeItemModalBtn = document.getElementById('closeItemModal');
     if (closeItemModalBtn) {
         closeItemModalBtn.addEventListener('click', closeItemModal);
     }
-    
+
     // Close item modal on Escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -1281,11 +1286,11 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupCapacityValidation() {
     const guestsInput = document.getElementById('reservationGuests');
     const capacityWarning = document.getElementById('capacityWarning');
-    
+
     if (guestsInput && capacityWarning) {
-        guestsInput.addEventListener('input', function() {
+        guestsInput.addEventListener('input', function () {
             const guests = parseInt(this.value) || 0;
-            
+
             if (selectedTableCapacity && guests > selectedTableCapacity) {
                 capacityWarning.innerHTML = `<span style="font-weight: 600;">⚠️ Only ${selectedTableCapacity} seats available</span> for this table. Please reduce the number of guests.`;
                 capacityWarning.style.display = 'block';
@@ -1295,8 +1300,8 @@ function setupCapacityValidation() {
                 this.setCustomValidity('');
             }
         });
-        
-        guestsInput.addEventListener('change', function() {
+
+        guestsInput.addEventListener('change', function () {
             const guests = parseInt(this.value) || 0;
             if (selectedTableCapacity && guests > selectedTableCapacity) {
                 this.value = selectedTableCapacity;
@@ -1315,7 +1320,7 @@ function scrollToSection(sectionId, element) {
     if (element) {
         element.classList.add('active');
     }
-    
+
     // Update top nav active state
     document.querySelectorAll('.nav-menu .nav-link').forEach(link => {
         link.classList.remove('active');
@@ -1324,7 +1329,7 @@ function scrollToSection(sectionId, element) {
     if (topNavLink) {
         topNavLink.classList.add('active');
     }
-    
+
     // Scroll to section
     const section = document.getElementById(sectionId);
     if (section) {
@@ -1340,7 +1345,7 @@ function focusSearch(element) {
     if (element) {
         element.classList.add('active');
     }
-    
+
     // Focus search input
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
@@ -1359,7 +1364,7 @@ function openProfile(element, e) {
         e.preventDefault();
         e.stopPropagation();
     }
-    
+
     // Update active state
     document.querySelectorAll('.bottom-nav-item').forEach(item => {
         item.classList.remove('active');
@@ -1367,7 +1372,7 @@ function openProfile(element, e) {
     if (element) {
         element.classList.add('active');
     }
-    
+
     // Show profile modal
     openProfileModal();
 }
@@ -1379,21 +1384,21 @@ function getRestaurantId() {
     if (window.websiteRestaurantId) {
         return window.websiteRestaurantId;
     }
-    
+
     // Secondary source: data attribute on body (set by PHP)
     const body = document.body;
     if (body && body.dataset && body.dataset.restaurantId) {
         window.websiteRestaurantId = body.dataset.restaurantId;
         return window.websiteRestaurantId;
     }
-    
+
     // Fallback: meta tag (also set by PHP)
     const metaRestaurant = document.querySelector('meta[name="restaurant-id"]');
     if (metaRestaurant && metaRestaurant.content) {
         window.websiteRestaurantId = metaRestaurant.content;
         return window.websiteRestaurantId;
     }
-    
+
     // Final fallback: query parameter (may not exist for clean URLs)
     const urlParams = new URLSearchParams(window.location.search);
     const restaurantIdFromUrl = urlParams.get('restaurant_id');
@@ -1401,7 +1406,7 @@ function getRestaurantId() {
         window.websiteRestaurantId = restaurantIdFromUrl;
         return restaurantIdFromUrl;
     }
-    
+
     // Absolute fallback - should rarely be used
     return 'RES001';
 }
@@ -1412,14 +1417,14 @@ async function loadMenus() {
         const restaurantId = getRestaurantId();
         const response = await fetch(`api.php?action=getMenus&restaurant_id=${encodeURIComponent(restaurantId)}`);
         const data = await response.json();
-        
+
         // Check for error
         if (data.error) {
             console.error('API Error:', data.error);
             document.getElementById('menuGrid').innerHTML = '<div class="loading">Error loading menu. Please check restaurant ID.</div>';
             return;
         }
-        
+
         // Handle both array response and wrapped response
         if (Array.isArray(data)) {
             menus = data;
@@ -1428,26 +1433,31 @@ async function loadMenus() {
         } else {
             menus = [];
         }
-        
+
         console.log('Loaded menus for mobile:', menus.length, menus);
         renderMenuTabs();
-        
-        // Load categories from database
+
+        // Load categories from database (for desktop filter only, not for mobile)
         const catResponse = await fetch(`api.php?action=getCategories&restaurant_id=${encodeURIComponent(restaurantId)}`);
         const catData = await catResponse.json();
         const categories = Array.isArray(catData) ? catData : [];
         populateCategoryFilter(categories);
-        
-        // Render mobile item categories (Breakfast, Snacks, etc.) with images from database
-        if (categories.length > 0) {
-            renderMobileCategories(categories);
+
+        // Always show menu categories (menus added by user), not subcategories
+        if (menus.length > 0) {
+            renderMobileMenuCategories(menus);
         } else {
-            console.warn('No categories found to display');
-            // Fallback to menus if no categories
-            if (menus.length > 0) {
-                renderMobileMenuCategories(menus);
-            }
+            console.warn('No menus found to display');
         }
+        
+        // Recalculate position after categories are rendered
+        setTimeout(() => {
+            updateCategoryWrapperPosition();
+            // Also update after a bit more delay to ensure all elements are rendered
+            setTimeout(() => {
+                updateCategoryWrapperPosition();
+            }, 200);
+        }, 100);
     } catch (error) {
         console.error('Error loading menus:', error);
         document.getElementById('menuGrid').innerHTML = '<div class="loading">Error loading menu. Please try again.</div>';
@@ -1457,21 +1467,38 @@ async function loadMenus() {
 // Render menu tabs
 function renderMenuTabs() {
     const menuTabs = document.getElementById('menuTabs');
-    const allBtn = menuTabs.querySelector('.category-btn');
-    menuTabs.innerHTML = allBtn.outerHTML;
+    if (!menuTabs) return;
     
+    // Clear existing buttons but keep the container
+    menuTabs.innerHTML = '';
+
+    // Create "All Items" button (active by default on desktop)
+    const allButton = document.createElement('button');
+    allButton.className = 'category-btn active';
+    allButton.setAttribute('data-menu', 'all');
+    allButton.textContent = 'All Items';
+    // Apply active styling for desktop
+    const primaryRed = getComputedStyle(document.documentElement).getPropertyValue('--primary-red').trim() || '#F70000';
+    allButton.style.backgroundColor = primaryRed;
+    allButton.style.color = '#FFFFFF';
+    allButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        filterByMenu(null, this);
+    });
+    menuTabs.appendChild(allButton);
+
+    // Create menu category buttons
     menus.forEach(menu => {
         const btn = document.createElement('button');
         btn.className = 'category-btn';
         btn.textContent = menu.menu_name;
-        btn.dataset.menuId = menu.id;
-        btn.addEventListener('click', () => filterByMenu(menu.id));
+        btn.setAttribute('data-menu-id', menu.id);
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            filterByMenu(menu.id, this);
+        });
         menuTabs.appendChild(btn);
     });
-    
-    // Make all button active
-    menuTabs.querySelector('.category-btn').classList.add('active');
-    menuTabs.querySelector('.category-btn').addEventListener('click', () => filterByMenu(null));
 }
 
 // Populate category filter
@@ -1490,48 +1517,68 @@ function populateCategoryFilter(categories) {
 // Render mobile menu categories (Breakfast, Snacks, etc.) with images
 function renderMobileMenuCategories(menus) {
     const mobileCategoryScroll = document.getElementById('mobileCategoryScroll');
+    const mobileCategoryScrollWrapper = document.getElementById('mobileCategoryScrollWrapper');
+    
     if (!mobileCategoryScroll) {
         console.error('mobileCategoryScroll element not found');
         return;
     }
-    
+
+    // Show the wrapper when menu categories are available
+    if (mobileCategoryScrollWrapper && menus && menus.length > 0) {
+        mobileCategoryScrollWrapper.style.display = 'block';
+        // Ensure the scroll container is visible
+        mobileCategoryScroll.style.display = 'flex';
+        // Show mobile header when categories are visible
+        checkAndShowMobileHeader();
+    } else {
+        // Hide header if no categories
+        const header = document.getElementById('mobileCategoryHeader');
+        if (header) {
+            header.style.display = 'none';
+        }
+        if (mobileCategoryScrollWrapper) {
+            mobileCategoryScrollWrapper.style.display = 'none';
+        }
+    }
+
     // Clear existing
     mobileCategoryScroll.innerHTML = '';
-    
-    // Add "All" button first
+
+    // Add "All" button first (with image for mobile)
     const allItem = document.createElement('div');
-    allItem.className = 'mobile-category-item active';
+    allItem.className = 'mobile-category-item';
     allItem.dataset.menu = 'all';
     allItem.onclick = () => selectMobileMenu(null, 'All');
-    
+
     const allImageDiv = document.createElement('div');
     allImageDiv.className = 'mobile-category-image';
     const allIcon = document.createElement('span');
     allIcon.className = 'material-symbols-rounded';
     allIcon.textContent = 'restaurant_menu';
     allImageDiv.appendChild(allIcon);
-    
+
     const allLabel = document.createElement('span');
     allLabel.className = 'mobile-category-label';
     allLabel.textContent = 'All';
-    
+
     allItem.appendChild(allImageDiv);
     allItem.appendChild(allLabel);
     mobileCategoryScroll.appendChild(allItem);
-    
-    // Add each menu category
+
+    // Add each menu category (with images for mobile)
     menus.forEach(menu => {
         const menuName = menu.menu_name || 'Menu';
         const menuImage = menu.menu_image || null;
-        
+
         const categoryItem = document.createElement('div');
         categoryItem.className = 'mobile-category-item';
-        categoryItem.dataset.menu = menu.id;
+        categoryItem.dataset.menu = String(menu.id);
         categoryItem.onclick = () => selectMobileMenu(menu.id, menuName);
-        
+
         const imageDiv = document.createElement('div');
         imageDiv.className = 'mobile-category-image';
-        
+
         if (menuImage) {
             const img = document.createElement('img');
             // Handle database-stored images
@@ -1543,7 +1590,7 @@ function renderMobileMenuCategories(menus) {
                 img.src = `api/image.php?path=${encodeURIComponent(menuImage)}`;
             }
             img.alt = menuName;
-            img.onerror = function() {
+            img.onerror = function () {
                 this.style.display = 'none';
                 const icon = document.createElement('span');
                 icon.className = 'material-symbols-rounded';
@@ -1557,82 +1604,144 @@ function renderMobileMenuCategories(menus) {
             icon.textContent = 'restaurant';
             imageDiv.appendChild(icon);
         }
-        
+
         const label = document.createElement('span');
         label.className = 'mobile-category-label';
         // Truncate long names but keep it readable
         const displayName = menuName.length > 15 ? menuName.substring(0, 13) + '...' : menuName;
         label.textContent = displayName;
-        
+
         categoryItem.appendChild(imageDiv);
         categoryItem.appendChild(label);
         mobileCategoryScroll.appendChild(categoryItem);
     });
+    
+    // CRITICAL: Recalculate position after menu categories are rendered
+    requestAnimationFrame(() => {
+        updateCategoryWrapperPosition();
+        enforceCategoryPosition();
+        checkAndShowMobileHeader();
+        
+        // ALWAYS re-apply active state after rendering
+        applyActiveStateToMenuCategories();
+        
+        setTimeout(() => {
+            updateCategoryWrapperPosition();
+            enforceCategoryPosition();
+            checkAndShowMobileHeader();
+            
+            // Re-apply active state again after delay
+            applyActiveStateToMenuCategories();
+        }, 50);
+    });
+}
+
+// Helper function to apply active state to menu categories
+function applyActiveStateToMenuCategories() {
+    const selectedId = window.selectedMenuId;
+    
+    // Remove active from all items first
+    document.querySelectorAll('.mobile-category-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // If a menu is selected, find and highlight it
+    if (selectedId !== undefined && selectedId !== null && selectedId !== '') {
+        const selectedIdStr = String(selectedId);
+        
+        // Try querySelector first
+        let selectedItem = document.querySelector(`.mobile-category-item[data-menu="${selectedIdStr}"]`);
+        
+        // If not found, iterate through all items to find match
+        if (!selectedItem) {
+            document.querySelectorAll('.mobile-category-item').forEach(item => {
+                const itemMenuId = String(item.dataset.menu || '');
+                if (itemMenuId === selectedIdStr) {
+                    selectedItem = item;
+                }
+            });
+        }
+        
+        if (selectedItem) {
+            selectedItem.classList.add('active');
+            return;
+        }
+    }
+    
+    // Don't highlight anything if no menu is selected - leave all buttons unhighlighted
 }
 
 // Render mobile item categories with images (for when a menu is selected)
 function renderMobileCategories(categories) {
     const mobileCategoryScroll = document.getElementById('mobileCategoryScroll');
-    if (!mobileCategoryScroll) return;
+    const mobileCategoryScrollWrapper = document.getElementById('mobileCategoryScrollWrapper');
     
+    if (!mobileCategoryScroll) return;
+
+    // Show the wrapper when categories are available
+    if (mobileCategoryScrollWrapper && categories && categories.length > 0) {
+        mobileCategoryScrollWrapper.style.display = 'block';
+        // Show mobile header when categories are visible
+        checkAndShowMobileHeader();
+    } else {
+        // Hide header if no categories
+        const header = document.getElementById('mobileCategoryHeader');
+        if (header) {
+            header.style.display = 'none';
+        }
+    }
+
     // Clear existing
     mobileCategoryScroll.innerHTML = '';
-    
+
     // Add "All" button
     const allItem = document.createElement('div');
     allItem.className = 'mobile-category-item active';
     allItem.dataset.category = 'all';
     allItem.onclick = () => selectMobileCategory('all');
-    
+
     const allImageDiv = document.createElement('div');
     allImageDiv.className = 'mobile-category-image';
     const allIcon = document.createElement('span');
     allIcon.className = 'material-symbols-rounded';
     allIcon.textContent = 'restaurant_menu';
     allImageDiv.appendChild(allIcon);
-    
+
     const allLabel = document.createElement('span');
     allLabel.className = 'mobile-category-label';
     allLabel.textContent = 'All';
-    
+
     allItem.appendChild(allImageDiv);
     allItem.appendChild(allLabel);
     mobileCategoryScroll.appendChild(allItem);
-    
+
     // Add each category
     categories.forEach(category => {
         const categoryName = typeof category === 'string' ? category : category.name;
         const categoryImage = category.image || null;
-        const categoryId = category.id || null;
-        
+
         const categoryItem = document.createElement('div');
         categoryItem.className = 'mobile-category-item';
         categoryItem.dataset.category = categoryName;
-        // When clicking an item category, filter by that category
+
+        // All categories in renderMobileCategories are item categories - just filter items
         categoryItem.onclick = () => selectMobileCategory(categoryName);
-        
+
         const imageDiv = document.createElement('div');
         imageDiv.className = 'mobile-category-image';
-        
+
         if (categoryImage) {
             const img = document.createElement('img');
-            // Handle database-stored images or file paths
-            // Categories come from menu table, so use menu image API
+            // Handle database-stored images or file paths - all are item categories
             if (categoryImage.startsWith('db:')) {
-                // For db: prefixed images, use menu ID
-                const menuId = category.id || category.menuId;
-                if (menuId) {
-                    img.src = `api/image.php?type=menu&id=${menuId}`;
-                } else {
-                    img.src = `api/image.php?path=${encodeURIComponent(categoryImage)}`;
-                }
+                img.src = `api/image.php?path=${encodeURIComponent(categoryImage)}`;
             } else if (categoryImage.startsWith('http')) {
                 img.src = categoryImage;
             } else {
                 img.src = `api/image.php?path=${encodeURIComponent(categoryImage)}`;
             }
             img.alt = categoryName;
-            img.onerror = function() {
+            img.onerror = function () {
                 this.style.display = 'none';
                 const icon = document.createElement('span');
                 icon.className = 'material-symbols-rounded';
@@ -1646,59 +1755,61 @@ function renderMobileCategories(categories) {
             icon.textContent = 'restaurant';
             imageDiv.appendChild(icon);
         }
-        
+
         const label = document.createElement('span');
         label.className = 'mobile-category-label';
         label.textContent = categoryName.length > 12 ? categoryName.substring(0, 10) + '...' : categoryName;
-        
+
         categoryItem.appendChild(imageDiv);
         categoryItem.appendChild(label);
         mobileCategoryScroll.appendChild(categoryItem);
+    });
+    
+    // CRITICAL: Recalculate position after categories are rendered
+    requestAnimationFrame(() => {
+        updateCategoryWrapperPosition();
+        enforceCategoryPosition();
+        checkAndShowMobileHeader();
+        
+        setTimeout(() => {
+            updateCategoryWrapperPosition();
+            enforceCategoryPosition();
+            checkAndShowMobileHeader();
+        }, 50);
     });
 }
 
 // Select mobile menu (Breakfast, Snacks, etc.)
 function selectMobileMenu(menuId, menuName) {
-    // Update active state
-    document.querySelectorAll('.mobile-category-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    const selectedItem = document.querySelector(`.mobile-category-item[data-menu="${menuId}"]`);
-    if (selectedItem) {
-        selectedItem.classList.add('active');
-    }
-    
+    // Store selected menu ID for highlighting after render
+    // Convert to string for consistent comparison
+    window.selectedMenuId = menuId !== null && menuId !== undefined ? String(menuId) : null;
+
     // Update header title
     const title = document.getElementById('mobileCategoryTitle');
     if (title) {
         title.textContent = menuName;
     }
-    
-    // Show category card (mobile header)
-    const header = document.getElementById('mobileCategoryHeader');
-    if (header) {
-        header.style.display = 'flex';
-        // Calculate header height and position category images right below it
-        setTimeout(() => {
-            const headerHeight = header.offsetHeight;
-            const categoryWrapper = document.querySelector('.mobile-category-scroll-wrapper');
-            if (categoryWrapper) {
-                categoryWrapper.style.top = `${headerHeight}px`;
-            }
-        }, 10);
-    }
-    
-    // Filter by menu
+
+    // Show category card (mobile header) when categories are visible
+    checkAndShowMobileHeader();
+
+    // Filter by menu - just filter items, don't load subcategories
     filterByMenu(menuId);
+
+    // Always keep showing menu categories (never load subcategories)
+    // All menu categories stay visible, just filter items by selected menu
+    renderMobileMenuCategories(menus);
+
+    // Re-apply active state after rendering with multiple attempts to ensure it sticks
+    setTimeout(() => {
+        applyActiveStateToMenuCategories();
+    }, 10);
     
-    // Load categories for this menu and show them (only if menuId is not null)
-    if (menuId) {
-        loadCategoriesForMenu(menuId);
-    } else {
-        // If "All" is selected, show menu categories again
-        renderMobileMenuCategories(menus);
-    }
-    
+    setTimeout(() => {
+        applyActiveStateToMenuCategories();
+    }, 100);
+
     // Scroll to menu section
     const menuSection = document.getElementById('menu');
     if (menuSection) {
@@ -1706,34 +1817,25 @@ function selectMobileMenu(menuId, menuName) {
     }
 }
 
-// Load categories for a specific menu
+// Load categories for a specific menu - DISABLED: We don't want subcategories
+// This function is kept for compatibility but does nothing
 async function loadCategoriesForMenu(menuId) {
-    try {
-        const restaurantId = getRestaurantId();
-        let url = `api.php?action=getCategories&restaurant_id=${encodeURIComponent(restaurantId)}`;
-        if (menuId) {
-            url += `&menu_id=${encodeURIComponent(menuId)}`;
-        }
-        const response = await fetch(url);
-        const catData = await response.json();
-        const categories = Array.isArray(catData) ? catData : [];
-        renderMobileCategories(categories);
-    } catch (error) {
-        console.error('Error loading categories for menu:', error);
-    }
+    // DISABLED: We don't want to show subcategories when clicking on menus
+    // Just keep showing menu categories instead
+    return;
 }
 
-// Scroll mobile categories
-function scrollMobileCategories(direction) {
+// Scroll categories horizontally
+function scrollCategories(direction) {
     const scrollContainer = document.getElementById('mobileCategoryScroll');
     if (!scrollContainer) return;
-    
-    const scrollAmount = 200;
+
+    const scrollAmount = 180;
     const currentScroll = scrollContainer.scrollLeft;
-    const newScroll = direction === 'left' 
-        ? currentScroll - scrollAmount 
+    const newScroll = direction === 'left'
+        ? Math.max(0, currentScroll - scrollAmount)
         : currentScroll + scrollAmount;
-    
+
     scrollContainer.scrollTo({
         left: newScroll,
         behavior: 'smooth'
@@ -1750,23 +1852,20 @@ function selectMobileCategory(categoryName) {
     if (selectedItem) {
         selectedItem.classList.add('active');
     }
-    
+
     // Update header title
     const title = document.getElementById('mobileCategoryTitle');
     if (title) {
         title.textContent = categoryName === 'all' ? 'Menu' : categoryName;
     }
-    
-    // Show mobile header
-    const header = document.getElementById('mobileCategoryHeader');
-    if (header) {
-        header.style.display = 'flex';
-    }
-    
+
+    // Show mobile header when categories are visible
+    checkAndShowMobileHeader();
+
     // Filter menu items
     currentFilter.category = categoryName === 'all' ? null : categoryName;
     loadMenuItems(currentFilter);
-    
+
     // Scroll to menu section
     const menuSection = document.getElementById('menu');
     if (menuSection) {
@@ -1774,37 +1873,481 @@ function selectMobileCategory(categoryName) {
     }
 }
 
-// Go back to categories view
-function goBackToCategories() {
-    // If we're viewing item categories, go back to menu categories
-    const currentCategoryItem = document.querySelector('.mobile-category-item.active[data-category]');
-    if (currentCategoryItem) {
-        // We're in item categories, go back to menu categories
-        renderMobileMenuCategories(menus);
-        const header = document.getElementById('mobileCategoryHeader');
-        if (header) {
+// Check if categories are visible and show mobile header accordingly
+function checkAndShowMobileHeader() {
+    const header = document.getElementById('mobileCategoryHeader');
+    const categoryWrapper = document.getElementById('mobileCategoryScrollWrapper');
+    const navbar = document.querySelector('.navbar');
+    
+    if (!header) return;
+    
+    const isMobile = window.innerWidth <= 768;
+    
+    // Show header if categories wrapper is visible OR on desktop (always show on desktop)
+    const categoriesVisible = categoryWrapper && categoryWrapper.style.display !== 'none';
+    
+    if (categoriesVisible || !isMobile) {
+        // Show header when categories are visible or on desktop
+        header.style.display = 'flex';
+        // Keep navbar visible - don't hide it
+        if (navbar) {
+            navbar.style.display = '';
+        }
+        updateCategoryWrapperPosition();
+    } else {
+        // Hide header when categories are not visible (mobile only)
+        if (isMobile) {
             header.style.display = 'none';
-            // Reset category wrapper sticky position when header is hidden
-            const categoryWrapper = document.querySelector('.mobile-category-scroll-wrapper');
-            if (categoryWrapper) {
-                categoryWrapper.style.top = '0';
+        }
+        // Keep navbar visible
+        if (navbar) {
+            navbar.style.display = '';
+        }
+        updateCategoryWrapperPosition();
+    }
+}
+
+// Update category wrapper sticky position based on header visibility
+function updateCategoryWrapperPosition() {
+    const navbar = document.querySelector('.navbar');
+    const header = document.getElementById('mobileCategoryHeader');
+    const categoryWrapper = document.getElementById('mobileCategoryScrollWrapper');
+    const menuItemsSection = document.querySelector('.menu-items');
+    
+    // Check if header is visible
+    const headerVisible = header && header.style.display !== 'none' && 
+                         window.getComputedStyle(header).display !== 'none';
+    
+    // Check if navbar is visible
+    const navbarVisible = navbar && navbar.style.display !== 'none' && 
+                         window.getComputedStyle(navbar).display !== 'none';
+    
+    const isDesktop = window.innerWidth > 768;
+    
+    if (categoryWrapper) {
+        if (headerVisible) {
+            const headerHeight = header.offsetHeight || 60;
+            // When header is visible and navbar is hidden, header sticks at top
+            if (!navbarVisible) {
+                header.style.top = '0px';
+                // Category wrapper sticks below header
+                categoryWrapper.style.top = `${headerHeight}px`;
+            } else {
+                // If navbar is still visible
+                const navbarHeight = navbar.offsetHeight || 70;
+                header.style.top = `${navbarHeight}px`;
+                categoryWrapper.style.top = `${navbarHeight + headerHeight}px`;
+            }
+        } else {
+            // Header not visible
+            if (navbarVisible) {
+                const navbarHeight = navbar.offsetHeight || 70;
+                categoryWrapper.style.top = `${navbarHeight}px`;
+            } else {
+                categoryWrapper.style.top = '0px';
             }
         }
-        filterByMenu(null);
-        return;
     }
     
-    // Otherwise, just hide header and reset
+    // Update header, categories and menu items section sticky positions (both desktop and mobile)
+    let headerTop = 0;
+    
+    if (navbarVisible) {
+        headerTop = navbar.offsetHeight || 70;
+    }
+    
+    // Set header sticky position
+    if (headerVisible && header) {
+        header.style.top = `${headerTop}px`;
+    }
+    
+    const categoriesSection = document.querySelector('.categories');
+    let categoriesTop = headerTop;
+    
+    if (headerVisible) {
+        categoriesTop += header.offsetHeight || 60;
+    }
+    
+    // Set categories section sticky position (desktop only)
+    if (categoriesSection && isDesktop) {
+        categoriesSection.style.top = `${categoriesTop}px`;
+    }
+    
+    // Update menu items section sticky position (below categories/header) - both desktop and mobile
+    if (menuItemsSection) {
+        let menuItemsTop = categoriesTop;
+        
+        // On desktop, add categories section height
+        if (isDesktop && categoriesSection && categoriesSection.offsetParent !== null) {
+            const categoriesHeight = categoriesSection.offsetHeight || categoriesSection.scrollHeight || 0;
+            menuItemsTop += categoriesHeight;
+        }
+        
+        // On mobile, if category wrapper is visible, add its height
+        if (!isDesktop && categoryWrapper && categoryWrapper.style.display !== 'none') {
+            const wrapperHeight = categoryWrapper.offsetHeight || 0;
+            menuItemsTop += wrapperHeight;
+        }
+        
+        menuItemsSection.style.top = `${menuItemsTop}px`;
+        // Ensure it's sticky
+        menuItemsSection.style.position = 'sticky';
+    }
+    
+    // Also call the old function for compatibility
+    setCategoriesStickyTop();
+}
+
+function enforceCategoryPosition() {
+    setCategoriesStickyTop();
+}
+
+// Helper function to update category wrapper sticky position based on header visibility - OLD VERSION
+function updateCategoryWrapperPosition_OLD() {
     const header = document.getElementById('mobileCategoryHeader');
+    const categoryWrapper = document.querySelector('.mobile-category-scroll-wrapper');
+    const heroSection = document.querySelector('.hero');
+    const bannerSection = document.querySelector('.banner-section');
+    const navbar = document.querySelector('.navbar');
+    
+    if (!categoryWrapper) return;
+    
+    // Calculate total height of all sections above category wrapper
+    // This includes: navbar, hero section, banner section, and mobile header (if visible)
+    let totalHeightAbove = 0;
+    
+    // Add navbar height if it exists and is visible (on mobile it might be hidden)
+    if (navbar && navbar.offsetParent !== null) {
+        const navStyle = window.getComputedStyle(navbar);
+        if (navStyle.display !== 'none' && navStyle.visibility !== 'hidden') {
+            totalHeightAbove += navbar.offsetHeight;
+        }
+    }
+    
+    // Add hero section height if it exists and is visible
+    if (heroSection && heroSection.offsetParent !== null) {
+        const heroStyle = window.getComputedStyle(heroSection);
+        if (heroStyle.display !== 'none' && heroStyle.visibility !== 'hidden') {
+            totalHeightAbove += heroSection.offsetHeight;
+        }
+    }
+    
+    // Add banner section height if it exists and is visible
+    if (bannerSection && bannerSection.offsetParent !== null) {
+        const bannerStyle = window.getComputedStyle(bannerSection);
+        if (bannerStyle.display !== 'none' && bannerStyle.visibility !== 'hidden') {
+            totalHeightAbove += bannerSection.offsetHeight;
+        }
+    }
+    
+    // Check if mobile header is visible
+    const isHeaderVisible = header && 
+                           header.style.display !== 'none' && 
+                           header.offsetParent !== null &&
+                           window.getComputedStyle(header).display !== 'none';
+    
+    if (isHeaderVisible) {
+        // Header is visible - add its height to total
+        const headerHeight = header.offsetHeight;
+        totalHeightAbove += headerHeight;
+        
+        // Use requestAnimationFrame for more accurate measurement
+        requestAnimationFrame(() => {
+            const headerRect = header.getBoundingClientRect();
+            const heroRect = heroSection ? heroSection.getBoundingClientRect() : { bottom: 0 };
+            const bannerRect = bannerSection ? bannerSection.getBoundingClientRect() : { bottom: 0 };
+            const navRect = navbar ? navbar.getBoundingClientRect() : { bottom: 0 };
+            const categoryRect = categoryWrapper.getBoundingClientRect();
+            
+            // Find the bottom of the lowest section above (the white line)
+            const bottomOfSectionsAbove = Math.max(
+                navRect.bottom,
+                heroRect.bottom,
+                bannerRect.bottom,
+                headerRect.bottom
+            );
+            
+            // CRITICAL: Never allow category to go above the white line
+            const requiredTop = Math.max(totalHeightAbove, 0);
+            
+            // Always enforce position - keep it stuck below all sections above
+            categoryWrapper.style.setProperty('top', `${requiredTop}px`, 'important');
+            categoryWrapper.style.setProperty('position', 'sticky', 'important');
+            categoryWrapper.style.setProperty('z-index', '1003', 'important');
+            categoryWrapper.style.setProperty('background', '#ffffff', 'important');
+            categoryWrapper.style.setProperty('width', '100%', 'important');
+            
+            // Store the required top value for scroll enforcement
+            categoryWrapper.dataset.requiredTop = totalHeightAbove;
+            
+            // Double-check after a frame to ensure it didn't slip above the white line
+            requestAnimationFrame(() => {
+                const newCategoryRect = categoryWrapper.getBoundingClientRect();
+                const newHeaderRect = header.getBoundingClientRect();
+                const newHeroRect = heroSection ? heroSection.getBoundingClientRect() : { bottom: 0 };
+                const newBannerRect = bannerSection ? bannerSection.getBoundingClientRect() : { bottom: 0 };
+                
+                const newBottomOfSectionsAbove = Math.max(
+                    newHeroRect.bottom,
+                    newBannerRect.bottom,
+                    newHeaderRect.bottom
+                );
+                
+                // If category moved above the white line, force it back down
+                if (newCategoryRect.top < newBottomOfSectionsAbove) {
+                    categoryWrapper.style.setProperty('top', `${totalHeightAbove}px`, 'important');
+                    categoryWrapper.style.setProperty('position', 'sticky', 'important');
+                    categoryWrapper.style.setProperty('background', '#ffffff', 'important');
+                    categoryWrapper.style.setProperty('z-index', '1003', 'important');
+                }
+            });
+        });
+    } else {
+        // Header is hidden - position below hero and banner only
+        requestAnimationFrame(() => {
+            const requiredTop = Math.max(totalHeightAbove, 0);
+            categoryWrapper.style.setProperty('top', `${requiredTop}px`, 'important');
+            categoryWrapper.style.setProperty('position', 'sticky', 'important');
+            categoryWrapper.style.setProperty('z-index', '1003', 'important');
+            categoryWrapper.style.setProperty('background', '#ffffff', 'important');
+            categoryWrapper.style.setProperty('width', '100%', 'important');
+            categoryWrapper.dataset.requiredTop = totalHeightAbove;
+            
+            // Double-check to prevent going above the white line
+            requestAnimationFrame(() => {
+                const categoryRect = categoryWrapper.getBoundingClientRect();
+                const heroRect = heroSection ? heroSection.getBoundingClientRect() : { bottom: 0 };
+                const bannerRect = bannerSection ? bannerSection.getBoundingClientRect() : { bottom: 0 };
+                const navRect = navbar ? navbar.getBoundingClientRect() : { bottom: 0 };
+                
+                const bottomOfSectionsAbove = Math.max(navRect.bottom, heroRect.bottom, bannerRect.bottom);
+                
+                if (categoryRect.top < bottomOfSectionsAbove) {
+                    categoryWrapper.style.setProperty('top', `${totalHeightAbove}px`, 'important');
+                    categoryWrapper.style.setProperty('position', 'sticky', 'important');
+                    categoryWrapper.style.setProperty('background', '#ffffff', 'important');
+                    categoryWrapper.style.setProperty('z-index', '1003', 'important');
+                }
+            });
+        });
+    }
+}
+
+// Recalculate position on window resize (in case header height changes)
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        updateCategoryWrapperPosition();
+    }, 100);
+});
+
+// Watch for DOM changes that might affect layout (e.g., images loading, content added)
+// This ensures position is recalculated after data is fetched and rendered
+const observer = new MutationObserver((mutations) => {
+    let shouldUpdate = false;
+    mutations.forEach((mutation) => {
+        // Check if nodes were added to menu grid or category scroll
+        if (mutation.addedNodes.length > 0) {
+            for (let node of mutation.addedNodes) {
+                if (node.nodeType === 1) { // Element node
+                    const menuGrid = document.getElementById('menuGrid');
+                    const categoryScroll = document.getElementById('mobileCategoryScroll');
+                    if ((menuGrid && menuGrid.contains(node)) || 
+                        (categoryScroll && categoryScroll.contains(node))) {
+                        shouldUpdate = true;
+                        break;
+                    }
+                }
+            }
+        }
+    });
+    
+    if (shouldUpdate) {
+        // Immediately update position when DOM changes
+        requestAnimationFrame(() => {
+            updateCategoryWrapperPosition();
+            enforceCategoryPosition();
+        });
+        
+        // Also update after a short delay to catch layout changes
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            updateCategoryWrapperPosition();
+            enforceCategoryPosition();
+        }, 50);
+    }
+});
+
+// Start observing when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    const menuGrid = document.getElementById('menuGrid');
+    const categoryScroll = document.getElementById('mobileCategoryScroll');
+    
+    if (menuGrid) {
+        observer.observe(menuGrid, { childList: true, subtree: true });
+    }
+    if (categoryScroll) {
+        observer.observe(categoryScroll, { childList: true, subtree: true });
+    }
+});
+
+// Simple function to set sticky top position for categories
+function setCategoriesStickyTop() {
+    const stickyEl = document.getElementById('mobileCatImagesWrapper');
+    if (!stickyEl) return;
+    
+    const navbar = document.querySelector('.navbar');
+    const hero = document.querySelector('.hero');
+    const banner = document.querySelector('.banner-section');
+    const mobileHeader = document.getElementById('mobileCategoryHeader');
+    
+    let totalHeight = 0;
+    
+    // Calculate height of sections above
+    if (navbar && navbar.offsetParent !== null) {
+        const style = window.getComputedStyle(navbar);
+        if (style.display !== 'none') totalHeight += navbar.offsetHeight;
+    }
+    
+    if (hero && hero.offsetParent !== null) {
+        const style = window.getComputedStyle(hero);
+        if (style.display !== 'none') totalHeight += hero.offsetHeight;
+    }
+    
+    if (banner && banner.offsetParent !== null) {
+        const style = window.getComputedStyle(banner);
+        if (style.display !== 'none') totalHeight += banner.offsetHeight;
+    }
+    
+    // If mobile header is visible, position categories directly below it
+    if (mobileHeader && mobileHeader.style.display !== 'none') {
+        const style = window.getComputedStyle(mobileHeader);
+        if (style.display !== 'none') {
+            totalHeight += mobileHeader.offsetHeight;
+            // Position directly below header (no gap)
+            stickyEl.style.top = `${totalHeight}px`;
+            stickyEl.style.marginTop = '0';
+            return;
+        }
+    }
+    
+    // If no mobile header, position below other sections
+    stickyEl.style.top = `${totalHeight}px`;
+    stickyEl.style.marginTop = '0';
+}
+
+// Update position on scroll and resize
+let stickyUpdateTimeout;
+function updateStickyPosition() {
+    clearTimeout(stickyUpdateTimeout);
+    stickyUpdateTimeout = setTimeout(setCategoriesStickyTop, 10);
+}
+
+window.addEventListener('scroll', updateStickyPosition, { passive: true });
+
+window.addEventListener('resize', () => {
+    updateStickyPosition();
+    updateCategoryWrapperPosition();
+    checkAndShowMobileHeader();
+    // Recalculate menu items position on resize
+    setTimeout(() => {
+        updateCategoryWrapperPosition();
+    }, 100);
+});
+
+// Update when DOM changes
+const stickyObserver = new MutationObserver(() => {
+    updateStickyPosition();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Initially hide mobile category header and wrapper, show navbar
+    const header = document.getElementById('mobileCategoryHeader');
+    const categoryWrapper = document.getElementById('mobileCategoryScrollWrapper');
+    const navbar = document.querySelector('.navbar');
+    
+    // Initialize selected menu state (null = no menu selected, nothing highlighted by default on mobile)
+    window.selectedMenuId = null;
+    
+    // Remove any active states from mobile category items on page load (mobile only)
+    // Desktop category buttons will have "All Items" active by default
+    document.querySelectorAll('.mobile-category-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    if (header) {
+        header.style.display = 'none';
+    }
+    if (categoryWrapper) {
+        categoryWrapper.style.display = 'none';
+    }
+    if (navbar) {
+        navbar.style.display = '';
+    }
+    
+    setCategoriesStickyTop();
+    updateCategoryWrapperPosition();
+    checkAndShowMobileHeader();
+    const stickyEl = document.getElementById('mobileCategoriesSticky');
+    if (stickyEl) {
+        stickyObserver.observe(document.body, { childList: true, subtree: true });
+    }
+});
+
+if (document.readyState !== 'loading') {
+    // Initially hide mobile category header and wrapper, show navbar
+    const header = document.getElementById('mobileCategoryHeader');
+    const categoryWrapper = document.getElementById('mobileCategoryScrollWrapper');
+    const navbar = document.querySelector('.navbar');
+    
+    if (header) {
+        header.style.display = 'none';
+    }
+    if (categoryWrapper) {
+        categoryWrapper.style.display = 'none';
+    }
+    if (navbar) {
+        navbar.style.display = '';
+    }
+    
+    setCategoriesStickyTop();
+    updateCategoryWrapperPosition();
+    checkAndShowMobileHeader();
+}
+
+// Go back to categories view - simple back to home/normal view
+function goBackToCategories() {
+    // Reset selected menu
+    window.selectedMenuId = null;
+    
+    // Reset filter to show all items
+    filterByMenu(null);
+    
+    // Hide mobile category header and wrapper
+    const header = document.getElementById('mobileCategoryHeader');
+    const categoryWrapper = document.getElementById('mobileCategoryScrollWrapper');
+    const navbar = document.querySelector('.navbar');
+    
     if (header) {
         header.style.display = 'none';
     }
     
-    // Reset to "All"
-    const allItem = document.querySelector('.mobile-category-item[data-menu="all"]');
-    if (allItem) {
-        allItem.click();
+    if (categoryWrapper) {
+        categoryWrapper.style.display = 'none';
     }
+    
+    // Show navbar
+    if (navbar) {
+        navbar.style.display = '';
+    }
+    
+    // Scroll to top to show home screen
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Update category wrapper position
+    updateCategoryWrapperPosition();
+    checkAndShowMobileHeader();
 }
 
 // Focus search
@@ -1820,14 +2363,14 @@ async function loadMenuItems(filter = {}) {
     try {
         const restaurantId = getRestaurantId();
         let url = `api.php?action=getMenuItems&restaurant_id=${encodeURIComponent(restaurantId)}`;
-        
+
         if (filter.menuId) url += `&menu_id=${filter.menuId}`;
         if (filter.category) url += `&category=${encodeURIComponent(filter.category)}`;
         if (filter.type) url += `&type=${encodeURIComponent(filter.type)}`;
-        
+
         const response = await fetch(url);
         const data = await response.json();
-        
+
         // Check for error
         if (data.error) {
             console.error('API Error:', data.error);
@@ -1835,30 +2378,91 @@ async function loadMenuItems(filter = {}) {
             renderMenuItems();
             return;
         }
-        
+
         menuItems = Array.isArray(data) ? data : [];
         renderMenuItems();
+        
+        // CRITICAL: Recalculate position multiple times after menu items are rendered
+        // Layout changes after data loads can affect sticky positioning
+        requestAnimationFrame(() => {
+            updateCategoryWrapperPosition();
+            enforceCategoryPosition();
+            
+            // Double check after a short delay to ensure it sticks
+            setTimeout(() => {
+                updateCategoryWrapperPosition();
+                enforceCategoryPosition();
+                
+                // Triple check after images load
+                setTimeout(() => {
+                    updateCategoryWrapperPosition();
+                    enforceCategoryPosition();
+                }, 200);
+            }, 100);
+        });
     } catch (error) {
         console.error('Error loading menu items:', error);
         menuItems = [];
         renderMenuItems();
+        
+        // Recalculate position even on error
+        requestAnimationFrame(() => {
+            updateCategoryWrapperPosition();
+            enforceCategoryPosition();
+        });
     }
 }
 
 // Render menu items
 function renderMenuItems() {
     const menuGrid = document.getElementById('menuGrid');
-    
+
     if (menuItems.length === 0) {
         menuGrid.innerHTML = '<div class="loading">No items found</div>';
+        // CRITICAL: Recalculate position after rendering
+        requestAnimationFrame(() => {
+            updateCategoryWrapperPosition();
+            enforceCategoryPosition();
+        });
         return;
     }
-    
+
     menuGrid.innerHTML = '';
-    
+
     menuItems.forEach(item => {
         const card = createMenuItemCard(item);
         menuGrid.appendChild(card);
+        
+        // Add image load listener to recalculate position when images load
+        const img = card.querySelector('img');
+        if (img) {
+            img.addEventListener('load', () => {
+                updateCategoryWrapperPosition();
+                enforceCategoryPosition();
+            });
+            img.addEventListener('error', () => {
+                updateCategoryWrapperPosition();
+                enforceCategoryPosition();
+            });
+        }
+    });
+    
+    // CRITICAL: Recalculate position after all items are rendered
+    // Use multiple checks to ensure it sticks after DOM updates
+    requestAnimationFrame(() => {
+        updateCategoryWrapperPosition();
+        enforceCategoryPosition();
+        
+        setTimeout(() => {
+            updateCategoryWrapperPosition();
+            enforceCategoryPosition();
+            
+            // Final check after a bit more time (for images loading)
+            setTimeout(() => {
+                updateCategoryWrapperPosition();
+                enforceCategoryPosition();
+            }, 150);
+        }, 50);
     });
 }
 
@@ -1866,14 +2470,14 @@ function renderMenuItems() {
 function createMenuItemCard(item) {
     const card = document.createElement('div');
     card.className = 'menu-card';
-    
-    const typeBadge = item.item_type === 'Veg' ? '🌱 Veg' : 
-                      item.item_type === 'Non Veg' ? '🍖 Non Veg' :
-                      item.item_type === 'Egg' ? '🥚 Egg' :
-                      item.item_type === 'Drink' ? '🥤 Drink' : '';
-    
+
+    const typeBadge = item.item_type === 'Veg' ? '🌱 Veg' :
+        item.item_type === 'Non Veg' ? '🍖 Non Veg' :
+            item.item_type === 'Egg' ? '🥚 Egg' :
+                item.item_type === 'Drink' ? '🥤 Drink' : '';
+
     const imageUrl = item.item_image ? `image.php?path=${encodeURIComponent(item.item_image)}` : '';
-    
+
     card.innerHTML = `
         <div class="menu-card-image">
             ${imageUrl ? `<img src="${imageUrl}" alt="${escapeHtml(item.item_name_en)}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">` : '🍽️'}
@@ -1893,10 +2497,10 @@ function createMenuItemCard(item) {
             </div>
         </div>
     `;
-    
+
     // Make the entire card clickable (except the add button)
     card.style.cursor = 'pointer';
-    card.addEventListener('click', function(e) {
+    card.addEventListener('click', function (e) {
         // Don't open modal if clicking the add button
         if (e.target.closest('.add-to-cart-btn')) {
             return;
@@ -1908,23 +2512,23 @@ function createMenuItemCard(item) {
             console.error('openItemModal function not found!');
         }
     });
-    
+
     // Add to cart button click handler
     const addBtn = card.querySelector('.add-to-cart-btn');
     if (addBtn) {
-        addBtn.addEventListener('click', function(e) {
+        addBtn.addEventListener('click', function (e) {
             e.stopPropagation(); // Prevent card click
             addToCart(item.id, item.item_name_en, item.base_price, item.item_image || '');
         });
     }
-    
+
     return card;
 }
 
 // Add to cart
 function addToCart(itemId, itemName, itemPrice, itemImage) {
     const existingItem = cart.find(item => item.id === itemId);
-    
+
     if (existingItem) {
         existingItem.quantity += 1;
     } else {
@@ -1936,7 +2540,7 @@ function addToCart(itemId, itemName, itemPrice, itemImage) {
             quantity: 1
         });
     }
-    
+
     updateCartStorage();
     updateCartUI();
     showCartNotification();
@@ -1955,18 +2559,18 @@ function updateCartUI() {
     if (cartCount) {
         cartCount.textContent = totalItems;
     }
-    
+
     // Update cart summary bar - ONLY show when cart has 1+ items, hide if 0 items
     const cartSummaryBar = document.getElementById('cartSummaryBar');
     const cartSummaryItems = document.getElementById('cartSummaryItems');
     const cartSummaryTotal = document.getElementById('cartSummaryTotal');
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
+
     // STRICT CHECK: Only show if cart has 1 or more items
     if (cartSummaryBar) {
         // Check if cart has items (1 or more)
         const hasItems = cart.length > 0 && totalItems > 0;
-        
+
         if (hasItems) {
             // Show yellow bar when cart has 1 or more items
             if (cartSummaryItems && cartSummaryTotal) {
@@ -1985,21 +2589,21 @@ function updateCartUI() {
             document.body.classList.remove('has-cart');
         }
     }
-    
+
     // Render cart items
     renderCartItems();
-    
+
     // Update total
     const cartTotal = document.getElementById('cartTotal');
     if (cartTotal) {
         cartTotal.textContent = formatCurrency(total);
     }
-    
+
     // Check if table is in URL
     const tableFromURL = getTableFromURL();
     const continueSection = document.getElementById('continueSection');
     const checkoutBtn = document.getElementById('checkoutBtn');
-    
+
     if (tableFromURL && cart.length > 0) {
         // Show Continue button instead of Checkout
         if (continueSection) continueSection.style.display = 'block';
@@ -2043,7 +2647,7 @@ function triggerCallWaiter() {
 // Render cart items
 function renderCartItems() {
     const cartItems = document.getElementById('cartItems');
-    
+
     if (cart.length === 0) {
         cartItems.innerHTML = `
             <div class="empty-cart">
@@ -2053,9 +2657,9 @@ function renderCartItems() {
         `;
         return;
     }
-    
+
     cartItems.innerHTML = '';
-    
+
     cart.forEach((item, index) => {
         const cartItem = createCartItemHTML(item, index);
         cartItems.appendChild(cartItem);
@@ -2066,9 +2670,9 @@ function renderCartItems() {
 function createCartItemHTML(item, index) {
     const div = document.createElement('div');
     div.className = 'cart-item';
-    
+
     const imageUrl = item.image ? `image.php?path=${encodeURIComponent(item.image)}` : '';
-    
+
     div.innerHTML = `
         <div class="cart-item-image">
             ${imageUrl ? `<img src="${imageUrl}" alt="${item.name}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">` : '🍽️'}
@@ -2087,7 +2691,7 @@ function createCartItemHTML(item, index) {
             </div>
         </div>
     `;
-    
+
     return div;
 }
 
@@ -2118,13 +2722,13 @@ function toggleCart() {
     const cartOverlay = document.getElementById('cartOverlay');
     const bottomNav = document.querySelector('.bottom-nav');
     const cartSummaryBar = document.getElementById('cartSummaryBar');
-    
+
     const isOpen = cartSidebar.classList.contains('open');
     const isMobile = window.innerWidth <= 768;
-    
+
     cartSidebar.classList.toggle('open');
     cartOverlay.classList.toggle('show');
-    
+
     // Hide/show bottom nav and cart summary bar
     if (isOpen) {
         // Cart is closing, show bottom nav only on mobile and cart summary bar (only if cart has items)
@@ -2185,37 +2789,37 @@ async function performSearch() {
         console.error('Search input not found');
         return;
     }
-    
+
     const searchTerm = searchInput.value.trim();
     const suggestionsDiv = document.getElementById('searchSuggestions');
-    
+
     // Hide suggestions dropdown
     if (suggestionsDiv) {
         suggestionsDiv.style.display = 'none';
     }
-    
+
     // If search is empty, show all items
     if (searchTerm.length === 0) {
         loadMenuItems(currentFilter);
         selectedSuggestionIndex = -1;
         return;
     }
-    
+
     try {
         const restaurantId = getRestaurantId();
         if (!restaurantId) {
             console.error('Restaurant ID not found');
             return;
         }
-        
+
         const response = await fetch(`api.php?action=searchItems&q=${encodeURIComponent(searchTerm)}&restaurant_id=${encodeURIComponent(restaurantId)}`);
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         // Check for error
         if (data.error) {
             console.error('Search Error:', data.error);
@@ -2224,14 +2828,14 @@ async function performSearch() {
             renderMenuItems();
             return;
         }
-        
+
         // Get search results
         menuItems = Array.isArray(data) ? data : (data.items || []);
         searchSuggestions = menuItems.slice(0, 5);
-        
+
         // Render the search results
         renderMenuItems();
-        
+
         // Scroll to menu section to show results
         setTimeout(() => {
             const menuSection = document.getElementById('menu');
@@ -2239,7 +2843,7 @@ async function performSearch() {
                 menuSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }, 100);
-        
+
     } catch (error) {
         console.error('Search error:', error);
         menuItems = [];
@@ -2251,9 +2855,9 @@ async function performSearch() {
 function handleSearch(e) {
     const searchTerm = e.target.value.trim();
     const suggestionsDiv = document.getElementById('searchSuggestions');
-    
+
     clearTimeout(searchTimeout);
-    
+
     // Hide suggestions if search is empty
     if (searchTerm.length === 0) {
         if (suggestionsDiv) suggestionsDiv.style.display = 'none';
@@ -2261,19 +2865,19 @@ function handleSearch(e) {
         selectedSuggestionIndex = -1;
         return;
     }
-    
+
     if (searchTerm.length < 2) {
         if (suggestionsDiv) suggestionsDiv.style.display = 'none';
         loadMenuItems(currentFilter);
         return;
     }
-    
+
     searchTimeout = setTimeout(async () => {
         try {
             const restaurantId = getRestaurantId();
             const response = await fetch(`api.php?action=searchItems&q=${encodeURIComponent(searchTerm)}&restaurant_id=${encodeURIComponent(restaurantId)}`);
             const data = await response.json();
-            
+
             // Check for error
             if (data.error) {
                 console.error('Search Error:', data.error);
@@ -2284,7 +2888,7 @@ function handleSearch(e) {
                 // Show top 5 results in suggestions
                 searchSuggestions = menuItems.slice(0, 5);
             }
-            
+
             // Show suggestions dropdown
             renderSearchSuggestions();
             renderMenuItems();
@@ -2302,7 +2906,7 @@ function handleSearch(e) {
 function renderSearchSuggestions() {
     const suggestionsDiv = document.getElementById('searchSuggestions');
     if (!suggestionsDiv) return;
-    
+
     if (searchSuggestions.length === 0) {
         suggestionsDiv.innerHTML = `
             <div class="search-suggestions-empty">
@@ -2313,13 +2917,13 @@ function renderSearchSuggestions() {
         suggestionsDiv.style.display = 'block';
         return;
     }
-    
+
     suggestionsDiv.innerHTML = searchSuggestions.map((item, index) => {
         const itemName = item.item_name_en || item.item_name || 'Unknown Item';
         const category = item.item_category || '';
         const price = item.base_price || 0;
         const imageUrl = item.item_image ? `image.php?path=${encodeURIComponent(item.item_image)}` : '';
-        
+
         // Build image HTML
         let imageHtml = '';
         if (imageUrl) {
@@ -2334,7 +2938,7 @@ function renderSearchSuggestions() {
                 <span class="material-symbols-rounded">restaurant_menu</span>
             </div>`;
         }
-        
+
         const escapedImage = escapeHtml(item.item_image || '');
         const escapedName = escapeHtml(itemName);
         return `
@@ -2355,9 +2959,9 @@ function renderSearchSuggestions() {
             </div>
         `;
     }).join('');
-    
+
     suggestionsDiv.style.display = 'block';
-    
+
     // Prevent blur when clicking on suggestions
     suggestionsDiv.addEventListener('mousedown', (e) => {
         e.preventDefault();
@@ -2372,17 +2976,17 @@ function selectSuggestion(index) {
         if (searchInput) {
             searchInput.value = item.item_name_en || item.item_name || '';
         }
-        
+
         // Hide suggestions
         const suggestionsDiv = document.getElementById('searchSuggestions');
         if (suggestionsDiv) suggestionsDiv.style.display = 'none';
-        
+
         // Scroll to menu section and highlight the item
         const menuSection = document.getElementById('menu');
         if (menuSection) {
             menuSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-        
+
         // Trigger search to show full results
         if (searchInput) {
             searchInput.dispatchEvent(new Event('input'));
@@ -2409,21 +3013,61 @@ function handleFilter() {
     const categoryFilter = document.getElementById('categoryFilter');
     const type = typeFilter ? typeFilter.value : '';
     const category = categoryFilter ? categoryFilter.value : '';
-    
+
     currentFilter.type = type;
     currentFilter.category = category;
-    
+
     loadMenuItems(currentFilter);
 }
 
 // Filter by menu
-function filterByMenu(menuId) {
-    // Update active button
-    document.querySelectorAll('.category-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    event.target.classList.add('active');
+function filterByMenu(menuId, buttonElement) {
+    // Get all category buttons from the menu tabs container
+    const menuTabs = document.getElementById('menuTabs');
+    if (!menuTabs) {
+        console.error('menuTabs container not found');
+        return;
+    }
     
+    const allButtons = menuTabs.querySelectorAll('.category-btn');
+    
+    // Remove active class and inline styles from all buttons
+    allButtons.forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.backgroundColor = '';
+        btn.style.color = '';
+    });
+    
+    // Determine which button should be active
+    let targetButton = null;
+    
+    if (buttonElement && buttonElement.classList && menuTabs.contains(buttonElement)) {
+        // Use the provided button element
+        targetButton = buttonElement;
+    } else {
+        // Find the button that matches the menuId
+        if (menuId === null || menuId === undefined || menuId === '') {
+            // For "All Items", find button with data-menu="all"
+            targetButton = menuTabs.querySelector('.category-btn[data-menu="all"]');
+        } else {
+            // Find the button with matching menuId (convert to string for comparison)
+            const menuIdStr = String(menuId);
+            targetButton = menuTabs.querySelector(`.category-btn[data-menu-id="${menuIdStr}"]`);
+        }
+    }
+    
+    // Apply active state to target button
+    if (targetButton) {
+        targetButton.classList.add('active');
+        // Also apply inline styles as backup to ensure visibility
+        const primaryRed = getComputedStyle(document.documentElement).getPropertyValue('--primary-red').trim() || '#F70000';
+        targetButton.style.backgroundColor = primaryRed;
+        targetButton.style.color = '#FFFFFF';
+    } else {
+        console.warn('Could not find target button for menuId:', menuId);
+    }
+
+    // Update filter and load items
     currentFilter.menuId = menuId;
     loadMenuItems(currentFilter);
 }
@@ -2434,28 +3078,28 @@ function clearFilters() {
     const categoryFilter = document.getElementById('categoryFilter');
     if (typeFilter) typeFilter.value = '';
     if (categoryFilter) categoryFilter.value = '';
-    
+
     const allBtn = document.querySelector('.category-btn');
     if (allBtn) {
         document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
         allBtn.classList.add('active');
     }
-    
+
     currentFilter = {
         menuId: null,
         category: null,
         type: null
     };
-    
+
     loadMenuItems();
 }
 
 // Handle checkout
 function handleCheckout() {
     if (cart.length === 0) return;
-    
+
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
+
     // Close cart and show customer details modal
     toggleCart();
     showCustomerDetailsModal(total);
@@ -2468,10 +3112,10 @@ function showCustomerDetailsModal(total) {
     if (existingModal) {
         existingModal.remove();
     }
-    
+
     // Load saved customer data
     const savedCustomer = loadCustomerFromStorage();
-    
+
     // Create modal
     const modal = document.createElement('div');
     modal.id = 'customerModal';
@@ -2557,19 +3201,19 @@ function showCustomerDetailsModal(total) {
         </div>
     `;
     document.body.appendChild(modal);
-    
+
     // Close button
     document.getElementById('closeCustomerModal').addEventListener('click', closeCustomerModal);
-    
+
     // Form submit
-    document.getElementById('customerForm').addEventListener('submit', function(e) {
+    document.getElementById('customerForm').addEventListener('submit', function (e) {
         e.preventDefault();
         processOrder(total);
     });
-    
+
     // Update order summary
     updateOrderSummary();
-    
+
     // Show modal
     setTimeout(() => {
         modal.classList.add('active');
@@ -2587,7 +3231,7 @@ function updateOrderSummary() {
             </div>
         `).join('');
     }
-    
+
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const summaryTotal = document.getElementById('summaryTotal');
     if (summaryTotal) {
@@ -2647,13 +3291,13 @@ function closeProfileModalOnOverlay(event) {
 // Load Profile Data from localStorage
 function loadProfileData() {
     const savedCustomer = loadCustomerFromStorage();
-    
+
     if (savedCustomer) {
         document.getElementById('profileName').textContent = savedCustomer.name || '-';
         document.getElementById('profilePhone').textContent = savedCustomer.phone || '-';
         document.getElementById('profileEmail').textContent = savedCustomer.email || '-';
         document.getElementById('profileAddress').textContent = savedCustomer.address || '-';
-        
+
         // Populate edit form
         document.getElementById('editName').value = savedCustomer.name || '';
         document.getElementById('editPhone').value = savedCustomer.phone || '';
@@ -2665,7 +3309,7 @@ function loadProfileData() {
         document.getElementById('profilePhone').textContent = 'Not set';
         document.getElementById('profileEmail').textContent = 'Not set';
         document.getElementById('profileAddress').textContent = 'Not set';
-        
+
         // Show edit form by default if no data
         toggleProfileEdit();
     }
@@ -2675,7 +3319,7 @@ function loadProfileData() {
 function toggleProfileEdit() {
     const infoDisplay = document.getElementById('profileInfo');
     const editForm = document.getElementById('profileEdit');
-    
+
     if (infoDisplay && editForm) {
         infoDisplay.style.display = infoDisplay.style.display === 'none' ? 'block' : 'none';
         editForm.style.display = editForm.style.display === 'none' ? 'block' : 'none';
@@ -2686,12 +3330,12 @@ function toggleProfileEdit() {
 function cancelProfileEdit() {
     const infoDisplay = document.getElementById('profileInfo');
     const editForm = document.getElementById('profileEdit');
-    
+
     if (infoDisplay && editForm) {
         infoDisplay.style.display = 'block';
         editForm.style.display = 'none';
     }
-    
+
     // Reload data to reset form
     loadProfileData();
 }
@@ -2700,31 +3344,31 @@ function cancelProfileEdit() {
 function setupProfileForm() {
     const profileForm = document.getElementById('profileForm');
     if (profileForm) {
-        profileForm.addEventListener('submit', function(e) {
+        profileForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const profileData = {
                 name: document.getElementById('editName').value.trim(),
                 phone: document.getElementById('editPhone').value.trim(),
                 email: document.getElementById('editEmail').value.trim(),
                 address: document.getElementById('editAddress').value.trim()
             };
-            
+
             // Validate required fields
             if (!profileData.name || !profileData.phone) {
                 showNotification('Name and phone number are required', 'error');
                 return;
             }
-            
+
             // Save to localStorage
             saveCustomerToStorage(profileData);
-            
+
             // Update display
             loadProfileData();
-            
+
             // Switch back to display mode
             cancelProfileEdit();
-            
+
             showNotification('Profile updated successfully!', 'success');
         });
     }
@@ -2734,31 +3378,31 @@ function setupProfileForm() {
 async function loadOrderHistory() {
     const orderHistoryDiv = document.getElementById('orderHistory');
     if (!orderHistoryDiv) return;
-    
+
     const savedCustomer = loadCustomerFromStorage();
-    
+
     if (!savedCustomer || !savedCustomer.phone) {
         orderHistoryDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-light);">Please add your phone number to view order history</div>';
         return;
     }
-    
+
     try {
         const restaurantId = getRestaurantId();
         const response = await fetch(`api.php?action=getCustomerOrders&restaurant_id=${encodeURIComponent(restaurantId)}&phone=${encodeURIComponent(savedCustomer.phone)}`);
         const data = await response.json();
-        
+
         if (data.error) {
             orderHistoryDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-light);">No orders found</div>';
             return;
         }
-        
+
         const orders = Array.isArray(data) ? data : (data.orders || []);
-        
+
         if (orders.length === 0) {
             orderHistoryDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-light);">No orders yet. Start ordering to see your history here!</div>';
             return;
         }
-        
+
         // Display orders
         orderHistoryDiv.innerHTML = orders.map(order => {
             const orderDate = new Date(order.created_at).toLocaleDateString('en-IN', {
@@ -2768,11 +3412,11 @@ async function loadOrderHistory() {
                 hour: '2-digit',
                 minute: '2-digit'
             });
-            
-            const statusColor = order.order_status === 'Completed' ? '#28a745' : 
-                               order.order_status === 'Pending' ? '#ffc107' : 
-                               order.order_status === 'Cancelled' ? '#dc3545' : '#6c757d';
-            
+
+            const statusColor = order.order_status === 'Completed' ? '#28a745' :
+                order.order_status === 'Pending' ? '#ffc107' :
+                    order.order_status === 'Cancelled' ? '#dc3545' : '#6c757d';
+
             return `
                 <div class="order-history-item">
                     <div class="order-history-header">
@@ -2799,7 +3443,7 @@ async function loadOrderHistory() {
                 </div>
             `;
         }).join('');
-        
+
     } catch (error) {
         console.error('Error loading order history:', error);
         orderHistoryDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-light);">Error loading order history</div>';
@@ -2807,39 +3451,39 @@ async function loadOrderHistory() {
 }
 
 // Item Details Modal Functions - Make sure it's globally accessible
-window.openItemModal = function(itemId) {
+window.openItemModal = function (itemId) {
     console.log('openItemModal called with itemId:', itemId);
     console.log('Available menuItems:', menuItems.length);
-    
+
     const item = menuItems.find(i => i.id === itemId);
     if (!item) {
         console.error('Item not found:', itemId, 'Available items:', menuItems.map(i => i.id));
         return;
     }
-    
+
     console.log('Item found:', item);
-    
+
     const modal = document.getElementById('itemModal');
     const modalBody = document.getElementById('itemModalBody');
-    
+
     if (!modal || !modalBody) {
         console.error('Item modal elements not found. Modal:', modal, 'ModalBody:', modalBody);
         return;
     }
-    
+
     console.log('Opening modal...');
-    
-    const typeBadge = item.item_type === 'Veg' ? '🌱 Veg' : 
-                      item.item_type === 'Non Veg' ? '🍖 Non Veg' :
-                      item.item_type === 'Egg' ? '🥚 Egg' :
-                      item.item_type === 'Drink' ? '🥤 Drink' : '';
-    
+
+    const typeBadge = item.item_type === 'Veg' ? '🌱 Veg' :
+        item.item_type === 'Non Veg' ? '🍖 Non Veg' :
+            item.item_type === 'Egg' ? '🥚 Egg' :
+                item.item_type === 'Drink' ? '🥤 Drink' : '';
+
     const imageUrl = item.item_image ? `image.php?path=${encodeURIComponent(item.item_image)}` : '';
     const existingCartItem = cart.find(c => c.id === item.id);
     const currentQuantity = existingCartItem ? existingCartItem.quantity : 1;
     itemModalQuantity = currentQuantity;
     currentItemModalItem = item;
-    
+
     modalBody.innerHTML = `
         <div class="item-modal-image">
             ${imageUrl ? `<img src="${imageUrl}" alt="${escapeHtml(item.item_name_en)}" loading="eager" fetchpriority="high" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
@@ -2875,29 +3519,29 @@ window.openItemModal = function(itemId) {
             </div>
         </div>
     `;
-    
+
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
-    
+
     // Setup event listeners for modal controls
     setTimeout(() => {
         const decreaseBtn = document.getElementById('itemModalQuantityDecrease');
         const increaseBtn = document.getElementById('itemModalQuantityIncrease');
         const quantityInput = document.getElementById('itemModalQuantity');
         const addToCartBtn = document.getElementById('addToCartFromModalBtn');
-        
+
         if (decreaseBtn) {
             decreaseBtn.onclick = () => updateItemModalQuantity(-1);
         }
-        
+
         if (increaseBtn) {
             increaseBtn.onclick = () => updateItemModalQuantity(1);
         }
-        
+
         if (quantityInput) {
             quantityInput.onchange = (e) => updateItemModalQuantityInput(e.target.value);
         }
-        
+
         if (addToCartBtn) {
             addToCartBtn.onclick = () => {
                 addToCartFromModal(item.id, item.item_name_en, item.base_price, item.item_image || '');
@@ -2906,7 +3550,7 @@ window.openItemModal = function(itemId) {
     }, 10);
 }
 
-window.closeItemModal = function() {
+window.closeItemModal = function () {
     const modal = document.getElementById('itemModal');
     if (modal) {
         modal.classList.remove('active');
@@ -2914,7 +3558,7 @@ window.closeItemModal = function() {
     }
 }
 
-window.closeItemModalOnOverlay = function(event) {
+window.closeItemModalOnOverlay = function (event) {
     if (event.target.id === 'itemModal') {
         closeItemModal();
     }
@@ -2926,12 +3570,12 @@ let currentItemModalItem = null;
 function updateItemModalQuantity(change) {
     const quantityInput = document.getElementById('itemModalQuantity');
     if (!quantityInput) return;
-    
+
     const currentValue = parseInt(quantityInput.value) || 1;
     const newValue = Math.max(1, currentValue + change);
     quantityInput.value = newValue;
     itemModalQuantity = newValue;
-    
+
     updateItemModalTotalPrice();
 }
 
@@ -2948,29 +3592,29 @@ function updateItemModalQuantityInput(value) {
 function updateItemModalTotalPrice() {
     const totalPriceElement = document.querySelector('.item-modal-total-price');
     if (!totalPriceElement) return;
-    
+
     // Find the current item from the modal
     const modalBody = document.getElementById('itemModalBody');
     if (!modalBody) return;
-    
+
     const priceElement = modalBody.querySelector('.item-modal-price');
     if (!priceElement) return;
-    
+
     // Extract price from the price element text
     const priceText = priceElement.textContent;
     const price = parseFloat(priceText.replace(/[^\d.]/g, '')) || 0;
     const quantity = itemModalQuantity || 1;
     const total = price * quantity;
-    
+
     totalPriceElement.textContent = formatCurrency(total);
 }
 
 function addToCartFromModal(itemId, itemName, itemPrice, itemImage) {
     const quantityInput = document.getElementById('itemModalQuantity');
     const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
-    
+
     const existingItem = cart.find(item => item.id === itemId);
-    
+
     if (existingItem) {
         existingItem.quantity += quantity;
     } else {
@@ -2982,7 +3626,7 @@ function addToCartFromModal(itemId, itemName, itemPrice, itemImage) {
             quantity: quantity
         });
     }
-    
+
     updateCartStorage();
     updateCartUI();
     showCartNotification();
@@ -2997,22 +3641,22 @@ async function processOrder(total) {
     const email = document.getElementById('customerEmail').value || '';
     const address = document.getElementById('customerAddress').value || '';
     const remember = document.getElementById('rememberCustomer').checked;
-    
+
     // Save customer details if remember is checked
     if (remember) {
         saveCustomerToStorage({ name, phone, email, address });
     } else {
         clearCustomerFromStorage();
     }
-    
+
     // Get selected payment method
     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
-    
+
     try {
         const restaurantId = getRestaurantId();
         const response = await fetch(`../api/process_website_order.php?restaurant_id=${encodeURIComponent(restaurantId)}`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
@@ -3027,18 +3671,18 @@ async function processOrder(total) {
                 payment_method: paymentMethod
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('Order placed successfully! Order #' + data.order_number, 'success');
             closeCustomerModal();
-            
+
             // Clear cart
             cart = [];
             updateCartStorage();
             updateCartUI();
-            
+
             // Ensure cart summary bar is hidden after checkout
             const cartSummaryBar = document.getElementById('cartSummaryBar');
             if (cartSummaryBar) {
@@ -3046,7 +3690,7 @@ async function processOrder(total) {
                 cartSummaryBar.classList.remove('show');
             }
             document.body.classList.remove('has-cart');
-            
+
             // Close cart sidebar if open
             const cartSidebar = document.getElementById('cartSidebar');
             const cartOverlay = document.getElementById('cartOverlay');
